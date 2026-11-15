@@ -15,6 +15,7 @@ const ConversationPages = preload("res://scripts/narrative/conversation_pages.gd
 const BarrioDetails = preload("res://scripts/world/barrio_details.gd")
 const EnvironmentPolish = preload("res://scripts/world/environment_polish.gd")
 const IllustratedBarrio = preload("res://scripts/world/illustrated_barrio.gd")
+const SoftwareWorldFallback = preload("res://scripts/visuals/software_world_fallback.gd")
 const SOIL_ART: Texture2D = preload("res://assets/world/soil_ground.svg")
 const PATH_ART: Texture2D = preload("res://assets/world/earthen_path.svg")
 const WATER_ART: Texture2D = preload("res://assets/world/tidal_water.svg")
@@ -76,6 +77,7 @@ var dog_next_waypoint := 0
 var dog_repath_timer := 0.0
 var camera_director = CinematicCamera.new()
 var camera: Camera3D
+var software_world_fallback: Control
 var lantern: SpotLight3D
 var status_panel: PanelContainer
 var status_stack: VBoxContainer
@@ -130,6 +132,7 @@ func _ready() -> void:
 	_create_camera()
 	_create_lighting()
 	_create_audio()
+	_create_software_world_fallback()
 	_create_ui()
 	_apply_preferences()
 	_restore_story()
@@ -640,9 +643,27 @@ func _sync_modal_ui() -> void:
 	modal_backdrop.color = Color(0.015, 0.035, 0.05, 0.30 if dialogue != null and dialogue.visible else 0.76)
 
 
+func _create_software_world_fallback() -> void:
+	var adapter_name := RenderingServer.get_video_adapter_name()
+	if not SoftwareWorldFallback.needs_software_draw(adapter_name):
+		return
+	# Only software GL adapter family lacks the 3D spatial shaders required
+	# by the normal world renderer. The interactive 3D simulation stays live.
+	var canvas := CanvasLayer.new()
+	canvas.name = "AndroidSoftwareWorldFallback"
+	canvas.layer = 1
+	add_child(canvas)
+	software_world_fallback = SoftwareWorldFallback.new()
+	canvas.add_child(software_world_fallback)
+	software_world_fallback.bind_game(self, camera)
+	print("Night 1: using LIVE 2.5D gameplay renderer on ", adapter_name)
+
+
 func _create_ui() -> void:
 	var canvas := CanvasLayer.new()
 	canvas.name = "HUD"
+	# Separate from the compatibility rendering canvas, always above it.
+	canvas.layer = 2
 	add_child(canvas)
 	var root := Control.new()
 	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
