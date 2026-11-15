@@ -20,6 +20,10 @@ var objective: Label
 var dialogue: PanelContainer
 var dialogue_text: Label
 var touch_axes := Vector2.ZERO
+var focus_held := false
+var light_alarm := 0.0
+var lamp_heading := Vector3.FORWARD
+var alarm_label: Label
 var move_buttons: Dictionary = {}
 var is_night := false
 var talked_to_lola := false
@@ -57,7 +61,16 @@ func _physics_process(delta: float) -> void:
 	player.move_and_slide()
 	if desired.length() > 0.05:
 		player.rotation.y = atan2(desired.x, desired.z)
-		lantern.rotation.y = -player.rotation.y
+		if not focus_held:
+			lamp_heading = desired
+	# Focus remains independent from movement while held.
+	if focus_held:
+		var target := santelmo.global_position if santelmo != null and is_night else player.global_position + lamp_heading * 7.0
+		lamp_heading = (target - player.global_position) * Vector3(1, 0, 1)
+		if lamp_heading.length() > 0.1:
+			lamp_heading = lamp_heading.normalized()
+	if lamp_heading.length() > 0.1:
+		lantern.global_rotation.y = atan2(-lamp_heading.x, -lamp_heading.z)
 	# A simple follow/stop behavior for the prototype. Navigation is a later gate.
 	var offset := player.global_position - bantay.global_position
 	offset.y = 0.0
@@ -69,6 +82,7 @@ func _physics_process(delta: float) -> void:
 	camera.look_at(player.global_position + Vector3(0, 0.7, 0))
 	elapsed += delta
 	if is_night and santelmo != null:
+		_update_santelmo_reaction(delta)
 		santelmo.position.y = 1.7 + 0.23 * sin(elapsed * 2.7)
 		var child_light := santelmo.get_node_or_null("Glow") as OmniLight3D
 		if child_light != null:
@@ -78,6 +92,10 @@ func _physics_process(delta: float) -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_accept"):
 		_interact()
+	if event.is_action_pressed("ui_focus_next"):
+		focus_held = true
+	if event.is_action_released("ui_focus_next"):
+		focus_held = false
 	if event.is_action_pressed("ui_cancel"):
 		_close_dialogue()
 
@@ -255,10 +273,19 @@ func _create_ui() -> void:
 	_make_button(root, "▶", Vector2(170, 575), Vector2(70, 65), func(): _set_button_axis("right", true), func(): _set_button_axis("right", false))
 	_make_button(root, "▲", Vector2(95, 505), Vector2(70, 65), func(): _set_button_axis("up", true), func(): _set_button_axis("up", false))
 	_make_button(root, "▼", Vector2(95, 645), Vector2(70, 65), func(): _set_button_axis("down", true), func(): _set_button_axis("down", false))
+	_make_button(root, "FOCUS", Vector2(1050, 490), Vector2(180, 60), func(): _set_focus(true), func(): _set_focus(false))
 	_make_button(root, "INTERACT", Vector2(1050, 565), Vector2(180, 60), _interact, func(): pass)
 	_make_button(root, "DAY / NIGHT", Vector2(1050, 640), Vector2(180, 56), _toggle_night, func(): pass)
+	alarm_label = Label.new()
+	alarm_label.position = Vector2(25, 95)
+	alarm_label.add_theme_font_size_override("font_size", 18)
+	root.add_child(alarm_label)
 	dialogue = PanelContainer.new()
-	dialogue.position = Vector2(320, 510)
+	dialogue.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
+	dialogue.offset_left = -350
+	dialogue.offset_right = 350
+	dialogue.offset_top = -180
+	dialogue.offset_bottom = -35
 	dialogue.custom_minimum_size = Vector2(700, 145)
 	root.add_child(dialogue)
 	dialogue_text = Label.new()
@@ -272,12 +299,37 @@ func _create_ui() -> void:
 func _make_button(parent: Control, title: String, pos: Vector2, size: Vector2, down: Callable, up: Callable) -> void:
 	var button := Button.new()
 	button.text = title
-	button.position = pos
+	# Anchor controls to bottom corners so they remain reachable on wider phones.
+	button.anchor_left = 1.0 if pos.x > 900 else 0.0
+	button.anchor_right = button.anchor_left
+	button.anchor_top = 1.0
+	button.anchor_bottom = 1.0
+	button.offset_left = pos.x - (1280.0 if pos.x > 900 else 0.0)
+	button.offset_top = pos.y - 720.0
+	button.offset_right = button.offset_left + size.x
+	button.offset_bottom = button.offset_top + size.y
 	button.custom_minimum_size = size
 	button.size = size
 	button.button_down.connect(down)
 	button.button_up.connect(up)
 	parent.add_child(button)
+
+
+func _set_focus(active: bool) -> void:
+	focus_held = active
+
+
+func _update_santelmo_reaction(delta: float) -> void:
+	# This is a telegraphed response only, not the 3-stage encounter.
+	var to_light := santelmo.global_position - player.global_position
+	var level := Vector3(to_light.x, 0, to_light.z)
+	var aimed := lamp_heading.dot(level.normalized()) > 0.88 if level.length() > 0.1 else false
+	var exposed := level.length() < 10.0 and aimed and focus_held
+	light_alarm = clampf(light_alarm + (delta * 0.65 if exposed else -delta * 0.25), 0, 1)
+	var glow := santelmo.get_node_or_null("Glow") as OmniLight3D
+	if glow != null:
+		glow.light_color = Color(1.0, 0.34, 0.20).lerp(Color(1.0, 0.76, 0.34), 1.0 - light_alarm)
+	alarm_label.text = "Santelmo: %s  |  Hold FOCUS to study its reaction" % ("ALARMED — ease your light" if light_alarm > 0.65 else "watching" if light_alarm > 0.2 else "calm")
 
 
 func _set_button_axis(direction: String, active: bool) -> void:
@@ -312,7 +364,7 @@ func _interact() -> void:
 		"MOORING":
 			if is_night:
 				encountered_light = true
-				_show_dialogue("The river light flickers near the old mooring. This is a preview only; the Santelmo puzzle is not implemented yet.")
+				_show_dialogue("The river light flickers near the old mooring. It responds to sustained Focus. Full reflection puzzles and outcomes are not implemented yet.")
 			else:
 				_show_dialogue("A weathered mooring by the river. An older name seems to be missing from the record.")
 		_:
@@ -332,12 +384,15 @@ func _close_dialogue() -> void:
 func _toggle_night() -> void:
 	is_night = not is_night
 	lantern.light_energy = 4.5 if is_night else 0.0
+	focus_held = false
+	light_alarm = 0.0
+	alarm_label.text = ""
 	var env_node := get_node_or_null("Environment") as WorldEnvironment
 	if env_node != null:
 		env_node.environment.background_color = Color(0.04, 0.10, 0.22) if is_night else Color(0.48, 0.68, 0.72)
 	if is_night and santelmo == null:
 		santelmo = Node3D.new()
-		santelmo.name = "Santelmo (visual preview)"
+		santelmo.name = "Santelmo (reaction prototype)"
 		santelmo.position = Vector3(-7.0, 1.7, 13.0)
 		var body := MeshInstance3D.new()
 		var sphere := SphereMesh.new()
@@ -370,4 +425,4 @@ func _update_objective() -> void:
 	elif not encountered_light:
 		objective.text = "OBJECTIVE: Visit the old mooring at night."
 	else:
-		objective.text = "FOUNDATION PREVIEW COMPLETE: Santelmo encounter gameplay is next."
+		objective.text = "REACTION SPIKE: Hold FOCUS near the light; full puzzles and outcomes are next."
