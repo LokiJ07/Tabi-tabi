@@ -571,7 +571,9 @@ func _style_game_button(button: Button, title: String, touch: bool = false) -> v
 	button.add_theme_color_override("font_color", Color("#f8e8c7"))
 	button.add_theme_color_override("font_hover_color", Color.WHITE)
 	button.add_theme_color_override("font_pressed_color", Color("#fff4d1"))
-	button.add_theme_font_size_override("font_size", 23)
+	# SAVE / RETRY are narrow split actions: shrink their type rather than
+	# silently clipping the last character on a real Android screenshot.
+	button.add_theme_font_size_override("font_size", 18 if touch and title.length() > 2 else 23)
 	button.alignment = HORIZONTAL_ALIGNMENT_CENTER
 	button.set_meta("art_theme", "night1-gold-navy")
 	button.clip_text = true
