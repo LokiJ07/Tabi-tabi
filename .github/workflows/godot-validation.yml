@@ -83,5 +83,7 @@ jobs:
         run: godot --headless --path . --script res://tests/night02_state_test.gd
       - name: Kapre Night 2 real interactive scene flow and Android UI
         run: godot --headless --path . --script res://tests/night02_scene_test.gd
+      - name: Kapre Night 2 unlock and QA preview on fresh installs
+        run: godot --headless --path . --script res://tests/night02_unlock_test.gd
       - name: Architectural cohesion of shore, boat, landing and authentic houses
         run: godot --headless --path . --script res://tests/night01_world_cohesion_test.gd
