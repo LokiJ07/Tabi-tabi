@@ -148,6 +148,13 @@ func _physics_process(delta: float) -> void:
 	_update_dog_warnings(delta)
 	_update_interact_hint()
 	FolkActors.animate_person(apprentice_visual, elapsed, desired.length() > 0.1)
+	for i in range(4):
+		var role: String = ["LOLA", "DADO", "SABEL", "MARA"][i]
+		var marker: Node3D = interaction_nodes.get(role) as Node3D
+		if marker != null:
+			var witness: Node3D = marker.get_node_or_null(role) as Node3D
+			if witness != null:
+				FolkActors.animate_person(witness, elapsed * 0.48 + float(i) * 2.3, false)
 	camera.global_position = camera.global_position.lerp(player.global_position + Vector3(12, 17, 12), 1.0 if preferences.reduced_motion else minf(1.0, delta * 4.0))
 	camera.look_at(player.global_position + Vector3(0, 0.7, 0))
 	elapsed += delta
@@ -311,6 +318,9 @@ func _marker(key: String, pos: Vector3, color: Color) -> void:
 	else:
 		var villager := FolkActors.person(key, color, Color(0.28, 0.24, 0.20))
 		villager.position.y = -0.1
+		# Face toward the approaching apprentice / isometric camera so the
+		# signature costume and eye details remain visible on small screens.
+		villager.rotation.y = -2.35
 		node.add_child(villager)
 
 

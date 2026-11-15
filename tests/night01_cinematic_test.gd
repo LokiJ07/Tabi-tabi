@@ -29,6 +29,12 @@ func _run() -> void:
 	check(portrait.speaker_id == "DADO", "portrait resolves fisher identity")
 	portrait.call("set_speaker", "TEACHER MARA")
 	check(portrait.speaker_id == "MARA", "portrait switches speaker")
+	check(Portrait.PAINTED_SHEET.get_width() == 1024, "actual painted artwork imported into Godot project")
+	check(Portrait.painted_region_for("LOLA") == Rect2(0, 0, 512, 512), "Lola shows own painted bust")
+	check(Portrait.painted_region_for("DADO") == Rect2(512, 0, 512, 512), "Dado uses fishing portrait quadrant")
+	check(Portrait.painted_region_for("MARA") == Rect2(0, 512, 512, 512), "Mara has separate glasses portrait")
+	check(Portrait.painted_region_for("SABEL") == Rect2(512, 512, 512, 512), "Sabel has own purple headwrap portrait")
+	check(Portrait.painted_region_for("NARRATOR").size.x == 0, "narrator retains original symbolic artwork")
 	portrait.queue_free()
 
 	var game = GameScene.instantiate()

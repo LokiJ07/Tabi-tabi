@@ -39,6 +39,7 @@ static func build(world: Node3D) -> Dictionary:
 	room.add_child(light)
 	var elder := FolkActors.person("Lola seated", Color(0.66, 0.47, 0.33), Color(0.32, 0.28, 0.31))
 	elder.position = Vector3(-0.35, 0.0, -2.8)
+	elder.rotation.y = -2.35
 	room.add_child(elder)
 	_target(room, "LOLA_HOME", Vector3(-0.35, 0, -2.8))
 	_target(room, "BLUE_NOTEBOOK", Vector3(-2.25, 0, -1.0))

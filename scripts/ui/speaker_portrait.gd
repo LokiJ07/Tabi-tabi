@@ -3,6 +3,7 @@ extends Control
 ## procedurally authored 3D costume. No external textures or extra 3D viewport.
 
 const FolkActors = preload("res://scripts/visuals/folk_actors.gd")
+const PAINTED_SHEET: Texture2D = preload("res://assets/portraits/night01_painted_sheet.png")
 var speaker_id := "NARRATOR"
 var breathing := 0.0
 var breath_clock := 0.0
@@ -45,10 +46,31 @@ func _ellipse(center: Vector2, radius: Vector2, color: Color) -> void:
 	draw_colored_polygon(points, color)
 
 
+static func painted_region_for(who: String) -> Rect2:
+	match FolkActors.role_id(who):
+		"LOLA":
+			return Rect2(0, 0, 512, 512)
+		"DADO":
+			return Rect2(512, 0, 512, 512)
+		"MARA":
+			return Rect2(0, 512, 512, 512)
+		"SABEL":
+			return Rect2(512, 512, 512, 512)
+	return Rect2()
+
+
 func _draw() -> void:
 	if size.x < 1.0 or size.y < 1.0:
 		return
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2(size.x / 256.0, size.y / 256.0))
+	var region := painted_region_for(speaker_id)
+	if region.size.x > 0.0:
+		# Painterly close-up is a real committed APK texture, not a generated
+		# web preview. The four quadrants share a single compact atlas.
+		draw_texture_rect_region(PAINTED_SHEET, Rect2(0, 0, 256, 256), region)
+		draw_rect(Rect2(1, 1, 254, 254), Color("#947d5b"), false, 3)
+		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+		return
 	draw_rect(Rect2(0, 0, 256, 256), Color("#13232e"))
 	# Film-like rim lights and an intentionally simple inked illustration style.
 	for i in range(7):
