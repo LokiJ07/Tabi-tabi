@@ -697,7 +697,7 @@ func _create_ui() -> void:
 	status_panel = PanelContainer.new()
 	status_panel.name = "QuestStatusCard"
 	status_panel.anchor_left = 0.0
-	status_panel.anchor_right = 0.55
+	status_panel.anchor_right = 0.44  # keep the world visible beside the objective
 	status_panel.anchor_top = 0.0
 	status_panel.anchor_bottom = 0.0
 	status_panel.offset_left = 16.0
@@ -802,12 +802,13 @@ func _create_ui() -> void:
 	# with the edge-mounted controls, including on large text settings.
 	var choice_bar := HBoxContainer.new()
 	choice_bar.name = "StoryActionsBar"
-	choice_bar.anchor_left = 0.24
-	choice_bar.anchor_right = 0.76
+	# Choices stay in the lower center clear of hut furniture and right HUD.
+	choice_bar.anchor_left = 0.265
+	choice_bar.anchor_right = 0.70
 	choice_bar.anchor_top = 1.0
 	choice_bar.anchor_bottom = 1.0
-	choice_bar.offset_top = -270
-	choice_bar.offset_bottom = -203
+	choice_bar.offset_top = -168
+	choice_bar.offset_bottom = -101
 	choice_bar.add_theme_constant_override("separation", 12)
 	choice_bar.alignment = BoxContainer.ALIGNMENT_CENTER
 	gameplay_hud.add_child(choice_bar)
