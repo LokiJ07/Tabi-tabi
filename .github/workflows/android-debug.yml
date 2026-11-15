@@ -87,6 +87,8 @@ jobs:
           godot --headless --path . --script res://tests/night01_title_and_art_test.gd
           godot --headless --path . --script res://tests/night01_navigation_test.gd
           godot --headless --path . --script res://tests/night01_illustrated_art_test.gd
+          godot --headless --path . --script res://tests/night02_state_test.gd
+          godot --headless --path . --script res://tests/night02_scene_test.gd
           godot --headless --path . --script res://tests/night01_world_cohesion_test.gd
           godot --headless --path . --script res://tests/living_ambience_test.gd
           godot --headless --path . --script res://tests/night01_journal_test.gd
