@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="260" height="500" viewBox="0 0 260 500"><defs><radialGradient id="lit"><stop stop-color="#fff1b0" stop-opacity=".85"/><stop offset=".45" stop-color="#ffbd5e" stop-opacity=".34"/><stop offset="1" stop-color="#e7a54f" stop-opacity="0"/></radialGradient><linearGradient id="glass"><stop stop-color="#fff5bf"/><stop offset="1" stop-color="#e89e45"/></linearGradient></defs>
+<ellipse cx="130" cy="481" rx="61" ry="13" opacity=".25" fill="#152e28"/>
+<path d="M64 480 L67 52" stroke="#543e2f" stroke-width="25" stroke-linecap="round"/>
+<path d="M72 57 L199 58 L199 100" stroke="#77563a" stroke-width="17" fill="none" stroke-linecap="round"/>
+<path d="M61 174 L72 174 M60 291 L73 291" stroke="#cf9c60" stroke-width="14"/>
+<circle cx="180" cy="183" r="82" fill="url(#lit)"/>
+<path d="M166 94 Q180 81 195 94 L201 110 L209 126 L200 194 Q181 220 160 194 L151 126 L157 110Z" fill="#67472e" stroke="#dbb36e" stroke-width="6"/>
+<path d="M165 125 L195 125 L197 183 L159 183Z" fill="url(#glass)"/>
+<path d="M166 127 L194 180 M193 128 L163 180 M177 128 L177 182" stroke="#785039" stroke-width="6" opacity=".7"/>
+<path d="M150 123 L208 123 M153 189 L207 189" stroke="#f1d188" stroke-width="7"/>
+<path d="M181 93 L181 61" stroke="#d9ad70" stroke-width="5"/><circle cx="181" cy="63" r="7" fill="#e5c882"/>
+<path d="M60 481 L86 481" stroke="#bc9063" stroke-width="9"/></svg>
