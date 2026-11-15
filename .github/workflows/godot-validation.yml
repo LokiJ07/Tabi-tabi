@@ -35,3 +35,5 @@ jobs:
         run: godot --headless --path . --script res://tests/bantay_route_test.gd
       - name: Bantay awareness regression
         run: godot --headless --path . --script res://tests/bantay_awareness_test.gd
+      - name: Night 1 witness dialogue regression
+        run: godot --headless --path . --script res://tests/night01_dialogue_test.gd

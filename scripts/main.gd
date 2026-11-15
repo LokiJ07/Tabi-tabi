@@ -3,6 +3,7 @@ extends Node3D
 ## All primitive geometry is temporary and must be replaced by approved art.
 
 const NightModel = preload("res://scripts/narrative/night01_state.gd")
+const NightDialogue = preload("res://scripts/narrative/night01_dialogue.gd")
 const SantelmoActor = preload("res://scripts/encounters/santelmo_actor.gd")
 const FolkActors = preload("res://scripts/visuals/folk_actors.gd")
 const BantayRoute = preload("res://scripts/ai/bantay_route.gd")
@@ -487,37 +488,34 @@ func _interact() -> void:
 		if d < distance:
 			closest = key
 			distance = d
+	if closest == "":
+		_show_dialogue("Move close to a resident or the old mooring to interact.")
+		return
+	var dialogue_line: String = NightDialogue.response(closest, story, is_night)
 	match closest:
 		"LOLA":
 			talked_to_lola = true
 			story.seen_people["lola"] = true
-			_show_dialogue("LOLA PASING: Ayaw una isulat ang imong gituohan. Paminaw sa, dayon pangita og pamatuod.")
 		"DADO":
+			story.observe_clue("light_retreat")
 			talked_to_dado = true
 			story.seen_people["dado"] = true
-			story.observe_clue("light_retreat")
-			_show_dialogue("TATAY DADO: Gamay nga kahayag. Kung akong tutokan, mosibog. Kung molingi ko, murag naghulat.")
 		"SABEL":
 			story.seen_people["sabel"] = true
-			_show_dialogue("ALING SABEL: Si Mang Celso usa ka karaang boatman. Ayaw pagsagol sa iyang ngalan sa uban nga nawala.")
+			# Protect private family details; notebook stores only the fact that privacy was respected.
+			story.seen_people["privacy_agreed"] = true
 		"MARA":
-			story.seen_people["mara"] = true
 			if story.clues.has("old_mooring"):
 				story.observe_clue("boatman_name")
-				_show_dialogue("TEACHER MARA: Ang ledger nagtawag kang Mang Celso. I-compare nato ang testimonya ug lugar.")
-			else:
-				_show_dialogue("TEACHER MARA: Tan-awa ang karaang mooring una. Ang testimonya kinahanglan ikumpara.")
+			story.seen_people["mara"] = true
 		"MOORING":
 			story.observe_clue("old_mooring")
 			if story.seen_people.has("mara"):
 				story.observe_clue("boatman_name")
 			if is_night:
 				encountered_light = true
-				_show_dialogue("The light waits by the mooring. Observe gently, compare reflections, and honor the forgotten name.")
-			else:
-				_show_dialogue("A weathered mooring by the river. An older name seems to be missing from the record.")
-		_:
-			_show_dialogue("Move close to Lola, Dado, or the old mooring to interact.")
+	_show_dialogue(dialogue_line)
+	_save_story_silent()
 	_refresh_choices()
 	_update_objective()
 
