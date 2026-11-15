@@ -48,6 +48,11 @@ var preferences = Preferences.new()
 var gameplay_hud: Control
 var modal_backdrop: ColorRect
 var settings_panel: PanelContainer
+var save_main_menu_button: Button
+var quit_game_button: Button
+var main_menu_confirmation: ConfirmationDialog
+var quit_game_confirmation: ConfirmationDialog
+var navigation_error_dialog: AcceptDialog
 var pref_text_button: Button
 var pref_motion_button: Button
 var pref_contrast_button: Button
@@ -1085,6 +1090,22 @@ func _create_ui() -> void:
 	pref_audio_button.pressed.connect(_cycle_audio_level)
 	_style_modal_button(pref_audio_button)
 	options_stack.add_child(pref_audio_button)
+	# Important navigation stays fixed BELOW the scroll area, not buried in
+	# adjustable preferences. All actions require confirmation.
+	save_main_menu_button = Button.new()
+	save_main_menu_button.name = "SaveAndMainMenu"
+	save_main_menu_button.text = "SAVE & MAIN MENU"
+	save_main_menu_button.custom_minimum_size = Vector2(320, 56)
+	save_main_menu_button.pressed.connect(_request_main_menu)
+	_style_modal_button(save_main_menu_button, false, true)
+	settings_layout.add_child(save_main_menu_button)
+	quit_game_button = Button.new()
+	quit_game_button.name = "QuitGame"
+	quit_game_button.text = "QUIT GAME"
+	quit_game_button.custom_minimum_size = Vector2(320, 52)
+	quit_game_button.pressed.connect(_request_quit_game)
+	_style_modal_button(quit_game_button, false, true)
+	settings_layout.add_child(quit_game_button)
 	var exit_options := Button.new()
 	exit_options.text = "CLOSE OPTIONS"
 	exit_options.custom_minimum_size = Vector2(360, 50)
@@ -1093,6 +1114,7 @@ func _create_ui() -> void:
 	_style_modal_button(exit_options, false, true)
 	settings_layout.add_child(exit_options)
 	settings_panel.hide()
+	_build_navigation_confirmations(root)
 	_sync_modal_ui()
 
 
@@ -1612,6 +1634,60 @@ func _open_settings() -> void:
 	_sync_modal_ui()
 
 
+func _build_navigation_confirmations(parent: Control) -> void:
+	main_menu_confirmation = ConfirmationDialog.new()
+	main_menu_confirmation.name = "ReturnToMenuConfirmation"
+	main_menu_confirmation.title = "Return to Main Menu?"
+	main_menu_confirmation.dialog_text = "Your Night 1 progress will be saved before returning."
+	main_menu_confirmation.ok_button_text = "SAVE & RETURN"
+	main_menu_confirmation.confirmed.connect(_save_and_return_to_menu)
+	parent.add_child(main_menu_confirmation)
+	quit_game_confirmation = ConfirmationDialog.new()
+	quit_game_confirmation.name = "QuitConfirmation"
+	quit_game_confirmation.title = "Quit Tabi-tabi?"
+	quit_game_confirmation.dialog_text = "Save Night 1 progress and close the game?"
+	quit_game_confirmation.ok_button_text = "SAVE & QUIT"
+	quit_game_confirmation.confirmed.connect(_save_and_quit_game)
+	parent.add_child(quit_game_confirmation)
+	navigation_error_dialog = AcceptDialog.new()
+	navigation_error_dialog.name = "NavigationSaveError"
+	navigation_error_dialog.title = "Save unsuccessful"
+	navigation_error_dialog.dialog_text = "Could not save your progress. The game will remain open. Try again."
+	parent.add_child(navigation_error_dialog)
+
+
+func _request_main_menu() -> void:
+	_clear_touch_input()
+	main_menu_confirmation.popup_centered(Vector2i(600, 215))
+
+
+func _request_quit_game() -> void:
+	_clear_touch_input()
+	quit_game_confirmation.popup_centered(Vector2i(600, 215))
+
+
+func _save_before_navigation() -> bool:
+	# Never silently discard story state, even if the save directory is
+	# unavailable. Returning and quitting use exactly the same safe pathway.
+	if not SaveService.write(story, is_night):
+		navigation_error_dialog.popup_centered(Vector2i(600, 200))
+		return false
+	preferences.save_to()
+	return true
+
+
+func _save_and_return_to_menu() -> void:
+	if not _save_before_navigation():
+		return
+	get_tree().change_scene_to_file("res://scenes/title.tscn")
+
+
+func _save_and_quit_game() -> void:
+	if not _save_before_navigation():
+		return
+	get_tree().quit()
+
+
 func _close_settings() -> void:
 	if settings_panel != null:
 		settings_panel.hide()
@@ -1672,6 +1748,8 @@ func _apply_preferences() -> void:
 		notebook_panel.get_node("NotebookLayout/CloseNotebook") as Button,
 		prep_panel.get_node("PreparationLayout/ClosePreparation") as Button,
 		settings_panel.get_node("SettingsLayout/CloseSettings") as Button,
+		save_main_menu_button,
+		quit_game_button,
 		dialogue.get_node("DialogueLayout/CloseDialogue") as Button
 	]:
 		_style_modal_button(footer, false, true)
