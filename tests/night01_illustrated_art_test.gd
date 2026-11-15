@@ -37,6 +37,11 @@ func _run() -> void:
 	check(game.get_node_or_null(Art.ROOT_NAME) != null, "actual playable world integrates imported environment illustrations")
 	var scene_art := game.get_node(Art.ROOT_NAME) as Node3D
 	check(scene_art.get_child_count() >= 19, "village has authored mangroves, lanterns, banana leaves and hibiscus")
+	check(scene_art.get_node_or_null("Winding illustrated earthen path") is MeshInstance3D, "road uses organically shaped textured surface")
+	check(scene_art.get_node_or_null("Tidal safety bamboo pole 00") is MeshInstance3D, "river fence is now recognizable woven posts")
+	check(not (game.get_node("Main footpath") as MeshInstance3D).visible, "flat rectangular road blockout no longer draws")
+	check(not (game.get_node("River bank safety fence") as MeshInstance3D).visible, "opaque shoreline fence replaced by rope art")
+	check(game.get_node_or_null("River bank safety fence collision") != null, "invisible river safety physics preserved")
 	check(scene_art.get_node_or_null("Painted estuary mangrove 00") is Sprite3D, "mangrove illustration used on shore")
 	check(scene_art.get_node_or_null("Illustrated garden hibiscus 00") is Sprite3D, "flower garden illustration present")
 	var village := game.get_node_or_null("BarrioEnvironmentDetails") as Node3D
