@@ -18,11 +18,34 @@ static func build(world: Node3D) -> Dictionary:
 	room.name = NODE_NAME
 	room.position = CENTER
 	world.add_child(room)
+	# A complete environment under the isolated interior pocket is essential.
+	# Previously the camera saw an open brown box floating in empty cyan sky.
+	# This non-colliding yard continues underneath the whole camera footprint.
+	_box(room, "Hut surrounding earth", Vector3(0, -0.50, 0), Vector3(36, 0.32, 32), Color("#526048"), false)
+	_box(room, "Hut garden silt", Vector3(-8.4, -0.31, -1.4), Vector3(3.9, 0.09, 10.2), Color("#68694a"), false)
+	_box(room, "Hut entrance stepping path", Vector3(0, -0.30, 7), Vector3(2.5, 0.09, 8), Color("#9d8360"), false)
+	_box(room, "Raised bamboo porch", Vector3(0, -0.08, 4.57), Vector3(5.1, 0.24, 2.15), Color("#a07a54"), false)
+	for i in range(8):
+		_box(room, "Yard porch timber %02d" % i, Vector3(-2.18 + float(i) * 0.62, 0.055, 4.59), Vector3(0.07, 0.025, 2.02), Color("#6c513b"), false)
+	for i in range(7):
+		var z := -7.5 + float(i) * 2.45
+		_box(room, "Surrounding planted reed %02d" % i, Vector3(-6.8, 0.16, z), Vector3(0.16, 1.0, 0.14), Color("#43653f") if i % 2 == 0 else Color("#64834d"), false)
 	_box(room, "Bamboo floor", Vector3(0, -0.21, 0), Vector3(9, 0.4, 8), Color(0.49, 0.35, 0.23), true)
 	_box(room, "Back woven wall", Vector3(0, 1.55, -4), Vector3(9, 3.1, 0.24), Color(0.63, 0.46, 0.28), true)
 	_box(room, "Front woven wall", Vector3(0, 1.55, 4), Vector3(9, 3.1, 0.24), Color(0.55, 0.39, 0.25), true)
 	_box(room, "Left woven wall", Vector3(-4.5, 1.55, 0), Vector3(0.24, 3.1, 8), Color(0.58, 0.43, 0.26), true)
 	_box(room, "Right woven wall", Vector3(4.5, 1.55, 0), Vector3(0.24, 3.1, 8), Color(0.58, 0.43, 0.26), true)
+	# Cross-bamboo weave and roof beam silhouettes are seen from overhead
+	# without covering the playable room with a solid opaque roof.
+	for i in range(11):
+		var wall_x := -4.05 + float(i) * 0.81
+		_box(room, "Back-wall split bamboo %02d" % i, Vector3(wall_x, 1.45, -3.82), Vector3(0.075, 2.61, 0.06), Color("#96704b"), false)
+	for i in range(6):
+		var wall_y := 0.45 + float(i) * 0.44
+		_box(room, "Back-wall woven rib %02d" % i, Vector3(0, wall_y, -3.79), Vector3(8.66, 0.07, 0.065), Color("#c09a67"), false)
+	for i in range(4):
+		_box(room, "Hut roof support beam %d" % i, Vector3(-3.45 + float(i) * 2.3, 3.12, -3.7), Vector3(0.14, 0.14, 7.0), Color("#6b4935"), false)
+	_box(room, "Front ceiling crossbar", Vector3(0, 3.15, 3.58), Vector3(8.8, 0.16, 0.16), Color("#644331"), false)
 	_box(room, "Woven rug", Vector3(0.0, 0.05, 0.1), Vector3(3.0, 0.07, 2.6), Color(0.62, 0.35, 0.23), false)
 	_box(room, "Breakfast table", Vector3(1.25, 0.52, -0.65), Vector3(1.85, 0.22, 1.15), Color(0.30, 0.20, 0.13), false)
 	# A separate study desk beside the back wall gives the notebook a
