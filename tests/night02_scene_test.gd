@@ -27,6 +27,14 @@ func _run() -> void:
 	check(game.action_buttons.has("OPTIONS"), "pause, save and quit controls")
 	check(game.menu_confirm != null and game.quit_confirm != null, "explicit navigation confirmations")
 	game._choose("close")
+	# Dialogue never damages courage while user reads at an unsafe location.
+	game.player_pos = game.TREE+Vector2(-75,0)
+	game._show_dialogue("NARRATOR","Reading must pause environmental tension.",[{"label":"OK","action":"close"}])
+	var before_courage: float = game.story.courage
+	game._process(8.0)
+	check(is_equal_approx(game.story.courage,before_courage), "dialogue pauses all tree hazard pressure")
+	game._choose("close")
+	game.player_pos = Vector2(-510,140)
 	for id in game.KEY_ORDER:
 		game.player_pos = game.TARGETS[id]
 		game._interact()
