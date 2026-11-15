@@ -57,7 +57,7 @@ func _run() -> void:
 	check(game.notebook.visible, "field notes can be reopened")
 	check(game.notebook_content.text.contains("Kapre") or game.notebook_content.text.contains("KAPRE"), "notes explain Chapter 2")
 	check(game._auto_save(), "real scene saves without touching Night 1")
-	var title = get_tree().current_scene
+	var title = current_scene
 	check(title == game, "game does not navigate unexpectedly")
 	game.queue_free()
 	await process_frame
