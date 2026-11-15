@@ -70,5 +70,15 @@ static func build(parent: Node3D, at: Vector3, index: int = 0) -> Node3D:
 		_canopy(tree, "MangroveLeafCluster_%d" % i,
 			Vector3(cos(angle) * 1.15, high + 0.48 + 0.17 * float(i % 2), sin(angle) * 1.05),
 			Vector3(0.85, 0.56, 0.76), greens[(i + index) % greens.size()])
+	# Mangrove propagules dangle under the crown; an identifiable estuary
+	# detail that differentiates these trees from ordinary rounded foliage.
+	for i in range(4):
+		var angle := TAU * float(i) / 4.0 + 0.32
+		var x := cos(angle) * 0.78
+		var z := sin(angle) * 0.71
+		_segment(tree, "HangingPropagule_%d" % i,
+			Vector3(x, high + 0.26, z),
+			Vector3(x + 0.08, high - 0.28, z + 0.04),
+			0.045, Color("#89a65a"))
 	tree.set_meta("shore_tree", "mangrove")
 	return tree
