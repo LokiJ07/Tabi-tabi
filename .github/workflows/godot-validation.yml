@@ -31,3 +31,5 @@ jobs:
         run: godot --headless --path . --script res://tests/santelmo_actor_test.gd
       - name: Procedural character animation smoke tests
         run: godot --headless --path . --script res://tests/folk_actors_test.gd
+      - name: Bantay navigation and obstacle regression
+        run: godot --headless --path . --script res://tests/bantay_route_test.gd

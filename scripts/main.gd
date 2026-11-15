@@ -5,6 +5,7 @@ extends Node3D
 const NightModel = preload("res://scripts/narrative/night01_state.gd")
 const SantelmoActor = preload("res://scripts/encounters/santelmo_actor.gd")
 const FolkActors = preload("res://scripts/visuals/folk_actors.gd")
+const BantayRoute = preload("res://scripts/ai/bantay_route.gd")
 const AimPad = preload("res://scripts/ui/aim_pad.gd")
 const SaveService = preload("res://scripts/core/save_service.gd")
 const PLAYER_SPEED := 4.2
@@ -24,7 +25,11 @@ var apprentice_visual: Node3D
 var bantay_visual: Node3D
 var sun: DirectionalLight3D
 var river_surface: MeshInstance3D
-var bantay: Node3D
+var bantay: CharacterBody3D
+var dog_guide = BantayRoute.new()
+var dog_waypoints := PackedVector3Array()
+var dog_next_waypoint := 0
+var dog_repath_timer := 0.0
 var camera: Camera3D
 var lantern: SpotLight3D
 var info: Label
@@ -84,15 +89,8 @@ func _physics_process(delta: float) -> void:
 		lamp_heading = (right * manual_aim.x + forward * -manual_aim.y).normalized()
 	if lamp_heading.length() > 0.1:
 		lantern.global_rotation.y = atan2(-lamp_heading.x, -lamp_heading.z)
-	# A simple follow/stop behavior for the prototype. Navigation is a later gate.
-	var offset := player.global_position - bantay.global_position
-	offset.y = 0.0
-	if offset.length() > 2.3:
-		bantay.global_position += offset.normalized() * minf(delta * 3.5, offset.length() - 2.0)
-	if offset.length() > 0.1:
-		bantay.rotation.y = atan2(-offset.x, -offset.z)
+	_update_bantay(delta)
 	FolkActors.animate_person(apprentice_visual, elapsed, desired.length() > 0.1)
-	FolkActors.animate_dog(bantay_visual, elapsed, offset.length() > 2.3, is_night and player.global_position.x < -4.0)
 	camera.global_position = camera.global_position.lerp(player.global_position + Vector3(12, 17, 12), minf(1.0, delta * 4.0))
 	camera.look_at(player.global_position + Vector3(0, 0.7, 0))
 	elapsed += delta
@@ -132,7 +130,12 @@ func _create_world() -> void:
 		_box("Reed", Vector3(-9.1, 0.4, z), Vector3(0.13, 0.7, 0.11), Color(0.43, 0.53, 0.26), false)
 	for z in [-16.0, -10.0, 0.0, 7.0, 15.0]:
 		_box("River shimmer", Vector3(-15.0, 0.08, z), Vector3(4.3, 0.025, 0.12), Color(0.22, 0.59, 0.61), false)
-	_box("River bank safety fence", Vector3(-9.7, 0.5, 0), Vector3(0.25, 1.0, 35), COLORS.wood, true)
+	_box("River bank safety fence", Vector3(-9.7, 0.5, 0), Vector3(0.25, 1.0, 46), COLORS.wood, true)
+	# Collision-only boundaries prevent accidental falls beyond the playable blockout.
+	_boundary(Vector3(-23.0, 1.0, 0.0), Vector3(0.3, 3.0, 46.0))
+	_boundary(Vector3(23.0, 1.0, 0.0), Vector3(0.3, 3.0, 46.0))
+	_boundary(Vector3(0.0, 1.0, -23.0), Vector3(46.0, 3.0, 0.3))
+	_boundary(Vector3(0.0, 1.0, 23.0), Vector3(46.0, 3.0, 0.3))
 	_house(Vector3(6, 0, 5), "Lola's hut")
 	_house(Vector3(7, 0, -8), "Sabel's store")
 	_house(Vector3(-2, 0, -12), "School")
@@ -172,6 +175,18 @@ func _box(name: String, pos: Vector3, size: Vector3, color: Color, solid: bool) 
 		body.add_child(collider)
 		add_child(body)
 	return mesh
+
+
+func _boundary(at: Vector3, dimensions: Vector3) -> void:
+	var wall := StaticBody3D.new()
+	wall.name = "Playable boundary"
+	wall.position = at
+	var shape := CollisionShape3D.new()
+	var box := BoxShape3D.new()
+	box.size = dimensions
+	shape.shape = box
+	wall.add_child(shape)
+	add_child(wall)
 
 
 func _house(pos: Vector3, name: String) -> void:
@@ -234,13 +249,48 @@ func _create_player() -> void:
 
 
 func _create_bantay() -> void:
-	bantay = Node3D.new()
-	bantay.name = "Bantay (prototype)"
-	bantay.position = Vector3(1.6, 0.55, 2.1)
+	bantay = CharacterBody3D.new()
+	bantay.name = "Bantay"
+	bantay.position = Vector3(1.6, 0.45, 2.1)
+	bantay.motion_mode = CharacterBody3D.MOTION_MODE_GROUNDED
+	var collider := CollisionShape3D.new()
+	var capsule := CapsuleShape3D.new()
+	capsule.radius = 0.32
+	capsule.height = 0.85
+	collider.shape = capsule
+	bantay.add_child(collider)
 	bantay_visual = FolkActors.dog()
-	bantay_visual.position.y = -0.55
+	bantay_visual.position.y = -0.45
 	bantay.add_child(bantay_visual)
 	add_child(bantay)
+
+
+func _update_bantay(delta: float) -> void:
+	var distance := bantay.global_position.distance_to(player.global_position)
+	dog_repath_timer -= delta
+	if dog_repath_timer <= 0.0:
+		dog_repath_timer = 0.45
+		if distance > 2.35:
+			dog_waypoints = dog_guide.route(bantay.global_position, player.global_position)
+			dog_next_waypoint = 0
+		else:
+			dog_waypoints.clear()
+	var motion := Vector3.ZERO
+	if distance > 2.0 and dog_next_waypoint < dog_waypoints.size():
+		var waypoint := dog_waypoints[dog_next_waypoint]
+		var toward := waypoint - bantay.global_position
+		toward.y = 0.0
+		if toward.length() < 0.55:
+			dog_next_waypoint += 1
+		elif toward.length() > 0.01:
+			motion = toward.normalized()
+	bantay.velocity.x = motion.x * 3.2
+	bantay.velocity.z = motion.z * 3.2
+	bantay.velocity.y = -0.1 if bantay.is_on_floor() else bantay.velocity.y - 24.0 * delta
+	bantay.move_and_slide()
+	if motion.length() > 0.05:
+		bantay.rotation.y = atan2(-motion.x, -motion.z)
+	FolkActors.animate_dog(bantay_visual, elapsed, motion.length() > 0.1, is_night and player.global_position.x < -4.0)
 
 
 func _create_camera() -> void:
