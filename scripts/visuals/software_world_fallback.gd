@@ -175,50 +175,166 @@ func _draw_village() -> void:
 		draw_circle(light_at, _scale_units(.55), Color("#b4e4ec", .64))
 		draw_circle(light_at, _scale_units(.19), Color("#f2f4db"))
 
+## Lola hut: hand-composed cutaway architecture, with all props at real 3D
+## interaction positions. Drawn every frame from the real orthographic camera,
+## and only on the software-rendered Android fallback.
+func _hut_face(corners: Array[Vector3], color: Color, stroke: Color = Color.TRANSPARENT, stroke_width: float = 2.0) -> void:
+	var points := PackedVector2Array()
+	for point in corners:
+		points.append(_screen(point))
+	draw_colored_polygon(points, color)
+	if stroke.a > 0.0:
+		points.append(points[0])
+		draw_polyline(points, stroke, stroke_width, true)
+
+
+func _hut_block(top: Vector3, half_x: float, half_z: float, thickness: float, color: Color) -> void:
+	var n := top + Vector3(-half_x, 0, -half_z)
+	var e := top + Vector3(half_x, 0, -half_z)
+	var s := top + Vector3(half_x, 0, half_z)
+	var w := top + Vector3(-half_x, 0, half_z)
+	_hut_face([w, s, s - Vector3(0, thickness, 0), w - Vector3(0, thickness, 0)], color.darkened(0.33), Color("#453427"), 2.0)
+	_hut_face([e, s, s - Vector3(0, thickness, 0), e - Vector3(0, thickness, 0)], color.darkened(0.18), Color("#4c3625"), 2.0)
+	_hut_face([n, e, s, w], color, color.lightened(0.13), 2.0)
+
+
+func _hut_line(start: Vector3, finish: Vector3, color: Color, weight: float = 2.0) -> void:
+	draw_line(_screen(start), _screen(finish), color, weight, true)
+
+
 func _draw_hut() -> void:
-	draw_rect(Rect2(Vector2.ZERO,size), Color("#4f5b46"))
-	var center := Vector3(55,0,0)
-	_quad(SOIL, [center + Vector3(-19, -.4, -17), center + Vector3(19, -.4, -17),
-		center + Vector3(19, -.4, 17), center + Vector3(-19, -.4, 17)], Color("#657353"))
-	_quad(PATH, [center + Vector3(-4.4, .05, -3.9), center + Vector3(4.4, .05, -3.9),
-		center + Vector3(4.4, .05, 3.9), center + Vector3(-4.4, .05, 3.9)], Color("#ad8960"))
-	draw_line(_screen(center + Vector3(-4.4, 1.6, -3.9)), _screen(center + Vector3(4.4, 1.6, -3.9)), Color("#634b39"), 15)
-	_art(NIPA, center + Vector3(0, 0.2, -3.93), 8.6, true, Color("#b9a183"))
-	# Place every interactive prop at its ACTUAL LolaHut GDScript position,
-	# so a player using the software renderer can find/inspect prologue items.
-	var desk := center + Vector3(-2.65, 0.57, -2.25)
-	_quad(PATH, [desk + Vector3(-0.88, 0, -0.49), desk + Vector3(0.88, 0, -0.49),
-		desk + Vector3(0.88, 0, 0.49), desk + Vector3(-0.88, 0, 0.49)],
-		Color("#ae805b"))
-	var journal := PackedVector2Array([
-		_screen(center + Vector3(-2.96, 0.79, -2.47)),
-		_screen(center + Vector3(-2.32, 0.79, -2.47)),
-		_screen(center + Vector3(-2.32, 0.79, -2.02)),
-		_screen(center + Vector3(-2.96, 0.79, -2.02))])
-	draw_colored_polygon(journal, Color("#205c87"))
-	draw_polyline(PackedVector2Array([journal[0],journal[1],journal[2],journal[3],journal[0]]), Color("#a6daea"), 3.0)
-	var paper := _screen(center + Vector3(-2.61, 0.82, -2.25))
-	draw_circle(paper, maxf(3.0, _scale_units(.12)), Color("#f8e3b9"))
-	# Lola's separate breakfast table/cup remain distinct from the writing desk.
-	var breakfast := center + Vector3(1.25, 0.52, -0.65)
-	_quad(PATH, [breakfast + Vector3(-0.92, 0, -0.57), breakfast + Vector3(0.92, 0, -0.57),
-		breakfast + Vector3(0.92, 0, 0.57), breakfast + Vector3(-0.92, 0, 0.57)],
-		Color("#76513a"))
-	var cup := _screen(center + Vector3(1.45, 0.75, -0.35))
-	draw_circle(cup, maxf(4.0, _scale_units(.17)), Color("#f4dba9"))
-	draw_circle(cup, maxf(2.0, _scale_units(.085)), Color("#986b45"))
-	var frame := _screen(center + Vector3(2.75, 1.67, -3.75))
-	draw_rect(Rect2(frame - Vector2(_scale_units(.32), _scale_units(.24)), Vector2(_scale_units(.64),_scale_units(.48))), Color("#b18a5b"))
-	draw_rect(Rect2(frame - Vector2(_scale_units(.26), _scale_units(.18)), Vector2(_scale_units(.52),_scale_units(.36))), Color("#4a8585"))
-	# A warm woven mat and folded bedding make the room navigable at a glance.
-	_quad(PATH, [center + Vector3(-1.5, .06, -.9), center + Vector3(1.5,.06,-.9),
-		center + Vector3(1.5,.06,1.1), center + Vector3(-1.5,.06,1.1)], Color("#a96d4f"))
-	var sleep_at := center + Vector3(-2.6, .16, 1.0)
-	_quad(PATH, [sleep_at + Vector3(-.9,0,-1.22), sleep_at + Vector3(.9,0,-1.22),
-		sleep_at + Vector3(.9,0,1.22), sleep_at + Vector3(-.9,0,1.22)], Color("#725e49"))
-	_art(LOLA, center + Vector3(-0.35, 0.12, -2.8), 1.6)
-	_art(HERO, game.player.global_position + Vector3(0, -0.65, 0), 1.65)
-	_art(BANTAY, game.bantay.global_position + Vector3(0, -0.2, 0), 1.62)
+	var c := Vector3(55.0, 0.0, 0.0)
+	# Quiet backyard. Unlike the first flat box, vegetation and stepped
+	# walkways continue behind the real hut footprint.
+	draw_rect(Rect2(Vector2.ZERO, size), Color("#233e32"))
+	_quad(SOIL, [c + Vector3(-20, -.46, -17), c + Vector3(20, -.46, -17),
+		c + Vector3(20, -.46, 17), c + Vector3(-20, -.46, 17)], Color("#82946c"), 4.0)
+	for i in range(9):
+		var dx: float = -11.2 + float(i) * 3.0
+		var dz: float = -9.0 + float(i % 3) * 5.4
+		_art(HIBISCUS if i % 3 == 0 else BANANA,
+			c + Vector3(dx, -.24, dz), 1.55 if i % 3 == 0 else 2.9, true,
+			Color("#a8b58e"))
+	for i in range(8):
+		var z: float = 4.7 + float(i) * 1.05
+		_hut_block(c + Vector3(0.0, -.21, z), 1.02, .42, .08, Color("#b39a72"))
+
+	# Platform thickness, timber perimeter, and visible bamboo floor.
+	var north_left := c + Vector3(-4.5, -.02, -4.0)
+	var north_right := c + Vector3(4.5, -.02, -4.0)
+	var south_right := c + Vector3(4.5, -.02, 4.0)
+	var south_left := c + Vector3(-4.5, -.02, 4.0)
+	_hut_face([north_left, north_right, south_right, south_left], Color("#4f392b"), Color("#d6b079"), 4.0)
+	_hut_face([south_left, south_right, south_right - Vector3(0, .55, 0), south_left - Vector3(0, .55, 0)],
+		Color("#61462f"), Color("#39281f"), 3.0)
+	_hut_face([north_right, south_right, south_right - Vector3(0, .55, 0), north_right - Vector3(0, .55, 0)],
+		Color("#75543a"), Color("#39281f"), 3.0)
+	# Slats are independent alternating bamboo tones with dark seams. This
+	# remains readable even if the software adapter cannot sample UVs.
+	for i in range(18):
+		var z0: float = -3.94 + float(i) * .438
+		var z1: float = z0 + .424
+		var pigment := Color("#ac8354") if i % 3 == 0 else Color("#bd9766") if i % 3 == 1 else Color("#9d774d")
+		_hut_face([c + Vector3(-4.35, .035, z0), c + Vector3(4.35, .035, z0),
+			c + Vector3(4.35, .035, z1), c + Vector3(-4.35, .035, z1)], pigment)
+		_hut_line(c + Vector3(-4.36, .055, z0), c + Vector3(4.36, .055, z0), Color("#775538"), 1.8)
+	for i in range(10):
+		var x: float = -4.1 + float(i) * .86
+		_hut_line(c + Vector3(x, .065, -3.86), c + Vector3(x, .065, 3.83),
+			Color(0.94, 0.79, 0.57, .17), 1.1)
+
+	# CUTAWAY: two textured rear walls, front and camera-side walls omitted
+	# entirely so neither Lola nor notebook can disappear behind the facade.
+	_hut_face([c + Vector3(-4.48, .04, -3.98), c + Vector3(4.48, .04, -3.98),
+		c + Vector3(4.48, 3.06, -3.98), c + Vector3(-4.48, 3.06, -3.98)],
+		Color("#bd9666"), Color("#5a422f"), 5.0)
+	_hut_face([c + Vector3(-4.48, .04, 3.94), c + Vector3(-4.48, .04, -3.98),
+		c + Vector3(-4.48, 3.06, -3.98), c + Vector3(-4.48, 3.06, 3.94)],
+		Color("#917047"), Color("#513b2a"), 5.0)
+	# Cross-hatched woven sawali pattern on rear walls.
+	for i in range(22):
+		var x: float = -4.35 + float(i) * .40
+		_hut_line(c + Vector3(x, .13, -3.95), c + Vector3(x, 2.97, -3.95),
+			Color("#e2bc83") if i % 2 == 0 else Color("#896747"), 1.7)
+	for i in range(14):
+		var y: float = .15 + float(i) * .202
+		_hut_line(c + Vector3(-4.37, y, -3.94), c + Vector3(4.38, y, -3.94),
+			Color("#7b593b") if i % 2 == 0 else Color("#e0b780"), 1.35)
+	for i in range(13):
+		var z: float = -3.66 + float(i) * .58
+		_hut_line(c + Vector3(-4.45, .14, z), c + Vector3(-4.45, 2.95, z),
+			Color("#d1a977") if i % 2 == 0 else Color("#705037"), 2.0)
+	for i in range(13):
+		var y: float = .18 + float(i) * .22
+		_hut_line(c + Vector3(-4.43, y, -3.88), c + Vector3(-4.43, y, 3.85),
+			Color("#6e5138") if i % 2 == 0 else Color("#d1a875"), 1.5)
+
+	# Open-view framed river window in the rear wall (not a covering facade).
+	_hut_face([c + Vector3(1.55, 1.43, -3.90), c + Vector3(3.78, 1.43, -3.90),
+		c + Vector3(3.78, 2.67, -3.90), c + Vector3(1.55, 2.67, -3.90)], Color("#285e62"), Color("#533b2a"), 5.0)
+	_hut_line(c + Vector3(2.665, 1.43, -3.88), c + Vector3(2.665, 2.67, -3.88), Color("#edc692"), 4.0)
+	_hut_line(c + Vector3(1.55, 2.06, -3.88), c + Vector3(3.78, 2.06, -3.88), Color("#edc692"), 4.0)
+	# A decorative hanging lamp between two visible roof beams.
+	_hut_line(c + Vector3(-4.55, 3.15, -4.02), c + Vector3(4.55, 3.15, -4.02), Color("#60452e"), 13)
+	_hut_line(c + Vector3(-4.55, 3.27, -4.02), c + Vector3(4.55, 3.27, -4.02), Color("#d2a66e"), 3)
+	_hut_line(c + Vector3(-.5, 3.23, -3.78), c + Vector3(-.5, 2.65, -3.78), Color("#674f3b"), 3)
+	var lamp_pos := _screen(c + Vector3(-.5, 2.54, -3.79))
+	draw_circle(lamp_pos, maxf(5.0, _scale_units(.34)), Color(1.0, .65, .3, .16))
+	draw_circle(lamp_pos, maxf(3.0, _scale_units(.15)), Color("#ffdd91"))
+
+	# Woven rug, sleeping mat and blanket. All surfaces sit below feet and
+	# are shown with slightly distinct edges instead of floating rectangles.
+	_hut_block(c + Vector3(-.1, .10, .55), 1.43, 1.14, .06, Color("#b65f49"))
+	for i in range(7):
+		var z: float = -.42 + float(i) * .31
+		_hut_line(c + Vector3(-1.4,.155,z), c + Vector3(1.25,.155,z),
+			Color("#e2aa74") if i % 2 == 0 else Color("#733f39"), 1.5)
+	_hut_block(c + Vector3(-2.6, .23, 1.05), .88, 1.18, .13, Color("#77664d"))
+	_hut_block(c + Vector3(-2.6, .27, .19), .75, .28, .04, Color("#e6d6b4"))
+
+	# Low writing desk at EXACT authored clue position, with supports/shadows.
+	_hut_block(c + Vector3(-3.39, .42, -2.65), .085, .085, .49, Color("#62432d"))
+	_hut_block(c + Vector3(-1.92, .42, -2.65), .085, .085, .49, Color("#62432d"))
+	_hut_block(c + Vector3(-2.65, .60, -2.25), .875, .48, .14, Color("#765039"))
+	for i in range(4):
+		var x: float = -3.36 + float(i) * .44
+		_hut_line(c + Vector3(x,.69,-2.65), c + Vector3(x,.69,-1.86), Color("#c18a55"), 1.7)
+	# Blue notebook is recognizable and precisely overlays BLUE_NOTEBOOK target.
+	_hut_block(c + Vector3(-2.65, .775, -2.25), .36, .27, .078, Color("#275982"))
+	_hut_line(c + Vector3(-2.89,.79,-2.45), c + Vector3(-2.89,.79,-2.07), Color("#e0c182"), 2.3)
+	_hut_line(c + Vector3(-2.77,.79,-2.38), c + Vector3(-2.45,.79,-2.38), Color("#afdaeb"), 1.5)
+	var notebook_screen := _screen(c + Vector3(-2.65, .82, -2.25))
+	draw_circle(notebook_screen, maxf(5.0, _scale_units(.32)), Color(.35,.75,1.0,.14))
+
+	# Lola's pottery breakfast table and clickable warm cup.
+	_hut_block(c + Vector3(.55, .34, -1.02), .085, .085, .4, Color("#523627"))
+	_hut_block(c + Vector3(1.95, .34, -.28), .085, .085, .4, Color("#523627"))
+	_hut_block(c + Vector3(1.25, .59, -.65), .91, .58, .19, Color("#69462e"))
+	_hut_block(c + Vector3(1.45, .78, -.35), .17, .17, .12, Color("#e4bd76"))
+	var cup := _screen(c + Vector3(1.45, .86, -.35))
+	draw_circle(cup, maxf(2.0, _scale_units(.07)), Color("#916a43"))
+	# Framed family photo and a clay jar, placed clear of the playable path.
+	var photo := c + Vector3(2.75,1.67,-3.84)
+	_hut_face([photo + Vector3(-.58,-.44,0), photo + Vector3(.58,-.44,0),
+		photo + Vector3(.58,.44,0), photo + Vector3(-.58,.44,0)], Color("#b18a5c"), Color("#60442c"), 3.0)
+	_hut_face([photo + Vector3(-.43,-.32,.015), photo + Vector3(.43,-.32,.015),
+		photo + Vector3(.43,.32,.015), photo + Vector3(-.43,.32,.015)], Color("#4e8783"))
+	_hut_line(photo + Vector3(-.24,-.17,.03), photo + Vector3(.26,.12,.03), Color("#dfc58d"), 2.0)
+	_art(LAMP, c + Vector3(-3.67, -.03, 2.6), .85, true, Color("#ead4a3"))
+
+	# Visible exit threshold and exterior bamboo steps (no opaque front wall).
+	_hut_block(c + Vector3(0.0, -.11, 4.42), 1.48, .67, .18, Color("#a17b51"))
+	for i in range(6):
+		var x: float = -1.32 + float(i) * .51
+		_hut_line(c + Vector3(x,-.015,3.93), c + Vector3(x,-.015,4.88), Color("#704d35"), 2.0)
+
+	# Layer characters LAST, in the live physics positions so no furniture
+	# accidentally paints over faces. Lola is at (-.35,0,-2.8), not at a
+	# made-up location outside her own house.
+	_art(LOLA, c + Vector3(-.35, .10, -2.8), 1.87)
+	_art(HERO, game.player.global_position + Vector3(0, -.65, 0), 1.83)
+	_art(BANTAY, game.bantay.global_position + Vector3(0, -.23, 0), 1.78)
+
 
 func _draw() -> void:
 	if game == null or not is_instance_valid(game) or camera == null or not is_instance_valid(camera):
