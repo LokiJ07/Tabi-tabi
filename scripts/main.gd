@@ -2,6 +2,8 @@ extends Node3D
 ## G1 engine/input spike: an explorable prototype, NOT the completed Night 1.
 ## All primitive geometry is temporary and must be replaced by approved art.
 
+const NightModel = preload("res://scripts/narrative/night01_state.gd")
+const SaveService = preload("res://scripts/core/save_service.gd")
 const PLAYER_SPEED := 4.2
 const COLORS := {
 	"earth": Color(0.30, 0.33, 0.23),
@@ -11,6 +13,9 @@ const COLORS := {
 	"roof": Color(0.35, 0.15, 0.13),
 	"leaf": Color(0.20, 0.36, 0.17),
 }
+var story = NightModel.new()
+var choice_buttons: Array[Button] = []
+var stage_label: Label
 var player: CharacterBody3D
 var bantay: Node3D
 var camera: Camera3D
@@ -40,6 +45,7 @@ func _ready() -> void:
 	_create_camera()
 	_create_lighting()
 	_create_ui()
+	_restore_story()
 	_update_objective()
 
 
@@ -83,6 +89,7 @@ func _physics_process(delta: float) -> void:
 	elapsed += delta
 	if is_night and santelmo != null:
 		_update_santelmo_reaction(delta)
+		story.alarm = light_alarm
 		santelmo.position.y = 1.7 + 0.23 * sin(elapsed * 2.7)
 		var child_light := santelmo.get_node_or_null("Glow") as OmniLight3D
 		if child_light != null:
@@ -115,6 +122,8 @@ func _create_world() -> void:
 	_marker("LOLA", Vector3(4, 0.1, 7), Color(0.9, 0.73, 0.44))
 	_marker("DADO", Vector3(-5, 0.1, 7), Color(0.42, 0.68, 0.83))
 	_marker("MOORING", Vector3(-7, 0.1, 13), Color(0.8, 0.76, 0.49))
+	_marker("SABEL", Vector3(3, 0.1, -5), Color(0.75, 0.5, 0.8))
+	_marker("MARA", Vector3(-2, 0.1, -8), Color(0.42, 0.82, 0.61))
 
 
 func _box(name: String, pos: Vector3, size: Vector3, color: Color, solid: bool) -> Node3D:
@@ -276,6 +285,29 @@ func _create_ui() -> void:
 	_make_button(root, "FOCUS", Vector2(1050, 490), Vector2(180, 60), func(): _set_focus(true), func(): _set_focus(false))
 	_make_button(root, "INTERACT", Vector2(1050, 565), Vector2(180, 60), _interact, func(): pass)
 	_make_button(root, "DAY / NIGHT", Vector2(1050, 640), Vector2(180, 56), _toggle_night, func(): pass)
+	_make_button(root, "NOTEBOOK", Vector2(1050, 415), Vector2(180, 56), _open_notebook, func(): pass)
+	_make_button(root, "SAVE", Vector2(1050, 345), Vector2(85, 52), _save_story, func(): pass)
+	_make_button(root, "RETRY", Vector2(1142, 345), Vector2(88, 52), _retry_story, func(): pass)
+	stage_label = Label.new()
+	stage_label.position = Vector2(25, 125)
+	stage_label.add_theme_font_size_override("font_size", 19)
+	root.add_child(stage_label)
+	for i in range(3):
+		var index := i
+		var action := Button.new()
+		action.name = "Choice %d" % i
+		action.anchor_left = 0.5
+		action.anchor_right = 0.5
+		action.anchor_top = 1.0
+		action.anchor_bottom = 1.0
+		action.offset_left = -300 + i * 205
+		action.offset_right = action.offset_left + 200
+		action.offset_top = -255
+		action.offset_bottom = -200
+		action.pressed.connect(func(): _choose_story_action(index))
+		root.add_child(action)
+		choice_buttons.append(action)
+	_refresh_choices()
 	alarm_label = Label.new()
 	alarm_label.position = Vector2(25, 95)
 	alarm_label.add_theme_font_size_override("font_size", 18)
@@ -346,7 +378,7 @@ func _interact() -> void:
 		return
 	var closest := ""
 	var distance := 3.4
-	for key in ["LOLA", "DADO", "MOORING"]:
+	for key in ["LOLA", "DADO", "MOORING", "SABEL", "MARA"]:
 		var mark := get_node_or_null(key) as Node3D
 		if mark == null:
 			continue
@@ -357,18 +389,35 @@ func _interact() -> void:
 	match closest:
 		"LOLA":
 			talked_to_lola = true
+			story.seen_people["lola"] = true
 			_show_dialogue("LOLA PASING: Ayaw una isulat ang imong gituohan. Paminaw sa, dayon pangita og pamatuod.")
 		"DADO":
 			talked_to_dado = true
+			story.seen_people["dado"] = true
+			story.observe_clue("light_retreat")
 			_show_dialogue("TATAY DADO: Gamay nga kahayag. Kung akong tutokan, mosibog. Kung molingi ko, murag naghulat.")
+		"SABEL":
+			story.seen_people["sabel"] = true
+			_show_dialogue("ALING SABEL: Si Mang Celso usa ka karaang boatman. Ayaw pagsagol sa iyang ngalan sa uban nga nawala.")
+		"MARA":
+			story.seen_people["mara"] = true
+			if story.clues.has("old_mooring"):
+				story.observe_clue("boatman_name")
+				_show_dialogue("TEACHER MARA: Ang ledger nagtawag kang Mang Celso. I-compare nato ang testimonya ug lugar.")
+			else:
+				_show_dialogue("TEACHER MARA: Tan-awa ang karaang mooring una. Ang testimonya kinahanglan ikumpara.")
 		"MOORING":
+			story.observe_clue("old_mooring")
+			if story.seen_people.has("mara"):
+				story.observe_clue("boatman_name")
 			if is_night:
 				encountered_light = true
-				_show_dialogue("The river light flickers near the old mooring. It responds to sustained Focus. Full reflection puzzles and outcomes are not implemented yet.")
+				_show_dialogue("The light waits by the mooring. Observe gently, compare reflections, and honor the forgotten name.")
 			else:
 				_show_dialogue("A weathered mooring by the river. An older name seems to be missing from the record.")
 		_:
 			_show_dialogue("Move close to Lola, Dado, or the old mooring to interact.")
+	_refresh_choices()
 	_update_objective()
 
 
@@ -382,6 +431,9 @@ func _close_dialogue() -> void:
 
 
 func _toggle_night() -> void:
+	if story.outcome != "":
+		_show_dialogue("The next morning has begun. Your outcome is already committed; no repeat rewards.")
+		return
 	is_night = not is_night
 	lantern.light_energy = 4.5 if is_night else 0.0
 	focus_held = false
@@ -412,6 +464,7 @@ func _toggle_night() -> void:
 		add_child(santelmo)
 	if santelmo != null:
 		santelmo.visible = is_night
+	_refresh_choices()
 	_update_objective()
 
 
@@ -424,5 +477,147 @@ func _update_objective() -> void:
 		objective.text = "OBJECTIVE: Inspect the old mooring, then tap DAY / NIGHT."
 	elif not encountered_light:
 		objective.text = "OBJECTIVE: Visit the old mooring at night."
+	elif story.outcome != "":
+		objective.text = "MORNING AFTER: " + story.outcome.to_upper() + " — state saved."
+	elif story.phase == 0:
+		objective.text = "Find three clues (Dado, mooring, Mara), then BEGIN at the river."
+	elif story.phase == 1:
+		objective.text = "Stage 1: Study the light; let its alarm settle, then OBSERVE."
+	elif story.phase == 2:
+		objective.text = "Stage 2: Follow the reflection that matches river current."
+	elif story.phase == 3:
+		objective.text = "Stage 3: Choose remembrance, protection, or retreat."
 	else:
-		objective.text = "REACTION SPIKE: Hold FOCUS near the light; full puzzles and outcomes are next."
+		objective.text = "Night 1 completed."
+
+
+func _refresh_choices() -> void:
+	if stage_label == null:
+		return
+	var names: Array[String] = []
+	if not is_night:
+		names = ["", "", ""]
+	elif story.phase == 0:
+		names = ["BEGIN" if story.can_begin() else "Find clues", "", ""]
+	elif story.phase == 1:
+		names = ["OBSERVE", "", "RETREAT"]
+	elif story.phase == 2:
+		names = ["Follow current", "False mirror", "RETREAT"]
+	elif story.phase == 3:
+		names = ["REMEMBER", "DRIVE AWAY", "RETREAT"]
+	else:
+		names = ["", "", ""]
+	for i in range(choice_buttons.size()):
+		choice_buttons[i].text = names[i]
+		choice_buttons[i].visible = names[i] != ""
+	stage_label.text = "CLUES: %d/3  •  PHASE: %d  •  OUTCOME: %s" % [story.clues.size(), story.phase, story.outcome if story.outcome != "" else "pending"]
+
+
+func _choose_story_action(index: int) -> void:
+	if not is_night or story.outcome != "":
+		return
+	if story.phase == 0:
+		if index == 0 and story.begin():
+			_show_dialogue("The first light rises above the old bank. Watch its response, and do not chase it into the river.")
+	elif story.phase == 1:
+		if index == 2:
+			_commit_night("partial")
+		elif index == 0:
+			if story.advance_observation():
+				_show_dialogue("The light settles. Two reflected patterns appear; only one follows the current.")
+			else:
+				_show_dialogue("The glow flares under direct Focus. Release the lamp and let the light calm.")
+	elif story.phase == 2:
+		if index == 2:
+			_commit_night("partial")
+		elif index == 0:
+			if story.choose_reflection("current_aligned"):
+				_show_dialogue("The real light drifts back to the mooring. You remember the boatman's name: Mang Celso.")
+		else:
+			story.choose_reflection("false_mirror")
+			_show_dialogue("That reflection moves against the water; try comparing it with the current.")
+	elif story.phase == 3:
+		if index == 0:
+			_commit_night("resolve")
+		elif index == 1:
+			_commit_night("drive_away")
+		elif index == 2:
+			_commit_night("partial")
+	_refresh_choices()
+	_update_objective()
+
+
+func _commit_night(result: String) -> void:
+	if result == "partial":
+		if not story.accept_partial():
+			return
+	elif not story.commit_result(result):
+		return
+	is_night = false
+	lantern.light_energy = 0
+	if santelmo != null:
+		santelmo.visible = false
+	var env_node := get_node_or_null("Environment") as WorldEnvironment
+	if env_node != null:
+		env_node.environment.background_color = Color(0.48, 0.68, 0.72)
+	var line := ""
+	match result:
+		"resolve":
+			line = "Morning: Dado says the river has gone quiet. Mang Celso is remembered."
+		"drive_away":
+			line = "Morning: the light has left, but the old mooring feels uneasy."
+		"partial":
+			line = "Morning: Lola welcomes you home. Another way to learn from the river remains."
+	_show_dialogue(line)
+	_save_story_silent()
+
+
+func _open_notebook() -> void:
+	var found: Array[String] = []
+	if story.clues.has("light_retreat"):
+		found.append("Dado reports the light retreats when stared at.")
+	if story.clues.has("old_mooring"):
+		found.append("The light returns to an old safe mooring.")
+	if story.clues.has("boatman_name"):
+		found.append("Mara's records name boatman Mang Celso.")
+	if found.is_empty():
+		found.append("No established signs yet. Speak with the residents.")
+	var hypothesis_line := "Guide gently" if story.hypothesis == "guide" else "Chase away" if story.hypothesis == "chase" else "Unknown"
+	_show_dialogue("NOTEBOOK  •  " + "\n".join(found) + "\nPrivate theory: " + hypothesis_line + "\nTap NOTEBOOK again later to revise your theory.")
+	# The theory is deliberately private and never changes social trust.
+	if story.hypothesis == "":
+		story.choose_hypothesis("chase")
+	elif story.hypothesis == "chase":
+		story.choose_hypothesis("guide")
+	else:
+		story.choose_hypothesis("chase")
+	_refresh_choices()
+
+
+func _save_story_silent() -> void:
+	SaveService.write(story, is_night)
+
+
+func _save_story() -> void:
+	_show_dialogue("Offline story state saved." if SaveService.write(story, is_night) else "Could not write the save file.")
+
+
+func _restore_story() -> void:
+	var data: Dictionary = SaveService.read(story)
+	if data.is_empty():
+		return
+	talked_to_lola = story.seen_people.has("lola")
+	talked_to_dado = story.seen_people.has("dado")
+	if bool(data.get("night", false)) and story.outcome == "":
+		_toggle_night()
+	_refresh_choices()
+
+
+func _retry_story() -> void:
+	if story.retry_from_checkpoint():
+		light_alarm = story.alarm
+		_show_dialogue("Restored the safe encounter checkpoint; no permanent resources were duplicated.")
+	else:
+		_show_dialogue("No uncommitted encounter checkpoint is available.")
+	_refresh_choices()
+	_update_objective()

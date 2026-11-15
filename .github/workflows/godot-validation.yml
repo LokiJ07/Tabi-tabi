@@ -19,3 +19,5 @@ jobs:
         run: godot --headless --editor --path . --import --quit
       - name: Scene smoke test
         run: godot --headless --path . --quit-after 20
+      - name: Night 1 outcome and evidence regression tests
+        run: godot --headless --path . --script res://tests/night01_state_test.gd
