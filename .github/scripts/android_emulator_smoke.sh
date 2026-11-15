@@ -161,6 +161,36 @@ capture_live_view 137 SHORE android-night1-shore-dock.png
 capture_live_view 138 NIGHT android-night1-night-river.png
 python3 .github/scripts/assert_night_atmosphere.py build/android-night1-shore-dock.png build/android-night1-night-river.png
 
+# On the Night 2 development branch, launch the REAL new chapter through
+# its debug-only title shortcut. Never silently treat Night 1 screenshots as
+# Kapre evidence; verify the new scene's exact engine log marker first.
+if [ "${GITHUB_REF:-}" = "refs/heads/feature/night2-kapre" ]; then
+  adb shell am force-stop "$PKG" || true
+  adb shell monkey -p "$PKG" -c android.intent.category.LAUNCHER 1
+  sleep 7
+  adb shell input keyevent 140  # Android F10, QA only: enter Night 2 scene
+  sleep 7
+  if ! adb logcat -d -v brief | grep -q "NIGHT2_QA_SCENE_READY"; then
+    echo "ERROR: Night 2 Kapre scene did not actually launch"
+    adb logcat -d | grep -E 'NIGHT2_QA|Godot|AndroidRuntime' | tail -n 100 || true
+    exit 1
+  fi
+  adb exec-out screencap -p > build/android-night2-intro.png
+  for item in "137 WITNESS witness" "138 ROUTE shelter-route" "139 MANGO kapre-tree"; do
+    set -- $item
+    adb shell input keyevent "$1"
+    sleep 4
+    if ! adb logcat -d -v brief | grep -q "NIGHT2_QA_${2}_VIEW"; then
+      echo "ERROR: Chapter 2 ${2} viewport not drawn from live gameplay"
+      exit 1
+    fi
+    adb exec-out screencap -p > "build/android-night2-${3}.png"
+    python3 .github/scripts/assert_gameplay_visible.py "build/android-night2-${3}.png"
+  done
+  adb logcat -d -v brief | grep -Ei 'NIGHT2_QA|Godot|AndroidRuntime' | tail -n 160 > build/android-night2-log.txt || true
+  echo "PASS: actual Kapre intro, witness area, shelter and mango tree run on Android"
+fi
+
 adb logcat -d -s AndroidRuntime:E Godot:E GodotEngine:E > build/android-night1-launch-log.txt || true
 if grep -q "FATAL EXCEPTION" build/android-night1-launch-log.txt; then
   cat build/android-night1-launch-log.txt
