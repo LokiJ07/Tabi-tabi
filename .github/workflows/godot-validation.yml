@@ -55,3 +55,5 @@ jobs:
         run: godot --headless --path . --script res://tests/night01_save_recovery_test.gd
       - name: Mobile overlay, focus release and HUD scroll regression
         run: godot --headless --path . --script res://tests/night01_hud_test.gd
+      - name: Original offline ambience and audio-options regression
+        run: godot --headless --path . --script res://tests/living_ambience_test.gd

@@ -14,6 +14,7 @@ const BantayAwareness = preload("res://scripts/ai/bantay_awareness.gd")
 const AimPad = preload("res://scripts/ui/aim_pad.gd")
 const SaveService = preload("res://scripts/core/save_service.gd")
 const Preferences = preload("res://scripts/core/preferences.gd")
+const LivingSound = preload("res://scripts/audio/living_ambience.gd")
 const PLAYER_SPEED := 4.2
 const COLORS := {
 	"earth": Color(0.30, 0.33, 0.23),
@@ -31,6 +32,8 @@ var pref_motion_button: Button
 var pref_contrast_button: Button
 var pref_hint_button: Button
 var pref_assist_button: Button
+var pref_audio_button: Button
+var living_sound: Node
 var courage_label: Label
 var prep_water_button: Button
 var choice_buttons: Array[Button] = []
@@ -92,6 +95,7 @@ func _ready() -> void:
 	_create_bantay()
 	_create_camera()
 	_create_lighting()
+	_create_audio()
 	_create_ui()
 	_apply_preferences()
 	_restore_story()
@@ -440,6 +444,13 @@ func _clear_touch_input() -> void:
 	move_buttons.clear()
 
 
+func _create_audio() -> void:
+	living_sound = LivingSound.new()
+	living_sound.name = "Living Barrio Ambience"
+	add_child(living_sound)
+	living_sound.set_audio_level(preferences.audio_level)
+
+
 func _create_ui() -> void:
 	var canvas := CanvasLayer.new()
 	canvas.name = "HUD"
@@ -699,6 +710,10 @@ func _create_ui() -> void:
 	pref_assist_button.custom_minimum_size = Vector2(360, 50)
 	pref_assist_button.pressed.connect(_toggle_story_assist)
 	options_stack.add_child(pref_assist_button)
+	pref_audio_button = Button.new()
+	pref_audio_button.custom_minimum_size = Vector2(360, 50)
+	pref_audio_button.pressed.connect(_cycle_audio_level)
+	options_stack.add_child(pref_audio_button)
 	var exit_options := Button.new()
 	exit_options.text = "CLOSE OPTIONS"
 	exit_options.custom_minimum_size = Vector2(360, 50)
@@ -902,6 +917,7 @@ func _toggle_night() -> void:
 		_show_dialogue("The next morning has begun. Your outcome is already committed; no repeat rewards.")
 		return
 	is_night = not is_night
+	living_sound.set_night(is_night)
 	lantern.light_energy = 4.5 if is_night else 0.0
 	dog_awareness.reset()
 	dog_warning_label.text = ""
@@ -1068,6 +1084,7 @@ func _commit_night(result: String) -> void:
 	elif not story.commit_result(result):
 		return
 	is_night = false
+	living_sound.set_night(false)
 	lantern.light_energy = 0
 	sun.light_energy = 1.1
 	MorningAftermath.ensure(self, story.outcome)
@@ -1110,6 +1127,7 @@ func _refresh_options() -> void:
 	pref_contrast_button.text = "HIGH-CONTRAST TEXT: %s" % ("ON" if preferences.high_contrast else "OFF")
 	pref_hint_button.text = "PUZZLE HINTS: " + str(preferences.HINT_LEVELS[preferences.hint_level])
 	pref_assist_button.text = "STORY ASSIST / NO-FAIL: " + ("ON" if preferences.story_assist else "OFF")
+	pref_audio_button.text = "AMBIENCE: " + (["OFF", "QUIET", "NORMAL"][preferences.audio_level])
 
 
 func _apply_preferences() -> void:
@@ -1147,6 +1165,13 @@ func _toggle_reduced_motion() -> void:
 
 func _toggle_contrast() -> void:
 	preferences.high_contrast = not preferences.high_contrast
+	preferences.save_to()
+	_apply_preferences()
+
+
+func _cycle_audio_level() -> void:
+	preferences.next_audio_level()
+	living_sound.set_audio_level(preferences.audio_level)
 	preferences.save_to()
 	_apply_preferences()
 
