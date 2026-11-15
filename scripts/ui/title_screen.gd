@@ -36,21 +36,28 @@ func _ready() -> void:
 	_build_settings()
 	_build_loading()
 	_build_confirmation()
+	if OS.get_name() == "Android":
+		print("NIGHT1_QA_TITLE_SCENE_READY")
 
 func _input(event: InputEvent) -> void:
-	# This deliberately does NOT exist in production APKs. The emulator
-	# automation can reliably enter gameplay without guessing rendered menu
-	# button coordinates or mistaking the Settings overlay for game content.
+	# Debug-only QA gesture, a backup when Android's screenshot automation
+	# cannot reliably tap the real START GAME button. Support touch AND mouse
+	# because Android emulator adb input may emulate either event type.
 	if not OS.has_feature("debug") or OS.get_name() != "Android":
 		return
-	if not (event is InputEventScreenTouch) or not event.pressed:
+	var touch: bool = event is InputEventScreenTouch and event.pressed
+	var mouse: bool = event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT
+	if not touch and not mouse:
 		return
+	var at: Vector2 = (event as InputEventScreenTouch).position if touch else (event as InputEventMouseButton).position
 	var dimensions := get_viewport().get_visible_rect().size
-	if event.position.x < dimensions.x * 0.91 or event.position.y > dimensions.y * 0.19:
+	var current_ms := Time.get_ticks_msec()
+	if current_ms - qa_last_tap_ms < 80:
+		return  # Ignore paired synthetic mouse event from the same touch.
+	if at.x < dimensions.x * 0.91 or at.y > dimensions.y * 0.19:
 		qa_corner_taps = 0
 		return
-	var current_ms := Time.get_ticks_msec()
-	if current_ms - qa_last_tap_ms > 1800:
+	if current_ms - qa_last_tap_ms > 2000:
 		qa_corner_taps = 0
 	qa_last_tap_ms = current_ms
 	qa_corner_taps += 1
