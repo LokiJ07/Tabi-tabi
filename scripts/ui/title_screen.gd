@@ -258,8 +258,6 @@ func _cycle_title_font() -> void:
 	prefs.next_text_scale()
 	prefs.save_to()
 	_refresh_settings()
-	for b in get_tree().get_nodes_in_group("unused"):
-		pass
 	for btn in [font_button, audio_button, motion_button]:
 		btn.add_theme_font_size_override("font_size", roundi(29.0 * prefs.text_scale))
 
