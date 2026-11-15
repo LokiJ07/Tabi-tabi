@@ -35,9 +35,18 @@ static func build(world: Node3D) -> Dictionary:
 		_box(room, "Surrounding planted reed %02d" % i, Vector3(-6.8, 0.16, z), Vector3(0.16, 1.0, 0.14), Color("#43653f") if i % 2 == 0 else Color("#64834d"), false)
 	_box(room, "Bamboo floor", Vector3(0, -0.21, 0), Vector3(9, 0.4, 8), Color(0.49, 0.35, 0.23), true)
 	_box(room, "Back woven wall", Vector3(0, 1.55, -4), Vector3(9, 3.1, 0.24), Color(0.63, 0.46, 0.28), true)
-	_box(room, "Front woven wall", Vector3(0, 1.55, 4), Vector3(9, 3.1, 0.24), Color(0.55, 0.39, 0.25), true)
+	# The camera approaches from +X/+Z: those two near walls must NOT
+	# obscure the room. Keep only side jamb colliders around a real doorway.
+	# Doorway opens 2.4m wide and remains reachable from HUT_EXIT.
+	_box(room, "Front woven wall left", Vector3(-2.85, 1.55, 4), Vector3(3.3, 3.1, 0.24), Color(0.55, 0.39, 0.25), true)
+	_box(room, "Front woven wall right", Vector3(2.85, 1.55, 4), Vector3(3.3, 3.1, 0.24), Color(0.55, 0.39, 0.25), true)
 	_box(room, "Left woven wall", Vector3(-4.5, 1.55, 0), Vector3(0.24, 3.1, 8), Color(0.58, 0.43, 0.26), true)
 	_box(room, "Right woven wall", Vector3(4.5, 1.55, 0), Vector3(0.24, 3.1, 8), Color(0.58, 0.43, 0.26), true)
+	# Cutaway presentation: hide camera-side wall meshes but RETAIN collision.
+	# A single coherent rear-wall-and-floor layout is shared with fallback.
+	for wall_name in ["Front woven wall left", "Front woven wall right", "Right woven wall"]:
+		var facing_wall := room.get_node(wall_name) as MeshInstance3D
+		facing_wall.visible = false
 	# Cross-bamboo weave and roof beam silhouettes are seen from overhead
 	# without covering the playable room with a solid opaque roof.
 	for i in range(11):
@@ -80,7 +89,11 @@ static func build(world: Node3D) -> Dictionary:
 	_box(room, "Notebook cloth spine", Vector3(-2.95, 0.79, -2.25), Vector3(0.055, 0.025, 0.49), Color("#122d49"), false)
 	_box(room, "Warm pottery cup", Vector3(1.45, 0.75, -0.35), Vector3(0.3, 0.28, 0.3), Color(0.86, 0.71, 0.47), false)
 	_box(room, "River family photograph", Vector3(2.75, 1.67, -3.75), Vector3(1.15, 0.88, 0.10), Color(0.47, 0.62, 0.61), false)
-	_box(room, "Wooden exit door", Vector3(0, 1.20, 3.84), Vector3(1.7, 2.4, 0.18), Color(0.38, 0.23, 0.13), false)
+	# Door arch and plank threshold, never a free-floating opaque exit slab.
+	_box(room, "Door jamb left", Vector3(-1.27, 1.16, 3.84), Vector3(.13, 2.32, .17), Color("#60422e"), false)
+	_box(room, "Door jamb right", Vector3(1.27, 1.16, 3.84), Vector3(.13, 2.32, .17), Color("#60422e"), false)
+	_box(room, "Door lintel", Vector3(0, 2.28, 3.84), Vector3(2.72, .16, .20), Color("#b79165"), false)
+	_box(room, "Wooden exit door", Vector3(0, -0.10, 3.84), Vector3(2.4, .18, .65), Color("#805938"), false)
 	var light := OmniLight3D.new()
 	light.name = "Warm morning lamp"
 	light.position = Vector3(0, 2.75, 0)
