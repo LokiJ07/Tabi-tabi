@@ -32,6 +32,7 @@ const BantayRoute = preload("res://scripts/ai/bantay_route.gd")
 const BantayAwareness = preload("res://scripts/ai/bantay_awareness.gd")
 const AimPad = preload("res://scripts/ui/aim_pad.gd")
 const SaveService = preload("res://scripts/core/save_service.gd")
+const Night02Scene = preload("res://scenes/night02.tscn")
 const Preferences = preload("res://scripts/core/preferences.gd")
 const LivingSound = preload("res://scripts/audio/living_ambience.gd")
 const PLAYER_SPEED := 4.2
@@ -49,6 +50,7 @@ var gameplay_hud: Control
 var modal_backdrop: ColorRect
 var settings_panel: PanelContainer
 var save_main_menu_button: Button
+var begin_night2_button: Button
 var quit_game_button: Button
 var main_menu_confirmation: ConfirmationDialog
 var quit_game_confirmation: ConfirmationDialog
@@ -1161,6 +1163,14 @@ func _create_ui() -> void:
 	options_stack.add_child(pref_audio_button)
 	# Important navigation stays fixed BELOW the scroll area, not buried in
 	# adjustable preferences. All actions require confirmation.
+	begin_night2_button = Button.new()
+	begin_night2_button.name = "BeginNight2Kapre"
+	begin_night2_button.text = "NEXT CHAPTER: NIGHT 2 • KAPRE"
+	begin_night2_button.custom_minimum_size = Vector2(320, 56)
+	begin_night2_button.disabled = true
+	begin_night2_button.pressed.connect(_begin_night2)
+	_style_modal_button(begin_night2_button, false, true)
+	settings_layout.add_child(begin_night2_button)
 	save_main_menu_button = Button.new()
 	save_main_menu_button.name = "SaveAndMainMenu"
 	save_main_menu_button.text = "SAVE & MAIN MENU"
@@ -1553,6 +1563,8 @@ func _update_objective() -> void:
 		objective.text = "STAGE 3 • Stand by GREEN ring. HOLD FOCUS; aim toward SHORE." if story.guide_progress < 0.999 else "The light reached shore. Choose REMEMBER, DRIVE AWAY, or RETREAT."
 	else:
 		objective.text = "Night 1 completed."
+	if begin_night2_button != null:
+		begin_night2_button.disabled = story.outcome == ""
 
 
 func _refresh_choices() -> void:
@@ -1745,6 +1757,15 @@ func _save_before_navigation() -> bool:
 	return true
 
 
+func _begin_night2() -> void:
+	if story.outcome == "":
+		_show_dialogue("Complete Night 1 before entering the old mango tree.")
+		return
+	if not _save_before_navigation():
+		return
+	get_tree().change_scene_to_packed(Night02Scene)
+
+
 func _save_and_return_to_menu() -> void:
 	if not _save_before_navigation():
 		return
@@ -1818,6 +1839,7 @@ func _apply_preferences() -> void:
 		prep_panel.get_node("PreparationLayout/ClosePreparation") as Button,
 		settings_panel.get_node("SettingsLayout/CloseSettings") as Button,
 		save_main_menu_button,
+		begin_night2_button,
 		quit_game_button,
 		dialogue.get_node("DialogueLayout/CloseDialogue") as Button
 	]:
