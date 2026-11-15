@@ -33,3 +33,5 @@ jobs:
         run: godot --headless --path . --script res://tests/folk_actors_test.gd
       - name: Bantay navigation and obstacle regression
         run: godot --headless --path . --script res://tests/bantay_route_test.gd
+      - name: Bantay awareness regression
+        run: godot --headless --path . --script res://tests/bantay_awareness_test.gd

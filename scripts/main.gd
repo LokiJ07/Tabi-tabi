@@ -6,6 +6,7 @@ const NightModel = preload("res://scripts/narrative/night01_state.gd")
 const SantelmoActor = preload("res://scripts/encounters/santelmo_actor.gd")
 const FolkActors = preload("res://scripts/visuals/folk_actors.gd")
 const BantayRoute = preload("res://scripts/ai/bantay_route.gd")
+const BantayAwareness = preload("res://scripts/ai/bantay_awareness.gd")
 const AimPad = preload("res://scripts/ui/aim_pad.gd")
 const SaveService = preload("res://scripts/core/save_service.gd")
 const PLAYER_SPEED := 4.2
@@ -27,6 +28,9 @@ var sun: DirectionalLight3D
 var river_surface: MeshInstance3D
 var bantay: CharacterBody3D
 var dog_guide = BantayRoute.new()
+var dog_awareness = BantayAwareness.new()
+var dog_warning_label: Label
+var dog_warning_seconds := 0.0
 var dog_waypoints := PackedVector3Array()
 var dog_next_waypoint := 0
 var dog_repath_timer := 0.0
@@ -90,6 +94,7 @@ func _physics_process(delta: float) -> void:
 	if lamp_heading.length() > 0.1:
 		lantern.global_rotation.y = atan2(-lamp_heading.x, -lamp_heading.z)
 	_update_bantay(delta)
+	_update_dog_warnings(delta)
 	FolkActors.animate_person(apprentice_visual, elapsed, desired.length() > 0.1)
 	camera.global_position = camera.global_position.lerp(player.global_position + Vector3(12, 17, 12), minf(1.0, delta * 4.0))
 	camera.look_at(player.global_position + Vector3(0, 0.7, 0))
@@ -265,6 +270,19 @@ func _create_bantay() -> void:
 	add_child(bantay)
 
 
+func _update_dog_warnings(delta: float) -> void:
+	var light_exists := is_night and santelmo != null
+	var light_position: Vector3 = santelmo.global_position if light_exists else Vector3.ZERO
+	var warning: String = dog_awareness.tick(delta, player.global_position, is_night, light_exists, light_position, light_alarm)
+	if warning != "":
+		dog_warning_label.text = warning
+		dog_warning_seconds = 4.5
+	elif dog_warning_seconds > 0.0:
+		dog_warning_seconds = maxf(0.0, dog_warning_seconds - delta)
+		if dog_warning_seconds <= 0.0:
+			dog_warning_label.text = ""
+
+
 func _update_bantay(delta: float) -> void:
 	var distance := bantay.global_position.distance_to(player.global_position)
 	dog_repath_timer -= delta
@@ -367,6 +385,11 @@ func _create_ui() -> void:
 	_make_button(root, "NOTEBOOK", Vector2(1050, 415), Vector2(180, 56), _open_notebook, func(): pass)
 	_make_button(root, "SAVE", Vector2(1050, 345), Vector2(85, 52), _save_story, func(): pass)
 	_make_button(root, "RETRY", Vector2(1142, 345), Vector2(88, 52), _retry_story, func(): pass)
+	dog_warning_label = Label.new()
+	dog_warning_label.position = Vector2(25, 160)
+	dog_warning_label.add_theme_font_size_override("font_size", 18)
+	dog_warning_label.add_theme_color_override("font_color", Color(0.95, 0.76, 0.42))
+	root.add_child(dog_warning_label)
 	stage_label = Label.new()
 	stage_label.position = Vector2(25, 125)
 	stage_label.add_theme_font_size_override("font_size", 19)
@@ -514,6 +537,9 @@ func _toggle_night() -> void:
 		return
 	is_night = not is_night
 	lantern.light_energy = 4.5 if is_night else 0.0
+	dog_awareness.reset()
+	dog_warning_label.text = ""
+	dog_warning_seconds = 0.0
 	sun.light_energy = 0.17 if is_night else 1.1
 	focus_held = false
 	light_alarm = 0.0
