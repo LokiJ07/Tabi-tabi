@@ -13,6 +13,7 @@ const FolkActors = preload("res://scripts/visuals/folk_actors.gd")
 const SpeakerPortrait = preload("res://scripts/ui/speaker_portrait.gd")
 const ConversationPages = preload("res://scripts/narrative/conversation_pages.gd")
 const BarrioDetails = preload("res://scripts/world/barrio_details.gd")
+const Mangrove = preload("res://scripts/world/mangrove.gd")
 const CinematicCamera = preload("res://scripts/visuals/cinematic_camera.gd")
 const BarrioLighting = preload("res://scripts/visuals/barrio_lighting.gd")
 const RiverBanca = preload("res://scripts/world/river_banca.gd")
@@ -245,9 +246,17 @@ func _create_world() -> void:
 	for x in [-8.6, -7.0, -5.4]:
 		_box("Landing plank", Vector3(x, 0.28, 9), Vector3(0.13, 0.06, 3.0), Color(0.58, 0.38, 0.23), false)
 	river_boat = RiverBanca.build(self, Vector3(-8.6, 0.15, 4.4))
+	var mangrove_index := 0
 	for x in [-19.0, -13.0, 13.0, 19.0]:
 		for z in [-18.0, -5.0, 14.0]:
-			_tree(Vector3(x, 0, z))
+			if x < 0.0:
+				Mangrove.build(self, Vector3(x, -0.04, z), mangrove_index)
+				mangrove_index += 1
+			else:
+				_tree(Vector3(x, 0, z))
+	for z in [-12.0, 1.0]:
+		Mangrove.build(self, Vector3(-11.75, -0.04, z), mangrove_index)
+		mangrove_index += 1
 	_marker("LOLA", Vector3(4, 0.1, 7), Color(0.9, 0.73, 0.44))
 	_marker("DADO", Vector3(-5, 0.1, 7), Color(0.42, 0.68, 0.83))
 	_marker("MOORING", Vector3(-7, 0.1, 13), Color(0.8, 0.76, 0.49))
@@ -502,8 +511,8 @@ func _create_audio() -> void:
 
 func _style_modal(panel: PanelContainer) -> void:
 	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.065, 0.095, 0.13, 0.98)
-	style.border_color = Color(0.56, 0.67, 0.69, 0.9)
+	style.bg_color = Color("#092936")
+	style.border_color = Color("#d0a65b")
 	style.set_border_width_all(2)
 	style.set_corner_radius_all(12)
 	style.content_margin_left = 22.0
@@ -527,18 +536,46 @@ func _menu_style(fill: Color, outline: Color) -> StyleBoxFlat:
 	return style
 
 
+func _style_game_button(button: Button, title: String, touch: bool = false) -> void:
+	# Shared Night 1 visual language from the approved art guide.
+	var base := StyleBoxFlat.new()
+	base.bg_color = Color("#082b37")
+	base.border_color = Color("#c69b55")
+	base.set_border_width_all(2)
+	base.set_corner_radius_all(13 if touch else 8)
+	base.content_margin_left = 11
+	base.content_margin_right = 11
+	var over := base.duplicate() as StyleBoxFlat
+	over.bg_color = Color("#154758")
+	over.border_color = Color("#f5ce7a")
+	var held := base.duplicate() as StyleBoxFlat
+	held.bg_color = Color("#365442")
+	held.border_color = Color("#ffd47a")
+	held.set_border_width_all(3)
+	button.add_theme_stylebox_override("normal", base)
+	button.add_theme_stylebox_override("hover", over)
+	button.add_theme_stylebox_override("pressed", held)
+	button.add_theme_stylebox_override("hover_pressed", held)
+	button.add_theme_color_override("font_color", Color("#f8e8c7"))
+	button.add_theme_color_override("font_hover_color", Color.WHITE)
+	button.add_theme_color_override("font_pressed_color", Color("#fff4d1"))
+	button.add_theme_font_size_override("font_size", 23)
+	button.alignment = HORIZONTAL_ALIGNMENT_CENTER
+	button.set_meta("art_theme", "night1-gold-navy")
+
+
 func _style_modal_button(button: Button, selected: bool = false, footer: bool = false) -> void:
 	# The default Godot Button font and disabled palette were nearly invisible
 	# on the user's landscape phone. Explicit styles cover every state.
-	var edge := Color(0.43, 0.75, 0.65) if selected else Color(0.34, 0.48, 0.56)
-	var background := Color(0.14, 0.25, 0.27) if selected else Color(0.14, 0.20, 0.26)
+	var edge := Color("#ffd47a") if selected else Color("#bb995c")
+	var background := Color("#295643") if selected else Color("#0d3443")
 	button.add_theme_stylebox_override("normal", _menu_style(background, edge))
-	button.add_theme_stylebox_override("hover", _menu_style(Color(0.22, 0.34, 0.39), Color(0.65, 0.83, 0.81)))
-	button.add_theme_stylebox_override("pressed", _menu_style(Color(0.26, 0.40, 0.39), Color(0.90, 0.80, 0.49)))
+	button.add_theme_stylebox_override("hover", _menu_style(Color("#184d59"), Color("#ffdf96")))
+	button.add_theme_stylebox_override("pressed", _menu_style(Color("#2a5644"), Color("#fbd485")))
 	button.add_theme_stylebox_override("hover_pressed", _menu_style(Color(0.26, 0.40, 0.39), Color(0.90, 0.80, 0.49)))
-	button.add_theme_stylebox_override("focus", _menu_style(Color(0.0, 0.0, 0.0, 0.0), Color(0.98, 0.84, 0.46)))
+	button.add_theme_stylebox_override("focus", _menu_style(Color(0.0, 0.0, 0.0, 0.0), Color("#ffde92")))
 	button.add_theme_stylebox_override("disabled", _menu_style(Color(0.11, 0.18, 0.21), edge.darkened(0.15)))
-	button.add_theme_color_override("font_color", Color(0.96, 0.97, 0.96))
+	button.add_theme_color_override("font_color", Color("#f8e8c7"))
 	button.add_theme_color_override("font_hover_color", Color.WHITE)
 	button.add_theme_color_override("font_pressed_color", Color.WHITE)
 	button.add_theme_color_override("font_focus_color", Color.WHITE)
@@ -688,6 +725,7 @@ func _create_ui() -> void:
 		action.offset_top = -255
 		action.offset_bottom = -200
 		action.pressed.connect(func(): _choose_story_action(index))
+		_style_game_button(action, "STORY ACTION")
 		gameplay_hud.add_child(action)
 		choice_buttons.append(action)
 	_refresh_choices()
@@ -995,6 +1033,7 @@ func _make_button(parent: Control, title: String, pos: Vector2, size: Vector2, d
 	button.size = size
 	button.button_down.connect(down)
 	button.button_up.connect(up)
+	_style_game_button(button, title, size.x < 95.0)
 	parent.add_child(button)
 	return button
 
@@ -1016,8 +1055,8 @@ func _update_focus_ui() -> void:
 			focus_visual_state = state
 			focus_button.text = "FOCUS HELD" if active else "HOLD FOCUS"
 			var style := StyleBoxFlat.new()
-			style.bg_color = Color("#286d57") if active else Color("#202d35")
-			style.border_color = Color("#a0ffd3") if active else Color("#52616d")
+			style.bg_color = Color("#665123") if active else Color("#082b37")
+			style.border_color = Color("#ffda70") if active else Color("#c69b55")
 			style.set_border_width_all(3 if active else 2)
 			style.set_corner_radius_all(8)
 			focus_button.add_theme_stylebox_override("normal", style)

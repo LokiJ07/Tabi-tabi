@@ -3,6 +3,7 @@ extends Control
 ## procedurally authored 3D costume. No external textures or extra 3D viewport.
 
 const FolkActors = preload("res://scripts/visuals/folk_actors.gd")
+const PORTRAIT_ATLAS: Texture2D = preload("res://assets/portraits/night01_art_guide_busts.jpg")
 # Night 1 uses fixed role-specific inked portraits generated from the SAME
 # character palette as the 3D actors. The earlier AI collage is deliberately
 # not displayed: it reused facial shapes and mismatched in-world identities.
@@ -50,6 +51,21 @@ func _ellipse(center: Vector2, radius: Vector2, color: Color) -> void:
 	draw_colored_polygon(points, color)
 
 
+static func atlas_region(who: String) -> Rect2:
+	match FolkActors.role_id(who):
+		"DADO":
+			return Rect2(0, 0, 256, 256)
+		"MARA":
+			return Rect2(256, 0, 256, 256)
+		"SABEL":
+			return Rect2(512, 0, 256, 256)
+		"LOLA":
+			return Rect2(768, 0, 256, 256)
+		"APPRENTICE":
+			return Rect2(1024, 0, 256, 256)
+	return Rect2()
+
+
 static func portrait_identity(who: String) -> Dictionary:
 	var id := FolkActors.role_id(who)
 	if id == "RESIDENT":
@@ -76,6 +92,14 @@ func _draw() -> void:
 	if size.x < 1.0 or size.y < 1.0:
 		return
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2(size.x / 256.0, size.y / 256.0))
+	# Actual cropped portraits from the approved Night 1 art guide.
+	# Deterministic atlas positions keep each NPC visually consistent.
+	var region := atlas_region(speaker_id)
+	if region.size.x > 0.0:
+		draw_texture_rect_region(PORTRAIT_ATLAS, Rect2(0, 0, 256, 256), region)
+		draw_rect(Rect2(2, 2, 252, 252), Color("#d3af62"), false, 3.0)
+		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+		return
 	# Original fixed hand-authored silhouettes; no AI collage texture at runtime.
 	draw_rect(Rect2(0, 0, 256, 256), Color("#13232e"))
 	# Film-like rim lights and an intentionally simple inked illustration style.

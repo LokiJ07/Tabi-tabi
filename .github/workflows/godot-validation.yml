@@ -71,3 +71,5 @@ jobs:
         run: godot --headless --path . --script res://tests/barrio_details_test.gd
       - name: Stage 3 mobile HUD spacing and safe landing beacon
         run: godot --headless --path . --script res://tests/night01_stage3_hud_test.gd
+      - name: Actual guide portraits and sculpted mangrove/nipa visuals
+        run: godot --headless --path . --script res://tests/night01_mangrove_art_test.gd

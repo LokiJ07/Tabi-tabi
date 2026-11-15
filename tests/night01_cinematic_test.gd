@@ -30,6 +30,10 @@ func _run() -> void:
 	check(portrait.speaker_id == "DADO", "portrait resolves fisher identity")
 	portrait.call("set_speaker", "TEACHER MARA")
 	check(portrait.speaker_id == "MARA", "portrait switches speaker")
+	check(Portrait.PORTRAIT_ATLAS.get_width() == 1280 and Portrait.PORTRAIT_ATLAS.get_height() == 256, "actual approved art guide portrait sprites imported as single atlas")
+	check(Portrait.atlas_region("LOLA") != Portrait.atlas_region("DADO"), "Lola and Dado never share portrait sprite")
+	check(Portrait.atlas_region("MARA") != Portrait.atlas_region("SABEL"), "Mara and Sabel have unique painted art")
+	check(Portrait.atlas_region("NARRATOR").size == Vector2.ZERO, "object narration never uses a human photo")
 	var profiles := {}
 	for role in ["LOLA", "DADO", "MARA", "SABEL", "APPRENTICE"]:
 		var profile: Dictionary = Portrait.portrait_identity(role)

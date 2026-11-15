@@ -80,15 +80,33 @@ static func _building(root: Node3D, tag: String, at: Vector3, wall: Color, accen
 	structure.position = at
 	root.add_child(structure)
 	_box(structure, "Woven wall stripe", Vector3(0, 1.25, 2.02), Vector3(3.7, 0.20, 0.06), wall)
+	# Woven bamboo has a distinct rhythm/texture rather than one flat wall.
+	for i in range(9):
+		var x: float = -1.82 + float(i) * 0.43
+		_box(structure, "Nipa facade bamboo strip %d" % i, Vector3(x, 1.46, 2.10), Vector3(0.043, 2.06, 0.045), Color("#c29c69") if i % 2 == 0 else Color("#876647"))
+	for i in range(5):
+		var y := 0.58 + float(i) * 0.40
+		_box(structure, "Woven horizontal rib %d" % i, Vector3(0, y, 2.12), Vector3(3.77, 0.052, 0.043), Color("#9d794e"))
+	_box(structure, "Nipa wall lower trim", Vector3(0, 0.35, 2.15), Vector3(3.9, 0.17, 0.12), Color("#654635"))
 	_box(structure, "Front door", Vector3(-0.35, 0.89, 2.045), Vector3(1.15, 1.76, 0.06), accent.darkened(0.22))
 	_box(structure, "Door frame lintel", Vector3(-0.35, 1.85, 2.11), Vector3(1.35, 0.13, 0.14), wall.lightened(0.2))
 	_box(structure, "Windowsill", Vector3(1.10, 1.18, 2.09), Vector3(0.74, 0.10, 0.16), Color("#c1a17a"))
-	_box(structure, "Dark window", Vector3(1.10, 1.53, 2.07), Vector3(0.64, 0.57, 0.04), Color("#1b343b"))
+	_box(structure, "Dark window", Vector3(1.10, 1.53, 2.15), Vector3(0.64, 0.57, 0.04), Color("#1b343b"))
+	_box(structure, "Open window shutter", Vector3(1.55, 1.53, 2.17), Vector3(0.30, 0.61, 0.08), accent)
+	_box(structure, "Window cross brace", Vector3(1.10, 1.53, 2.18), Vector3(0.06, 0.59, 0.05), Color("#d2b383"))
 	for side in [-1, 1]:
 		var roof := _box(structure, "Layered roof %d" % side, Vector3(1.24 * side, 3.06, 0), Vector3(2.94, 0.15, 4.72), accent)
 		roof.rotation.z = 0.19 * float(side)
 		_box(structure, "Under eave %d" % side, Vector3(2.1 * side, 2.86, 0), Vector3(0.14, 0.18, 4.45), Color("#74533d"))
+		for j in range(5):
+			var thatch := _box(structure, "Layered roof cap %d_%d" % [side, j],
+				Vector3(1.24 * side, 3.17, -1.75 + float(j) * 0.88),
+				Vector3(3.04, 0.045, 0.43), Color("#957451") if j % 2 == 0 else Color("#71523e"))
+			thatch.rotation.z = 0.19 * float(side)
 	_box(structure, "Raised porch edge", Vector3(0, 0.18, 2.46), Vector3(3.2, 0.16, 0.76), Color("#72513c"))
+	for j in range(6):
+		_box(structure, "Porch floorboards %d" % j, Vector3(-1.37 + float(j) * 0.56, 0.28, 2.5),
+			Vector3(0.46, 0.035, 0.76), Color("#9a7047") if j % 2 == 0 else Color("#b08a5b"))
 	if kind == 0:
 		_box(structure, "Lola woven mat", Vector3(1.16, 0.35, 2.52), Vector3(0.93, 0.06, 0.48), Color("#ba9563"))
 		_box(structure, "Lola flower pot", Vector3(2.28, 0.33, 2.5), Vector3(0.4, 0.50, 0.38), Color("#8c5643"))
