@@ -14,6 +14,7 @@ func _initialize() -> void:
 	call_deferred("_run")
 
 func _run() -> void:
+	check(int(ProjectSettings.get_setting("display/window/handheld/orientation")) == 4, "Night 1 must stay in sensor-landscape on Android")
 	var title = TitleScene.instantiate()
 	root.add_child(title)
 	await process_frame
