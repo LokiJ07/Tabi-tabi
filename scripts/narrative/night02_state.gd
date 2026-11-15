@@ -145,8 +145,15 @@ func commit(value: String) -> bool:
 	return true
 
 func safe_retry() -> bool:
-	if checkpoint.is_empty() or outcome != "":
+	if outcome != "":
 		return false
+	if checkpoint.is_empty():
+		# A player who approaches the unstable trunk before all five clues
+		# exists at phase 0 and has no checkpoint yet. Never softlock them.
+		encounter_failed = false
+		alarm = 0.10
+		courage = maxf(55.0, courage)
+		return true
 	var cp := checkpoint.duplicate(true)
 	if not from_dict(cp):
 		return false
