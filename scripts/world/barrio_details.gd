@@ -2,6 +2,7 @@ extends RefCounted
 ## Hand-positioned riverside details for a richer Barrio Lawom silhouette.
 ## Visual-only props intentionally do not alter tested player collision/nav.
 const ROOT_NAME := "BarrioEnvironmentDetails"
+const NIPA_THATCH: Texture2D = preload("res://assets/world/nipa_thatch_roof.svg")
 
 
 static func decorate(world: Node3D) -> Node3D:
@@ -97,12 +98,26 @@ static func _building(root: Node3D, tag: String, at: Vector3, wall: Color, accen
 	for side in [-1, 1]:
 		var roof := _box(structure, "Layered roof %d" % side, Vector3(1.24 * side, 3.06, 0), Vector3(2.94, 0.15, 4.72), accent)
 		roof.rotation.z = 0.19 * float(side)
+		# Layered thatch is a real material on the angled roof, not extra
+		# detached decorations floating over the original blockout.
+		var thatch_mat := StandardMaterial3D.new()
+		thatch_mat.albedo_texture = NIPA_THATCH
+		thatch_mat.albedo_color = Color("#e9dfbd") if kind == 0 else Color("#d9c6b4") if kind == 1 else Color("#c6d5d0")
+		thatch_mat.uv1_scale = Vector3(2.5, 1.0, 3.0)
+		thatch_mat.roughness = 0.98
+		roof.material_override = thatch_mat
 		_box(structure, "Under eave %d" % side, Vector3(2.1 * side, 2.86, 0), Vector3(0.14, 0.18, 4.45), Color("#74533d"))
 		for j in range(5):
 			var thatch := _box(structure, "Layered roof cap %d_%d" % [side, j],
 				Vector3(1.24 * side, 3.17, -1.75 + float(j) * 0.88),
 				Vector3(3.04, 0.045, 0.43), Color("#957451") if j % 2 == 0 else Color("#71523e"))
 			thatch.rotation.z = 0.19 * float(side)
+			var cap_mat := StandardMaterial3D.new()
+			cap_mat.albedo_texture = NIPA_THATCH
+			cap_mat.albedo_color = Color("#e7d2a6")
+			cap_mat.uv1_scale = Vector3(1.5, 1.0, 1.5)
+			cap_mat.roughness = 1.0
+			thatch.material_override = cap_mat
 	_box(structure, "Raised porch edge", Vector3(0, 0.18, 2.46), Vector3(3.2, 0.16, 0.76), Color("#72513c"))
 	for j in range(6):
 		_box(structure, "Porch floorboards %d" % j, Vector3(-1.37 + float(j) * 0.56, 0.28, 2.5),
