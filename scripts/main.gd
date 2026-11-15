@@ -66,6 +66,8 @@ var dog_repath_timer := 0.0
 var camera_director = CinematicCamera.new()
 var camera: Camera3D
 var lantern: SpotLight3D
+var status_panel: PanelContainer
+var status_stack: VBoxContainer
 var info: Label
 var objective: Label
 var dialogue: PanelContainer
@@ -183,9 +185,14 @@ func _physics_process(delta: float) -> void:
 			_show_dialogue("Bantay leads you back from the frightening light. You can RETRY the safe checkpoint or ACCEPT PARTIAL.")
 			_refresh_choices()
 			_update_objective()
-		alarm_label.text = "Santelmo: %s  |  Strong Focus makes it retreat" % ("ALARMED: lower your light" if light_alarm > 0.65 else "watching" if light_alarm > 0.2 else "calm")
+		alarm_label.text = "SANTELMO • %s" % ("ALARMED — lower Focus" if light_alarm > 0.65 else "WATCHING — avoid direct Focus" if light_alarm > 0.2 else "CALM — avoid aiming at it")
 	if courage_label != null:
-		courage_label.text = "COURAGE: %d / 100" % roundi(story.courage) if is_night and story.phase >= 1 and story.phase <= 3 else ""
+		courage_label.text = "COURAGE %d / 100" % roundi(story.courage) if is_night and story.phase >= 1 and story.phase <= 3 else ""
+		courage_label.visible = courage_label.text != ""
+	if alarm_label != null:
+		alarm_label.visible = is_night and story.phase >= 1 and story.phase <= 3
+	if dog_warning_label != null:
+		dog_warning_label.visible = dog_warning_label.text != ""
 	for i in range(ambient_walkers.size()):
 		var villager := ambient_walkers[i]
 		villager.visible = not is_night
@@ -559,17 +566,48 @@ func _create_ui() -> void:
 	gameplay_hud.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	gameplay_hud.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	root.add_child(gameplay_hud)
+	# A vertical, wrapping status card prevents the objective, clue progress,
+	# Santelmo alarm, companion alerts and courage from occupying fixed Y slots.
+	status_panel = PanelContainer.new()
+	status_panel.name = "QuestStatusCard"
+	status_panel.anchor_left = 0.0
+	status_panel.anchor_right = 0.57
+	status_panel.anchor_top = 0.0
+	status_panel.anchor_bottom = 0.0
+	status_panel.offset_left = 16.0
+	status_panel.offset_right = -8.0
+	status_panel.offset_top = 10.0
+	status_panel.offset_bottom = 250.0
+	status_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var status_style := StyleBoxFlat.new()
+	status_style.bg_color = Color(0.035, 0.075, 0.09, 0.83)
+	status_style.border_color = Color(0.38, 0.62, 0.56, 0.48)
+	status_style.set_border_width_all(1)
+	status_style.set_corner_radius_all(9)
+	status_style.content_margin_left = 13
+	status_style.content_margin_right = 13
+	status_style.content_margin_top = 8
+	status_style.content_margin_bottom = 8
+	status_panel.add_theme_stylebox_override("panel", status_style)
+	gameplay_hud.add_child(status_panel)
+	status_stack = VBoxContainer.new()
+	status_stack.name = "StatusRows"
+	status_stack.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	status_stack.add_theme_constant_override("separation", 5)
+	status_panel.add_child(status_stack)
 	info = Label.new()
-	info.position = Vector2(25, 16)
+	info.name = "VillageHeading"
 	info.text = "TABI-TABI  •  BARRIO LAWOM"
 	info.add_theme_font_size_override("font_size", 24)
-	gameplay_hud.add_child(info)
+	info.add_theme_color_override("font_color", Color("#f3e2b8"))
+	status_stack.add_child(info)
 	objective = Label.new()
-	objective.position = Vector2(25, 56)
+	objective.name = "QuestObjective"
 	objective.add_theme_font_size_override("font_size", 22)
 	objective.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	objective.size = Vector2(760, 65)
-	gameplay_hud.add_child(objective)
+	objective.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	objective.add_theme_color_override("font_color", Color("#f2f5f2"))
+	status_stack.add_child(objective)
 	_make_button(gameplay_hud, "◀", Vector2(20, 575), Vector2(70, 65), func(): _set_button_axis("left", true), func(): _set_button_axis("left", false))
 	_make_button(gameplay_hud, "▶", Vector2(170, 575), Vector2(70, 65), func(): _set_button_axis("right", true), func(): _set_button_axis("right", false))
 	_make_button(gameplay_hud, "▲", Vector2(95, 505), Vector2(70, 65), func(): _set_button_axis("up", true), func(): _set_button_axis("up", false))
@@ -594,30 +632,37 @@ func _create_ui() -> void:
 	_make_button(gameplay_hud, "SAVE", Vector2(1050, 345), Vector2(85, 52), _save_story, func(): pass)
 	_make_button(gameplay_hud, "RETRY", Vector2(1142, 345), Vector2(88, 52), _retry_story, func(): pass)
 	interact_hint = Label.new()
-	interact_hint.anchor_left = 0.30
-	interact_hint.anchor_right = 0.70
+	# The interaction prompt occupies a separate top-right zone instead of
+	# crossing the left-hand objective/status card.
+	interact_hint.name = "NearbyPrompt"
+	interact_hint.anchor_left = 0.60
+	interact_hint.anchor_right = 0.86
 	interact_hint.anchor_top = 0.0
 	interact_hint.anchor_bottom = 0.0
-	interact_hint.offset_top = 8
-	interact_hint.offset_bottom = 46
+	interact_hint.offset_top = 9
+	interact_hint.offset_bottom = 66
+	interact_hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	interact_hint.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	interact_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	interact_hint.add_theme_font_size_override("font_size", 21)
 	interact_hint.add_theme_color_override("font_color", Color(0.98, 0.86, 0.60))
 	gameplay_hud.add_child(interact_hint)
 	courage_label = Label.new()
-	courage_label.position = Vector2(25, 196)
+	courage_label.name = "CourageStatus"
 	courage_label.add_theme_font_size_override("font_size", 20)
 	courage_label.add_theme_color_override("font_color", Color(0.98, 0.86, 0.61))
-	gameplay_hud.add_child(courage_label)
+	status_stack.add_child(courage_label)
 	dog_warning_label = Label.new()
-	dog_warning_label.position = Vector2(25, 160)
+	dog_warning_label.name = "CompanionWarning"
+	dog_warning_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	dog_warning_label.add_theme_font_size_override("font_size", 18)
 	dog_warning_label.add_theme_color_override("font_color", Color(0.95, 0.76, 0.42))
-	gameplay_hud.add_child(dog_warning_label)
+	status_stack.add_child(dog_warning_label)
 	stage_label = Label.new()
-	stage_label.position = Vector2(25, 125)
+	stage_label.name = "ClueAndGuideProgress"
+	stage_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	stage_label.add_theme_font_size_override("font_size", 20)
-	gameplay_hud.add_child(stage_label)
+	status_stack.add_child(stage_label)
 	for i in range(3):
 		var index := i
 		var action := Button.new()
@@ -635,9 +680,18 @@ func _create_ui() -> void:
 		choice_buttons.append(action)
 	_refresh_choices()
 	alarm_label = Label.new()
-	alarm_label.position = Vector2(25, 95)
+	alarm_label.name = "SpiritAlert"
+	alarm_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	alarm_label.add_theme_color_override("font_color", Color("#e7ba7b"))
 	alarm_label.add_theme_font_size_override("font_size", 18)
-	gameplay_hud.add_child(alarm_label)
+	status_stack.add_child(alarm_label)
+	# Keep the briefing order stable even though the labels were created
+	# after the gameplay controls for backwards-compatible references.
+	status_stack.move_child(stage_label, 2)
+	status_stack.move_child(alarm_label, 3)
+	alarm_label.hide()
+	courage_label.hide()
+	dog_warning_label.hide()
 	modal_backdrop = ColorRect.new()
 	modal_backdrop.name = "ModalDimmer"
 	modal_backdrop.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -1212,11 +1266,11 @@ func _update_objective() -> void:
 	elif story.phase == 0:
 		objective.text = "Collect 3 clues, link evidence pairs in NOTEBOOK, then BEGIN."
 	elif story.phase == 1:
-		objective.text = "Stage 1: Study the light; let its alarm settle, then OBSERVE."
+		objective.text = "STAGE 1 • Let the Santelmo calm, then OBSERVE."
 	elif story.phase == 2:
-		objective.text = "Stage 2: Walk to a reflected light, then INSPECT; the real one follows the slow current."
+		objective.text = "STAGE 2 • Approach a reflection. INSPECT the one following the current."
 	elif story.phase == 3:
-		objective.text = "Stage 3: Stand near the GREEN landing ring; hold FOCUS toward the shore until the light follows." if story.guide_progress < 0.999 else "The light has reached the safe landing. Remember Mang Celso, defend, or retreat."
+		objective.text = "STAGE 3 • Stand by GREEN ring. HOLD FOCUS; aim toward SHORE." if story.guide_progress < 0.999 else "The light reached shore. Choose REMEMBER, DRIVE AWAY, or RETREAT."
 	else:
 		objective.text = "Night 1 completed."
 
@@ -1239,13 +1293,13 @@ func _refresh_choices() -> void:
 	elif story.phase == 2:
 		names = ["INSPECT LIGHT", "HINT", "RETREAT"]
 	elif story.phase == 3:
-		names = ["REMEMBER" if story.guide_progress >= 0.999 else "GUIDE TO SHORE", "DRIVE AWAY" if story.kit.has("signal_bell") else "NEED BELL", "RETREAT"]
+		names = ["REMEMBER" if story.guide_progress >= 0.999 else "HOW TO GUIDE", "DRIVE AWAY" if story.kit.has("signal_bell") else "NEED BELL", "RETREAT"]
 	else:
 		names = ["", "", ""]
 	for i in range(choice_buttons.size()):
 		choice_buttons[i].text = names[i]
 		choice_buttons[i].visible = names[i] != ""
-	stage_label.text = MorningAftermath.morning_label(story.outcome) if story.outcome != "" else "CLUES: %d/3  •  PHASE: %d  •  GUIDE: %d%%" % [story.clues.size(), story.phase, roundi(story.guide_progress * 100.0)] if story.phase == 3 else "CLUES: %d/3  •  PHASE: %d  •  OUTCOME: pending" % [story.clues.size(), story.phase]
+	stage_label.text = MorningAftermath.morning_label(story.outcome) if story.outcome != "" else "CLUES %d/3  •  GUIDE %d%%" % [story.clues.size(), roundi(story.guide_progress * 100.0)] if story.phase == 3 else "CLUES %d/3  •  STAGE %d" % [story.clues.size(), story.phase]
 
 
 func _choose_story_action(index: int) -> void:

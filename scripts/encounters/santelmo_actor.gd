@@ -40,7 +40,34 @@ func _ready() -> void:
 	add_child(light)
 	true_reflection = _make_reflection("CURRENT_ALIGNED", Vector3(-8.0, 0.28, 15.5), CALM)
 	false_reflection = _make_reflection("FALSE_MIRROR", Vector3(-5.0, 0.28, 15.5), Color(0.4, 0.8, 0.95))
-	landing_marker = _make_reflection("SAFE_LANDING_GUIDE", SAFE_LANDING, Color(0.45, 0.95, 0.69))
+	landing_marker = _make_reflection("SAFE_LANDING_GUIDE", SAFE_LANDING, Color("#50ff98"))
+	# A larger ground ring and an elevated, gently pulsing green beacon
+	# make the landing readable behind the NPCs on small Android screens.
+	var landing_disc := landing_marker.get_child(0) as MeshInstance3D
+	var disc_mesh := landing_disc.mesh as CylinderMesh
+	disc_mesh.top_radius = 1.05
+	disc_mesh.bottom_radius = 1.05
+	disc_mesh.height = 0.085
+	var beacon := MeshInstance3D.new()
+	beacon.name = "SafeLandingBeacon"
+	var beacon_mesh := SphereMesh.new()
+	beacon_mesh.radius = 0.28
+	beacon_mesh.height = 0.56
+	beacon.mesh = beacon_mesh
+	beacon.position = Vector3(0, 0.92, 0)
+	var green := StandardMaterial3D.new()
+	green.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	green.albedo_color = Color(0.37, 1.0, 0.57, 0.87)
+	green.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	beacon.material_override = green
+	landing_marker.add_child(beacon)
+	var spill := OmniLight3D.new()
+	spill.name = "SafeGreenSpill"
+	spill.position = Vector3(0, 0.75, 0)
+	spill.light_color = Color(0.52, 1.0, 0.65)
+	spill.light_energy = 0.55
+	spill.omni_range = 3.3
+	landing_marker.add_child(spill)
 	set_encounter_phase(0)
 
 
@@ -106,7 +133,12 @@ func update_behavior(delta: float, player_position: Vector3, direction: Vector3,
 		if landing_marker.visible:
 			var marker_mesh := landing_marker.get_child(0) as MeshInstance3D
 			var marker_material := marker_mesh.material_override as StandardMaterial3D
-			marker_material.albedo_color.a = 0.56 + 0.18 * sin(time * 2.2)
+			marker_material.albedo_color.a = 0.70 + 0.16 * sin(time * 2.2)
+			var beacon := landing_marker.get_node_or_null("SafeLandingBeacon") as MeshInstance3D
+			if beacon != null:
+				beacon.position.y = 0.92 + 0.16 * sin(time * 1.8)
+				var beacon_mat := beacon.material_override as StandardMaterial3D
+				beacon_mat.albedo_color.a = 0.73 + 0.18 * sin(time * 2.1)
 	return alarm
 
 

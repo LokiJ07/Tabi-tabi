@@ -69,3 +69,5 @@ jobs:
         run: godot --headless --path . --script res://tests/river_banca_test.gd
       - name: Distinct Barrio Lawom environmental storytelling
         run: godot --headless --path . --script res://tests/barrio_details_test.gd
+      - name: Stage 3 mobile HUD spacing and safe landing beacon
+        run: godot --headless --path . --script res://tests/night01_stage3_hud_test.gd
