@@ -66,6 +66,7 @@ var subtitle: Label
 var danger: Label
 var progress: ProgressBar
 var interaction_hint: Label
+var waypoint_label: Label
 var action_buttons: Dictionary = {}
 var dialogue: PanelContainer
 var dialogue_name: Label
@@ -91,6 +92,8 @@ func _ready() -> void:
 	if not Night1Save.read(previous).is_empty():
 		story.night1_outcome = previous.outcome
 	Save.read(story) # Distinct save, never rewrites Night 1.
+	player_pos = story.player_position
+	dog_pos = player_pos + Vector2(-52, 31)
 	camera = Camera2D.new()
 	camera.name = "Night2IsometricCamera"
 	camera.enabled = true
@@ -146,6 +149,7 @@ func _process(delta: float) -> void:
 		_show_dialogue("NARRATOR", "The old branches crack above. Bantay pulls you back. The safe route remains available; retry the checkpoint or withdraw.",
 			[{"label": "SAFE RETRY", "action": "retry"}, {"label": "WITHDRAW", "action": "retreat"}])
 	_update_hint()
+	_update_waypoint()
 	if progress != null:
 		progress.visible = story.phase == 2
 		progress.value = story.observation * 100.0
@@ -357,6 +361,17 @@ func _build_ui() -> void:
 	danger.add_theme_color_override("font_color", Color("#f4c99b"))
 	danger.add_theme_font_size_override("font_size", 19)
 	layout.add_child(danger)
+	waypoint_label = Label.new()
+	waypoint_label.name = "NextLocationCompass"
+	waypoint_label.anchor_left = .475
+	waypoint_label.anchor_right = .80
+	waypoint_label.anchor_top = .035
+	waypoint_label.anchor_bottom = .135
+	waypoint_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	waypoint_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	waypoint_label.add_theme_font_size_override("font_size", roundi(18.0*prefs.text_scale))
+	waypoint_label.add_theme_color_override("font_color", Color("#f1d6a4"))
+	layout.add_child(waypoint_label)
 	progress = ProgressBar.new()
 	progress.name = "ObserveProgress"
 	progress.anchor_left = .29
@@ -586,6 +601,54 @@ func _nearby() -> String:
 			return "kapre"
 	return ""
 
+func _next_target() -> Dictionary:
+	var best_distance := INF
+	var target_id := ""
+	var target_at := Vector2.ZERO
+	var ids: Array[String] = []
+	if story.phase == 0:
+		for id in KEY_ORDER:
+			if not story.clues.has(id):
+				ids.append(id)
+	elif story.phase == 1:
+		for id in Story.BARRIER_POSITIONS:
+			if not story.barriers.has(id):
+				ids.append(id)
+	if ids.size() > 0:
+		for id in ids:
+			var distance := player_pos.distance_to(TARGETS[id])
+			if distance < best_distance:
+				best_distance = distance
+				target_at = TARGETS[id]
+				target_id = id
+	elif story.phase == 2:
+		target_at = OBSERVATION
+		target_id = "SAFE LOOKOUT"
+	elif story.phase == 3:
+		target_at = TREE
+		target_id = "OLD MANGO TREE"
+	else:
+		return {}
+	return {"name": str(CLUE_TITLES.get(target_id,target_id.replace("_"," "))).to_upper(), "point": target_at}
+
+
+func _update_waypoint() -> void:
+	if waypoint_label == null:
+		return
+	var next := _next_target()
+	if next.is_empty():
+		waypoint_label.text = "CHAPTER COMPLETE"
+		return
+	var direction: Vector2 = next["point"] - player_pos
+	var angle := atan2(direction.y,direction.x)
+	var octant := posmod(roundi((angle+PI) / (PI/4.0)),8)
+	var arrows := ["←","↖","↑","↗","→","↘","↓","↙"]
+	var compass: String = arrows[octant]
+	if direction.length() < 120.0:
+		compass = "◆"
+	waypoint_label.text = compass + "  " + str(next["name"]) + "\n" + ("%d STEPS" % roundi(direction.length()/11.0))
+
+
 func _update_hint() -> void:
 	var near := _nearby()
 	if near == last_target and interaction_hint.text != "":
@@ -778,6 +841,7 @@ func _open_options() -> void:
 	options_panel.show()
 
 func _auto_save() -> bool:
+	story.player_position = player_pos
 	return Save.write(story)
 
 func _save_and_notify() -> void:
