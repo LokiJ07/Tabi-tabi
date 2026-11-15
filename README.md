@@ -14,8 +14,8 @@ An offline Android isometric 3D folklore mystery-adventure set in the fictional 
 
 ## Present in the feature branch
 
-- Procedural Barrio Lawom blockout, explorable morning interior of Lola’s hut with interactive notebook/cup/photo and physical door transition, safe riverbank collision, store/school/landing, a boat and simple resident routines.
-- Isometric camera; touch movement and independent lantern Focus; distinct 3D NPC silhouettes/outfits for Lola, Dado, Mara and Sabel; original painted four-person bust portrait atlas, speaker-aware cinematic dialogue and gentle idle animations.
+- Procedural Barrio Lawom environment with distinct building details, explorable Lola-hut morning prologue, safe riverbank collision, fishing/market props and an original low-poly banca with shaped hull, bamboo outriggers, seats and paddle (rather than a single placeholder boat cube).
+- Isometric camera with actor-targeted cinematic conversation framing; touch movement and independent lantern Focus; distinct 3D NPC silhouettes/outfits for Lola, Dado, Mara and Sabel; original painted four-person bust portrait atlas, speaker-aware cinematic dialogue, blink/speech gestures and reversible reduced-motion transitions.
 - Evidence notebook, contextual witness interviews, two clue links and a private revisable theory.
 - Four-slot supply preparation; cloth-wrap lantern calming, signal-bell defensive choice, single-use water recovery.
 - Reactive Santelmo, reflection puzzle with proximity check, **in-world lantern guiding to the safe shore for Resolve**, Courage pressure, no-fail story assist, safe checkpoint retry.

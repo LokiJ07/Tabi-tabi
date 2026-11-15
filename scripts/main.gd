@@ -15,6 +15,7 @@ const ConversationPages = preload("res://scripts/narrative/conversation_pages.gd
 const BarrioDetails = preload("res://scripts/world/barrio_details.gd")
 const CinematicCamera = preload("res://scripts/visuals/cinematic_camera.gd")
 const BarrioLighting = preload("res://scripts/visuals/barrio_lighting.gd")
+const RiverBanca = preload("res://scripts/world/river_banca.gd")
 const BantayRoute = preload("res://scripts/ai/bantay_route.gd")
 const BantayAwareness = preload("res://scripts/ai/bantay_awareness.gd")
 const AimPad = preload("res://scripts/ui/aim_pad.gd")
@@ -51,6 +52,7 @@ var apprentice_visual: Node3D
 var bantay_visual: Node3D
 var sun: DirectionalLight3D
 var river_surface: MeshInstance3D
+var river_boat: Node3D
 var bantay: CharacterBody3D
 var dog_guide = BantayRoute.new()
 var dog_awareness = BantayAwareness.new()
@@ -167,6 +169,7 @@ func _physics_process(delta: float) -> void:
 		var elder := get_node_or_null(LolaHut.NODE_NAME + "/Lola seated") as Node3D
 		FolkActors.animate_expression(elder, elapsed, speaking_role == "LOLA", preferences.reduced_motion)
 	camera_director.tick(camera, player, delta, preferences.reduced_motion)
+	RiverBanca.animate(river_boat, elapsed, preferences.reduced_motion)
 	elapsed += delta
 	if is_night and santelmo != null:
 		light_alarm = santelmo.update_behavior(delta, player.global_position, lamp_heading, focus_held)
@@ -230,7 +233,7 @@ func _create_world() -> void:
 	_box("Landing", Vector3(-7, 0.1, 9), Vector3(4.1, 0.3, 3.2), COLORS.wood, false)
 	for x in [-8.6, -7.0, -5.4]:
 		_box("Landing plank", Vector3(x, 0.28, 9), Vector3(0.13, 0.06, 3.0), Color(0.58, 0.38, 0.23), false)
-	_box("Boat hull", Vector3(-8.6, 0.15, 4.4), Vector3(1.5, 0.35, 2.7), Color(0.26, 0.16, 0.10), false)
+	river_boat = RiverBanca.build(self, Vector3(-8.6, 0.15, 4.4))
 	for x in [-19.0, -13.0, 13.0, 19.0]:
 		for z in [-18.0, -5.0, 14.0]:
 			_tree(Vector3(x, 0, z))

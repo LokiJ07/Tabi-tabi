@@ -65,5 +65,7 @@ jobs:
         run: godot --headless --path . --script res://tests/night01_camera_test.gd
       - name: Lightweight day and night ambience lighting
         run: godot --headless --path . --script res://tests/barrio_lighting_test.gd
+      - name: Original shaped river banca, outrigger and water motion
+        run: godot --headless --path . --script res://tests/river_banca_test.gd
       - name: Distinct Barrio Lawom environmental storytelling
         run: godot --headless --path . --script res://tests/barrio_details_test.gd
