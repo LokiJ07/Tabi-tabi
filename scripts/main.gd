@@ -13,6 +13,8 @@ const FolkActors = preload("res://scripts/visuals/folk_actors.gd")
 const SpeakerPortrait = preload("res://scripts/ui/speaker_portrait.gd")
 const ConversationPages = preload("res://scripts/narrative/conversation_pages.gd")
 const BarrioDetails = preload("res://scripts/world/barrio_details.gd")
+const CinematicCamera = preload("res://scripts/visuals/cinematic_camera.gd")
+const BarrioLighting = preload("res://scripts/visuals/barrio_lighting.gd")
 const BantayRoute = preload("res://scripts/ai/bantay_route.gd")
 const BantayAwareness = preload("res://scripts/ai/bantay_awareness.gd")
 const AimPad = preload("res://scripts/ui/aim_pad.gd")
@@ -59,6 +61,7 @@ var dog_warning_seconds := 0.0
 var dog_waypoints := PackedVector3Array()
 var dog_next_waypoint := 0
 var dog_repath_timer := 0.0
+var camera_director = CinematicCamera.new()
 var camera: Camera3D
 var lantern: SpotLight3D
 var info: Label
@@ -148,6 +151,10 @@ func _physics_process(delta: float) -> void:
 	_update_dog_warnings(delta)
 	_update_interact_hint()
 	FolkActors.animate_person(apprentice_visual, elapsed, desired.length() > 0.1)
+	var speaking_role := ""
+	if dialogue != null and dialogue.visible and not dialogue_pages.is_empty():
+		speaking_role = str(dialogue_pages[dialogue_page].get("speaker", ""))
+	FolkActors.animate_expression(apprentice_visual, elapsed, speaking_role == "APPRENTICE", preferences.reduced_motion)
 	for i in range(4):
 		var role: String = ["LOLA", "DADO", "SABEL", "MARA"][i]
 		var marker: Node3D = interaction_nodes.get(role) as Node3D
@@ -155,8 +162,11 @@ func _physics_process(delta: float) -> void:
 			var witness: Node3D = marker.get_node_or_null(role) as Node3D
 			if witness != null:
 				FolkActors.animate_person(witness, elapsed * 0.48 + float(i) * 2.3, false)
-	camera.global_position = camera.global_position.lerp(player.global_position + Vector3(12, 17, 12), 1.0 if preferences.reduced_motion else minf(1.0, delta * 4.0))
-	camera.look_at(player.global_position + Vector3(0, 0.7, 0))
+				FolkActors.animate_expression(witness, elapsed, role == speaking_role, preferences.reduced_motion)
+	if in_lola_hut:
+		var elder := get_node_or_null(LolaHut.NODE_NAME + "/Lola seated") as Node3D
+		FolkActors.animate_expression(elder, elapsed, speaking_role == "LOLA", preferences.reduced_motion)
+	camera_director.tick(camera, player, delta, preferences.reduced_motion)
 	elapsed += delta
 	if is_night and santelmo != null:
 		light_alarm = santelmo.update_behavior(delta, player.global_position, lamp_heading, focus_held)
@@ -455,6 +465,7 @@ func _create_lighting() -> void:
 	environment.environment = env
 	environment.name = "Environment"
 	add_child(environment)
+	BarrioLighting.apply(sun, environment, lantern, false)
 
 
 func _is_reading_ui() -> bool:
@@ -1037,7 +1048,9 @@ func _teleport_with_bantay(destination: Vector3) -> void:
 	bantay.velocity = Vector3.ZERO
 	dog_waypoints.clear()
 	dog_repath_timer = 0.0
-	camera.global_position = player.global_position + Vector3(12, 17, 12)
+	camera_director.reset()
+	camera.size = CinematicCamera.WORLD_SIZE
+	camera.global_position = player.global_position + CinematicCamera.DEFAULT_OFFSET
 	camera.look_at(player.global_position + Vector3(0, 0.7, 0))
 
 
@@ -1094,11 +1107,31 @@ func _render_dialogue_page() -> void:
 	dialogue_text.text = str(item.get("text", ""))
 	dialogue_portrait.call("set_speaker", role)
 	dialogue_portrait.set_process(not preferences.reduced_motion)
+	_frame_cinematic_speaker(role)
 	var color: Color = FolkActors.identity(role)["accent"] if role != "NARRATOR" else Color("#d7c69c")
 	dialogue_speaker.add_theme_color_override("font_color", color.lightened(0.15))
 	dialogue_next_button.text = "NEXT SPEAKER  >" if dialogue_page + 1 < dialogue_pages.size() else "CONTINUE / CLOSE"
 	var scroller := dialogue.get_node("DialogueLayout/DialogueScroll") as ScrollContainer
 	scroller.scroll_vertical = 0
+
+
+func _frame_cinematic_speaker(role: String) -> void:
+	# Frame the physical source rather than only swapping a portrait sprite.
+	# Story overlays still show the world above them.
+	var target: Node3D = null
+	if role == "LOLA" and in_lola_hut:
+		target = get_node_or_null(LolaHut.NODE_NAME + "/Lola seated") as Node3D
+	elif ["LOLA", "DADO", "MARA", "SABEL"].has(role):
+		target = interaction_nodes.get(role) as Node3D
+	elif role == "APPRENTICE" or role == "BANTAY":
+		target = player if role == "APPRENTICE" else bantay
+	elif role == "SANTELMO" and santelmo != null:
+		target = santelmo as Node3D
+	elif role == "NARRATOR" and is_night and santelmo != null:
+		target = santelmo as Node3D
+	else:
+		target = player
+	camera_director.focus_on(target, role)
 
 
 func _advance_dialogue() -> void:
@@ -1112,6 +1145,7 @@ func _advance_dialogue() -> void:
 
 
 func _close_dialogue() -> void:
+	camera_director.release()
 	if dialogue != null:
 		dialogue.hide()
 		dialogue.modulate.a = 1.0
@@ -1137,17 +1171,13 @@ func _toggle_night() -> void:
 		return
 	is_night = not is_night
 	living_sound.set_night(is_night)
-	lantern.light_energy = 4.5 if is_night else 0.0
+	BarrioLighting.apply(sun, get_node_or_null("Environment") as WorldEnvironment, lantern, is_night)
 	dog_awareness.reset()
 	dog_warning_label.text = ""
 	dog_warning_seconds = 0.0
-	sun.light_energy = 0.17 if is_night else 1.1
 	focus_held = false
 	light_alarm = 0.0
 	alarm_label.text = ""
-	var env_node := get_node_or_null("Environment") as WorldEnvironment
-	if env_node != null:
-		env_node.environment.background_color = Color(0.04, 0.10, 0.22) if is_night else Color(0.48, 0.68, 0.72)
 	if is_night and santelmo == null:
 		santelmo = SantelmoActor.new()
 		add_child(santelmo)
@@ -1304,14 +1334,10 @@ func _commit_night(result: String) -> void:
 		return
 	is_night = false
 	living_sound.set_night(false)
-	lantern.light_energy = 0
-	sun.light_energy = 1.1
+	BarrioLighting.apply(sun, get_node_or_null("Environment") as WorldEnvironment, lantern, false)
 	MorningAftermath.ensure(self, story.outcome)
 	if santelmo != null:
 		santelmo.visible = false
-	var env_node := get_node_or_null("Environment") as WorldEnvironment
-	if env_node != null:
-		env_node.environment.background_color = Color(0.48, 0.68, 0.72)
 	var line := ""
 	match result:
 		"resolve":

@@ -73,6 +73,7 @@ static func person(role: String, shirt: Color, trousers: Color) -> Node3D:
 	part(actor, "Head", "sphere", Vector3(0, 1.59, 0), Vector3(0.25, 0.28, 0.23), skin)
 	part(actor, "Hair", "sphere", Vector3(0, 1.79, 0.025), Vector3(0.264, 0.13, 0.235), hair)
 	part(actor, "Nose", "sphere", Vector3(0, 1.55, -0.235), Vector3(0.062, 0.084, 0.09), skin.darkened(0.11))
+	part(actor, "SpeakingMouth", "sphere", Vector3(0, 1.44, -0.218), Vector3(0.09, 0.025, 0.018), Color("#693f39"))
 	for side in [-1, 1]:
 		var label := "Left" if side < 0 else "Right"
 		part(actor, "Eye" + label, "sphere", Vector3(0.104 * side, 1.64, -0.217), Vector3(0.039, 0.04, 0.025), Color("#25221f"))
@@ -161,6 +162,33 @@ static func animate_person(actor: Node3D, time: float, moving: bool) -> void:
 		arm_l.rotation.x = -swing * 0.65
 	if arm_r != null:
 		arm_r.rotation.x = swing * 0.65
+
+
+static func animate_expression(actor: Node3D, time: float, speaking: bool, reduced_motion: bool = false) -> void:
+	# Lightweight procedural face acting: no extra 3D viewports or animation
+	# textures. This is stand-in acting until properly rigged characters arrive.
+	if actor == null:
+		return
+	var role: String = str(actor.get_meta("character_id", "RESIDENT"))
+	var offset: float = 0.7 if role == "LOLA" else 2.1 if role == "DADO" else 3.0 if role == "MARA" else 0.2
+	var blink: float = 1.0
+	if not reduced_motion and fposmod(time + offset, 4.8) < 0.13:
+		blink = 0.14
+	for label in ["EyeLeft", "EyeRight"]:
+		var eye := actor.get_node_or_null(label) as MeshInstance3D
+		if eye != null:
+			eye.scale = Vector3(0.039, 0.04 * blink, 0.025)
+	var mouth := actor.get_node_or_null("SpeakingMouth") as MeshInstance3D
+	if mouth != null:
+		var amount := 0.025
+		if speaking and not reduced_motion:
+			amount = 0.038 + 0.026 * absf(sin(time * 8.7))
+		elif speaking:
+			amount = 0.047
+		mouth.scale = Vector3(0.09, amount, 0.018)
+	var gesture := actor.get_node_or_null("ArmRight") as Node3D
+	if gesture != null:
+		gesture.rotation.z = 0.18 * sin(time * 2.1 + offset) if speaking and not reduced_motion else 0.0
 
 
 static func animate_dog(actor: Node3D, time: float, moving: bool, alert: bool) -> void:
