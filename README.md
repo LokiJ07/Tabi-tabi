@@ -2,9 +2,9 @@
 
 An offline Android isometric 3D folklore mystery-adventure set in the fictional Northern Mindanao-inspired **Barrio Lawom**.
 
-## Current playable development target
+## Current Night 1 QA milestone
 
-**Night 1 — The Light on the River (Santelmo)** is an *installable engineering prototype*, NOT a finished cinematic or production-ready vertical slice. There are seven nights in the approved master script, but the quality-first gate requires a validated Night 1 before creating Night 2 content.
+**Night 1 — The Light on the River (Santelmo)** is an *installable QA build*, NOT a finished cinematic or production-ready vertical slice. There are seven nights in the approved master script, but the quality-first gate requires a validated Night 1 before creating Night 2 content.
 
 **Direct Night 1 development APK:** [Download the latest GitHub prerelease APK](https://github.com/LokiJ07/Tabi-tabi/releases/download/night1-dev/tabi-tabi-night1-debug.apk)
 
@@ -41,7 +41,7 @@ An offline Android isometric 3D folklore mystery-adventure set in the fictional 
 4. Export Android debug APK; upload artifact and update rolling development prerelease if checks pass.
 5. After the planned production art/features, request uncoached real-device feedback and resolve blockers **before** advancing to Night 2.
 
-See [development gates](docs/QUALITY_GATES.md) for the master-script roadmap and remaining work.
+See [development gates](docs/QUALITY_GATES.md) and the [Night 1 go/no-go checklist](docs/NIGHT01_RELEASE_CANDIDATE_CHECKLIST.md) for the master-script test requirements. Android CI additionally attempts a real emulator install-and-launch smoke, which never replaces physical phone tests.
 
 ## Canon
 

@@ -49,6 +49,64 @@ jobs:
           export/android/java_sdk_path = "$JAVA_HOME"
           EOF
           cp "$HOME/.config/godot/editor_settings-4.tres" "$HOME/.config/godot/editor_settings-4.3.tres"
+      - name: Set monotonic Android QA version
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import os, re
+          path = Path("export_presets.cfg")
+          cfg = path.read_text()
+          run = int(os.environ["GITHUB_RUN_NUMBER"])
+          cfg = re.sub(r"(?m)^version/code=.*$", f"version/code={run}", cfg)
+          cfg = re.sub(r'(?m)^version/name=.*        run: godot --headless --editor --path . --import --quit
+      - name: Gate the preview on essential story and equipment tests
+        run: |
+          godot --headless --path . --script res://tests/night01_state_test.gd
+          godot --headless --path . --script res://tests/night01_inventory_test.gd
+          godot --headless --path . --script res://tests/preferences_test.gd
+          godot --headless --path . --script res://tests/night01_courage_test.gd
+          godot --headless --path . --script res://tests/night01_aftermath_test.gd
+          godot --headless --path . --script res://tests/night01_flow_test.gd
+          godot --headless --path . --script res://tests/night01_prologue_test.gd
+          godot --headless --path . --script res://tests/night01_save_recovery_test.gd
+          godot --headless --path . --script res://tests/night01_hud_test.gd
+          godot --headless --path . --script res://tests/living_ambience_test.gd
+          godot --headless --path . --script res://tests/night01_journal_test.gd
+      - name: Export debug APK
+        env:
+          GODOT_ANDROID_KEYSTORE_DEBUG_PATH: ${{ runner.temp }}/debug.keystore
+          GODOT_ANDROID_KEYSTORE_DEBUG_USER: androiddebugkey
+          GODOT_ANDROID_KEYSTORE_DEBUG_PASSWORD: android
+        run: |
+          mkdir -p build
+          godot --headless --path . --export-debug Android build/tabi-tabi-night1-debug.apk
+          test -s build/tabi-tabi-night1-debug.apk
+      - name: Verify APK manifest, signature and supported ABIs
+        run: |
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose build/tabi-tabi-night1-debug.apk
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging build/tabi-tabi-night1-debug.apk | head -n 5
+          unzip -Z1 build/tabi-tabi-night1-debug.apk | grep -Fqx "lib/arm64-v8a/libgodot_android.so"
+          unzip -Z1 build/tabi-tabi-night1-debug.apk | grep -Fqx "lib/x86_64/libgodot_android.so"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tabi-tabi-night1-debug-apk
+          path: build/tabi-tabi-night1-debug.apk
+          if-no-files-found: error
+          retention-days: 14
+      - name: Publish rolling Night 1 prerelease (direct APK URL)
+        if: github.ref == 'refs/heads/feature/night1-foundation'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if ! gh release view night1-dev >/dev/null 2>&1; then
+            gh release create night1-dev --target "$GITHUB_SHA" --prerelease --title "TABI-TABI — Night 1 Development Preview" --notes "Experimental Android ARM64 debug build. Not a completed game or production release. Use for evaluation only; each CI run uses a temporary signing key, so different APKs may require uninstalling."
+          fi
+          gh release upload night1-dev build/tabi-tabi-night1-debug.apk --clobber
+          echo "Direct APK: https://github.com/${GITHUB_REPOSITORY}/releases/download/night1-dev/tabi-tabi-night1-debug.apk"
+, f'version/name="0.9.0-night1-qa.{run}"', cfg)
+          path.write_text(cfg)
+          print("QA version", run)
+          PY
       - name: Import project
         run: godot --headless --editor --path . --import --quit
       - name: Gate the preview on essential story and equipment tests
@@ -89,3 +147,40 @@ jobs:
           fi
           gh release upload night1-dev build/tabi-tabi-night1-debug.apk --clobber
           echo "Direct APK: https://github.com/${GITHUB_REPOSITORY}/releases/download/night1-dev/tabi-tabi-night1-debug.apk"
+  emulator-smoke:
+    needs: android-debug
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: tabi-tabi-night1-debug-apk
+          path: build
+      - name: Enable Linux KVM acceleration
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Install and launch actual Android APK on emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          target: google_apis
+          profile: pixel_5
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none
+          script: |
+            set -e
+            PKG=org.tabitabi.nightone
+            adb install -r build/tabi-tabi-night1-debug.apk
+            adb logcat -c
+            adb shell monkey -p "$PKG" -c android.intent.category.LAUNCHER 1
+            sleep 15
+            adb shell pidof "$PKG" || { adb logcat -d -s AndroidRuntime:E Godot:E; exit 1; }
+            if adb logcat -d -s AndroidRuntime:E | grep -q "FATAL EXCEPTION"; then
+              adb logcat -d -s AndroidRuntime:E
+              exit 1
+            fi
+            echo "PASS: Android APK installed, launched and remained alive for 15 seconds"

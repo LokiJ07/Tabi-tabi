@@ -9,8 +9,8 @@ This is a non-spoiler implementation matrix aligned with Master Script & Develop
 | G2 Living hub | Playable temporary Lola-hut morning interior/prologue plus store/school blockout, ambient residents, Bantay path grid and alerts | Authored/interior and believable NPC activity; navigation QA |
 | G3 Story/investigation | Witness dialogue, 3 clues, 2 links, revisable theory, 4-slot preparation, offline save and accessibility prefs | True conditional dialogue, localized line IDs, full UI/learning experience, multi-aspect usability |
 | G4 Santelmo | State-driven phases, physical retreat cues, 2 reflected markers, **three-second player-guided lantern route to shore for Resolve**, Courage, cloth/water/bell actions, three outcomes, checkpoint, morning prop | Fair puzzle/gameplay real-device demonstration, cinematic and visibility QA |
-| G5 Cinematic/art | Engineering-only stand-ins | Approved rigs and animations, painterly environment, sound and polished cutscenes |
-| G6 Night 1 player validation | Headless full-flow and Android packaging; earlier user screenshot proves app launched | Uncoached testing, bug/pace feedback, stable real thumb controls, save/load and performance |
+| G5 Cinematic/art | Temporary procedural stand-ins plus offline synthesized ambience and source-aware notebook | Approved rigs and animations, painterly environment, sound and polished cutscenes |
+| G6 Night 1 player validation | Headless full-flow and Android packaging; Android emulator launch smoke is a new CI gate; earlier user screenshot proves an older APK launched | Uncoached testing, bug/pace feedback, stable real thumb controls, save/load and performance |
 | G7 Nights 2–5 | Not implemented | Distinct Kapre/Tikbalang/Manananggal/Sigbin gameplay with chapter-specific validation |
 | G8 Nights 6–7 + epilogue | Not implemented | Three historical reconstructions, Keeper trial, four endings, independent Lola arc |
 | G9 Release qualification | Not started | Full offline test matrix, accessibility/localization, cultural review, stable signing/update and credits |
