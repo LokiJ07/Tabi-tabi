@@ -22,6 +22,10 @@ var audio_button: Button
 var motion_button: Button
 var loading_cover: ColorRect
 var new_game_dialog: ConfirmationDialog
+# On Android DEBUG builds only, a fast three-tap upper-right QA gesture
+# allows CI to enter live gameplay independently of menu focus/ANR popups.
+var qa_corner_taps := 0
+var qa_last_tap_ms := 0
 
 func _ready() -> void:
 	prefs.load_from()
@@ -32,6 +36,30 @@ func _ready() -> void:
 	_build_settings()
 	_build_loading()
 	_build_confirmation()
+
+func _input(event: InputEvent) -> void:
+	# This deliberately does NOT exist in production APKs. The emulator
+	# automation can reliably enter gameplay without guessing rendered menu
+	# button coordinates or mistaking the Settings overlay for game content.
+	if not OS.has_feature("debug") or OS.get_name() != "Android":
+		return
+	if not (event is InputEventScreenTouch) or not event.pressed:
+		return
+	var dimensions := get_viewport().get_visible_rect().size
+	if event.position.x < dimensions.x * 0.91 or event.position.y > dimensions.y * 0.19:
+		qa_corner_taps = 0
+		return
+	var current_ms := Time.get_ticks_msec()
+	if current_ms - qa_last_tap_ms > 1800:
+		qa_corner_taps = 0
+	qa_last_tap_ms = current_ms
+	qa_corner_taps += 1
+	if qa_corner_taps >= 3:
+		qa_corner_taps = 0
+		print("NIGHT1_QA_DEBUG_SHORTCUT: entering gameplay")
+		_enter_game(true)
+		get_viewport().set_input_as_handled()
+
 
 func _draw() -> void:
 	if size.x <= 0 or size.y <= 0:
