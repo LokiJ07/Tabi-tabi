@@ -743,7 +743,7 @@ func _open_notebook() -> void:
 		return
 	motion = Vector2.ZERO
 	held_moves.clear()
-	var lines := "NIGHT 2: THE GIANT IN THE MANGO TREE\n"
+	var lines := "NIGHT 2: KAPRE — THE GIANT IN THE MANGO TREE\n"
 	lines += "Night 1 outcome: %s\n\n" % (story.night1_outcome if story.night1_outcome != "" else "unverified")
 	lines += "OBSERVED EVIDENCE (do not confuse with rumors):\n"
 	for id in KEY_ORDER:
