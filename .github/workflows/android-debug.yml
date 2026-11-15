@@ -3,6 +3,11 @@ on:
   workflow_dispatch:
   push:
     branches: ['feature/**']
+permissions:
+  contents: write
+concurrency:
+  group: night1-rolling-preview
+  cancel-in-progress: false
 jobs:
   android-debug:
     runs-on: ubuntu-latest
@@ -46,6 +51,11 @@ jobs:
           cp "$HOME/.config/godot/editor_settings-4.tres" "$HOME/.config/godot/editor_settings-4.3.tres"
       - name: Import project
         run: godot --headless --editor --path . --import --quit
+      - name: Gate the preview on essential story and equipment tests
+        run: |
+          godot --headless --path . --script res://tests/night01_state_test.gd
+          godot --headless --path . --script res://tests/night01_inventory_test.gd
+          godot --headless --path . --script res://tests/preferences_test.gd
       - name: Export debug APK
         env:
           GODOT_ANDROID_KEYSTORE_DEBUG_PATH: ${{ runner.temp }}/debug.keystore
@@ -61,3 +71,13 @@ jobs:
           path: build/tabi-tabi-night1-debug.apk
           if-no-files-found: error
           retention-days: 14
+      - name: Publish rolling Night 1 prerelease (direct APK URL)
+        if: github.ref == 'refs/heads/feature/night1-foundation'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if ! gh release view night1-dev >/dev/null 2>&1; then
+            gh release create night1-dev --target "$GITHUB_SHA" --prerelease --title "TABI-TABI — Night 1 Development Preview" --notes "Experimental Android ARM64 debug build. Not a completed game or production release. Use for evaluation only; each CI run uses a temporary signing key, so different APKs may require uninstalling."
+          fi
+          gh release upload night1-dev build/tabi-tabi-night1-debug.apk --clobber
+          echo "Direct APK: https://github.com/${GITHUB_REPOSITORY}/releases/download/night1-dev/tabi-tabi-night1-debug.apk"
