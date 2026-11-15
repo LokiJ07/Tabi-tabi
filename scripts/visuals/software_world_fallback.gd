@@ -184,12 +184,41 @@ func _draw_hut() -> void:
 		center + Vector3(4.4, .05, 3.9), center + Vector3(-4.4, .05, 3.9)], Color("#ad8960"))
 	draw_line(_screen(center + Vector3(-4.4, 1.6, -3.9)), _screen(center + Vector3(4.4, 1.6, -3.9)), Color("#634b39"), 15)
 	_art(NIPA, center + Vector3(0, 0.2, -3.93), 8.6, true, Color("#b9a183"))
-	_art(LOLA, center + Vector3(1.1, 0.12, -1.8), 1.6)
+	# Place every interactive prop at its ACTUAL LolaHut GDScript position,
+	# so a player using the software renderer can find/inspect prologue items.
+	var desk := center + Vector3(-2.65, 0.57, -2.25)
+	_quad(PATH, [desk + Vector3(-0.88, 0, -0.49), desk + Vector3(0.88, 0, -0.49),
+		desk + Vector3(0.88, 0, 0.49), desk + Vector3(-0.88, 0, 0.49)],
+		Color("#ae805b"))
+	var journal := PackedVector2Array([
+		_screen(center + Vector3(-2.96, 0.79, -2.47)),
+		_screen(center + Vector3(-2.32, 0.79, -2.47)),
+		_screen(center + Vector3(-2.32, 0.79, -2.02)),
+		_screen(center + Vector3(-2.96, 0.79, -2.02))])
+	draw_colored_polygon(journal, Color("#205c87"))
+	draw_polyline(PackedVector2Array([journal[0],journal[1],journal[2],journal[3],journal[0]]), Color("#a6daea"), 3.0)
+	var paper := _screen(center + Vector3(-2.61, 0.82, -2.25))
+	draw_circle(paper, maxf(3.0, _scale_units(.12)), Color("#f8e3b9"))
+	# Lola's separate breakfast table/cup remain distinct from the writing desk.
+	var breakfast := center + Vector3(1.25, 0.52, -0.65)
+	_quad(PATH, [breakfast + Vector3(-0.92, 0, -0.57), breakfast + Vector3(0.92, 0, -0.57),
+		breakfast + Vector3(0.92, 0, 0.57), breakfast + Vector3(-0.92, 0, 0.57)],
+		Color("#76513a"))
+	var cup := _screen(center + Vector3(1.45, 0.75, -0.35))
+	draw_circle(cup, maxf(4.0, _scale_units(.17)), Color("#f4dba9"))
+	draw_circle(cup, maxf(2.0, _scale_units(.085)), Color("#986b45"))
+	var frame := _screen(center + Vector3(2.75, 1.67, -3.75))
+	draw_rect(Rect2(frame - Vector2(_scale_units(.32), _scale_units(.24)), Vector2(_scale_units(.64),_scale_units(.48))), Color("#b18a5b"))
+	draw_rect(Rect2(frame - Vector2(_scale_units(.26), _scale_units(.18)), Vector2(_scale_units(.52),_scale_units(.36))), Color("#4a8585"))
+	# A warm woven mat and folded bedding make the room navigable at a glance.
+	_quad(PATH, [center + Vector3(-1.5, .06, -.9), center + Vector3(1.5,.06,-.9),
+		center + Vector3(1.5,.06,1.1), center + Vector3(-1.5,.06,1.1)], Color("#a96d4f"))
+	var sleep_at := center + Vector3(-2.6, .16, 1.0)
+	_quad(PATH, [sleep_at + Vector3(-.9,0,-1.22), sleep_at + Vector3(.9,0,-1.22),
+		sleep_at + Vector3(.9,0,1.22), sleep_at + Vector3(-.9,0,1.22)], Color("#725e49"))
+	_art(LOLA, center + Vector3(-0.35, 0.12, -2.8), 1.6)
 	_art(HERO, game.player.global_position + Vector3(0, -0.65, 0), 1.65)
 	_art(BANTAY, game.bantay.global_position + Vector3(0, -0.2, 0), 1.62)
-	for object_at in [center + Vector3(-1.5, .34, 1.1), center + Vector3(2.1, .34, 1.6)]:
-		var p := _screen(object_at)
-		draw_rect(Rect2(p - Vector2(_scale_units(.42), _scale_units(.18)), Vector2(_scale_units(.84), _scale_units(.36))), Color("#604a32"))
 
 func _draw() -> void:
 	if game == null or not is_instance_valid(game) or camera == null or not is_instance_valid(camera):
