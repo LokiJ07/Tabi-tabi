@@ -243,6 +243,25 @@ func _physics_process(delta: float) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	# Internal QA camera tour for ACTUAL Android screenshots, not a mockup.
+	# F6/F7/F8 are inaccessible from ordinary touch gameplay and exist only
+	# in debug APKs; they do not save or change canonical story decisions.
+	if OS.get_name() == "Android" and OS.has_feature("debug") and event is InputEventKey:
+		var key := event as InputEventKey
+		if key.pressed and not key.echo:
+			match key.keycode:
+				KEY_F6:
+					_qa_show_world_view(Vector3(2.0, 0.75, -4.0), false, "VILLAGE")
+					get_viewport().set_input_as_handled()
+					return
+				KEY_F7:
+					_qa_show_world_view(Vector3(-6.0, 0.75, 9.0), false, "SHORE")
+					get_viewport().set_input_as_handled()
+					return
+				KEY_F8:
+					_qa_show_world_view(Vector3(-7.0, 0.75, 12.0), true, "NIGHT")
+					get_viewport().set_input_as_handled()
+					return
 	if event.is_action_pressed("ui_accept"):
 		_interact()
 	if event.is_action_pressed("ui_focus_next"):
@@ -254,6 +273,28 @@ func _unhandled_input(event: InputEvent) -> void:
 		_close_notebook()
 		_close_prep()
 		_close_settings()
+
+
+func _qa_show_world_view(destination: Vector3, night_view: bool, label: String) -> void:
+	# QA-only inspection changes no save file or canonical investigation state.
+	_close_dialogue()
+	_close_notebook()
+	_close_prep()
+	_close_settings()
+	in_lola_hut = false
+	_teleport_with_bantay(destination)
+	is_night = night_view
+	living_sound.set_night(night_view)
+	BarrioLighting.apply(sun, get_node_or_null("Environment") as WorldEnvironment, lantern, night_view)
+	if night_view and santelmo == null:
+		santelmo = SantelmoActor.new()
+		add_child(santelmo)
+	if santelmo != null:
+		santelmo.visible = night_view
+		santelmo.set_encounter_phase(story.phase)
+	_refresh_choices()
+	_update_objective()
+	print("NIGHT1_QA_VIEW_" + label)
 
 
 func _create_world() -> void:
