@@ -154,6 +154,9 @@ jobs:
           path: |
             build/android-night1-title.png
             build/android-night1-launch.png
+            build/android-night1-village.png
+            build/android-night1-shore-dock.png
+            build/android-night1-night-river.png
             build/android-night1-notebook.png
             build/android-night1-notebook-scrolled.png
             build/android-night1-preparation.png
