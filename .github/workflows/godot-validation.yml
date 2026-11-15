@@ -29,3 +29,5 @@ jobs:
         run: godot --headless --path . --script res://tests/night01_state_test.gd
       - name: Santelmo actor and reflection regression tests
         run: godot --headless --path . --script res://tests/santelmo_actor_test.gd
+      - name: Procedural character animation smoke tests
+        run: godot --headless --path . --script res://tests/folk_actors_test.gd

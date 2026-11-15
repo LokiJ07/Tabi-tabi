@@ -4,6 +4,7 @@ extends Node3D
 
 const NightModel = preload("res://scripts/narrative/night01_state.gd")
 const SantelmoActor = preload("res://scripts/encounters/santelmo_actor.gd")
+const FolkActors = preload("res://scripts/visuals/folk_actors.gd")
 const AimPad = preload("res://scripts/ui/aim_pad.gd")
 const SaveService = preload("res://scripts/core/save_service.gd")
 const PLAYER_SPEED := 4.2
@@ -19,6 +20,10 @@ var story = NightModel.new()
 var choice_buttons: Array[Button] = []
 var stage_label: Label
 var player: CharacterBody3D
+var apprentice_visual: Node3D
+var bantay_visual: Node3D
+var sun: DirectionalLight3D
+var river_surface: MeshInstance3D
 var bantay: Node3D
 var camera: Camera3D
 var lantern: SpotLight3D
@@ -85,7 +90,9 @@ func _physics_process(delta: float) -> void:
 	if offset.length() > 2.3:
 		bantay.global_position += offset.normalized() * minf(delta * 3.5, offset.length() - 2.0)
 	if offset.length() > 0.1:
-		bantay.rotation.y = atan2(offset.x, offset.z)
+		bantay.rotation.y = atan2(-offset.x, -offset.z)
+	FolkActors.animate_person(apprentice_visual, elapsed, desired.length() > 0.1)
+	FolkActors.animate_dog(bantay_visual, elapsed, offset.length() > 2.3, is_night and player.global_position.x < -4.0)
 	camera.global_position = camera.global_position.lerp(player.global_position + Vector3(12, 17, 12), minf(1.0, delta * 4.0))
 	camera.look_at(player.global_position + Vector3(0, 0.7, 0))
 	elapsed += delta
@@ -97,7 +104,13 @@ func _physics_process(delta: float) -> void:
 		var villager := ambient_walkers[i]
 		villager.visible = not is_night
 		if not is_night:
-			villager.position.z = -4.0 + 0.7 * sin(elapsed * (0.4 + 0.13 * float(i)) + float(i) * 3.0)
+			villager.position.z = -4.0 - 2.0 * float(i) + 1.65 * sin(elapsed * (0.35 + 0.06 * float(i)) + float(i) * 3.0)
+			FolkActors.animate_person(villager, elapsed + float(i), true)
+			villager.rotation.y = PI if cos(elapsed * (0.35 + 0.06 * float(i)) + float(i) * 3.0) > 0 else 0
+	if river_surface != null:
+		var river_mat := river_surface.material_override as StandardMaterial3D
+		if river_mat != null:
+			river_mat.albedo_color = COLORS.river.lerp(Color(0.12, 0.42, 0.52), 0.5 + 0.5 * sin(elapsed * 1.2))
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -114,12 +127,19 @@ func _unhandled_input(event: InputEvent) -> void:
 func _create_world() -> void:
 	_box("Ground", Vector3(0, -0.35, 0), Vector3(46, 0.65, 46), COLORS.earth, true)
 	_box("Main footpath", Vector3(0, 0.015, 0), Vector3(5, 0.08, 38), COLORS.path, false)
-	_box("River", Vector3(-16, 0.02, 0), Vector3(12, 0.08, 46), COLORS.river, false)
+	river_surface = _box("River", Vector3(-16, 0.02, 0), Vector3(12, 0.08, 46), COLORS.river, false) as MeshInstance3D
+	for z in [4.0, 11.0, 18.0]:
+		_box("Reed", Vector3(-9.1, 0.4, z), Vector3(0.13, 0.7, 0.11), Color(0.43, 0.53, 0.26), false)
+	for z in [-16.0, -10.0, 0.0, 7.0, 15.0]:
+		_box("River shimmer", Vector3(-15.0, 0.08, z), Vector3(4.3, 0.025, 0.12), Color(0.22, 0.59, 0.61), false)
 	_box("River bank safety fence", Vector3(-9.7, 0.5, 0), Vector3(0.25, 1.0, 35), COLORS.wood, true)
 	_house(Vector3(6, 0, 5), "Lola's hut")
 	_house(Vector3(7, 0, -8), "Sabel's store")
 	_house(Vector3(-2, 0, -12), "School")
 	_box("Landing", Vector3(-7, 0.1, 9), Vector3(4.1, 0.3, 3.2), COLORS.wood, false)
+	for x in [-8.6, -7.0, -5.4]:
+		_box("Landing plank", Vector3(x, 0.28, 9), Vector3(0.13, 0.06, 3.0), Color(0.58, 0.38, 0.23), false)
+	_box("Boat hull", Vector3(-8.6, 0.15, 4.4), Vector3(1.5, 0.35, 2.7), Color(0.26, 0.16, 0.10), false)
 	for x in [-19.0, -13.0, 13.0, 19.0]:
 		for z in [-18.0, -5.0, 14.0]:
 			_tree(Vector3(x, 0, z))
@@ -191,44 +211,25 @@ func _marker(key: String, pos: Vector3, color: Color) -> void:
 
 
 func _create_ambient_walkers() -> void:
-	# Low-cost sample NPC routines. These remain temporary geometry.
-	for i in range(2):
-		var villager := Node3D.new()
-		villager.name = "AmbientResident_%d" % i
-		villager.position = Vector3(1.0 + float(i) * 2.0, 0.65, -4.0)
-		var mesh := MeshInstance3D.new()
-		var shape := CapsuleMesh.new()
-		shape.radius = 0.25
-		shape.height = 1.25
-		mesh.mesh = shape
-		var mat := StandardMaterial3D.new()
-		mat.albedo_color = Color(0.64 + 0.13 * i, 0.52, 0.37 + 0.12 * i)
-		mesh.material_override = mat
-		villager.add_child(mesh)
-		add_child(villager)
-		ambient_walkers.append(villager)
-
+	for i in range(3):
+		var resident := FolkActors.person("Resident_%d" % i, Color(0.41 + 0.13 * i, 0.43, 0.39 + 0.06 * i), Color(0.29, 0.27 + 0.09 * i, 0.25))
+		resident.position = Vector3(1.0 + float(i) * 1.5, 0.0, -4.0 - 2.0 * float(i))
+		add_child(resident)
+		ambient_walkers.append(resident)
 
 func _create_player() -> void:
 	player = CharacterBody3D.new()
 	player.name = "Apprentice"
-	player.position = Vector3(0, 0.45, 2)
+	player.position = Vector3(0, 0.75, 2)
 	var shape := CollisionShape3D.new()
 	var capsule := CapsuleShape3D.new()
 	capsule.radius = 0.35
 	capsule.height = 1.5
 	shape.shape = capsule
 	player.add_child(shape)
-	var body := MeshInstance3D.new()
-	var mesh := CapsuleMesh.new()
-	mesh.radius = 0.35
-	mesh.height = 1.5
-	body.mesh = mesh
-	body.position.y = 0.35
-	var mat := StandardMaterial3D.new()
-	mat.albedo_color = Color(0.88, 0.73, 0.42)
-	body.material_override = mat
-	player.add_child(body)
+	apprentice_visual = FolkActors.person("Apprentice", Color(0.72, 0.50, 0.25), Color(0.26, 0.31, 0.34))
+	apprentice_visual.position.y = -0.75
+	player.add_child(apprentice_visual)
 	add_child(player)
 
 
@@ -236,16 +237,9 @@ func _create_bantay() -> void:
 	bantay = Node3D.new()
 	bantay.name = "Bantay (prototype)"
 	bantay.position = Vector3(1.6, 0.55, 2.1)
-	var dog := MeshInstance3D.new()
-	var mesh := CapsuleMesh.new()
-	mesh.radius = 0.27
-	mesh.height = 0.9
-	dog.mesh = mesh
-	dog.rotation.x = PI / 2
-	var mat := StandardMaterial3D.new()
-	mat.albedo_color = Color(0.75, 0.51, 0.28)
-	dog.material_override = mat
-	bantay.add_child(dog)
+	bantay_visual = FolkActors.dog()
+	bantay_visual.position.y = -0.55
+	bantay.add_child(bantay_visual)
 	add_child(bantay)
 
 
@@ -259,11 +253,11 @@ func _create_camera() -> void:
 
 
 func _create_lighting() -> void:
-	var sunlight := DirectionalLight3D.new()
-	sunlight.name = "Sun"
-	sunlight.rotation_degrees = Vector3(-55, -25, 0)
-	sunlight.light_energy = 1.1
-	add_child(sunlight)
+	sun = DirectionalLight3D.new()
+	sun.name = "Sun"
+	sun.rotation_degrees = Vector3(-55, -25, 0)
+	sun.light_energy = 1.1
+	add_child(sun)
 	lantern = SpotLight3D.new()
 	lantern.name = "Lantern prototype"
 	lantern.position = Vector3(0.3, 1.4, -0.4)
@@ -470,6 +464,7 @@ func _toggle_night() -> void:
 		return
 	is_night = not is_night
 	lantern.light_energy = 4.5 if is_night else 0.0
+	sun.light_energy = 0.17 if is_night else 1.1
 	focus_held = false
 	light_alarm = 0.0
 	alarm_label.text = ""
@@ -582,6 +577,7 @@ func _commit_night(result: String) -> void:
 		return
 	is_night = false
 	lantern.light_energy = 0
+	sun.light_energy = 1.1
 	if santelmo != null:
 		santelmo.visible = false
 	var env_node := get_node_or_null("Environment") as WorldEnvironment
