@@ -14,6 +14,10 @@ const SpeakerPortrait = preload("res://scripts/ui/speaker_portrait.gd")
 const ConversationPages = preload("res://scripts/narrative/conversation_pages.gd")
 const BarrioDetails = preload("res://scripts/world/barrio_details.gd")
 const EnvironmentPolish = preload("res://scripts/world/environment_polish.gd")
+const IllustratedBarrio = preload("res://scripts/world/illustrated_barrio.gd")
+const SOIL_ART: Texture2D = preload("res://assets/world/soil_ground.svg")
+const PATH_ART: Texture2D = preload("res://assets/world/earthen_path.svg")
+const WATER_ART: Texture2D = preload("res://assets/world/tidal_water.svg")
 const Mangrove = preload("res://scripts/world/mangrove.gd")
 const CinematicCamera = preload("res://scripts/visuals/cinematic_camera.gd")
 const BarrioLighting = preload("res://scripts/visuals/barrio_lighting.gd")
@@ -209,7 +213,7 @@ func _physics_process(delta: float) -> void:
 	if river_surface != null and not preferences.reduced_motion:
 		var river_mat := river_surface.material_override as StandardMaterial3D
 		if river_mat != null:
-			river_mat.albedo_color = COLORS.river.lerp(Color(0.12, 0.42, 0.52), 0.5 + 0.5 * sin(elapsed * 1.2))
+			river_mat.albedo_color = Color.WHITE.lerp(Color("#cde1d6"), 0.12 + 0.08 * sin(elapsed * 1.2))
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -254,7 +258,9 @@ func _create_world() -> void:
 				Mangrove.build(self, Vector3(x, -0.04, z), mangrove_index)
 				mangrove_index += 1
 			else:
-				_tree(Vector3(x, 0, z))
+				# Inland tree spheres retired: authored banana and garden cutouts
+				# in IllustratedBarrio now cover these spots without path obstacles.
+				pass
 	for z in [-12.0, 1.0]:
 		Mangrove.build(self, Vector3(-11.75, -0.04, z), mangrove_index)
 		mangrove_index += 1
@@ -274,6 +280,7 @@ func _create_world() -> void:
 		interaction_nodes[key] = room_interactions[key]
 	BarrioDetails.decorate(self)
 	EnvironmentPolish.decorate(self)
+	IllustratedBarrio.decorate(self)
 
 
 func _box(name: String, pos: Vector3, size: Vector3, color: Color, solid: bool) -> Node3D:
@@ -284,6 +291,23 @@ func _box(name: String, pos: Vector3, size: Vector3, color: Color, solid: bool) 
 	mesh.mesh = shape
 	var material := StandardMaterial3D.new()
 	material.albedo_color = color
+	material.roughness = 0.93
+	# Textured terrain is a deliberate art asset, not giant single-color boxes.
+	# UV repeats keep ground details readable at the game's orthographic zoom.
+	match name:
+		"Ground":
+			material.albedo_texture = SOIL_ART
+			material.albedo_color = Color.WHITE
+			material.uv1_scale = Vector3(9.0, 1.0, 9.0)
+		"Main footpath":
+			material.albedo_texture = PATH_ART
+			material.albedo_color = Color.WHITE
+			material.uv1_scale = Vector3(1.0, 1.0, 8.0)
+		"River":
+			material.albedo_texture = WATER_ART
+			material.albedo_color = Color.WHITE
+			material.metallic = 0.12
+			material.uv1_scale = Vector3(2.0, 1.0, 8.0)
 	mesh.material_override = material
 	mesh.position = pos
 	add_child(mesh)
