@@ -41,6 +41,10 @@ var info: Label
 var objective: Label
 var dialogue: PanelContainer
 var dialogue_text: Label
+var notebook_panel: PanelContainer
+var notebook_body: Label
+var notebook_guide: Button
+var notebook_chase: Button
 var touch_axes := Vector2.ZERO
 var focus_held := false
 var manual_aim := Vector2.ZERO
@@ -126,6 +130,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		focus_held = false
 	if event.is_action_pressed("ui_cancel"):
 		_close_dialogue()
+		_close_notebook()
 
 
 func _create_world() -> void:
@@ -357,12 +362,12 @@ func _create_ui() -> void:
 	canvas.add_child(root)
 	info = Label.new()
 	info.position = Vector2(25, 16)
-	info.text = "TABI-TABI  •  NIGHT 1 FOUNDATION"
+	info.text = "TABI-TABI  •  BARRIO LAWOM"
 	info.add_theme_font_size_override("font_size", 24)
 	root.add_child(info)
 	objective = Label.new()
 	objective.position = Vector2(25, 56)
-	objective.add_theme_font_size_override("font_size", 18)
+	objective.add_theme_font_size_override("font_size", 22)
 	root.add_child(objective)
 	_make_button(root, "◀", Vector2(20, 575), Vector2(70, 65), func(): _set_button_axis("left", true), func(): _set_button_axis("left", false))
 	_make_button(root, "▶", Vector2(170, 575), Vector2(70, 65), func(): _set_button_axis("right", true), func(): _set_button_axis("right", false))
@@ -393,7 +398,7 @@ func _create_ui() -> void:
 	root.add_child(dog_warning_label)
 	stage_label = Label.new()
 	stage_label.position = Vector2(25, 125)
-	stage_label.add_theme_font_size_override("font_size", 19)
+	stage_label.add_theme_font_size_override("font_size", 20)
 	root.add_child(stage_label)
 	for i in range(3):
 		var index := i
@@ -416,19 +421,56 @@ func _create_ui() -> void:
 	alarm_label.add_theme_font_size_override("font_size", 18)
 	root.add_child(alarm_label)
 	dialogue = PanelContainer.new()
-	dialogue.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
-	dialogue.offset_left = -350
-	dialogue.offset_right = 350
-	dialogue.offset_top = -180
-	dialogue.offset_bottom = -35
-	dialogue.custom_minimum_size = Vector2(700, 145)
+	dialogue.anchor_left = 0.24
+	dialogue.anchor_right = 0.76
+	dialogue.anchor_top = 0.14
+	dialogue.anchor_bottom = 0.14
+	dialogue.offset_bottom = 165
 	root.add_child(dialogue)
 	dialogue_text = Label.new()
-	dialogue_text.custom_minimum_size = Vector2(680, 125)
 	dialogue_text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	dialogue_text.add_theme_font_size_override("font_size", 23)
+	dialogue_text.add_theme_font_size_override("font_size", 22)
+	dialogue_text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	dialogue.add_child(dialogue_text)
 	dialogue.hide()
+	notebook_panel = PanelContainer.new()
+	notebook_panel.anchor_left = 0.26
+	notebook_panel.anchor_right = 0.74
+	notebook_panel.anchor_top = 0.14
+	notebook_panel.anchor_bottom = 0.14
+	notebook_panel.offset_bottom = 325
+	root.add_child(notebook_panel)
+	var stack := VBoxContainer.new()
+	stack.add_theme_constant_override("separation", 10)
+	notebook_panel.add_child(stack)
+	var title := Label.new()
+	title.text = "FIELD NOTEBOOK  |  NIGHT 1"
+	title.add_theme_font_size_override("font_size", 25)
+	stack.add_child(title)
+	notebook_body = Label.new()
+	notebook_body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	notebook_body.add_theme_font_size_override("font_size", 21)
+	notebook_body.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	stack.add_child(notebook_body)
+	var theory_row := HBoxContainer.new()
+	theory_row.add_theme_constant_override("separation", 10)
+	stack.add_child(theory_row)
+	notebook_guide = Button.new()
+	notebook_guide.text = "GUIDE GENTLY"
+	notebook_guide.custom_minimum_size = Vector2(170, 48)
+	notebook_guide.pressed.connect(func(): _select_theory("guide"))
+	theory_row.add_child(notebook_guide)
+	notebook_chase = Button.new()
+	notebook_chase.text = "CHASE AWAY"
+	notebook_chase.custom_minimum_size = Vector2(170, 48)
+	notebook_chase.pressed.connect(func(): _select_theory("chase"))
+	theory_row.add_child(notebook_chase)
+	var close_button := Button.new()
+	close_button.text = "CLOSE NOTEBOOK"
+	close_button.custom_minimum_size = Vector2(200, 48)
+	close_button.pressed.connect(_close_notebook)
+	stack.add_child(close_button)
+	notebook_panel.hide()
 
 
 func _make_button(parent: Control, title: String, pos: Vector2, size: Vector2, down: Callable, up: Callable) -> void:
@@ -475,6 +517,9 @@ func _set_button_axis(direction: String, active: bool) -> void:
 
 
 func _interact() -> void:
+	if notebook_panel.visible:
+		_close_notebook()
+		return
 	if dialogue.visible:
 		_close_dialogue()
 		return
@@ -521,7 +566,8 @@ func _interact() -> void:
 
 
 func _show_dialogue(value: String) -> void:
-	dialogue_text.text = value + "\n\n[INTERACT or ENTER to close]"
+	_close_notebook()
+	dialogue_text.text = value + "\n\n[INTERACT to close]"
 	dialogue.show()
 
 
@@ -672,25 +718,41 @@ func _commit_night(result: String) -> void:
 
 
 func _open_notebook() -> void:
-	var found: Array[String] = []
+	if notebook_panel.visible:
+		_close_notebook()
+		return
+	_close_dialogue()
+	notebook_panel.show()
+	_refresh_notebook()
+
+
+func _refresh_notebook() -> void:
+	var lines: Array[String] = []
 	if story.clues.has("light_retreat"):
-		found.append("Dado reports the light retreats when stared at.")
+		lines.append("DADO | Light retreats when stared at.")
 	if story.clues.has("old_mooring"):
-		found.append("The light returns to an old safe mooring.")
+		lines.append("MOORING | Worn rope at the river.")
 	if story.clues.has("boatman_name"):
-		found.append("Mara's records name boatman Mang Celso.")
-	if found.is_empty():
-		found.append("No established signs yet. Speak with the residents.")
-	var hypothesis_line := "Guide gently" if story.hypothesis == "guide" else "Chase away" if story.hypothesis == "chase" else "Unknown"
-	_show_dialogue("NOTEBOOK  •  " + "\n".join(found) + "\nPrivate theory: " + hypothesis_line + "\nTap NOTEBOOK again later to revise your theory.")
-	# The theory is deliberately private and never changes social trust.
-	if story.hypothesis == "":
-		story.choose_hypothesis("chase")
-	elif story.hypothesis == "chase":
-		story.choose_hypothesis("guide")
-	else:
-		story.choose_hypothesis("chase")
-	_refresh_choices()
+		lines.append("MARA | Ledger names Mang Celso.")
+	if lines.is_empty():
+		lines.append("No clues yet. Speak to residents and inspect the old mooring.")
+	var theory_name := "Guide gently" if story.hypothesis == "guide" else "Chase away" if story.hypothesis == "chase" else "Undecided"
+	notebook_body.text = "\n".join(lines) + "\n\nPRIVATE THEORY: " + theory_name
+	notebook_guide.disabled = story.outcome != ""
+	notebook_chase.disabled = story.outcome != ""
+
+
+func _select_theory(value: String) -> void:
+	if story.outcome != "":
+		return
+	story.choose_hypothesis(value)
+	_save_story_silent()
+	_refresh_notebook()
+
+
+func _close_notebook() -> void:
+	if notebook_panel != null:
+		notebook_panel.hide()
 
 
 func _save_story_silent() -> void:
