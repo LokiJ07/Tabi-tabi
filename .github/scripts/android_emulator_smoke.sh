@@ -85,15 +85,17 @@ fi
 # left a white SYSTEM popup over the correctly-rendering Lola dialogue.
 adb shell input tap 1690 520 || true
 sleep 2
-# Closing the first Lola dialogue makes the WORLD readable in the screenshot.
-# Escape (ui_cancel) followed by the actual dialogue footer button covers
-# both keyboard and touchscreen handling and permits a short dialogue chain.
-adb shell input keyevent 4 || true
-sleep 1
+# Use ONLY the in-game dialogue footer to advance Lola's prologue.
+# Android's physical BACK key exited Godot to the launcher, so the old visual
+# checker captured the phone home screen rather than the playable world.
 for i in 1 2 3; do
   adb shell input tap 1160 956 || true
   sleep 1
 done
+# Assert the game is still foreground before any screenshot acceptance.
+# On emulators where dumpsys text formats differ, the pixel check below
+# remains the mandatory visual gate.
+adb shell dumpsys activity activities | grep -E 'mResumedActivity|topResumedActivity' | tail -n 4 > build/android-foreground.txt || true
 adb exec-out screencap -p > build/android-night1-launch.png
 adb shell wm size > build/android-display.txt || true
 adb logcat -d -v brief | grep -Ei 'Godot|EGL|OpenGL|Vulkan|swiftshader|Renderer|SceneShaderGLES3|NIGHT1_QA' | tail -n 300 > build/android-godot-renderer-log.txt || true
