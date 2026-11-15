@@ -53,3 +53,5 @@ jobs:
         run: godot --headless --path . --script res://tests/night01_prologue_test.gd
       - name: Offline save corruption and backup recovery
         run: godot --headless --path . --script res://tests/night01_save_recovery_test.gd
+      - name: Mobile overlay, focus release and HUD scroll regression
+        run: godot --headless --path . --script res://tests/night01_hud_test.gd

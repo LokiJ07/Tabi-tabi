@@ -104,6 +104,8 @@ func _physics_process(delta: float) -> void:
 	if player == null:
 		return
 	var axis := Input.get_vector("ui_left", "ui_right", "ui_up", "ui_down")
+	if _is_reading_ui():
+		axis = Vector2.ZERO
 	axis += touch_axes
 	axis = axis.limit_length()
 	var forward := Vector3(-1, 0, -1).normalized()
@@ -427,6 +429,17 @@ func _create_lighting() -> void:
 	add_child(environment)
 
 
+func _is_reading_ui() -> bool:
+	return (dialogue != null and dialogue.visible) or (notebook_panel != null and notebook_panel.visible) or (prep_panel != null and prep_panel.visible) or (settings_panel != null and settings_panel.visible)
+
+
+func _clear_touch_input() -> void:
+	focus_held = false
+	manual_aim = Vector2.ZERO
+	touch_axes = Vector2.ZERO
+	move_buttons.clear()
+
+
 func _create_ui() -> void:
 	var canvas := CanvasLayer.new()
 	canvas.name = "HUD"
@@ -443,6 +456,8 @@ func _create_ui() -> void:
 	objective = Label.new()
 	objective.position = Vector2(25, 56)
 	objective.add_theme_font_size_override("font_size", 22)
+	objective.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	objective.size = Vector2(760, 65)
 	root.add_child(objective)
 	_make_button(root, "◀", Vector2(20, 575), Vector2(70, 65), func(): _set_button_axis("left", true), func(): _set_button_axis("left", false))
 	_make_button(root, "▶", Vector2(170, 575), Vector2(70, 65), func(): _set_button_axis("right", true), func(): _set_button_axis("right", false))
@@ -518,6 +533,8 @@ func _create_ui() -> void:
 	dialogue.anchor_top = 0.14
 	dialogue.anchor_bottom = 0.14
 	dialogue.offset_bottom = 205
+	dialogue.name = "DialoguePanel"
+	dialogue.mouse_filter = Control.MOUSE_FILTER_STOP
 	root.add_child(dialogue)
 	dialogue_text = Label.new()
 	dialogue_text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -528,13 +545,21 @@ func _create_ui() -> void:
 	notebook_panel = PanelContainer.new()
 	notebook_panel.anchor_left = 0.26
 	notebook_panel.anchor_right = 0.74
-	notebook_panel.anchor_top = 0.14
-	notebook_panel.anchor_bottom = 0.14
-	notebook_panel.offset_bottom = 395
+	notebook_panel.name = "NotebookPanel"
+	notebook_panel.anchor_top = 0.09
+	notebook_panel.anchor_bottom = 0.84
+	notebook_panel.offset_top = 0
+	notebook_panel.offset_bottom = 0
 	root.add_child(notebook_panel)
 	var stack := VBoxContainer.new()
 	stack.add_theme_constant_override("separation", 10)
-	notebook_panel.add_child(stack)
+	var notebook_scroll := ScrollContainer.new()
+	notebook_scroll.name = "NotebookScroll"
+	notebook_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	notebook_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	notebook_scroll.follow_focus = true
+	notebook_panel.add_child(notebook_scroll)
+	notebook_scroll.add_child(stack)
 	var title := Label.new()
 	title.text = "FIELD NOTEBOOK  |  NIGHT 1"
 	title.add_theme_font_size_override("font_size", 25)
@@ -581,13 +606,21 @@ func _create_ui() -> void:
 	prep_panel = PanelContainer.new()
 	prep_panel.anchor_left = 0.23
 	prep_panel.anchor_right = 0.77
+	prep_panel.name = "PreparationPanel"
 	prep_panel.anchor_top = 0.08
-	prep_panel.anchor_bottom = 0.08
-	prep_panel.offset_bottom = 555
+	prep_panel.anchor_bottom = 0.88
+	prep_panel.offset_top = 0
+	prep_panel.offset_bottom = 0
 	root.add_child(prep_panel)
 	var kit_stack := VBoxContainer.new()
 	kit_stack.add_theme_constant_override("separation", 8)
-	prep_panel.add_child(kit_stack)
+	var kit_scroll := ScrollContainer.new()
+	kit_scroll.name = "PreparationScroll"
+	kit_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	kit_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	kit_scroll.follow_focus = true
+	prep_panel.add_child(kit_scroll)
+	kit_scroll.add_child(kit_stack)
 	var kit_title := Label.new()
 	kit_title.text = "RIVER PREPARATION | CHOOSE FOUR"
 	kit_title.add_theme_font_size_override("font_size", 24)
@@ -627,13 +660,21 @@ func _create_ui() -> void:
 	settings_panel = PanelContainer.new()
 	settings_panel.anchor_left = 0.27
 	settings_panel.anchor_right = 0.73
-	settings_panel.anchor_top = 0.18
-	settings_panel.anchor_bottom = 0.18
-	settings_panel.offset_bottom = 365
+	settings_panel.name = "SettingsPanel"
+	settings_panel.anchor_top = 0.15
+	settings_panel.anchor_bottom = 0.83
+	settings_panel.offset_top = 0
+	settings_panel.offset_bottom = 0
 	root.add_child(settings_panel)
 	var options_stack := VBoxContainer.new()
 	options_stack.add_theme_constant_override("separation", 13)
-	settings_panel.add_child(options_stack)
+	var settings_scroll := ScrollContainer.new()
+	settings_scroll.name = "SettingsScroll"
+	settings_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	settings_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	settings_scroll.follow_focus = true
+	settings_panel.add_child(settings_scroll)
+	settings_scroll.add_child(options_stack)
 	var options_heading := Label.new()
 	options_heading.text = "ACCESSIBILITY / GAME OPTIONS"
 	options_heading.add_theme_font_size_override("font_size", 23)
@@ -658,7 +699,6 @@ func _create_ui() -> void:
 	pref_assist_button.custom_minimum_size = Vector2(360, 50)
 	pref_assist_button.pressed.connect(_toggle_story_assist)
 	options_stack.add_child(pref_assist_button)
-	settings_panel.offset_bottom = 435
 	var exit_options := Button.new()
 	exit_options.text = "CLOSE OPTIONS"
 	exit_options.custom_minimum_size = Vector2(360, 50)
@@ -835,6 +875,7 @@ func _interact_lola_hut(id: String) -> void:
 
 
 func _show_dialogue(value: String) -> void:
+	_clear_touch_input()
 	_close_notebook()
 	_close_prep()
 	_close_settings()
@@ -1050,6 +1091,7 @@ func _commit_night(result: String) -> void:
 
 
 func _open_settings() -> void:
+	_clear_touch_input()
 	_close_dialogue()
 	_close_notebook()
 	_close_prep()
@@ -1122,6 +1164,7 @@ func _toggle_story_assist() -> void:
 
 
 func _open_prep() -> void:
+	_clear_touch_input()
 	_close_dialogue()
 	_close_notebook()
 	_close_settings()
@@ -1165,6 +1208,7 @@ func _toggle_kit_item(id: String) -> void:
 
 
 func _open_notebook() -> void:
+	_clear_touch_input()
 	_close_settings()
 	_close_prep()
 	if notebook_panel.visible:
