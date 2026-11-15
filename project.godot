@@ -1,0 +1,24 @@
+; Engine configuration file.
+; TABI-TABI / G0-G1 foundation
+config_version=5
+
+[application]
+config/name="TABI-TABI"
+run/main_scene="res://scenes/main.tscn"
+config/features=PackedStringArray("4.3", "GL Compatibility")
+config/description="Barrio Lawom — Night 1 vertical slice"
+
+[display]
+window/size/viewport_width=1280
+window/size/viewport_height=720
+window/stretch/mode="canvas_items"
+window/handheld/orientation=6
+
+[rendering]
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
+textures/default_filters/use_nearest_mipmap_filter=false
+environment/defaults/default_clear_color=Color(0.18, 0.26, 0.27, 1)
+
+[physics]
+3d/default_gravity=24.0

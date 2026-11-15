@@ -1,0 +1,21 @@
+name: Godot project validation
+on:
+  push:
+    branches: [main, 'feature/**']
+  pull_request:
+  workflow_dispatch:
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Godot 4.3 headless
+        run: |
+          curl -fL --retry 3 -o godot.zip "https://github.com/godotengine/godot-builds/releases/download/4.3-stable/Godot_v4.3-stable_linux.x86_64.zip"
+          unzip -q godot.zip
+          chmod +x Godot_v4.3-stable_linux.x86_64
+          sudo mv Godot_v4.3-stable_linux.x86_64 /usr/local/bin/godot
+      - name: Import resources and validate GDScript
+        run: godot --headless --editor --path . --import --quit
+      - name: Scene smoke test
+        run: godot --headless --path . --quit-after 20
