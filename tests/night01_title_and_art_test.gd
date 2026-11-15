@@ -19,6 +19,9 @@ func _run() -> void:
 	await process_frame
 	check(title.get_node_or_null("MainMenu") != null, "title has real tappable main menu")
 	check(title.get_node_or_null("TitleWordmark") != null, "title wordmark in scene")
+	for detail in ["MangroveAtDusk", "SchoolhouseAtDusk", "MarketAtDusk", "ApprenticeAtDusk", "BantayAtDusk"]:
+		var art := title.get_node_or_null("IllustratedTitleScene/" + detail) as TextureRect
+		check(art != null and art.texture != null, "main menu uses same imported game art: " + detail)
 	check(title.get_node_or_null("LoadingScreen") != null, "scene has a blocking loading state")
 	check(title.continue_button.disabled == not title._has_save(), "continue enabled only for existing save")
 	title._open_settings()
