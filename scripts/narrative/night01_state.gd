@@ -217,7 +217,10 @@ func from_dict(raw: Dictionary) -> bool:
 		return false
 	if restored_result != "" and restored_phase != 4:
 		return false
-	var input_clues: Dictionary = raw.get("clues", {})
+	var input_clues: Variant = raw.get("clues", {})
+	var input_people: Variant = raw.get("seen_people", {})
+	if typeof(input_clues) != TYPE_DICTIONARY or typeof(input_people) != TYPE_DICTIONARY:
+		return false
 	clues.clear()
 	for id in REQUIRED:
 		if input_clues.get(id, false) == true:
@@ -240,7 +243,7 @@ func from_dict(raw: Dictionary) -> bool:
 	committed_events = {}
 	if outcome != "":
 		committed_events["n1_santelmo_" + outcome] = true
-	seen_people = raw.get("seen_people", {}).duplicate(true)
+	seen_people = input_people.duplicate(true)
 	prologue_flags = {}
 	var intro: Variant = raw.get("prologue_flags", null)
 	if typeof(intro) == TYPE_DICTIONARY:

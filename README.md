@@ -14,11 +14,11 @@ An offline Android isometric 3D folklore mystery-adventure set in the fictional 
 
 ## Present in the feature branch
 
-- Procedural Barrio Lawom blockout, safe riverbank collision, houses/store/school/landing, a boat and simple resident routines.
+- Procedural Barrio Lawom blockout, explorable morning interior of Lola’s hut with interactive notebook/cup/photo and physical door transition, safe riverbank collision, store/school/landing, a boat and simple resident routines.
 - Isometric camera; touch movement and independent lantern Focus; temporary Apprentice/Bantay silhouettes, gait and awareness.
 - Evidence notebook, contextual witness interviews, two clue links and a private revisable theory.
 - Four-slot supply preparation; cloth-wrap lantern calming, signal-bell defensive choice, single-use water recovery.
-- Reactive Santelmo, reflection puzzle with proximity check, Courage pressure, no-fail story assist, safe checkpoint retry.
+- Reactive Santelmo, reflection puzzle with proximity check, **in-world lantern guiding to the safe shore for Resolve**, Courage pressure, no-fail story assist, safe checkpoint retry.
 - Resolve, Drive Away, Partial outcomes; conditional next-morning dialogue, persistent outcome markers.
 - Local story saving with backup and independent offline accessibility settings (text scale, contrast, reduced motion, hint detail).
 - Godot headless parser/smoke/regression tests, scene-level Night 1 flow tests for all three outcomes and Android APK export.
@@ -26,7 +26,7 @@ An offline Android isometric 3D folklore mystery-adventure set in the fictional 
 ### Still missing or unverified
 
 - Final cinematic painterly 3D artwork, full NPC and Bantay rigs/animations, creature VFX and sound.
-- A proper interactive Lola-hut prologue/interior, richer village interactions, polished readable HUD and fully authored subtitles.
+- Finished Lola-hut art/cinematics, richer village interactions, polished HUD and fully authored subtitles; a basic interactive morning hut prologue is implemented in the feature branch.
 - Complete Cebuano/Filipino/English localization, sound preferences, HUD remapping, story cinematics, comprehensive performance presets.
 - Actual phone gameplay validation of the **latest** build, end-to-end uncoached tests, safe-area and FPS/thermal profiling.
 - Night 2–7 gameplay implementation, historical reconstruction, Keeper trial, all endings and full epilogue.

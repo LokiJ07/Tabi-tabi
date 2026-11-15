@@ -6,9 +6,9 @@ This is a non-spoiler implementation matrix aligned with Master Script & Develop
 | --- | --- | --- |
 | G0 Preproduction | Source canon exists; source scene IDs not all in data assets | Freeze Night 1 scene dependency and art bible |
 | G1 Engine/input | Android debug export, isometric camera, movement, Focus and user-reported initial functional buttons | Thumb-based control, camera/occlusion and multi-aspect device signoff |
-| G2 Living hub | Procedural hut/store/school exterior blockout, ambient residents, Bantay path grid and alerts | Authored/interior and believable NPC activity; navigation QA |
+| G2 Living hub | Playable temporary Lola-hut morning interior/prologue plus store/school blockout, ambient residents, Bantay path grid and alerts | Authored/interior and believable NPC activity; navigation QA |
 | G3 Story/investigation | Witness dialogue, 3 clues, 2 links, revisable theory, 4-slot preparation, offline save and accessibility prefs | True conditional dialogue, localized line IDs, full UI/learning experience, multi-aspect usability |
-| G4 Santelmo | State-driven phases, physical retreat cues, 2 reflected markers, Courage, cloth/water/bell actions, three outcomes, checkpoint, morning prop | Fair puzzle/gameplay real-device demonstration, cinematic and visibility QA |
+| G4 Santelmo | State-driven phases, physical retreat cues, 2 reflected markers, **three-second player-guided lantern route to shore for Resolve**, Courage, cloth/water/bell actions, three outcomes, checkpoint, morning prop | Fair puzzle/gameplay real-device demonstration, cinematic and visibility QA |
 | G5 Cinematic/art | Engineering-only stand-ins | Approved rigs and animations, painterly environment, sound and polished cutscenes |
 | G6 Night 1 player validation | Headless full-flow and Android packaging; earlier user screenshot proves app launched | Uncoached testing, bug/pace feedback, stable real thumb controls, save/load and performance |
 | G7 Nights 2–5 | Not implemented | Distinct Kapre/Tikbalang/Manananggal/Sigbin gameplay with chapter-specific validation |

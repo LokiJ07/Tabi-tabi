@@ -1,23 +1,15 @@
 # TABI-TABI Development Status
 
-## G0 / G1 — Early prototype
+The original G0/G1 entry in this file described the first engine prototype. The ongoing work is now recorded in the source-controlled quality-gate tracker: [G0–G9 implementation matrix](QUALITY_GATES.md).
 
-**Implemented (not yet run on real Android):** Godot 4 project, initial 3D blockout of Barrio Lawom, third-person orthographic isometric camera, keyboard and prototype touch button movement, static world collisions, a following Bantay placeholder, two NPC interactions, daytime/nighttime toggle, lantern light and Santelmo visual placeholder. CI workflow added for import/scene smoke checks.
+## Currently implemented (feature/night1-foundation)
 
-**Not implemented:** authored character models and animation, actual Santelmo encounter AI and deterministic puzzles, notebook/evidence linking, save/profile system, narrative branching/outcomes, polished NPC schedules, localization, in-game audio, Android export templates/signing, performance validation and any completed vertical slice.
+Godot 4.3 3D barrio blockout; a morning Lola-hut interior with notebook/cup/photo interactions, outdoor witness dialogues and clues, two notebook links, four-slot equipment, independent manual Focus, reactive Santelmo, a physical shoreline guiding action for the Resolve ending, three distinct Night 1 outcomes, visible morning markers, offline save/backup and accessibility settings.
 
-### Scope discipline
+Automated CI includes story/outcome state regression, navigation, Santelmo actor behavior, morning prologue, full Night 1 scene flow and Android export. The release workflow publishes an experimental Android debug APK as a GitHub prerelease.
 
-This prototype uses primitives intentionally as a temporary engineering spike; they are not the approved Cinematic Painterly 3D art. It is not a claim of G1 completion until CI, Android deployment, and touch feel are verified. Do not mark Night 1 complete or proceed to Night 2 until G6's real-device and gameplay criteria pass.
+## Explicitly NOT complete
 
-### Controls
+The master script's seven-night journey is not implemented. Night 1 lacks final-quality character rigs, animation, cinematography, sound, authored environmental detail, full language support, performance tuning, stable update signing and complete real-device/end-to-end user validation.
 
-Desktop: Arrow keys to move; Enter to interact/close dialogue; Escape to dismiss. Android prototype: on-screen directional buttons, INTERACT, DAY / NIGHT. Buttons currently use fixed 1280x720 layout and must be made adaptive before G1 acceptance.
-
-### Next engineering priorities
-
-- Confirm Godot resource import and runtime in GitHub Actions.
-- Improve mobile HUD anchoring, Focus lantern and movement fidelity.
-- Implement collision-safe riverbank/navigation and Bantay pathfinding.
-- Replace placeholder environment and NPCs with approved rigged/animated art.
-- Implement clue notebook and save contracts for the complete Night 1 vertical slice.
+Green CI is engineering evidence, not completed chapter sign-off. Do not merge the prototype into main as a finished game or move to Night 2 before Night 1's quality gates pass.

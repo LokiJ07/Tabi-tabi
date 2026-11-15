@@ -51,3 +51,5 @@ jobs:
         run: godot --headless --path . --script res://tests/night01_flow_test.gd
       - name: Lola hut prologue, interactive props and migration
         run: godot --headless --path . --script res://tests/night01_prologue_test.gd
+      - name: Offline save corruption and backup recovery
+        run: godot --headless --path . --script res://tests/night01_save_recovery_test.gd
