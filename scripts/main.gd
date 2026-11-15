@@ -4,6 +4,7 @@ extends Node3D
 
 const NightModel = preload("res://scripts/narrative/night01_state.gd")
 const NightDialogue = preload("res://scripts/narrative/night01_dialogue.gd")
+const MorningAftermath = preload("res://scripts/world/night01_aftermath.gd")
 const Nearby = preload("res://scripts/ui/nearby_interaction.gd")
 const SantelmoActor = preload("res://scripts/encounters/santelmo_actor.gd")
 const FolkActors = preload("res://scripts/visuals/folk_actors.gd")
@@ -829,7 +830,7 @@ func _refresh_choices() -> void:
 	for i in range(choice_buttons.size()):
 		choice_buttons[i].text = names[i]
 		choice_buttons[i].visible = names[i] != ""
-	stage_label.text = "CLUES: %d/3  •  PHASE: %d  •  OUTCOME: %s" % [story.clues.size(), story.phase, story.outcome if story.outcome != "" else "pending"]
+	stage_label.text = MorningAftermath.morning_label(story.outcome) if story.outcome != "" else "CLUES: %d/3  •  PHASE: %d  •  OUTCOME: pending" % [story.clues.size(), story.phase]
 
 
 func _choose_story_action(index: int) -> void:
@@ -908,6 +909,7 @@ func _commit_night(result: String) -> void:
 	is_night = false
 	lantern.light_energy = 0
 	sun.light_energy = 1.1
+	MorningAftermath.ensure(self, story.outcome)
 	if santelmo != null:
 		santelmo.visible = false
 	var env_node := get_node_or_null("Environment") as WorldEnvironment
@@ -1110,6 +1112,8 @@ func _restore_story() -> void:
 		return
 	talked_to_lola = story.seen_people.has("lola")
 	talked_to_dado = story.seen_people.has("dado")
+	if story.outcome != "":
+		MorningAftermath.ensure(self, story.outcome)
 	if bool(data.get("night", false)) and story.outcome == "":
 		_toggle_night()
 		light_alarm = story.alarm
