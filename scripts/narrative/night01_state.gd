@@ -15,6 +15,7 @@ var committed_events: Dictionary = {}
 var seen_people: Dictionary = {}
 var alarm := 0.0
 var courage := 100.0
+var guide_progress := 0.0
 var encounter_failed := false
 var checkpoint: Dictionary = {}
 var revision_count := 0
@@ -94,7 +95,22 @@ func choose_reflection(id: String) -> bool:
 	return true
 
 
+func guide_to_landing(delta: float, close_to_landing: bool, focusing: bool, aim_aligned: bool) -> bool:
+	# Holding a softened beam toward the SAFE landing (away from the spirit)
+	# leads Santelmo ashore. Only this progress is continuous; not canonical truth.
+	if phase != 3 or outcome != "" or encounter_failed:
+		return false
+	var good: bool = close_to_landing and focusing and aim_aligned and alarm < 0.55 and clues.has("boatman_name")
+	if good:
+		guide_progress = minf(1.0, guide_progress + maxf(0.0, delta) / 3.0)
+	else:
+		guide_progress = maxf(0.0, guide_progress - maxf(0.0, delta) * 0.10)
+	return guide_progress >= 0.999
+
+
 func commit_result(result: String) -> bool:
+	if result == "resolve" and guide_progress < 0.999:
+		return false
 	if encounter_failed and result != "partial":
 		return false
 	if result == "drive_away" and not kit.has("signal_bell"):
@@ -170,6 +186,7 @@ func to_dict() -> Dictionary:
 		"seen_people": seen_people.duplicate(true),
 		"alarm": alarm,
 		"courage": courage,
+		"guide_progress": guide_progress,
 		"encounter_failed": encounter_failed,
 		"revision_count": revision_count,
 		"checkpoint": checkpoint.duplicate(true)
@@ -213,6 +230,7 @@ func from_dict(raw: Dictionary) -> bool:
 	seen_people = raw.get("seen_people", {}).duplicate(true)
 	alarm = clampf(float(raw.get("alarm", 0)), 0.0, 1.0)
 	courage = clampf(float(raw.get("courage", 100.0)), 0.0, 100.0)
+	guide_progress = clampf(float(raw.get("guide_progress", 0.0)), 0.0, 1.0)
 	encounter_failed = bool(raw.get("encounter_failed", false)) if outcome == "" else false
 	revision_count = maxi(0, int(raw.get("revision_count", 0)))
 	checkpoint = {}

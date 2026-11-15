@@ -68,6 +68,7 @@ var touch_axes := Vector2.ZERO
 var focus_held := false
 var manual_aim := Vector2.ZERO
 var light_alarm := 0.0
+var guide_was_complete := false
 var lamp_heading := Vector3.FORWARD
 var alarm_label: Label
 var move_buttons: Dictionary = {}
@@ -130,6 +131,7 @@ func _physics_process(delta: float) -> void:
 	if is_night and santelmo != null:
 		light_alarm = santelmo.update_behavior(delta, player.global_position, lamp_heading, focus_held)
 		story.alarm = light_alarm
+		_advance_safe_guiding(delta)
 		encounter_autosave_clock += delta
 		if encounter_autosave_clock >= 10.0 and story.outcome == "" and story.phase >= 1:
 			encounter_autosave_clock = 0.0
@@ -317,6 +319,23 @@ func _create_bantay() -> void:
 	bantay_visual.position.y = -0.45
 	bantay.add_child(bantay_visual)
 	add_child(bantay)
+
+
+func _advance_safe_guiding(delta: float) -> void:
+	if story.phase != 3 or story.outcome != "" or story.encounter_failed:
+		return
+	var to_landing: Vector3 = SantelmoActor.SAFE_LANDING - player.global_position
+	to_landing.y = 0.0
+	var close_enough: bool = to_landing.length() < 4.0
+	var direction_correct: bool = to_landing.length() > 0.3 and lamp_heading.dot(to_landing.normalized()) > 0.65
+	var was_ready: bool = story.guide_progress >= 0.999
+	story.guide_to_landing(delta, close_enough, focus_held, direction_correct)
+	if santelmo != null:
+		santelmo.set_guide_progress(story.guide_progress)
+	if story.guide_progress >= 0.999 and not was_ready:
+		_save_story_silent()
+		_refresh_choices()
+		_update_objective()
 
 
 func _update_dog_warnings(delta: float) -> void:
@@ -804,7 +823,7 @@ func _update_objective() -> void:
 	elif story.phase == 2:
 		objective.text = "Stage 2: Walk to a reflected light, then INSPECT; the real one follows the slow current."
 	elif story.phase == 3:
-		objective.text = "Stage 3: Choose remembrance, protection, or retreat."
+		objective.text = "Stage 3: Stand near the GREEN landing ring; hold FOCUS toward the shore until the light follows." if story.guide_progress < 0.999 else "The light has reached the safe landing. Remember Mang Celso, defend, or retreat."
 	else:
 		objective.text = "Night 1 completed."
 
@@ -824,13 +843,13 @@ func _refresh_choices() -> void:
 	elif story.phase == 2:
 		names = ["INSPECT LIGHT", "HINT", "RETREAT"]
 	elif story.phase == 3:
-		names = ["REMEMBER", "DRIVE AWAY" if story.kit.has("signal_bell") else "NEED BELL", "RETREAT"]
+		names = ["REMEMBER" if story.guide_progress >= 0.999 else "GUIDE TO SHORE", "DRIVE AWAY" if story.kit.has("signal_bell") else "NEED BELL", "RETREAT"]
 	else:
 		names = ["", "", ""]
 	for i in range(choice_buttons.size()):
 		choice_buttons[i].text = names[i]
 		choice_buttons[i].visible = names[i] != ""
-	stage_label.text = MorningAftermath.morning_label(story.outcome) if story.outcome != "" else "CLUES: %d/3  •  PHASE: %d  •  OUTCOME: pending" % [story.clues.size(), story.phase]
+	stage_label.text = MorningAftermath.morning_label(story.outcome) if story.outcome != "" else "CLUES: %d/3  •  PHASE: %d  •  GUIDE: %d%%" % [story.clues.size(), story.phase, roundi(story.guide_progress * 100.0)] if story.phase == 3 else "CLUES: %d/3  •  PHASE: %d  •  OUTCOME: pending" % [story.clues.size(), story.phase]
 
 
 func _choose_story_action(index: int) -> void:
@@ -886,7 +905,10 @@ func _choose_story_action(index: int) -> void:
 				_show_dialogue("This restless reflection moves against the current. Try the other light.")
 	elif story.phase == 3:
 		if index == 0:
-			_commit_night("resolve")
+			if story.guide_progress >= 0.999:
+				_commit_night("resolve")
+			else:
+				_show_dialogue("Gently GUIDE the light in the world first. Stand by the GREEN landing ring, hold Focus and aim toward shore, away from the spirit. Then remember Mang Celso.")
 		elif index == 1:
 			if story.kit.has("signal_bell"):
 				_commit_night("drive_away")
@@ -896,6 +918,7 @@ func _choose_story_action(index: int) -> void:
 			_commit_night("partial")
 	if santelmo != null:
 		santelmo.set_encounter_phase(story.phase)
+		santelmo.set_guide_progress(story.guide_progress)
 	_refresh_choices()
 	_update_objective()
 
@@ -1118,7 +1141,9 @@ func _restore_story() -> void:
 		_toggle_night()
 		light_alarm = story.alarm
 		if santelmo != null:
+			santelmo.alarm = story.alarm
 			santelmo.set_encounter_phase(story.phase)
+			santelmo.set_guide_progress(story.guide_progress)
 	_refresh_choices()
 
 
@@ -1130,6 +1155,7 @@ func _retry_story() -> void:
 		_save_story_silent()
 		if santelmo != null:
 			santelmo.set_encounter_phase(story.phase)
+			santelmo.set_guide_progress(story.guide_progress)
 		_show_dialogue("Restored the safe encounter checkpoint; no permanent resources were duplicated.")
 	else:
 		_show_dialogue("No uncommitted encounter checkpoint is available.")

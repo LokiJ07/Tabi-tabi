@@ -56,6 +56,15 @@ func _run_one(result: String) -> void:
 		game._choose_story_action(0)
 		assert_true(game.story.phase == 3, "near the correct river reflection advances")
 		game._close_dialogue()
+		if result == "resolve":
+			game.player.global_position = Vector3(-7.0, 0.75, 12.0)
+			var toward_shore: Vector3 = game.SantelmoActor.SAFE_LANDING - game.player.global_position
+			toward_shore.y = 0.0
+			game.lamp_heading = toward_shore.normalized()
+			game.focus_held = true
+			game._advance_safe_guiding(3.3)
+			game.focus_held = false
+			assert_true(game.story.guide_progress >= 0.999, "gently guiding unlocks remembrance")
 		game._choose_story_action(0 if result == "resolve" else 1)
 	else:
 		game._choose_story_action(2)
