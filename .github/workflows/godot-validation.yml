@@ -47,3 +47,5 @@ jobs:
         run: godot --headless --path . --script res://tests/night01_courage_test.gd
       - name: Morning outcome world consistency regression
         run: godot --headless --path . --script res://tests/night01_aftermath_test.gd
+      - name: Full Night 1 scene-to-outcome integration loop
+        run: godot --headless --path . --script res://tests/night01_flow_test.gd
