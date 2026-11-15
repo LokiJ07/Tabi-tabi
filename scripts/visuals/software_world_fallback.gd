@@ -164,17 +164,48 @@ func _art(texture: Texture2D, at: Vector3, width_units: float, bottom_aligned: b
 	draw_texture_rect(texture, rect, false, color)
 
 func _paint_building(at: Vector3, texture: Texture2D, roof: Color) -> void:
-	# Raised architecture: front facade, roof silhouette, visible porch.
-	var roof_pts := PackedVector2Array([
-		_screen(at + Vector3(-2.45, 3.1, -2.22)),
-		_screen(at + Vector3(2.45, 3.1, -2.22)),
-		_screen(at + Vector3(2.45, 3.1, 2.22)),
-		_screen(at + Vector3(-2.45, 3.1, 2.22))])
-	draw_colored_polygon(roof_pts, roof)
-	draw_polyline(PackedVector2Array([roof_pts[0], roof_pts[1], roof_pts[2], roof_pts[3], roof_pts[0]]), roof.lightened(.28), 3.0)
-	_art(texture, at + Vector3(0, 0, 2.28), 3.65, true, _tint())
-	var porch := _screen(at + Vector3(0, 0.18, 3.1))
-	draw_line(porch + Vector2(-_scale_units(1.7), 0), porch + Vector2(_scale_units(1.7), 0), Color("#c5a47c"), 7)
+	# Volume-first 2.5D: a REAL gabled nipa house with four spatial wall
+	# corners, two pitched roof planes, porch and flush front facade.
+	# Old renderer pasted a facade under a flat slab and looked broken.
+	var x_left := -1.98
+	var x_right := 1.98
+	var z_rear := -2.02
+	var z_front := 2.02
+	var foot := 0.16
+	var wall_top := 2.82
+	var ridge_top := 3.78
+	# Side walls stay behind the roof; front wall gets the attached facade.
+	_quad(HUT_WALL, [at + Vector3(x_left,foot,z_rear), at + Vector3(x_left,foot,z_front),
+		at + Vector3(x_left,wall_top,z_front), at + Vector3(x_left,wall_top,z_rear)], Color("#947552"))
+	_quad(HUT_WALL, [at + Vector3(x_right,foot,z_rear), at + Vector3(x_right,foot,z_front),
+		at + Vector3(x_right,wall_top,z_front), at + Vector3(x_right,wall_top,z_rear)], Color("#b89a72"))
+	_quad(HUT_WALL, [at + Vector3(x_left,foot,z_front), at + Vector3(x_right,foot,z_front),
+		at + Vector3(x_right,wall_top,z_front), at + Vector3(x_left,wall_top,z_front)], Color("#cbb088"))
+	# True ridge at x=0 along the depth axis, eaves at x ±2.45.
+	_hut_face([at + Vector3(-2.46,2.94,-2.34), at + Vector3(0,ridge_top,-2.34),
+		at + Vector3(0,ridge_top,2.35), at + Vector3(-2.46,2.94,2.35)],
+		roof.lightened(.11), roof.darkened(.25), 3.2)
+	_hut_face([at + Vector3(0,ridge_top,-2.34), at + Vector3(2.46,2.94,-2.34),
+		at + Vector3(2.46,2.94,2.35), at + Vector3(0,ridge_top,2.35)],
+		roof.darkened(.12), roof.lightened(.25), 3.2)
+	_hut_face([at + Vector3(-2.45,2.93,2.34), at + Vector3(0,ridge_top,2.34),
+		at + Vector3(2.45,2.93,2.34)], Color("#aa855e"), Color("#5b4435"), 2.5)
+	for i in range(5):
+		var z := -1.85 + float(i) * .93
+		_hut_line(at + Vector3(-2.40,2.97,z), at + Vector3(-.06,ridge_top-.03,z), roof.lightened(.24), 2.0)
+		_hut_line(at + Vector3(.08,ridge_top-.04,z), at + Vector3(2.40,2.96,z), roof.darkened(.24), 2.0)
+	# Facade texture is grounded in the real wall plane, directly below gable.
+	_art(texture, at + Vector3(0, .13, 2.15), 3.90, true, _tint())
+	# Small timber porch with individual floorboard seams and short steps.
+	_hut_face([at + Vector3(-1.71,.30,2.20), at + Vector3(1.71,.30,2.20),
+		at + Vector3(1.71,.30,3.28), at + Vector3(-1.71,.30,3.28)],
+		Color("#a88155"), Color("#624830"), 2.5)
+	for i in range(7):
+		var x := -1.45 + float(i) * .48
+		_hut_line(at + Vector3(x,.32,2.23), at + Vector3(x,.32,3.24), Color("#755337"), 1.8)
+	for i in range(3):
+		_hut_line(at + Vector3(-.82,.26,3.35 + float(i)*.28),
+			at + Vector3(.82,.26,3.35 + float(i)*.28), Color("#bd9b6a"), 3.0)
 
 func _draw_village() -> void:
 	_ground()
