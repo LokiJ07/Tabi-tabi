@@ -166,13 +166,23 @@ func _unhandled_input(event: InputEvent) -> void:
 			_open_options()
 	if OS.get_name() == "Android" and OS.has_feature("debug") and event is InputEventKey:
 		var key := event as InputEventKey
-		if key.pressed and not key.echo and key.keycode == KEY_F9:
-			# QA-only: camera tour without mutating saved canonical outcome.
+		if key.pressed and not key.echo and [KEY_F7, KEY_F8, KEY_F9].has(key.keycode):
+			# Each screenshot uses the real interactive running scene, NEVER
+			# a concept art canvas or a fake static title.
 			_close_dialogue()
 			notebook.hide()
-			player_pos = Vector2(90, -80)
+			options_panel.hide()
+			if key.keycode == KEY_F7:
+				player_pos = Vector2(-530,-315)
+				print("NIGHT2_QA_WITNESS_VIEW")
+			elif key.keycode == KEY_F8:
+				player_pos = Vector2(-320,220)
+				print("NIGHT2_QA_ROUTE_VIEW")
+			else:
+				player_pos = Vector2(90,-80)
+				print("NIGHT2_QA_MANGO_VIEW")
+			dog_pos = player_pos+Vector2(-42,25)
 			camera.position = player_pos
-			print("NIGHT2_QA_MANGO_VIEW")
 			get_viewport().set_input_as_handled()
 
 func _draw() -> void:
