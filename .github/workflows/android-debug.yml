@@ -84,6 +84,7 @@ jobs:
           godot --headless --path . --script res://tests/river_banca_test.gd
           godot --headless --path . --script res://tests/barrio_details_test.gd
           godot --headless --path . --script res://tests/night01_mangrove_art_test.gd
+          godot --headless --path . --script res://tests/night01_title_and_art_test.gd
           godot --headless --path . --script res://tests/living_ambience_test.gd
           godot --headless --path . --script res://tests/night01_journal_test.gd
       - name: Export debug APK
@@ -148,6 +149,7 @@ jobs:
         with:
           name: tabi-tabi-emulator-launch-evidence
           path: |
+            build/android-night1-title.png
             build/android-night1-launch.png
             build/android-night1-notebook.png
             build/android-night1-notebook-scrolled.png
