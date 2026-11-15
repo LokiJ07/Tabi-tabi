@@ -33,6 +33,14 @@ func _run() -> void:
 		var structure := village.get_node_or_null(name) as Node3D
 		check(structure != null, name + " still renders")
 		if structure != null:
+			# All three houses must be CLOSED volumes, not pasted flat facades.
+			# The old bare cubes are hidden, so these panels are essential.
+			for wall_name in ["Front woven wall surface", "Rear woven wall surface", "Left woven wall surface", "Right woven wall surface"]:
+				var panel := structure.get_node_or_null(wall_name) as MeshInstance3D
+				check(panel != null, name + ": complete " + wall_name)
+				if panel != null:
+					var wall_mat := panel.material_override as StandardMaterial3D
+					check(wall_mat != null and wall_mat.albedo_texture != null, name + ": wall uses imported woven bamboo")
 			for side in [-1, 1]:
 				var roof := structure.get_node_or_null("Layered roof %d" % side) as MeshInstance3D
 				check(roof != null, name + ": proper pitched nipa roof geometry")
