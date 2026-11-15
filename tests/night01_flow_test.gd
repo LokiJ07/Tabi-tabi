@@ -82,11 +82,13 @@ func _run_one(result: String) -> void:
 	assert_true(game.story.outcome == result, "selected outcome committed once: " + result)
 	assert_true(game.get_node_or_null("Night01MorningAftermath") != null, "outcome visible in the world")
 	assert_true(game.story.committed_events.size() == 1, "single canonical event")
+	assert_true(game.story.bestiary.size() == 1, "single canonical bestiary record")
 	var loaded = State.new()
 	var read: Dictionary = Save.read(loaded)
 	assert_true(not read.is_empty(), "offline save reloads")
 	assert_true(loaded.outcome == result, "reloaded outcome matches current game")
 	assert_true(loaded.committed_events.size() == 1, "no duplicate outcome after reload")
+	assert_true(loaded.bestiary.size() == 1 and loaded.bestiary.has("santelmo"), "bestiary preserved exactly once")
 	game.queue_free()
 	await process_frame
 

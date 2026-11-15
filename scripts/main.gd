@@ -4,6 +4,7 @@ extends Node3D
 
 const NightModel = preload("res://scripts/narrative/night01_state.gd")
 const NightDialogue = preload("res://scripts/narrative/night01_dialogue.gd")
+const NightJournal = preload("res://scripts/narrative/night01_journal.gd")
 const MorningAftermath = preload("res://scripts/world/night01_aftermath.gd")
 const LolaHut = preload("res://scripts/world/lola_hut_interior.gd")
 const Nearby = preload("res://scripts/ui/nearby_interaction.gd")
@@ -108,9 +109,9 @@ func _physics_process(delta: float) -> void:
 	if player == null:
 		return
 	var axis := Input.get_vector("ui_left", "ui_right", "ui_up", "ui_down")
+	axis += touch_axes
 	if _is_reading_ui():
 		axis = Vector2.ZERO
-	axis += touch_axes
 	axis = axis.limit_length()
 	var forward := Vector3(-1, 0, -1).normalized()
 	var right := Vector3(1, 0, -1).normalized()
@@ -547,11 +548,17 @@ func _create_ui() -> void:
 	dialogue.name = "DialoguePanel"
 	dialogue.mouse_filter = Control.MOUSE_FILTER_STOP
 	root.add_child(dialogue)
+	var dialogue_scroll := ScrollContainer.new()
+	dialogue_scroll.name = "DialogueScroll"
+	dialogue_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	dialogue_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	dialogue_scroll.follow_focus = true
+	dialogue.add_child(dialogue_scroll)
 	dialogue_text = Label.new()
 	dialogue_text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	dialogue_text.add_theme_font_size_override("font_size", 22)
 	dialogue_text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	dialogue.add_child(dialogue_text)
+	dialogue_scroll.add_child(dialogue_text)
 	dialogue.hide()
 	notebook_panel = PanelContainer.new()
 	notebook_panel.anchor_left = 0.26
@@ -900,6 +907,7 @@ func _show_dialogue(value: String) -> void:
 
 func _close_dialogue() -> void:
 	dialogue.hide()
+	_clear_touch_input()
 
 
 func _toggle_night() -> void:
@@ -1119,6 +1127,7 @@ func _open_settings() -> void:
 func _close_settings() -> void:
 	if settings_panel != null:
 		settings_panel.hide()
+	_clear_touch_input()
 
 
 func _refresh_options() -> void:
@@ -1200,6 +1209,7 @@ func _open_prep() -> void:
 func _close_prep() -> void:
 	if prep_panel != null:
 		prep_panel.hide()
+	_clear_touch_input()
 
 
 func _refresh_prep() -> void:
@@ -1245,17 +1255,7 @@ func _open_notebook() -> void:
 
 
 func _refresh_notebook() -> void:
-	var lines: Array[String] = []
-	if story.clues.has("light_retreat"):
-		lines.append("DADO | Light retreats when stared at.")
-	if story.clues.has("old_mooring"):
-		lines.append("MOORING | Worn rope at the river.")
-	if story.clues.has("boatman_name"):
-		lines.append("MARA | Ledger names Mang Celso.")
-	if lines.is_empty():
-		lines.append("No clues yet. Speak to residents and inspect the old mooring.")
-	var theory_name := "Guide gently" if story.hypothesis == "guide" else "Chase away" if story.hypothesis == "chase" else "Undecided"
-	notebook_body.text = "\n".join(lines) + "\n\nLINKED: %d / 2  |  THEORY: %s" % [story.evidence_links.size(), theory_name]
+	notebook_body.text = "\n".join(NightJournal.lines(story))
 	link_light_button.visible = story.clues.has("light_retreat") and story.clues.has("old_mooring")
 	link_light_button.disabled = story.phase > 0 or story.evidence_links.has("light_mooring")
 	link_light_button.text = "LINKED: DADO + MOORING" if story.evidence_links.has("light_mooring") else "LINK: DADO + MOORING"
@@ -1285,6 +1285,7 @@ func _select_theory(value: String) -> void:
 func _close_notebook() -> void:
 	if notebook_panel != null:
 		notebook_panel.hide()
+	_clear_touch_input()
 
 
 func _save_story_silent() -> void:

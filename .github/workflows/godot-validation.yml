@@ -57,3 +57,5 @@ jobs:
         run: godot --headless --path . --script res://tests/night01_hud_test.gd
       - name: Original offline ambience and audio-options regression
         run: godot --headless --path . --script res://tests/living_ambience_test.gd
+      - name: Source-aware Night 1 journal and single bestiary entry
+        run: godot --headless --path . --script res://tests/night01_journal_test.gd

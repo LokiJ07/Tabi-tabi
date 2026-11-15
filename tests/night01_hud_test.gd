@@ -32,6 +32,11 @@ func _run() -> void:
 	game._close_prep()
 	game._show_dialogue("A readable conversation with Lola Pasing.")
 	check(game._is_reading_ui(), "dialogue blocks movement")
+	check(game.dialogue.get_node_or_null("DialogueScroll") != null, "long dialogue can scroll without clipping")
+	game._set_button_axis("right", true)
+	var before: Vector3 = game.player.global_position
+	game._physics_process(0.25)
+	check(game.player.global_position.distance_to(before) < 0.06, "touch movement remains blocked even when pressed while dialogue open")
 	game._close_dialogue()
 	check(not game._is_reading_ui(), "closing overlays restores movement")
 	game.preferences.text_scale = 1.4

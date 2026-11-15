@@ -12,6 +12,7 @@ var hypothesis := ""
 var phase := 0
 var outcome := ""
 var committed_events: Dictionary = {}
+var bestiary: Dictionary = {}
 var seen_people: Dictionary = {}
 var prologue_flags: Dictionary = {}
 var alarm := 0.0
@@ -131,6 +132,12 @@ func commit_result(result: String) -> bool:
 		return false
 	outcome = result
 	committed_events["n1_santelmo_" + result] = true
+	# A single observation entry, NOT a supernatural assertion that the boatman became the light.
+	bestiary["santelmo"] = {
+		"result": result,
+		"observed": ["light_retreat", "old_mooring", "river_reflection"],
+		"interpretation": "A wandering light near the old mooring. Mang Celso's name is a historical lead, not proven identity."
+	}
 	phase = 4
 	return true
 
@@ -195,6 +202,7 @@ func to_dict() -> Dictionary:
 		"phase": phase,
 		"outcome": outcome,
 		"committed_events": committed_events.duplicate(true),
+		"bestiary": bestiary.duplicate(true),
 		"seen_people": seen_people.duplicate(true),
 		"prologue_flags": prologue_flags.duplicate(true),
 		"alarm": alarm,
@@ -241,6 +249,12 @@ func from_dict(raw: Dictionary) -> bool:
 	phase = restored_phase
 	outcome = restored_result
 	committed_events = {}
+	bestiary = {}
+	var restored_bestiary: Variant = raw.get("bestiary", {})
+	if outcome != "" and typeof(restored_bestiary) == TYPE_DICTIONARY and typeof(restored_bestiary.get("santelmo", null)) == TYPE_DICTIONARY:
+		bestiary["santelmo"] = restored_bestiary["santelmo"].duplicate(true)
+	elif outcome != "":
+		bestiary["santelmo"] = {"result": outcome, "observed": ["light_retreat", "old_mooring", "river_reflection"], "interpretation": "A wandering light. The boatman connection remains an interpretation."}
 	if outcome != "":
 		committed_events["n1_santelmo_" + outcome] = true
 	seen_people = input_people.duplicate(true)
