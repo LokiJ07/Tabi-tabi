@@ -187,6 +187,14 @@ if [ "${GITHUB_REF:-}" = "refs/heads/feature/night2-kapre" ]; then
     adb exec-out screencap -p > "build/android-night2-${3}.png"
     python3 .github/scripts/assert_gameplay_visible.py "build/android-night2-${3}.png"
   done
+  adb shell input keyevent 136  # F6: in-engine twilight/lantern art preview
+  sleep 3
+  if ! adb logcat -d -v brief | grep -q "NIGHT2_QA_DUSK_VIEW"; then
+    echo "ERROR: Kapre twilight view did not render from actual Godot gameplay"
+    exit 1
+  fi
+  adb exec-out screencap -p > build/android-night2-dusk.png
+  python3 .github/scripts/assert_gameplay_visible.py build/android-night2-dusk.png
   adb logcat -d -v brief | grep -Ei 'NIGHT2_QA|Godot|AndroidRuntime' | tail -n 160 > build/android-night2-log.txt || true
   echo "PASS: actual Kapre intro, witness area, shelter and mango tree run on Android"
 fi
