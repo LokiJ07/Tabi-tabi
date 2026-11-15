@@ -133,16 +133,14 @@ jobs:
           profile: pixel_5
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none
-          script: |
-            set -e
-            PKG=org.tabitabi.nightone
-            adb install -r build/tabi-tabi-night1-debug.apk
-            adb logcat -c
-            adb shell monkey -p "$PKG" -c android.intent.category.LAUNCHER 1
-            sleep 15
-            adb shell pidof "$PKG" || { adb logcat -d -s AndroidRuntime:E Godot:E; exit 1; }
-            if adb logcat -d -s AndroidRuntime:E | grep -q "FATAL EXCEPTION"; then
-              adb logcat -d -s AndroidRuntime:E
-              exit 1
-            fi
-            echo "PASS: Android APK installed and stayed running for 15 seconds"
+          script: bash .github/scripts/android_emulator_smoke.sh
+      - name: Save Android launch screenshot and crash logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tabi-tabi-emulator-launch-evidence
+          path: |
+            build/android-night1-launch.png
+            build/android-night1-launch-log.txt
+          if-no-files-found: warn
+          retention-days: 7
