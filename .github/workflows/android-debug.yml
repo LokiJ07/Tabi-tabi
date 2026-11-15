@@ -58,6 +58,7 @@ jobs:
           lines = path.read_text().splitlines()
           run = int(os.environ["GITHUB_RUN_NUMBER"])
           lines = [f"version/code={run}" if line.startswith("version/code=") else
+                   f'version/name="0.10.0-night2-qa.{run}"' if os.environ.get("GITHUB_REF", "").endswith("night2-kapre") and line.startswith("version/name=") else
                    f'version/name="0.9.0-night1-qa.{run}"' if line.startswith("version/name=") else
                    line for line in lines]
           path.write_text("\n".join(lines) + "\n")
@@ -123,6 +124,17 @@ jobs:
           fi
           gh release upload night1-dev build/tabi-tabi-night1-debug.apk --clobber
           echo "Direct APK: https://github.com/${GITHUB_REPOSITORY}/releases/download/night1-dev/tabi-tabi-night1-debug.apk"
+      - name: Publish rolling Night 2 Kapre preview (separate download)
+        if: github.ref == 'refs/heads/feature/night2-kapre'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp build/tabi-tabi-night1-debug.apk build/tabi-tabi-night2-debug.apk
+          if ! gh release view night2-dev >/dev/null 2>&1; then
+            gh release create night2-dev --target "$GITHUB_SHA" --prerelease --title "TABI-TABI — Night 2 Kapre Development Preview" --notes "Experimental playable Kapre chapter. Chapter progression unlocks after Night 1. Use for Android playtesting; temporary CI debug signing may require uninstalling older QA builds."
+          fi
+          gh release upload night2-dev build/tabi-tabi-night2-debug.apk --clobber
+          echo "Night 2 APK https://github.com/${GITHUB_REPOSITORY}/releases/download/night2-dev/tabi-tabi-night2-debug.apk"
   emulator-smoke:
     needs: android-debug
     runs-on: ubuntu-latest
@@ -159,6 +171,11 @@ jobs:
             build/android-night1-village.png
             build/android-night1-shore-dock.png
             build/android-night1-night-river.png
+            build/android-night2-intro.png
+            build/android-night2-witness.png
+            build/android-night2-shelter-route.png
+            build/android-night2-kapre-tree.png
+            build/android-night2-log.txt
             build/android-night1-notebook.png
             build/android-night1-notebook-scrolled.png
             build/android-night1-preparation.png
