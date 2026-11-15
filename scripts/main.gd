@@ -27,6 +27,8 @@ const COLORS := {
 }
 var story = NightModel.new()
 var preferences = Preferences.new()
+var gameplay_hud: Control
+var modal_backdrop: ColorRect
 var settings_panel: PanelContainer
 var pref_text_button: Button
 var pref_motion_button: Button
@@ -452,6 +454,28 @@ func _create_audio() -> void:
 	living_sound.set_audio_level(preferences.audio_level)
 
 
+func _style_modal(panel: PanelContainer) -> void:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.065, 0.095, 0.13, 0.98)
+	style.border_color = Color(0.56, 0.67, 0.69, 0.9)
+	style.set_border_width_all(2)
+	style.set_corner_radius_all(12)
+	style.content_margin_left = 22.0
+	style.content_margin_right = 22.0
+	style.content_margin_top = 16.0
+	style.content_margin_bottom = 16.0
+	panel.add_theme_stylebox_override("panel", style)
+	panel.mouse_filter = Control.MOUSE_FILTER_STOP
+
+
+func _sync_modal_ui() -> void:
+	if gameplay_hud == null or modal_backdrop == null:
+		return
+	var active: bool = _is_reading_ui()
+	gameplay_hud.visible = not active
+	modal_backdrop.visible = active
+
+
 func _create_ui() -> void:
 	var canvas := CanvasLayer.new()
 	canvas.name = "HUD"
@@ -460,21 +484,26 @@ func _create_ui() -> void:
 	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	canvas.add_child(root)
+	gameplay_hud = Control.new()
+	gameplay_hud.name = "GameplayControls"
+	gameplay_hud.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	gameplay_hud.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	root.add_child(gameplay_hud)
 	info = Label.new()
 	info.position = Vector2(25, 16)
 	info.text = "TABI-TABI  •  BARRIO LAWOM"
 	info.add_theme_font_size_override("font_size", 24)
-	root.add_child(info)
+	gameplay_hud.add_child(info)
 	objective = Label.new()
 	objective.position = Vector2(25, 56)
 	objective.add_theme_font_size_override("font_size", 22)
 	objective.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	objective.size = Vector2(760, 65)
-	root.add_child(objective)
-	_make_button(root, "◀", Vector2(20, 575), Vector2(70, 65), func(): _set_button_axis("left", true), func(): _set_button_axis("left", false))
-	_make_button(root, "▶", Vector2(170, 575), Vector2(70, 65), func(): _set_button_axis("right", true), func(): _set_button_axis("right", false))
-	_make_button(root, "▲", Vector2(95, 505), Vector2(70, 65), func(): _set_button_axis("up", true), func(): _set_button_axis("up", false))
-	_make_button(root, "▼", Vector2(95, 645), Vector2(70, 65), func(): _set_button_axis("down", true), func(): _set_button_axis("down", false))
+	gameplay_hud.add_child(objective)
+	_make_button(gameplay_hud, "◀", Vector2(20, 575), Vector2(70, 65), func(): _set_button_axis("left", true), func(): _set_button_axis("left", false))
+	_make_button(gameplay_hud, "▶", Vector2(170, 575), Vector2(70, 65), func(): _set_button_axis("right", true), func(): _set_button_axis("right", false))
+	_make_button(gameplay_hud, "▲", Vector2(95, 505), Vector2(70, 65), func(): _set_button_axis("up", true), func(): _set_button_axis("up", false))
+	_make_button(gameplay_hud, "▼", Vector2(95, 645), Vector2(70, 65), func(): _set_button_axis("down", true), func(): _set_button_axis("down", false))
 	var aim_pad := AimPad.new()
 	aim_pad.anchor_left = 1.0
 	aim_pad.anchor_right = 1.0
@@ -486,14 +515,14 @@ func _create_ui() -> void:
 	aim_pad.offset_bottom = -40
 	aim_pad.aim_changed.connect(_on_aim_changed)
 	aim_pad.aim_released.connect(_on_aim_released)
-	root.add_child(aim_pad)
-	_make_button(root, "FOCUS", Vector2(1050, 490), Vector2(180, 60), func(): _set_focus(true), func(): _set_focus(false))
-	_make_button(root, "INTERACT", Vector2(1050, 565), Vector2(180, 60), _interact, func(): pass)
-	_make_button(root, "DAY / NIGHT", Vector2(1050, 640), Vector2(180, 56), _toggle_night, func(): pass)
-	_make_button(root, "NOTEBOOK", Vector2(1050, 415), Vector2(180, 56), _open_notebook, func(): pass)
-	_make_button(root, "PREPARE", Vector2(1050, 276), Vector2(180, 56), _open_prep, func(): pass)
-	_make_button(root, "SAVE", Vector2(1050, 345), Vector2(85, 52), _save_story, func(): pass)
-	_make_button(root, "RETRY", Vector2(1142, 345), Vector2(88, 52), _retry_story, func(): pass)
+	gameplay_hud.add_child(aim_pad)
+	_make_button(gameplay_hud, "FOCUS", Vector2(1050, 490), Vector2(180, 60), func(): _set_focus(true), func(): _set_focus(false))
+	_make_button(gameplay_hud, "INTERACT", Vector2(1050, 565), Vector2(180, 60), _interact, func(): pass)
+	_make_button(gameplay_hud, "DAY / NIGHT", Vector2(1050, 640), Vector2(180, 56), _toggle_night, func(): pass)
+	_make_button(gameplay_hud, "NOTEBOOK", Vector2(1050, 415), Vector2(180, 56), _open_notebook, func(): pass)
+	_make_button(gameplay_hud, "PREPARE", Vector2(1050, 276), Vector2(180, 56), _open_prep, func(): pass)
+	_make_button(gameplay_hud, "SAVE", Vector2(1050, 345), Vector2(85, 52), _save_story, func(): pass)
+	_make_button(gameplay_hud, "RETRY", Vector2(1142, 345), Vector2(88, 52), _retry_story, func(): pass)
 	interact_hint = Label.new()
 	interact_hint.anchor_left = 0.30
 	interact_hint.anchor_right = 0.70
@@ -504,21 +533,21 @@ func _create_ui() -> void:
 	interact_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	interact_hint.add_theme_font_size_override("font_size", 21)
 	interact_hint.add_theme_color_override("font_color", Color(0.98, 0.86, 0.60))
-	root.add_child(interact_hint)
+	gameplay_hud.add_child(interact_hint)
 	courage_label = Label.new()
 	courage_label.position = Vector2(25, 196)
 	courage_label.add_theme_font_size_override("font_size", 20)
 	courage_label.add_theme_color_override("font_color", Color(0.98, 0.86, 0.61))
-	root.add_child(courage_label)
+	gameplay_hud.add_child(courage_label)
 	dog_warning_label = Label.new()
 	dog_warning_label.position = Vector2(25, 160)
 	dog_warning_label.add_theme_font_size_override("font_size", 18)
 	dog_warning_label.add_theme_color_override("font_color", Color(0.95, 0.76, 0.42))
-	root.add_child(dog_warning_label)
+	gameplay_hud.add_child(dog_warning_label)
 	stage_label = Label.new()
 	stage_label.position = Vector2(25, 125)
 	stage_label.add_theme_font_size_override("font_size", 20)
-	root.add_child(stage_label)
+	gameplay_hud.add_child(stage_label)
 	for i in range(3):
 		var index := i
 		var action := Button.new()
@@ -532,60 +561,83 @@ func _create_ui() -> void:
 		action.offset_top = -255
 		action.offset_bottom = -200
 		action.pressed.connect(func(): _choose_story_action(index))
-		root.add_child(action)
+		gameplay_hud.add_child(action)
 		choice_buttons.append(action)
 	_refresh_choices()
 	alarm_label = Label.new()
 	alarm_label.position = Vector2(25, 95)
 	alarm_label.add_theme_font_size_override("font_size", 18)
-	root.add_child(alarm_label)
+	gameplay_hud.add_child(alarm_label)
+	modal_backdrop = ColorRect.new()
+	modal_backdrop.name = "ModalDimmer"
+	modal_backdrop.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	modal_backdrop.color = Color(0.015, 0.035, 0.05, 0.76)
+	modal_backdrop.mouse_filter = Control.MOUSE_FILTER_STOP
+	root.add_child(modal_backdrop)
+	modal_backdrop.hide()
 	dialogue = PanelContainer.new()
-	dialogue.anchor_left = 0.24
-	dialogue.anchor_right = 0.76
-	dialogue.anchor_top = 0.14
-	dialogue.anchor_bottom = 0.14
-	dialogue.offset_bottom = 205
 	dialogue.name = "DialoguePanel"
-	dialogue.mouse_filter = Control.MOUSE_FILTER_STOP
+	dialogue.anchor_left = 0.12
+	dialogue.anchor_right = 0.88
+	dialogue.anchor_top = 0.55
+	dialogue.anchor_bottom = 0.94
+	_style_modal(dialogue)
 	root.add_child(dialogue)
+	var dialogue_layout := VBoxContainer.new()
+	dialogue_layout.name = "DialogueLayout"
+	dialogue_layout.add_theme_constant_override("separation", 12)
+	dialogue.add_child(dialogue_layout)
 	var dialogue_scroll := ScrollContainer.new()
 	dialogue_scroll.name = "DialogueScroll"
+	dialogue_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	dialogue_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	dialogue_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	dialogue_scroll.follow_focus = true
-	dialogue.add_child(dialogue_scroll)
+	dialogue_layout.add_child(dialogue_scroll)
 	dialogue_text = Label.new()
 	dialogue_text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	dialogue_text.add_theme_font_size_override("font_size", 22)
 	dialogue_text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	dialogue_scroll.add_child(dialogue_text)
+	var dialogue_close := Button.new()
+	dialogue_close.name = "CloseDialogue"
+	dialogue_close.text = "CONTINUE / CLOSE"
+	dialogue_close.custom_minimum_size = Vector2(240, 52)
+	dialogue_close.pressed.connect(_close_dialogue)
+	dialogue_layout.add_child(dialogue_close)
 	dialogue.hide()
 	notebook_panel = PanelContainer.new()
-	notebook_panel.anchor_left = 0.26
-	notebook_panel.anchor_right = 0.74
 	notebook_panel.name = "NotebookPanel"
-	notebook_panel.anchor_top = 0.09
-	notebook_panel.anchor_bottom = 0.84
-	notebook_panel.offset_top = 0
-	notebook_panel.offset_bottom = 0
+	notebook_panel.anchor_left = 0.10
+	notebook_panel.anchor_right = 0.90
+	notebook_panel.anchor_top = 0.055
+	notebook_panel.anchor_bottom = 0.945
+	_style_modal(notebook_panel)
 	root.add_child(notebook_panel)
-	var stack := VBoxContainer.new()
-	stack.add_theme_constant_override("separation", 10)
-	var notebook_scroll := ScrollContainer.new()
-	notebook_scroll.name = "NotebookScroll"
-	notebook_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	notebook_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	notebook_scroll.follow_focus = true
-	notebook_panel.add_child(notebook_scroll)
-	notebook_scroll.add_child(stack)
+	var notebook_layout := VBoxContainer.new()
+	notebook_layout.name = "NotebookLayout"
+	notebook_layout.add_theme_constant_override("separation", 12)
+	notebook_panel.add_child(notebook_layout)
 	var title := Label.new()
 	title.text = "FIELD NOTEBOOK  |  NIGHT 1"
 	title.add_theme_font_size_override("font_size", 25)
-	stack.add_child(title)
+	notebook_layout.add_child(title)
+	var notebook_scroll := ScrollContainer.new()
+	notebook_scroll.name = "NotebookScroll"
+	notebook_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	notebook_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	notebook_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	notebook_scroll.follow_focus = true
+	notebook_layout.add_child(notebook_scroll)
+	var stack := VBoxContainer.new()
+	stack.name = "EvidenceContent"
+	stack.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	stack.add_theme_constant_override("separation", 12)
+	notebook_scroll.add_child(stack)
 	notebook_body = Label.new()
 	notebook_body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	notebook_body.add_theme_font_size_override("font_size", 21)
-	notebook_body.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	notebook_body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	stack.add_child(notebook_body)
 	var links_label := Label.new()
 	links_label.text = "CONNECT EVIDENCE"
@@ -618,26 +670,33 @@ func _create_ui() -> void:
 	close_button.text = "CLOSE NOTEBOOK"
 	close_button.custom_minimum_size = Vector2(200, 48)
 	close_button.pressed.connect(_close_notebook)
-	stack.add_child(close_button)
+	close_button.name = "CloseNotebook"
+	notebook_layout.add_child(close_button)
 	notebook_panel.hide()
 	# Four active equipment slots, persisted with Night 1 state.
 	prep_panel = PanelContainer.new()
-	prep_panel.anchor_left = 0.23
-	prep_panel.anchor_right = 0.77
 	prep_panel.name = "PreparationPanel"
-	prep_panel.anchor_top = 0.08
-	prep_panel.anchor_bottom = 0.88
-	prep_panel.offset_top = 0
-	prep_panel.offset_bottom = 0
+	prep_panel.anchor_left = 0.10
+	prep_panel.anchor_right = 0.90
+	prep_panel.anchor_top = 0.055
+	prep_panel.anchor_bottom = 0.945
+	_style_modal(prep_panel)
 	root.add_child(prep_panel)
-	var kit_stack := VBoxContainer.new()
-	kit_stack.add_theme_constant_override("separation", 8)
+	var prep_layout := VBoxContainer.new()
+	prep_layout.name = "PreparationLayout"
+	prep_layout.add_theme_constant_override("separation", 10)
+	prep_panel.add_child(prep_layout)
 	var kit_scroll := ScrollContainer.new()
 	kit_scroll.name = "PreparationScroll"
+	kit_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	kit_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	kit_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	kit_scroll.follow_focus = true
-	prep_panel.add_child(kit_scroll)
+	prep_layout.add_child(kit_scroll)
+	var kit_stack := VBoxContainer.new()
+	kit_stack.name = "EquipmentContent"
+	kit_stack.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	kit_stack.add_theme_constant_override("separation", 10)
 	kit_scroll.add_child(kit_stack)
 	var kit_title := Label.new()
 	kit_title.text = "RIVER PREPARATION | CHOOSE FOUR"
@@ -662,7 +721,8 @@ func _create_ui() -> void:
 	kit_close.text = "CLOSE PREPARATION"
 	kit_close.custom_minimum_size = Vector2(260, 48)
 	kit_close.pressed.connect(_close_prep)
-	kit_stack.add_child(kit_close)
+	kit_close.name = "ClosePreparation"
+	prep_layout.add_child(kit_close)
 	prep_panel.hide()
 	# Persistent accessibility options; deliberately not a second gameplay save.
 	var options_button := Button.new()
@@ -674,24 +734,30 @@ func _create_ui() -> void:
 	options_button.offset_top = 14
 	options_button.offset_bottom = 60
 	options_button.pressed.connect(_open_settings)
-	root.add_child(options_button)
+	gameplay_hud.add_child(options_button)
 	settings_panel = PanelContainer.new()
-	settings_panel.anchor_left = 0.27
-	settings_panel.anchor_right = 0.73
 	settings_panel.name = "SettingsPanel"
-	settings_panel.anchor_top = 0.15
-	settings_panel.anchor_bottom = 0.83
-	settings_panel.offset_top = 0
-	settings_panel.offset_bottom = 0
+	settings_panel.anchor_left = 0.10
+	settings_panel.anchor_right = 0.90
+	settings_panel.anchor_top = 0.055
+	settings_panel.anchor_bottom = 0.945
+	_style_modal(settings_panel)
 	root.add_child(settings_panel)
-	var options_stack := VBoxContainer.new()
-	options_stack.add_theme_constant_override("separation", 13)
+	var settings_layout := VBoxContainer.new()
+	settings_layout.name = "SettingsLayout"
+	settings_layout.add_theme_constant_override("separation", 10)
+	settings_panel.add_child(settings_layout)
 	var settings_scroll := ScrollContainer.new()
 	settings_scroll.name = "SettingsScroll"
+	settings_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	settings_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	settings_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	settings_scroll.follow_focus = true
-	settings_panel.add_child(settings_scroll)
+	settings_layout.add_child(settings_scroll)
+	var options_stack := VBoxContainer.new()
+	options_stack.name = "OptionsContent"
+	options_stack.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	options_stack.add_theme_constant_override("separation", 13)
 	settings_scroll.add_child(options_stack)
 	var options_heading := Label.new()
 	options_heading.text = "ACCESSIBILITY / GAME OPTIONS"
@@ -725,8 +791,10 @@ func _create_ui() -> void:
 	exit_options.text = "CLOSE OPTIONS"
 	exit_options.custom_minimum_size = Vector2(360, 50)
 	exit_options.pressed.connect(_close_settings)
-	options_stack.add_child(exit_options)
+	exit_options.name = "CloseSettings"
+	settings_layout.add_child(exit_options)
 	settings_panel.hide()
+	_sync_modal_ui()
 
 
 func _make_button(parent: Control, title: String, pos: Vector2, size: Vector2, down: Callable, up: Callable) -> void:
@@ -901,13 +969,16 @@ func _show_dialogue(value: String) -> void:
 	_close_notebook()
 	_close_prep()
 	_close_settings()
-	dialogue_text.text = value + "\n\n[INTERACT to close]"
+	dialogue_text.text = value
 	dialogue.show()
+	_sync_modal_ui()
 
 
 func _close_dialogue() -> void:
-	dialogue.hide()
+	if dialogue != null:
+		dialogue.hide()
 	_clear_touch_input()
+	_sync_modal_ui()
 
 
 func _toggle_night() -> void:
@@ -1122,12 +1193,14 @@ func _open_settings() -> void:
 	_close_prep()
 	settings_panel.show()
 	_refresh_options()
+	_sync_modal_ui()
 
 
 func _close_settings() -> void:
 	if settings_panel != null:
 		settings_panel.hide()
 	_clear_touch_input()
+	_sync_modal_ui()
 
 
 func _refresh_options() -> void:
@@ -1204,12 +1277,14 @@ func _open_prep() -> void:
 	_close_settings()
 	prep_panel.show()
 	_refresh_prep()
+	_sync_modal_ui()
 
 
 func _close_prep() -> void:
 	if prep_panel != null:
 		prep_panel.hide()
 	_clear_touch_input()
+	_sync_modal_ui()
 
 
 func _refresh_prep() -> void:
@@ -1252,6 +1327,7 @@ func _open_notebook() -> void:
 	_close_dialogue()
 	notebook_panel.show()
 	_refresh_notebook()
+	_sync_modal_ui()
 
 
 func _refresh_notebook() -> void:
@@ -1286,6 +1362,7 @@ func _close_notebook() -> void:
 	if notebook_panel != null:
 		notebook_panel.hide()
 	_clear_touch_input()
+	_sync_modal_ui()
 
 
 func _save_story_silent() -> void:
