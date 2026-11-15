@@ -56,6 +56,7 @@ jobs:
           godot --headless --path . --script res://tests/night01_state_test.gd
           godot --headless --path . --script res://tests/night01_inventory_test.gd
           godot --headless --path . --script res://tests/preferences_test.gd
+          godot --headless --path . --script res://tests/night01_courage_test.gd
       - name: Export debug APK
         env:
           GODOT_ANDROID_KEYSTORE_DEBUG_PATH: ${{ runner.temp }}/debug.keystore

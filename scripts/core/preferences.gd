@@ -6,6 +6,7 @@ const HINT_LEVELS := ["STANDARD", "GUIDED", "FULL"]
 var text_scale := 1.0
 var reduced_motion := false
 var high_contrast := false
+var story_assist := false
 var hint_level := 1
 
 func next_text_scale() -> void:
@@ -16,7 +17,7 @@ func next_hint_level() -> void:
 	hint_level = (hint_level + 1) % HINT_LEVELS.size()
 
 func to_dict() -> Dictionary:
-	return {"schema": 1, "text_scale": text_scale, "reduced_motion": reduced_motion, "high_contrast": high_contrast, "hint_level": hint_level}
+	return {"schema": 1, "text_scale": text_scale, "reduced_motion": reduced_motion, "high_contrast": high_contrast, "story_assist": story_assist, "hint_level": hint_level}
 
 func from_dict(data: Variant) -> bool:
 	if typeof(data) != TYPE_DICTIONARY or int(data.get("schema", -1)) != 1:
@@ -25,6 +26,7 @@ func from_dict(data: Variant) -> bool:
 	text_scale = minf(1.4, maxf(1.0, size))
 	reduced_motion = bool(data.get("reduced_motion", false))
 	high_contrast = bool(data.get("high_contrast", false))
+	story_assist = bool(data.get("story_assist", false))
 	hint_level = clampi(int(data.get("hint_level", 1)), 0, 2)
 	return true
 

@@ -43,3 +43,5 @@ jobs:
         run: godot --headless --path . --script res://tests/night01_inventory_test.gd
       - name: Offline accessibility preferences regression
         run: godot --headless --path . --script res://tests/preferences_test.gd
+      - name: Courage and safe retry regression
+        run: godot --headless --path . --script res://tests/night01_courage_test.gd

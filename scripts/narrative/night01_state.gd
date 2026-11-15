@@ -14,6 +14,8 @@ var outcome := ""
 var committed_events: Dictionary = {}
 var seen_people: Dictionary = {}
 var alarm := 0.0
+var courage := 100.0
+var encounter_failed := false
 var checkpoint: Dictionary = {}
 var revision_count := 0
 
@@ -71,7 +73,7 @@ func begin() -> bool:
 
 
 func advance_observation() -> bool:
-	if phase != 1:
+	if phase != 1 or encounter_failed:
 		return false
 	# Releasing sustained direct light leaves the spirit calm enough to observe.
 	if alarm > 0.45:
@@ -82,7 +84,7 @@ func advance_observation() -> bool:
 
 
 func choose_reflection(id: String) -> bool:
-	if phase != 2:
+	if phase != 2 or encounter_failed:
 		return false
 	if id != "current_aligned":
 		alarm = minf(1.0, alarm + 0.22)
@@ -93,6 +95,8 @@ func choose_reflection(id: String) -> bool:
 
 
 func commit_result(result: String) -> bool:
+	if encounter_failed and result != "partial":
+		return false
 	if result == "drive_away" and not kit.has("signal_bell"):
 		return false
 	if phase != 3 or outcome != "" or not RESULTS.has(result):
@@ -103,8 +107,33 @@ func commit_result(result: String) -> bool:
 	return true
 
 
+func tick_courage(delta: float, story_assist: bool = false) -> bool:
+	if outcome != "" or phase < 1 or phase > 3 or encounter_failed:
+		return false
+	# Only a clearly alarmed spirit produces pressure; calm moments recover courage.
+	if alarm > 0.60:
+		courage -= (alarm - 0.60) * 25.0 * delta
+	else:
+		courage += 4.0 * delta
+	courage = clampf(courage, 0.0, 100.0)
+	if story_assist:
+		courage = maxf(25.0, courage)
+	if courage <= 0.0:
+		encounter_failed = true
+		return true
+	return false
+
+
+func drink_water() -> bool:
+	if outcome != "" or phase < 1 or phase > 3 or encounter_failed or not kit.consume("water_flask"):
+		return false
+	courage = minf(100.0, courage + 35.0)
+	alarm = maxf(0.0, alarm - 0.12)
+	return true
+
+
 func shade_lantern() -> bool:
-	if phase != 1 or outcome != "" or not kit.consume("cloth_wrap"):
+	if phase != 1 or outcome != "" or encounter_failed or not kit.consume("cloth_wrap"):
 		return false
 	alarm = maxf(0.0, alarm - 0.34)
 	return true
@@ -140,6 +169,8 @@ func to_dict() -> Dictionary:
 		"committed_events": committed_events.duplicate(true),
 		"seen_people": seen_people.duplicate(true),
 		"alarm": alarm,
+		"courage": courage,
+		"encounter_failed": encounter_failed,
 		"revision_count": revision_count,
 		"checkpoint": checkpoint.duplicate(true)
 	}
@@ -181,6 +212,8 @@ func from_dict(raw: Dictionary) -> bool:
 		committed_events["n1_santelmo_" + outcome] = true
 	seen_people = raw.get("seen_people", {}).duplicate(true)
 	alarm = clampf(float(raw.get("alarm", 0)), 0.0, 1.0)
+	courage = clampf(float(raw.get("courage", 100.0)), 0.0, 100.0)
+	encounter_failed = bool(raw.get("encounter_failed", false)) if outcome == "" else false
 	revision_count = maxi(0, int(raw.get("revision_count", 0)))
 	checkpoint = {}
 	var saved_checkpoint: Variant = raw.get("checkpoint", {})

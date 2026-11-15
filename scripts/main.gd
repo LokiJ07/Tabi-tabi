@@ -28,6 +28,9 @@ var pref_text_button: Button
 var pref_motion_button: Button
 var pref_contrast_button: Button
 var pref_hint_button: Button
+var pref_assist_button: Button
+var courage_label: Label
+var prep_water_button: Button
 var choice_buttons: Array[Button] = []
 var stage_label: Label
 var player: CharacterBody3D
@@ -74,6 +77,7 @@ var encountered_light := false
 var santelmo
 var ambient_walkers: Array[Node3D] = []
 var elapsed := 0.0
+var encounter_autosave_clock := 0.0
 
 
 func _ready() -> void:
@@ -125,7 +129,17 @@ func _physics_process(delta: float) -> void:
 	if is_night and santelmo != null:
 		light_alarm = santelmo.update_behavior(delta, player.global_position, lamp_heading, focus_held)
 		story.alarm = light_alarm
+		encounter_autosave_clock += delta
+		if encounter_autosave_clock >= 10.0 and story.outcome == "" and story.phase >= 1:
+			encounter_autosave_clock = 0.0
+			_save_story_silent()
+		if story.tick_courage(delta, preferences.story_assist):
+			_show_dialogue("Bantay leads you back from the frightening light. You can RETRY the safe checkpoint or ACCEPT PARTIAL.")
+			_refresh_choices()
+			_update_objective()
 		alarm_label.text = "Santelmo: %s  |  Strong Focus makes it retreat" % ("ALARMED: lower your light" if light_alarm > 0.65 else "watching" if light_alarm > 0.2 else "calm")
+	if courage_label != null:
+		courage_label.text = "COURAGE: %d / 100" % roundi(story.courage) if is_night and story.phase >= 1 and story.phase <= 3 else ""
 	for i in range(ambient_walkers.size()):
 		var villager := ambient_walkers[i]
 		villager.visible = not is_night
@@ -431,6 +445,11 @@ func _create_ui() -> void:
 	interact_hint.add_theme_font_size_override("font_size", 21)
 	interact_hint.add_theme_color_override("font_color", Color(0.98, 0.86, 0.60))
 	root.add_child(interact_hint)
+	courage_label = Label.new()
+	courage_label.position = Vector2(25, 196)
+	courage_label.add_theme_font_size_override("font_size", 20)
+	courage_label.add_theme_color_override("font_color", Color(0.98, 0.86, 0.61))
+	root.add_child(courage_label)
 	dog_warning_label = Label.new()
 	dog_warning_label.position = Vector2(25, 160)
 	dog_warning_label.add_theme_font_size_override("font_size", 18)
@@ -550,6 +569,11 @@ func _create_ui() -> void:
 		item_button.pressed.connect(func(): _toggle_kit_item(item_id))
 		prep_buttons[item_id] = item_button
 		kit_stack.add_child(item_button)
+	prep_water_button = Button.new()
+	prep_water_button.custom_minimum_size = Vector2(360, 49)
+	prep_water_button.text = "USE WATER FLASK (NIGHT)"
+	prep_water_button.pressed.connect(_use_water)
+	kit_stack.add_child(prep_water_button)
 	var kit_close := Button.new()
 	kit_close.text = "CLOSE PREPARATION"
 	kit_close.custom_minimum_size = Vector2(260, 48)
@@ -597,6 +621,11 @@ func _create_ui() -> void:
 	pref_hint_button.custom_minimum_size = Vector2(360, 50)
 	pref_hint_button.pressed.connect(_cycle_hint_level)
 	options_stack.add_child(pref_hint_button)
+	pref_assist_button = Button.new()
+	pref_assist_button.custom_minimum_size = Vector2(360, 50)
+	pref_assist_button.pressed.connect(_toggle_story_assist)
+	options_stack.add_child(pref_assist_button)
+	settings_panel.offset_bottom = 435
 	var exit_options := Button.new()
 	exit_options.text = "CLOSE OPTIONS"
 	exit_options.custom_minimum_size = Vector2(360, 50)
@@ -724,6 +753,9 @@ func _close_dialogue() -> void:
 
 
 func _toggle_night() -> void:
+	if is_night and story.phase >= 1 and story.phase <= 3:
+		_show_dialogue("The encounter has begun. Use RETREAT or the safe checkpoint, not the day/night switch.")
+		return
 	if not is_night and not story.kit.is_ready():
 		_open_prep()
 		return
@@ -762,6 +794,8 @@ func _update_objective() -> void:
 		objective.text = "MORNING AFTER: " + story.outcome.to_upper() + " — state saved."
 	elif not is_night:
 		objective.text = "Meet Mara, prepare four items, then choose the night."
+	elif story.encounter_failed:
+		objective.text = "Bantay found safe ground. RETRY checkpoint or ACCEPT PARTIAL."
 	elif story.phase == 0:
 		objective.text = "Collect 3 clues, link evidence pairs in NOTEBOOK, then BEGIN."
 	elif story.phase == 1:
@@ -780,6 +814,8 @@ func _refresh_choices() -> void:
 	var names: Array[String] = []
 	if not is_night:
 		names = ["", "", ""]
+	elif story.encounter_failed:
+		names = ["RETRY", "ACCEPT PARTIAL", ""]
 	elif story.phase == 0:
 		names = ["BEGIN" if story.can_begin() else "OPEN NOTEBOOK", "", ""]
 	elif story.phase == 1:
@@ -798,6 +834,12 @@ func _refresh_choices() -> void:
 
 func _choose_story_action(index: int) -> void:
 	if not is_night or story.outcome != "":
+		return
+	if story.encounter_failed:
+		if index == 0:
+			_retry_story()
+		elif index == 1:
+			_commit_night("partial")
 		return
 	if story.phase == 0:
 		if index == 0:
@@ -903,12 +945,13 @@ func _refresh_options() -> void:
 	pref_motion_button.text = "REDUCED MOTION: %s" % ("ON" if preferences.reduced_motion else "OFF")
 	pref_contrast_button.text = "HIGH-CONTRAST TEXT: %s" % ("ON" if preferences.high_contrast else "OFF")
 	pref_hint_button.text = "PUZZLE HINTS: " + str(preferences.HINT_LEVELS[preferences.hint_level])
+	pref_assist_button.text = "STORY ASSIST / NO-FAIL: " + ("ON" if preferences.story_assist else "OFF")
 
 
 func _apply_preferences() -> void:
 	var scale: float = preferences.text_scale
-	var labels: Array[Label] = [info, objective, stage_label, alarm_label, interact_hint, dog_warning_label, dialogue_text, notebook_body, prep_summary]
-	var base_sizes: Array[int] = [24, 22, 20, 18, 21, 18, 22, 21, 20]
+	var labels: Array[Label] = [info, objective, stage_label, alarm_label, interact_hint, dog_warning_label, dialogue_text, notebook_body, prep_summary, courage_label]
+	var base_sizes: Array[int] = [24, 22, 20, 18, 21, 18, 22, 21, 20, 20]
 	for i in range(labels.size()):
 		var element: Label = labels[i]
 		if element == null:
@@ -950,6 +993,12 @@ func _cycle_hint_level() -> void:
 	_apply_preferences()
 
 
+func _toggle_story_assist() -> void:
+	preferences.story_assist = not preferences.story_assist
+	preferences.save_to()
+	_apply_preferences()
+
+
 func _open_prep() -> void:
 	_close_dialogue()
 	_close_notebook()
@@ -969,6 +1018,20 @@ func _refresh_prep() -> void:
 		var item_button: Button = prep_buttons[id]
 		item_button.text = ("[EQUIPPED] " if story.kit.has(id) else "[AVAILABLE] ") + str(story.kit.NAMES[id])
 		item_button.disabled = is_night or story.phase > 0 or story.outcome != ""
+	prep_water_button.visible = is_night and story.phase >= 1 and story.phase <= 3
+	prep_water_button.disabled = not story.kit.has("water_flask") or story.kit.is_used("water_flask") or story.encounter_failed
+	prep_water_button.text = "DRINK WATER (restores courage)" if not story.kit.is_used("water_flask") else "WATER USED"
+
+
+func _use_water() -> void:
+	if story.drink_water():
+		light_alarm = story.alarm
+		if santelmo != null:
+			santelmo.alarm = story.alarm
+		_save_story_silent()
+		_show_dialogue("You pause on safe ground, drink water, and steady your breathing. Courage restored.")
+	else:
+		_refresh_prep()
 
 
 func _toggle_kit_item(id: String) -> void:
@@ -1058,6 +1121,9 @@ func _restore_story() -> void:
 func _retry_story() -> void:
 	if story.retry_from_checkpoint():
 		light_alarm = story.alarm
+		if santelmo != null:
+			santelmo.alarm = story.alarm
+		_save_story_silent()
 		if santelmo != null:
 			santelmo.set_encounter_phase(story.phase)
 		_show_dialogue("Restored the safe encounter checkpoint; no permanent resources were duplicated.")
