@@ -143,7 +143,7 @@ func _draw_banca() -> void:
 	for z in [-.90, 0.20, 1.02]:
 		draw_line(_screen(p+Vector3(-.60,.25,z)),_screen(p+Vector3(.60,.25,z)),Color("#c6a174"),3.1,true)
 	for side in [-1.0,1.0]:
-		var x := 2.14*side
+		var x: float = 2.14 * float(side)
 		draw_line(_screen(p+Vector3(x,.09,-1.48)),_screen(p+Vector3(x,.09,1.56)),Color("#b39a68"),5.0,true)
 		for z in [-.52,.82]:
 			draw_line(_screen(p+Vector3(.60*side,.24,z)),_screen(p+Vector3(x,.13,z)),Color("#92744e"),2.4,true)
