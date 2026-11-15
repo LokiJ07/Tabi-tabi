@@ -32,7 +32,7 @@ const TARGETS := {
 	"exposed_roots": Vector2(342, 250),
 	"cigar_ash": Vector2(560, -216),
 	"shelter_route": Vector2(-446, 272),
-	"witness_accounts": Vector2(-546, -335),
+	"witness_accounts": Vector2(-545, -223),
 	"west_approach": Vector2(-65, 154),
 	"south_approach": Vector2(160, 302),
 	"shelter_turn": Vector2(-360, 247)
@@ -191,7 +191,7 @@ func _unhandled_input(event: InputEvent) -> void:
 				player_pos = Vector2(110,-140)
 				print("NIGHT2_QA_DUSK_VIEW")
 			elif key.keycode == KEY_F7:
-				player_pos = Vector2(-530,-315)
+				player_pos = Vector2(-345,-315)
 				print("NIGHT2_QA_WITNESS_VIEW")
 			elif key.keycode == KEY_F8:
 				player_pos = Vector2(-320,220)
@@ -254,13 +254,29 @@ func _draw() -> void:
 		if story.barriers.has(id):
 			draw_texture_rect(BARRIER, Rect2(point-Vector2(38,78), Vector2(76,100)), false)
 		else:
-			draw_line(point + Vector2(-31,0),point + Vector2(31,0),Color("#e9c280",.65),3)
-			draw_arc(point,43,0,TAU,45,Color("#e9c280",.44),2)
+			# Unsecured access shows a believable roadside bamboo hazard
+			# stake with cloth warning, NOT a generic flat circle target.
+			draw_line(point + Vector2(0,-38),point + Vector2(0,35),Color("#68472f"),6,true)
+			draw_line(point + Vector2(-4,-33),point + Vector2(18,-34),Color("#c79f64"),3,true)
+			draw_colored_polygon(PackedVector2Array([
+				point + Vector2(3,-34),point+Vector2(48,-20),point+Vector2(3,-5)]),Color("#b16a47"))
+			draw_line(point+Vector2(11,-26),point+Vector2(11,-13),Color("#f3d9a7"),2.4)
 	# Paths stay grounded; actors and ambient lights are last.
-	draw_texture_rect(DADO, Rect2(-640,-390,78,126), false)
-	draw_texture_rect(MARA, Rect2(-525,-385,78,126), false)
-	draw_texture_rect(BANTAY, Rect2(dog_pos-Vector2(45,67),Vector2(90,96)),false)
-	draw_texture_rect(HERO, Rect2(player_pos-Vector2(46,116),Vector2(92,124)),false)
+	# Dynamic painter sorting: villagers, Apprentice and Bantay can walk
+	# around each other without always floating above every NPC's face.
+	var actors: Array[Dictionary] = [
+		{"at": Vector2(-661,-263), "texture": DADO, "width": 80.0, "height": 128.0},
+		{"at": Vector2(-461,-261), "texture": MARA, "width": 80.0, "height": 128.0},
+		{"at": dog_pos + Vector2(0,29), "texture": BANTAY, "width": 90.0, "height": 96.0},
+		{"at": player_pos + Vector2(0,8), "texture": HERO, "width": 92.0, "height": 124.0}
+	]
+	actors.sort_custom(func(a: Dictionary,b: Dictionary)->bool:
+		return (a["at"] as Vector2).y < (b["at"] as Vector2).y)
+	for actor in actors:
+		var foot: Vector2 = actor["at"]
+		var width: float = actor["width"]
+		var height: float = actor["height"]
+		draw_texture_rect(actor["texture"],Rect2(foot-Vector2(width*.5,height),Vector2(width,height)),false)
 	# The observation and negotiation stages are genuinely twilight, not
 	# the identical green daytime village with a changed objective label.
 	if story.phase >= 2 or debug_dusk_preview:
