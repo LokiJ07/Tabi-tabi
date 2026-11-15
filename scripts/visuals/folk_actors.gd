@@ -1,4 +1,41 @@
 extends RefCounted
+## G6: actual imported illustrated 2.5D sprites are the visible characters.
+## Original collision-free primitive rigs remain hidden for backwards-compatible
+## scene nodes and regression tests, and can be re-enabled for art debugging.
+const FACE_APPRENTICE: Texture2D = preload("res://assets/characters/apprentice.svg")
+const FACE_LOLA: Texture2D = preload("res://assets/characters/lola.svg")
+const FACE_DADO: Texture2D = preload("res://assets/characters/dado.svg")
+const FACE_MARA: Texture2D = preload("res://assets/characters/mara.svg")
+const FACE_SABEL: Texture2D = preload("res://assets/characters/sabel.svg")
+const FACE_RESIDENT: Texture2D = preload("res://assets/characters/resident.svg")
+const FACE_BANTAY: Texture2D = preload("res://assets/characters/bantay.svg")
+
+static func role_texture(role: String) -> Texture2D:
+	match role_id(role):
+		"LOLA": return FACE_LOLA
+		"DADO": return FACE_DADO
+		"MARA": return FACE_MARA
+		"SABEL": return FACE_SABEL
+		"APPRENTICE": return FACE_APPRENTICE
+	return FACE_RESIDENT
+
+static func finish_illustrated_actor(actor: Node3D, texture: Texture2D, dog_actor: bool = false) -> void:
+	# Keep every named rig mesh available to QA scripts without showing the
+	# unpolished box/sphere faces under the hand-authored character illustration.
+	for child in actor.get_children():
+		if child is Node3D:
+			(child as Node3D).visible = false
+	var art := Sprite3D.new()
+	art.name = "IllustratedSprite"
+	art.texture = texture
+	art.pixel_size = 0.0055 if dog_actor else 0.0050
+	art.billboard = BaseMaterial3D.BILLBOARD_FIXED_Y
+	art.shaded = false
+	art.alpha_cut = SpriteBase3D.ALPHA_CUT_DISCARD
+	art.position = Vector3(0, 0.9 if dog_actor else 1.1, 0)
+	actor.add_child(art)
+	actor.set_meta("visual_asset", texture.resource_path)
+
 ## Night 1 authored character identities. Procedural mobile-friendly meshes are
 ## interchangeable stand-ins until final rigged art is approved.
 
@@ -123,6 +160,7 @@ static func person(role: String, shirt: Color, trousers: Color) -> Node3D:
 			part(actor, "SalakotBrim", "cylinder", Vector3(0, 1.87, 0), Vector3(0.51, 0.055, 0.51), accent)
 			part(actor, "NotebookSatchel", "box", Vector3(0.34, 0.80, -0.02), Vector3(0.21, 0.36, 0.32), Color("#72503a"))
 			part(actor, "BagStrap", "box", Vector3(0.1, 1.13, -0.2), Vector3(0.065, 0.68, 0.04), Color("#523d30"))
+	finish_illustrated_actor(actor, role_texture(role))
 	return actor
 
 
@@ -144,6 +182,7 @@ static func dog() -> Node3D:
 	actor.add_child(tail)
 	var tail_mesh := part(tail, "TailShape", "cylinder", Vector3(0, 0.19, 0.18), Vector3(0.10, 0.49, 0.10), Color(0.63, 0.37, 0.21))
 	tail_mesh.rotation.x = 0.8
+	finish_illustrated_actor(actor, FACE_BANTAY, true)
 	return actor
 
 
@@ -162,6 +201,10 @@ static func animate_person(actor: Node3D, time: float, moving: bool) -> void:
 		arm_l.rotation.x = -swing * 0.65
 	if arm_r != null:
 		arm_r.rotation.x = swing * 0.65
+	var image := actor.get_node_or_null("IllustratedSprite") as Sprite3D
+	if image != null:
+		image.position.y = 1.1 + (absf(sin(time * 8.0)) * 0.065 if moving else 0.018 * sin(time * 1.8))
+		image.rotation.z = sin(time * 8.0) * 0.014 if moving else 0.0
 
 
 static func animate_expression(actor: Node3D, time: float, speaking: bool, reduced_motion: bool = false) -> void:
@@ -189,6 +232,13 @@ static func animate_expression(actor: Node3D, time: float, speaking: bool, reduc
 	var gesture := actor.get_node_or_null("ArmRight") as Node3D
 	if gesture != null:
 		gesture.rotation.z = 0.18 * sin(time * 2.1 + offset) if speaking and not reduced_motion else 0.0
+	# The billboard uses characterful body acting even without skeletal rigging.
+	# Reduced-motion settings hold it steady.
+	var sprite := actor.get_node_or_null("IllustratedSprite") as Sprite3D
+	if sprite != null:
+		sprite.scale = Vector3.ONE if reduced_motion else Vector3(
+			1.0 + (0.012 * sin(time * 2.3 + offset) if speaking else 0.0),
+			1.0 + (0.016 * sin(time * 2.3 + offset) if speaking else 0.0), 1.0)
 
 
 static func animate_dog(actor: Node3D, time: float, moving: bool, alert: bool) -> void:
@@ -198,3 +248,8 @@ static func animate_dog(actor: Node3D, time: float, moving: bool, alert: bool) -
 	var body := actor.get_node_or_null("Body") as MeshInstance3D
 	if body != null:
 		body.position.y = 0.52 + (0.03 * sin(time * 11.0) if moving else 0.01 * sin(time * 2.0))
+	var sprite := actor.get_node_or_null("IllustratedSprite") as Sprite3D
+	if sprite != null:
+		sprite.position.y = 0.9 + (0.07 * absf(sin(time * 11.0)) if moving else 0.025 * sin(time * 2.3))
+		sprite.rotation.z = 0.025 * sin(time * (8.0 if alert else 3.0))
+
