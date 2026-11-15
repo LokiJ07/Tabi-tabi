@@ -79,3 +79,5 @@ jobs:
         run: godot --headless --path . --script res://tests/night01_navigation_test.gd
       - name: G6 imported illustrated characters, village, and world materials
         run: godot --headless --path . --script res://tests/night01_illustrated_art_test.gd
+      - name: Architectural cohesion of shore, boat, landing and authentic houses
+        run: godot --headless --path . --script res://tests/night01_world_cohesion_test.gd
