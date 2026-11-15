@@ -13,6 +13,7 @@ const FolkActors = preload("res://scripts/visuals/folk_actors.gd")
 const SpeakerPortrait = preload("res://scripts/ui/speaker_portrait.gd")
 const ConversationPages = preload("res://scripts/narrative/conversation_pages.gd")
 const BarrioDetails = preload("res://scripts/world/barrio_details.gd")
+const EnvironmentPolish = preload("res://scripts/world/environment_polish.gd")
 const Mangrove = preload("res://scripts/world/mangrove.gd")
 const CinematicCamera = preload("res://scripts/visuals/cinematic_camera.gd")
 const BarrioLighting = preload("res://scripts/visuals/barrio_lighting.gd")
@@ -272,6 +273,7 @@ func _create_world() -> void:
 	for key in room_interactions:
 		interaction_nodes[key] = room_interactions[key]
 	BarrioDetails.decorate(self)
+	EnvironmentPolish.decorate(self)
 
 
 func _box(name: String, pos: Vector3, size: Vector3, color: Color, solid: bool) -> Node3D:
@@ -509,6 +511,16 @@ func _create_audio() -> void:
 	living_sound.set_audio_level(preferences.audio_level)
 
 
+func _fit_status_card() -> void:
+	# Let the status card grow when accessibility text or objectives wrap.
+	# Avoid the fixed 250px card which clipped Stage 3 at 140% text size.
+	if status_panel == null or status_stack == null or not is_inside_tree():
+		return
+	var needed: float = status_stack.get_combined_minimum_size().y + 30.0
+	var available: float = get_viewport().get_visible_rect().size.y * 0.67
+	status_panel.offset_bottom = clampf(needed, 145.0, available)
+
+
 func _style_modal(panel: PanelContainer) -> void:
 	var style := StyleBoxFlat.new()
 	style.bg_color = Color("#092936")
@@ -562,6 +574,7 @@ func _style_game_button(button: Button, title: String, touch: bool = false) -> v
 	button.add_theme_font_size_override("font_size", 23)
 	button.alignment = HORIZONTAL_ALIGNMENT_CENTER
 	button.set_meta("art_theme", "night1-gold-navy")
+	button.clip_text = true
 
 
 func _style_modal_button(button: Button, selected: bool = false, footer: bool = false) -> void:
@@ -612,18 +625,18 @@ func _create_ui() -> void:
 	status_panel = PanelContainer.new()
 	status_panel.name = "QuestStatusCard"
 	status_panel.anchor_left = 0.0
-	status_panel.anchor_right = 0.57
+	status_panel.anchor_right = 0.55
 	status_panel.anchor_top = 0.0
 	status_panel.anchor_bottom = 0.0
 	status_panel.offset_left = 16.0
 	status_panel.offset_right = -8.0
 	status_panel.offset_top = 10.0
-	status_panel.offset_bottom = 250.0
+	status_panel.offset_bottom = 250.0  # updated from live text minimum size
 	status_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var status_style := StyleBoxFlat.new()
 	status_style.bg_color = Color(0.035, 0.075, 0.09, 0.83)
-	status_style.border_color = Color(0.38, 0.62, 0.56, 0.48)
-	status_style.set_border_width_all(1)
+	status_style.border_color = Color("#c29a55")
+	status_style.set_border_width_all(2)
 	status_style.set_corner_radius_all(9)
 	status_style.content_margin_left = 13
 	status_style.content_margin_right = 13
@@ -634,7 +647,8 @@ func _create_ui() -> void:
 	status_stack = VBoxContainer.new()
 	status_stack.name = "StatusRows"
 	status_stack.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	status_stack.add_theme_constant_override("separation", 5)
+	status_stack.add_theme_constant_override("separation", 6)
+	status_stack.minimum_size_changed.connect(func(): call_deferred("_fit_status_card"))
 	status_panel.add_child(status_stack)
 	info = Label.new()
 	info.name = "VillageHeading"
@@ -683,7 +697,7 @@ func _create_ui() -> void:
 	interact_hint.anchor_top = 0.0
 	interact_hint.anchor_bottom = 0.0
 	interact_hint.offset_top = 9
-	interact_hint.offset_bottom = 66
+	interact_hint.offset_bottom = 89
 	interact_hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	interact_hint.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	interact_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -712,21 +726,29 @@ func _create_ui() -> void:
 	focus_feedback.add_theme_font_size_override("font_size", 18)
 	focus_feedback.add_theme_color_override("font_color", Color("#8ff5cc"))
 	status_stack.add_child(focus_feedback)
+	# Flexible centered choice row: no hard-coded adjacent labels or collision
+	# with the edge-mounted controls, including on large text settings.
+	var choice_bar := HBoxContainer.new()
+	choice_bar.name = "StoryActionsBar"
+	choice_bar.anchor_left = 0.24
+	choice_bar.anchor_right = 0.76
+	choice_bar.anchor_top = 1.0
+	choice_bar.anchor_bottom = 1.0
+	choice_bar.offset_top = -270
+	choice_bar.offset_bottom = -203
+	choice_bar.add_theme_constant_override("separation", 12)
+	choice_bar.alignment = BoxContainer.ALIGNMENT_CENTER
+	gameplay_hud.add_child(choice_bar)
 	for i in range(3):
 		var index := i
 		var action := Button.new()
 		action.name = "Choice %d" % i
-		action.anchor_left = 0.5
-		action.anchor_right = 0.5
-		action.anchor_top = 1.0
-		action.anchor_bottom = 1.0
-		action.offset_left = -300 + i * 205
-		action.offset_right = action.offset_left + 200
-		action.offset_top = -255
-		action.offset_bottom = -200
+		action.custom_minimum_size = Vector2(170, 65)
+		action.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		action.clip_text = true
 		action.pressed.connect(func(): _choose_story_action(index))
 		_style_game_button(action, "STORY ACTION")
-		gameplay_hud.add_child(action)
+		choice_bar.add_child(action)
 		choice_buttons.append(action)
 	_refresh_choices()
 	alarm_label = Label.new()
@@ -788,7 +810,7 @@ func _create_ui() -> void:
 	dialogue_text = Label.new()
 	dialogue_text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	dialogue_text.add_theme_font_size_override("font_size", 25)
-	dialogue_text.custom_minimum_size = Vector2(390, 180)
+	dialogue_text.custom_minimum_size = Vector2(260, 150)
 	dialogue_text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	dialogue_text.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	portrait_row.add_child(dialogue_text)
@@ -1020,6 +1042,7 @@ func _create_ui() -> void:
 func _make_button(parent: Control, title: String, pos: Vector2, size: Vector2, down: Callable, up: Callable) -> Button:
 	var button := Button.new()
 	button.text = title
+	button.clip_text = true
 	# Anchor controls to bottom corners so they remain reachable on wider phones.
 	button.anchor_left = 1.0 if pos.x > 900 else 0.0
 	button.anchor_right = button.anchor_left
@@ -1393,8 +1416,11 @@ func _refresh_choices() -> void:
 	else:
 		names = ["", "", ""]
 	for i in range(choice_buttons.size()):
-		choice_buttons[i].text = names[i]
-		choice_buttons[i].visible = names[i] != ""
+		var action: Button = choice_buttons[i]
+		action.text = names[i].replace("LOLA, ARE YOU RESTED?", "LOLA, ARE YOU\nRESTED?")
+		action.visible = names[i] != ""
+		# Deliberate two-line text beats accidental truncation in a narrow HUD.
+		action.add_theme_font_size_override("font_size", 17 if names[i].length() > 17 else 21)
 	stage_label.text = MorningAftermath.morning_label(story.outcome) if story.outcome != "" else "CLUES %d/3  •  GUIDE %d%%" % [story.clues.size(), roundi(story.guide_progress * 100.0)] if story.phase == 3 else "CLUES %d/3  •  STAGE %d" % [story.clues.size(), story.phase]
 	_update_focus_ui()
 
@@ -1541,12 +1567,15 @@ func _apply_preferences() -> void:
 		if element == null:
 			continue
 		element.add_theme_font_size_override("font_size", roundi(float(base_sizes[i]) * scale))
+		if not element.has_meta("original_font_color"):
+			element.set_meta("original_font_color", element.get_theme_color("font_color"))
 		if preferences.high_contrast:
 			element.add_theme_color_override("font_color", Color.WHITE)
 			element.add_theme_color_override("font_outline_color", Color.BLACK)
 			element.add_theme_constant_override("outline_size", 3)
 		else:
-			element.remove_theme_color_override("font_color")
+			# Restore characterful original colors, not Godot's low-contrast default.
+			element.add_theme_color_override("font_color", element.get_meta("original_font_color"))
 			element.remove_theme_color_override("font_outline_color")
 			element.remove_theme_constant_override("outline_size")
 	var headers: Array[Label] = [
@@ -1579,6 +1608,7 @@ func _apply_preferences() -> void:
 	if settings_panel != null:
 		_refresh_options()
 	_update_focus_ui()
+	call_deferred("_fit_status_card")
 
 
 func _cycle_text_size() -> void:
