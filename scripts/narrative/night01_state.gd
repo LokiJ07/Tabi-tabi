@@ -90,7 +90,9 @@ func retry_from_checkpoint() -> bool:
 	if checkpoint.is_empty() or outcome != "":
 		return false
 	var saved: Dictionary = checkpoint.duplicate(true)
-	from_dict(saved)
+	if not from_dict(saved):
+		return false
+	checkpoint = saved
 	return true
 
 
@@ -104,7 +106,8 @@ func to_dict() -> Dictionary:
 		"committed_events": committed_events.duplicate(true),
 		"seen_people": seen_people.duplicate(true),
 		"alarm": alarm,
-		"revision_count": revision_count
+		"revision_count": revision_count,
+		"checkpoint": checkpoint.duplicate(true)
 	}
 
 
@@ -134,4 +137,9 @@ func from_dict(raw: Dictionary) -> bool:
 	alarm = clampf(float(raw.get("alarm", 0)), 0.0, 1.0)
 	revision_count = maxi(0, int(raw.get("revision_count", 0)))
 	checkpoint = {}
+	var saved_checkpoint: Variant = raw.get("checkpoint", {})
+	if typeof(saved_checkpoint) == TYPE_DICTIONARY and outcome == "":
+		var cp_phase := int(saved_checkpoint.get("phase", -1))
+		if cp_phase >= 1 and cp_phase <= 3 and str(saved_checkpoint.get("outcome", "")) == "":
+			checkpoint = saved_checkpoint.duplicate(true)
 	return true

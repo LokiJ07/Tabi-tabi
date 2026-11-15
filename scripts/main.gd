@@ -496,12 +496,10 @@ func _update_objective() -> void:
 		objective.text = "OBJECTIVE: Speak to Lola Pasing (gold marker)."
 	elif not talked_to_dado:
 		objective.text = "OBJECTIVE: Meet Tatay Dado by the river (blue marker)."
-	elif not is_night:
-		objective.text = "OBJECTIVE: Inspect the old mooring, then tap DAY / NIGHT."
-	elif not encountered_light:
-		objective.text = "OBJECTIVE: Visit the old mooring at night."
 	elif story.outcome != "":
 		objective.text = "MORNING AFTER: " + story.outcome.to_upper() + " — state saved."
+	elif not is_night:
+		objective.text = "Inspect mooring and speak to Mara, then begin night when ready."
 	elif story.phase == 0:
 		objective.text = "Find three clues (Dado, mooring, Mara), then BEGIN at the river."
 	elif story.phase == 1:
@@ -592,6 +590,8 @@ func _commit_night(result: String) -> void:
 		"partial":
 			line = "Morning: Lola welcomes you home. Another way to learn from the river remains."
 	_show_dialogue(line)
+	_refresh_choices()
+	_update_objective()
 	_save_story_silent()
 
 
@@ -633,6 +633,7 @@ func _restore_story() -> void:
 	talked_to_dado = story.seen_people.has("dado")
 	if bool(data.get("night", false)) and story.outcome == "":
 		_toggle_night()
+		light_alarm = story.alarm
 	_refresh_choices()
 
 
