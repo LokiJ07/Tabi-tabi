@@ -133,8 +133,8 @@ func _draw_village() -> void:
 	_ground()
 	var props: Array[Dictionary] = []
 	for i in range(8):
-		var z := [-18.1,-13.1,-4.9,1.7,9.0,16.3,-15.3,20.0][i]
-		var x := [-19.3,-14.0,-18.7,-14.2,-18.4,-13.9,-11.4,-17.2][i]
+		var z: float = [-18.1,-13.1,-4.9,1.7,9.0,16.3,-15.3,20.0][i]
+		var x: float = [-19.3,-14.0,-18.7,-14.2,-18.4,-13.9,-11.4,-17.2][i]
 		props.append({"at": Vector3(x, 0.03, z), "type": "sprite", "texture": MANGROVE, "width": 4.5})
 	for at in [Vector3(14.5, 0, -19.3), Vector3(16.7, 0, -8.5),
 		Vector3(14.8, 0, 3.8), Vector3(18.3, 0, 15), Vector3(11.2, 0, 17.9)]:
