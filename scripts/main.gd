@@ -18,6 +18,11 @@ const IllustratedBarrio = preload("res://scripts/world/illustrated_barrio.gd")
 const SOIL_ART: Texture2D = preload("res://assets/world/soil_ground.svg")
 const PATH_ART: Texture2D = preload("res://assets/world/earthen_path.svg")
 const WATER_ART: Texture2D = preload("res://assets/world/tidal_water.svg")
+const UI_PREPARE: Texture2D = preload("res://assets/ui/prepare.svg")
+const UI_NOTEBOOK: Texture2D = preload("res://assets/ui/notebook.svg")
+const UI_FOCUS: Texture2D = preload("res://assets/ui/focus.svg")
+const UI_INTERACT: Texture2D = preload("res://assets/ui/interact.svg")
+const UI_DAYNIGHT: Texture2D = preload("res://assets/ui/daynight.svg")
 const Mangrove = preload("res://scripts/world/mangrove.gd")
 const CinematicCamera = preload("res://scripts/visuals/cinematic_camera.gd")
 const BarrioLighting = preload("res://scripts/visuals/barrio_lighting.gd")
@@ -1085,6 +1090,18 @@ func _make_button(parent: Control, title: String, pos: Vector2, size: Vector2, d
 	button.button_down.connect(down)
 	button.button_up.connect(up)
 	_style_game_button(button, title, size.x < 95.0)
+	# Icons are imported vector game assets, not emoji glyphs that differ across
+	# Android devices. Smaller text fits beside them inside the touch targets.
+	match title:
+		"PREPARE": button.icon = UI_PREPARE
+		"NOTEBOOK": button.icon = UI_NOTEBOOK
+		"HOLD FOCUS": button.icon = UI_FOCUS
+		"INTERACT": button.icon = UI_INTERACT
+		"DAY / NIGHT": button.icon = UI_DAYNIGHT
+	if button.icon != null:
+		button.icon_alignment = HORIZONTAL_ALIGNMENT_LEFT
+		button.add_theme_font_size_override("font_size", 19)
+		button.add_theme_constant_override("h_separation", 4)
 	parent.add_child(button)
 	return button
 
