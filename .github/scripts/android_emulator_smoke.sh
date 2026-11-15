@@ -74,10 +74,21 @@ if [ "$scene_ready" -ne 1 ]; then
   exit 1
 fi
 
-# The starting Lola prologue is a real gameplay scene even if the dialogue
-# overlay is initially visible. Close dialogue (never press title SETTINGS).
-adb shell input keyevent 4 || true
+# Android 35 displays a one-time immersive onboarding sheet on the first
+# landscape launch. The actual "Got it" button is at (1690,520) on the
+# 2340x1080 emulator, NOT at the old (1700,660) coordinate. That old tap
+# left a white SYSTEM popup over the correctly-rendering Lola dialogue.
+adb shell input tap 1690 520 || true
 sleep 2
+# Closing the first Lola dialogue makes the WORLD readable in the screenshot.
+# Escape (ui_cancel) followed by the actual dialogue footer button covers
+# both keyboard and touchscreen handling and permits a short dialogue chain.
+adb shell input keyevent 4 || true
+sleep 1
+for i in 1 2 3; do
+  adb shell input tap 1160 956 || true
+  sleep 1
+done
 adb exec-out screencap -p > build/android-night1-launch.png
 adb shell wm size > build/android-display.txt || true
 adb logcat -d -v brief | grep -Ei 'Godot|EGL|OpenGL|Vulkan|swiftshader|Renderer|SceneShaderGLES3|NIGHT1_QA' | tail -n 300 > build/android-godot-renderer-log.txt || true
