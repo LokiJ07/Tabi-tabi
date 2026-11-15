@@ -3,6 +3,7 @@ extends Node3D
 ## All primitive geometry is temporary and must be replaced by approved art.
 
 const NightModel = preload("res://scripts/narrative/night01_state.gd")
+const AimPad = preload("res://scripts/ui/aim_pad.gd")
 const SaveService = preload("res://scripts/core/save_service.gd")
 const PLAYER_SPEED := 4.2
 const COLORS := {
@@ -26,6 +27,7 @@ var dialogue: PanelContainer
 var dialogue_text: Label
 var touch_axes := Vector2.ZERO
 var focus_held := false
+var manual_aim := Vector2.ZERO
 var light_alarm := 0.0
 var lamp_heading := Vector3.FORWARD
 var alarm_label: Label
@@ -69,12 +71,9 @@ func _physics_process(delta: float) -> void:
 		player.rotation.y = atan2(desired.x, desired.z)
 		if not focus_held:
 			lamp_heading = desired
-	# Focus remains independent from movement while held.
-	if focus_held:
-		var target := santelmo.global_position if santelmo != null and is_night else player.global_position + lamp_heading * 7.0
-		lamp_heading = (target - player.global_position) * Vector3(1, 0, 1)
-		if lamp_heading.length() > 0.1:
-			lamp_heading = lamp_heading.normalized()
+	# Manual right-thumb stick direction is independent from walking.
+	if focus_held and manual_aim.length() > 0.15:
+		lamp_heading = (right * manual_aim.x + forward * -manual_aim.y).normalized()
 	if lamp_heading.length() > 0.1:
 		lantern.global_rotation.y = atan2(-lamp_heading.x, -lamp_heading.z)
 	# A simple follow/stop behavior for the prototype. Navigation is a later gate.
@@ -282,6 +281,18 @@ func _create_ui() -> void:
 	_make_button(root, "▶", Vector2(170, 575), Vector2(70, 65), func(): _set_button_axis("right", true), func(): _set_button_axis("right", false))
 	_make_button(root, "▲", Vector2(95, 505), Vector2(70, 65), func(): _set_button_axis("up", true), func(): _set_button_axis("up", false))
 	_make_button(root, "▼", Vector2(95, 645), Vector2(70, 65), func(): _set_button_axis("down", true), func(): _set_button_axis("down", false))
+	var aim_pad := AimPad.new()
+	aim_pad.anchor_left = 1.0
+	aim_pad.anchor_right = 1.0
+	aim_pad.anchor_top = 1.0
+	aim_pad.anchor_bottom = 1.0
+	aim_pad.offset_left = -435
+	aim_pad.offset_right = -260
+	aim_pad.offset_top = -205
+	aim_pad.offset_bottom = -40
+	aim_pad.aim_changed.connect(_on_aim_changed)
+	aim_pad.aim_released.connect(_on_aim_released)
+	root.add_child(aim_pad)
 	_make_button(root, "FOCUS", Vector2(1050, 490), Vector2(180, 60), func(): _set_focus(true), func(): _set_focus(false))
 	_make_button(root, "INTERACT", Vector2(1050, 565), Vector2(180, 60), _interact, func(): pass)
 	_make_button(root, "DAY / NIGHT", Vector2(1050, 640), Vector2(180, 56), _toggle_night, func(): pass)
@@ -349,6 +360,18 @@ func _make_button(parent: Control, title: String, pos: Vector2, size: Vector2, d
 
 func _set_focus(active: bool) -> void:
 	focus_held = active
+	if not active:
+		manual_aim = Vector2.ZERO
+
+
+func _on_aim_changed(value: Vector2) -> void:
+	manual_aim = value
+	focus_held = true
+
+
+func _on_aim_released() -> void:
+	manual_aim = Vector2.ZERO
+	focus_held = false
 
 
 func _update_santelmo_reaction(delta: float) -> void:
