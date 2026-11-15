@@ -21,3 +21,5 @@ jobs:
         run: godot --headless --path . --quit-after 20
       - name: Night 1 outcome and evidence regression tests
         run: godot --headless --path . --script res://tests/night01_state_test.gd
+      - name: Santelmo actor and reflection regression tests
+        run: godot --headless --path . --script res://tests/santelmo_actor_test.gd

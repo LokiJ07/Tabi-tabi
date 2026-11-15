@@ -3,6 +3,7 @@ extends Node3D
 ## All primitive geometry is temporary and must be replaced by approved art.
 
 const NightModel = preload("res://scripts/narrative/night01_state.gd")
+const SantelmoActor = preload("res://scripts/encounters/santelmo_actor.gd")
 const AimPad = preload("res://scripts/ui/aim_pad.gd")
 const SaveService = preload("res://scripts/core/save_service.gd")
 const PLAYER_SPEED := 4.2
@@ -36,12 +37,14 @@ var is_night := false
 var talked_to_lola := false
 var talked_to_dado := false
 var encountered_light := false
-var santelmo: Node3D
+var santelmo
+var ambient_walkers: Array[Node3D] = []
 var elapsed := 0.0
 
 
 func _ready() -> void:
 	_create_world()
+	_create_ambient_walkers()
 	_create_player()
 	_create_bantay()
 	_create_camera()
@@ -87,12 +90,14 @@ func _physics_process(delta: float) -> void:
 	camera.look_at(player.global_position + Vector3(0, 0.7, 0))
 	elapsed += delta
 	if is_night and santelmo != null:
-		_update_santelmo_reaction(delta)
+		light_alarm = santelmo.update_behavior(delta, player.global_position, lamp_heading, focus_held)
 		story.alarm = light_alarm
-		santelmo.position.y = 1.7 + 0.23 * sin(elapsed * 2.7)
-		var child_light := santelmo.get_node_or_null("Glow") as OmniLight3D
-		if child_light != null:
-			child_light.light_energy = 1.7 + 0.5 * sin(elapsed * 4.8)
+		alarm_label.text = "Santelmo: %s  |  Strong Focus makes it retreat" % ("ALARMED: lower your light" if light_alarm > 0.65 else "watching" if light_alarm > 0.2 else "calm")
+	for i in range(ambient_walkers.size()):
+		var villager := ambient_walkers[i]
+		villager.visible = not is_night
+		if not is_night:
+			villager.position.z = -4.0 + 0.7 * sin(elapsed * (0.4 + 0.13 * float(i)) + float(i) * 3.0)
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -183,6 +188,25 @@ func _marker(key: String, pos: Vector3, color: Color) -> void:
 	mesh.material_override = mat
 	mesh.position.y = 0.7
 	node.add_child(mesh)
+
+
+func _create_ambient_walkers() -> void:
+	# Low-cost sample NPC routines. These remain temporary geometry.
+	for i in range(2):
+		var villager := Node3D.new()
+		villager.name = "AmbientResident_%d" % i
+		villager.position = Vector3(1.0 + float(i) * 2.0, 0.65, -4.0)
+		var mesh := MeshInstance3D.new()
+		var shape := CapsuleMesh.new()
+		shape.radius = 0.25
+		shape.height = 1.25
+		mesh.mesh = shape
+		var mat := StandardMaterial3D.new()
+		mat.albedo_color = Color(0.64 + 0.13 * i, 0.52, 0.37 + 0.12 * i)
+		mesh.material_override = mat
+		villager.add_child(mesh)
+		add_child(villager)
+		ambient_walkers.append(villager)
 
 
 func _create_player() -> void:
@@ -374,19 +398,6 @@ func _on_aim_released() -> void:
 	focus_held = false
 
 
-func _update_santelmo_reaction(delta: float) -> void:
-	# This is a telegraphed response only, not the 3-stage encounter.
-	var to_light := santelmo.global_position - player.global_position
-	var level := Vector3(to_light.x, 0, to_light.z)
-	var aimed := lamp_heading.dot(level.normalized()) > 0.88 if level.length() > 0.1 else false
-	var exposed := level.length() < 10.0 and aimed and focus_held
-	light_alarm = clampf(light_alarm + (delta * 0.65 if exposed else -delta * 0.25), 0, 1)
-	var glow := santelmo.get_node_or_null("Glow") as OmniLight3D
-	if glow != null:
-		glow.light_color = Color(1.0, 0.34, 0.20).lerp(Color(1.0, 0.76, 0.34), 1.0 - light_alarm)
-	alarm_label.text = "Santelmo: %s  |  Hold FOCUS to study its reaction" % ("ALARMED — ease your light" if light_alarm > 0.65 else "watching" if light_alarm > 0.2 else "calm")
-
-
 func _set_button_axis(direction: String, active: bool) -> void:
 	move_buttons[direction] = active
 	touch_axes = Vector2(
@@ -466,27 +477,11 @@ func _toggle_night() -> void:
 	if env_node != null:
 		env_node.environment.background_color = Color(0.04, 0.10, 0.22) if is_night else Color(0.48, 0.68, 0.72)
 	if is_night and santelmo == null:
-		santelmo = Node3D.new()
-		santelmo.name = "Santelmo (reaction prototype)"
-		santelmo.position = Vector3(-7.0, 1.7, 13.0)
-		var body := MeshInstance3D.new()
-		var sphere := SphereMesh.new()
-		sphere.radius = 0.36
-		sphere.height = 0.72
-		body.mesh = sphere
-		var material := StandardMaterial3D.new()
-		material.albedo_color = Color(0.95, 0.78, 0.29)
-		material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-		body.material_override = material
-		santelmo.add_child(body)
-		var glow := OmniLight3D.new()
-		glow.name = "Glow"
-		glow.light_color = Color(1.0, 0.7, 0.25)
-		glow.omni_range = 5.0
-		santelmo.add_child(glow)
+		santelmo = SantelmoActor.new()
 		add_child(santelmo)
 	if santelmo != null:
 		santelmo.visible = is_night
+		santelmo.set_encounter_phase(story.phase)
 	_refresh_choices()
 	_update_objective()
 
@@ -505,7 +500,7 @@ func _update_objective() -> void:
 	elif story.phase == 1:
 		objective.text = "Stage 1: Study the light; let its alarm settle, then OBSERVE."
 	elif story.phase == 2:
-		objective.text = "Stage 2: Follow the reflection that matches river current."
+		objective.text = "Stage 2: Walk to a reflected light, then INSPECT; the real one follows the slow current."
 	elif story.phase == 3:
 		objective.text = "Stage 3: Choose remembrance, protection, or retreat."
 	else:
@@ -523,7 +518,7 @@ func _refresh_choices() -> void:
 	elif story.phase == 1:
 		names = ["OBSERVE", "", "RETREAT"]
 	elif story.phase == 2:
-		names = ["Follow current", "False mirror", "RETREAT"]
+		names = ["INSPECT LIGHT", "HINT", "RETREAT"]
 	elif story.phase == 3:
 		names = ["REMEMBER", "DRIVE AWAY", "RETREAT"]
 	else:
@@ -539,24 +534,33 @@ func _choose_story_action(index: int) -> void:
 		return
 	if story.phase == 0:
 		if index == 0 and story.begin():
+			_save_story_silent()
 			_show_dialogue("The first light rises above the old bank. Watch its response, and do not chase it into the river.")
 	elif story.phase == 1:
 		if index == 2:
 			_commit_night("partial")
 		elif index == 0:
 			if story.advance_observation():
+				_save_story_silent()
 				_show_dialogue("The light settles. Two reflected patterns appear; only one follows the current.")
 			else:
 				_show_dialogue("The glow flares under direct Focus. Release the lamp and let the light calm.")
 	elif story.phase == 2:
 		if index == 2:
 			_commit_night("partial")
+		elif index == 1:
+			_show_dialogue("Watch the two reflected circles. The true light follows the slow current; the false one jitters.")
 		elif index == 0:
-			if story.choose_reflection("current_aligned"):
-				_show_dialogue("The real light drifts back to the mooring. You remember the boatman's name: Mang Celso.")
-		else:
-			story.choose_reflection("false_mirror")
-			_show_dialogue("That reflection moves against the water; try comparing it with the current.")
+			var choice := santelmo.reflection_near(player.global_position) if santelmo != null else ""
+			if choice == "":
+				_show_dialogue("Walk closer to a reflected circle on the safe bank, then inspect.")
+			elif choice == "CURRENT_ALIGNED":
+				if story.choose_reflection("current_aligned"):
+					_save_story_silent()
+					_show_dialogue("The quiet reflection follows the current. The light returns to Mang Celso's mooring.")
+			else:
+				story.choose_reflection("false_mirror")
+				_show_dialogue("This restless reflection moves against the current. Try the other light.")
 	elif story.phase == 3:
 		if index == 0:
 			_commit_night("resolve")
@@ -564,6 +568,8 @@ func _choose_story_action(index: int) -> void:
 			_commit_night("drive_away")
 		elif index == 2:
 			_commit_night("partial")
+	if santelmo != null:
+		santelmo.set_encounter_phase(story.phase)
 	_refresh_choices()
 	_update_objective()
 
@@ -634,12 +640,16 @@ func _restore_story() -> void:
 	if bool(data.get("night", false)) and story.outcome == "":
 		_toggle_night()
 		light_alarm = story.alarm
+		if santelmo != null:
+			santelmo.set_encounter_phase(story.phase)
 	_refresh_choices()
 
 
 func _retry_story() -> void:
 	if story.retry_from_checkpoint():
 		light_alarm = story.alarm
+		if santelmo != null:
+			santelmo.set_encounter_phase(story.phase)
 		_show_dialogue("Restored the safe encounter checkpoint; no permanent resources were duplicated.")
 	else:
 		_show_dialogue("No uncommitted encounter checkpoint is available.")
