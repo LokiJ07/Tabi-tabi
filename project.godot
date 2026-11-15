@@ -14,7 +14,9 @@ window/size/viewport_width=1280
 window/size/viewport_height=720
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
-window/handheld/orientation=6
+; Night 1 is a landscape-only game. SENSOR (6) allowed portrait and
+; squeezed the menu into a tall unusable Android screen.
+window/handheld/orientation=4
 
 [rendering]
 ; Bound per-surface GLES3 shader light arrays for low-limit Android/SwiftShader.
