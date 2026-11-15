@@ -11,6 +11,7 @@ const BantayRoute = preload("res://scripts/ai/bantay_route.gd")
 const BantayAwareness = preload("res://scripts/ai/bantay_awareness.gd")
 const AimPad = preload("res://scripts/ui/aim_pad.gd")
 const SaveService = preload("res://scripts/core/save_service.gd")
+const Preferences = preload("res://scripts/core/preferences.gd")
 const PLAYER_SPEED := 4.2
 const COLORS := {
 	"earth": Color(0.30, 0.33, 0.23),
@@ -21,6 +22,12 @@ const COLORS := {
 	"leaf": Color(0.20, 0.36, 0.17),
 }
 var story = NightModel.new()
+var preferences = Preferences.new()
+var settings_panel: PanelContainer
+var pref_text_button: Button
+var pref_motion_button: Button
+var pref_contrast_button: Button
+var pref_hint_button: Button
 var choice_buttons: Array[Button] = []
 var stage_label: Label
 var player: CharacterBody3D
@@ -70,6 +77,7 @@ var elapsed := 0.0
 
 
 func _ready() -> void:
+	preferences.load_from()
 	_create_world()
 	_create_ambient_walkers()
 	_create_player()
@@ -77,6 +85,7 @@ func _ready() -> void:
 	_create_camera()
 	_create_lighting()
 	_create_ui()
+	_apply_preferences()
 	_restore_story()
 	_update_objective()
 
@@ -110,7 +119,7 @@ func _physics_process(delta: float) -> void:
 	_update_dog_warnings(delta)
 	_update_interact_hint()
 	FolkActors.animate_person(apprentice_visual, elapsed, desired.length() > 0.1)
-	camera.global_position = camera.global_position.lerp(player.global_position + Vector3(12, 17, 12), minf(1.0, delta * 4.0))
+	camera.global_position = camera.global_position.lerp(player.global_position + Vector3(12, 17, 12), 1.0 if preferences.reduced_motion else minf(1.0, delta * 4.0))
 	camera.look_at(player.global_position + Vector3(0, 0.7, 0))
 	elapsed += delta
 	if is_night and santelmo != null:
@@ -124,7 +133,7 @@ func _physics_process(delta: float) -> void:
 			villager.position.z = -4.0 - 2.0 * float(i) + 1.65 * sin(elapsed * (0.35 + 0.06 * float(i)) + float(i) * 3.0)
 			FolkActors.animate_person(villager, elapsed + float(i), true)
 			villager.rotation.y = PI if cos(elapsed * (0.35 + 0.06 * float(i)) + float(i) * 3.0) > 0 else 0
-	if river_surface != null:
+	if river_surface != null and not preferences.reduced_motion:
 		var river_mat := river_surface.material_override as StandardMaterial3D
 		if river_mat != null:
 			river_mat.albedo_color = COLORS.river.lerp(Color(0.12, 0.42, 0.52), 0.5 + 0.5 * sin(elapsed * 1.2))
@@ -141,6 +150,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		_close_dialogue()
 		_close_notebook()
 		_close_prep()
+		_close_settings()
 
 
 func _create_world() -> void:
@@ -546,6 +556,53 @@ func _create_ui() -> void:
 	kit_close.pressed.connect(_close_prep)
 	kit_stack.add_child(kit_close)
 	prep_panel.hide()
+	# Persistent accessibility options; deliberately not a second gameplay save.
+	var options_button := Button.new()
+	options_button.text = "OPTIONS"
+	options_button.anchor_left = 1.0
+	options_button.anchor_right = 1.0
+	options_button.offset_left = -171
+	options_button.offset_right = -20
+	options_button.offset_top = 14
+	options_button.offset_bottom = 60
+	options_button.pressed.connect(_open_settings)
+	root.add_child(options_button)
+	settings_panel = PanelContainer.new()
+	settings_panel.anchor_left = 0.27
+	settings_panel.anchor_right = 0.73
+	settings_panel.anchor_top = 0.18
+	settings_panel.anchor_bottom = 0.18
+	settings_panel.offset_bottom = 365
+	root.add_child(settings_panel)
+	var options_stack := VBoxContainer.new()
+	options_stack.add_theme_constant_override("separation", 13)
+	settings_panel.add_child(options_stack)
+	var options_heading := Label.new()
+	options_heading.text = "ACCESSIBILITY / GAME OPTIONS"
+	options_heading.add_theme_font_size_override("font_size", 23)
+	options_stack.add_child(options_heading)
+	pref_text_button = Button.new()
+	pref_text_button.custom_minimum_size = Vector2(360, 50)
+	pref_text_button.pressed.connect(_cycle_text_size)
+	options_stack.add_child(pref_text_button)
+	pref_motion_button = Button.new()
+	pref_motion_button.custom_minimum_size = Vector2(360, 50)
+	pref_motion_button.pressed.connect(_toggle_reduced_motion)
+	options_stack.add_child(pref_motion_button)
+	pref_contrast_button = Button.new()
+	pref_contrast_button.custom_minimum_size = Vector2(360, 50)
+	pref_contrast_button.pressed.connect(_toggle_contrast)
+	options_stack.add_child(pref_contrast_button)
+	pref_hint_button = Button.new()
+	pref_hint_button.custom_minimum_size = Vector2(360, 50)
+	pref_hint_button.pressed.connect(_cycle_hint_level)
+	options_stack.add_child(pref_hint_button)
+	var exit_options := Button.new()
+	exit_options.text = "CLOSE OPTIONS"
+	exit_options.custom_minimum_size = Vector2(360, 50)
+	exit_options.pressed.connect(_close_settings)
+	options_stack.add_child(exit_options)
+	settings_panel.hide()
 
 
 func _make_button(parent: Control, title: String, pos: Vector2, size: Vector2, down: Callable, up: Callable) -> void:
@@ -602,13 +659,16 @@ func _nearby_target() -> String:
 func _update_interact_hint() -> void:
 	if interact_hint == null:
 		return
-	if dialogue.visible or notebook_panel.visible or prep_panel.visible:
+	if dialogue.visible or notebook_panel.visible or prep_panel.visible or settings_panel.visible:
 		interact_hint.text = ""
 		return
 	interact_hint.text = Nearby.caption(_nearby_target())
 
 
 func _interact() -> void:
+	if settings_panel.visible:
+		_close_settings()
+		return
 	if prep_panel.visible:
 		_close_prep()
 		return
@@ -654,6 +714,7 @@ func _interact() -> void:
 func _show_dialogue(value: String) -> void:
 	_close_notebook()
 	_close_prep()
+	_close_settings()
 	dialogue_text.text = value + "\n\n[INTERACT to close]"
 	dialogue.show()
 
@@ -763,7 +824,12 @@ func _choose_story_action(index: int) -> void:
 		if index == 2:
 			_commit_night("partial")
 		elif index == 1:
-			_show_dialogue("Watch the two reflected circles. The true light follows the slow current; the false one jitters.")
+			if preferences.hint_level == 0:
+				_show_dialogue("Compare the glows as the water moves. What did Dado observe?")
+			elif preferences.hint_level == 1:
+				_show_dialogue("One reflection moves with the slow current; the other jitters.")
+			else:
+				_show_dialogue("Full hint: the golden marker near the old mooring follows the slow current. Approach and INSPECT.")
 		elif index == 0:
 			var choice: String = santelmo.reflection_near(player.global_position) if santelmo != null else ""
 			if choice == "":
@@ -819,9 +885,75 @@ func _commit_night(result: String) -> void:
 	_save_story_silent()
 
 
+func _open_settings() -> void:
+	_close_dialogue()
+	_close_notebook()
+	_close_prep()
+	settings_panel.show()
+	_refresh_options()
+
+
+func _close_settings() -> void:
+	if settings_panel != null:
+		settings_panel.hide()
+
+
+func _refresh_options() -> void:
+	pref_text_button.text = "TEXT SIZE: %d%%" % roundi(preferences.text_scale * 100.0)
+	pref_motion_button.text = "REDUCED MOTION: %s" % ("ON" if preferences.reduced_motion else "OFF")
+	pref_contrast_button.text = "HIGH-CONTRAST TEXT: %s" % ("ON" if preferences.high_contrast else "OFF")
+	pref_hint_button.text = "PUZZLE HINTS: " + str(preferences.HINT_LEVELS[preferences.hint_level])
+
+
+func _apply_preferences() -> void:
+	var scale: float = preferences.text_scale
+	var labels: Array[Label] = [info, objective, stage_label, alarm_label, interact_hint, dog_warning_label, dialogue_text, notebook_body, prep_summary]
+	var base_sizes: Array[int] = [24, 22, 20, 18, 21, 18, 22, 21, 20]
+	for i in range(labels.size()):
+		var element: Label = labels[i]
+		if element == null:
+			continue
+		element.add_theme_font_size_override("font_size", roundi(float(base_sizes[i]) * scale))
+		if preferences.high_contrast:
+			element.add_theme_color_override("font_color", Color.WHITE)
+			element.add_theme_color_override("font_outline_color", Color.BLACK)
+			element.add_theme_constant_override("outline_size", 3)
+		else:
+			element.remove_theme_color_override("font_color")
+			element.remove_theme_color_override("font_outline_color")
+			element.remove_theme_constant_override("outline_size")
+	if settings_panel != null:
+		_refresh_options()
+
+
+func _cycle_text_size() -> void:
+	preferences.next_text_scale()
+	preferences.save_to()
+	_apply_preferences()
+
+
+func _toggle_reduced_motion() -> void:
+	preferences.reduced_motion = not preferences.reduced_motion
+	preferences.save_to()
+	_apply_preferences()
+
+
+func _toggle_contrast() -> void:
+	preferences.high_contrast = not preferences.high_contrast
+	preferences.save_to()
+	_apply_preferences()
+
+
+func _cycle_hint_level() -> void:
+	preferences.next_hint_level()
+	preferences.save_to()
+	_apply_preferences()
+
+
 func _open_prep() -> void:
 	_close_dialogue()
 	_close_notebook()
+	_close_settings()
 	prep_panel.show()
 	_refresh_prep()
 
@@ -848,6 +980,7 @@ func _toggle_kit_item(id: String) -> void:
 
 
 func _open_notebook() -> void:
+	_close_settings()
 	_close_prep()
 	if notebook_panel.visible:
 		_close_notebook()
