@@ -27,6 +27,23 @@ adb exec-out screencap -p > build/android-night1-launch.png || true
 adb shell input tap 2050 660 || true
 sleep 2
 adb exec-out screencap -p > build/android-night1-notebook.png || true
+# Inspect scrolling and the bottom of the Notebook as rendered by Android.
+adb shell input swipe 1390 775 1390 360 450 || true
+sleep 1
+adb exec-out screencap -p > build/android-night1-notebook-scrolled.png || true
+# Fixed-footer Close Notebook; then capture the actual Preparation and Options UIs.
+adb shell input tap 1160 965 || true
+sleep 1
+adb shell input tap 1900 460 || true
+sleep 2
+adb exec-out screencap -p > build/android-night1-preparation.png || true
+adb shell input tap 1160 965 || true
+sleep 1
+adb shell input tap 1940 60 || true
+sleep 2
+adb exec-out screencap -p > build/android-night1-options.png || true
+# Gather rendering warnings as well as fatal errors; silent GL failures may not crash.
+adb logcat -d -v brief | grep -Ei 'Godot|EGL|OpenGL|Vulkan|swiftshader|Renderer' | tail -n 250 > build/android-godot-renderer-log.txt || true
 adb logcat -d -s AndroidRuntime:E Godot:E GodotEngine:E > build/android-night1-launch-log.txt || true
 if ! adb shell pidof "$PKG"; then
   echo "ERROR: Android game process is not alive after launch"
