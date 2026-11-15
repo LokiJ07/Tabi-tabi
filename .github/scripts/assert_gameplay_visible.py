@@ -36,6 +36,7 @@ def read_png_rgb(path: Path):
     cursor = 0
     samples = collections.Counter()
     total = 0
+    white_popup_pixels = 0
     for y in range(height):
         kind = scan[cursor]
         cursor += 1
@@ -71,15 +72,21 @@ def read_png_rgb(path: Path):
                 rgb = (row[i] // 16, row[i + 1] // 16, row[i + 2] // 16)
                 samples[rgb] += 1
                 total += 1
+                if row[i] > 195 and row[i + 1] > 195 and row[i + 2] > 195:
+                    white_popup_pixels += 1
         previous = row
-    return width, height, total, samples
+    return width, height, total, samples, white_popup_pixels
 
 if __name__ == "__main__":
     path = Path(sys.argv[1]) if len(sys.argv) > 1 else Path("build/android-night1-launch.png")
-    width, height, total, histogram = read_png_rgb(path)
+    width, height, total, histogram, white_popup_pixels = read_png_rgb(path)
     top, count = histogram.most_common(1)[0]
     dominant = count / total
+    white_popup_share = white_popup_pixels / total
     print(f"Android gameplay visual check: {width}x{height}; samples={total}; dominant RGB/16={top}; portion={dominant:.1%}; colors={len(histogram)}")
+    if white_popup_share > .15:
+        print(f"FAIL: Android immersive onboarding / white system popup obscures {white_popup_share:.1%} of gameplay.", file=sys.stderr)
+        sys.exit(1)
     if dominant > .67:
         print("FAIL: World is mostly a flat color, likely GLES3 shader failure / cyan background.", file=sys.stderr)
         sys.exit(1)
