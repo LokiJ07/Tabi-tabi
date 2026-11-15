@@ -4,6 +4,7 @@ extends Node3D
 
 const NightModel = preload("res://scripts/narrative/night01_state.gd")
 const NightDialogue = preload("res://scripts/narrative/night01_dialogue.gd")
+const Nearby = preload("res://scripts/ui/nearby_interaction.gd")
 const SantelmoActor = preload("res://scripts/encounters/santelmo_actor.gd")
 const FolkActors = preload("res://scripts/visuals/folk_actors.gd")
 const BantayRoute = preload("res://scripts/ai/bantay_route.gd")
@@ -31,6 +32,8 @@ var bantay: CharacterBody3D
 var dog_guide = BantayRoute.new()
 var dog_awareness = BantayAwareness.new()
 var dog_warning_label: Label
+var interact_hint: Label
+var interaction_nodes: Dictionary = {}
 var dog_warning_seconds := 0.0
 var dog_waypoints := PackedVector3Array()
 var dog_next_waypoint := 0
@@ -100,6 +103,7 @@ func _physics_process(delta: float) -> void:
 		lantern.global_rotation.y = atan2(-lamp_heading.x, -lamp_heading.z)
 	_update_bantay(delta)
 	_update_dog_warnings(delta)
+	_update_interact_hint()
 	FolkActors.animate_person(apprentice_visual, elapsed, desired.length() > 0.1)
 	camera.global_position = camera.global_position.lerp(player.global_position + Vector3(12, 17, 12), minf(1.0, delta * 4.0))
 	camera.look_at(player.global_position + Vector3(0, 0.7, 0))
@@ -224,16 +228,24 @@ func _marker(key: String, pos: Vector3, color: Color) -> void:
 	node.name = key
 	node.position = pos
 	add_child(node)
-	var mesh := MeshInstance3D.new()
-	var sphere := SphereMesh.new()
-	sphere.radius = 0.42
-	sphere.height = 0.84
-	mesh.mesh = sphere
-	var mat := StandardMaterial3D.new()
-	mat.albedo_color = color
-	mesh.material_override = mat
-	mesh.position.y = 0.7
-	node.add_child(mesh)
+	interaction_nodes[key] = node
+	if key == "MOORING":
+		var stump := MeshInstance3D.new()
+		stump.name = "Old tied post"
+		var wood := CylinderMesh.new()
+		wood.top_radius = 0.24
+		wood.bottom_radius = 0.32
+		wood.height = 1.1
+		stump.mesh = wood
+		stump.position.y = 0.55
+		var wood_mat := StandardMaterial3D.new()
+		wood_mat.albedo_color = Color(0.43, 0.29, 0.17)
+		stump.material_override = wood_mat
+		node.add_child(stump)
+	else:
+		var villager := FolkActors.person(key, color, Color(0.28, 0.24, 0.20))
+		villager.position.y = -0.1
+		node.add_child(villager)
 
 
 func _create_ambient_walkers() -> void:
@@ -391,6 +403,17 @@ func _create_ui() -> void:
 	_make_button(root, "NOTEBOOK", Vector2(1050, 415), Vector2(180, 56), _open_notebook, func(): pass)
 	_make_button(root, "SAVE", Vector2(1050, 345), Vector2(85, 52), _save_story, func(): pass)
 	_make_button(root, "RETRY", Vector2(1142, 345), Vector2(88, 52), _retry_story, func(): pass)
+	interact_hint = Label.new()
+	interact_hint.anchor_left = 0.30
+	interact_hint.anchor_right = 0.70
+	interact_hint.anchor_top = 0.0
+	interact_hint.anchor_bottom = 0.0
+	interact_hint.offset_top = 8
+	interact_hint.offset_bottom = 46
+	interact_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	interact_hint.add_theme_font_size_override("font_size", 21)
+	interact_hint.add_theme_color_override("font_color", Color(0.98, 0.86, 0.60))
+	root.add_child(interact_hint)
 	dog_warning_label = Label.new()
 	dog_warning_label.position = Vector2(25, 160)
 	dog_warning_label.add_theme_font_size_override("font_size", 18)
@@ -516,6 +539,23 @@ func _set_button_axis(direction: String, active: bool) -> void:
 	)
 
 
+func _nearby_target() -> String:
+	var locations: Dictionary = {}
+	for key in interaction_nodes:
+		var actor: Node3D = interaction_nodes[key]
+		locations[key] = actor.global_position
+	return Nearby.closest(player.global_position, locations)
+
+
+func _update_interact_hint() -> void:
+	if interact_hint == null:
+		return
+	if dialogue.visible or notebook_panel.visible:
+		interact_hint.text = ""
+		return
+	interact_hint.text = Nearby.caption(_nearby_target())
+
+
 func _interact() -> void:
 	if notebook_panel.visible:
 		_close_notebook()
@@ -523,16 +563,7 @@ func _interact() -> void:
 	if dialogue.visible:
 		_close_dialogue()
 		return
-	var closest := ""
-	var distance := 3.4
-	for key in ["LOLA", "DADO", "MOORING", "SABEL", "MARA"]:
-		var mark := get_node_or_null(key) as Node3D
-		if mark == null:
-			continue
-		var d := player.global_position.distance_to(mark.global_position)
-		if d < distance:
-			closest = key
-			distance = d
+	var closest: String = _nearby_target()
 	if closest == "":
 		_show_dialogue("Move close to a resident or the old mooring to interact.")
 		return

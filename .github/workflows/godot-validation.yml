@@ -37,3 +37,5 @@ jobs:
         run: godot --headless --path . --script res://tests/bantay_awareness_test.gd
       - name: Night 1 witness dialogue regression
         run: godot --headless --path . --script res://tests/night01_dialogue_test.gd
+      - name: Nearby NPC interaction prompts
+        run: godot --headless --path . --script res://tests/nearby_interaction_test.gd
