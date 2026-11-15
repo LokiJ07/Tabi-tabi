@@ -247,11 +247,36 @@ func _draw_village() -> void:
 		else:
 			_art(entry["texture"], entry["at"], entry["width"], true, _tint())
 
-	if game.is_night and game.santelmo != null and is_instance_valid(game.santelmo):
-		var light_at := _screen(game.santelmo.global_position)
-		draw_circle(light_at, _scale_units(1.15), Color("#57bfc4", .26))
-		draw_circle(light_at, _scale_units(.55), Color("#b4e4ec", .64))
-		draw_circle(light_at, _scale_units(.19), Color("#f2f4db"))
+	if game.is_night:
+		# Real Night 1 low-light grade. Earlier software previews barely
+		# changed day colors, making Santelmo feel like a daylight orb.
+		# This is beneath HUD controls and never changes collision/gameplay.
+		draw_rect(Rect2(Vector2.ZERO, size), Color(0.015, 0.042, 0.098, 0.38))
+		# A subtle misted-blue top horizon rather than one flat black screen.
+		for i in range(8):
+			var band_height := size.y * float(i) / 24.0
+			draw_rect(Rect2(0, band_height, size.x, size.y / 30.0),
+				Color(0.23, 0.40, 0.52, 0.021))
+		# Warm pools of light: exactly the two authored lantern locations.
+		for lamp_at in [Vector3(-4.0, 2.05, 9.0), Vector3(2.8, 2.05, -2.0)]:
+			var p := _screen(lamp_at)
+			var radius := _scale_units(1.75)
+			for j in range(6, 0, -1):
+				var fraction := float(j) / 6.0
+				draw_circle(p, radius * fraction,
+					Color(1.0, .68, .30, 0.012 + .006 * (1.0 - fraction)))
+			draw_circle(p, maxf(3.5, _scale_units(.11)), Color("#ffe0a0"))
+		# The supernatural light sits on top of the dark grade and remains
+		# a readable animated threat instead of disappearing into the water.
+		if game.santelmo != null and is_instance_valid(game.santelmo):
+			var light_at := _screen(game.santelmo.global_position)
+			for i in range(8, 0, -1):
+				var glow_fraction := float(i) / 8.0
+				draw_circle(light_at, _scale_units(1.70) * glow_fraction,
+					Color(.30, .80, .93, 0.015 + 0.012 * (1.0 - glow_fraction)))
+			draw_circle(light_at, _scale_units(.50), Color("#72b9c4", .31))
+			draw_circle(light_at, _scale_units(.17), Color("#f3f5e3"))
+
 
 ## Lola hut: hand-composed cutaway architecture, with all props at real 3D
 ## interaction positions. Drawn every frame from the real orthographic camera,
