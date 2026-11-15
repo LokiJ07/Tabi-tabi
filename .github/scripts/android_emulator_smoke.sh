@@ -159,6 +159,7 @@ capture_live_view() {
 capture_live_view 136 VILLAGE android-night1-village.png
 capture_live_view 137 SHORE android-night1-shore-dock.png
 capture_live_view 138 NIGHT android-night1-night-river.png
+python3 .github/scripts/assert_night_atmosphere.py build/android-night1-shore-dock.png build/android-night1-night-river.png
 
 adb logcat -d -s AndroidRuntime:E Godot:E GodotEngine:E > build/android-night1-launch-log.txt || true
 if grep -q "FATAL EXCEPTION" build/android-night1-launch-log.txt; then
