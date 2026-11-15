@@ -16,9 +16,15 @@ jobs:
           chmod +x Godot_v4.3-stable_linux.x86_64
           sudo mv Godot_v4.3-stable_linux.x86_64 /usr/local/bin/godot
       - name: Import resources and validate GDScript
-        run: godot --headless --editor --path . --import --quit
+        run: |
+          set -o pipefail
+          godot --headless --editor --path . --import --quit 2>&1 | tee import.log
+          if grep -E "SCRIPT ERROR:|ERROR: Failed to load script|Parse Error:" import.log; then exit 1; fi
       - name: Scene smoke test
-        run: godot --headless --path . --quit-after 20
+        run: |
+          set -o pipefail
+          godot --headless --path . --quit-after 20 2>&1 | tee smoke.log
+          if grep -E "SCRIPT ERROR:|ERROR: Failed to load script|Parse Error:" smoke.log; then exit 1; fi
       - name: Night 1 outcome and evidence regression tests
         run: godot --headless --path . --script res://tests/night01_state_test.gd
       - name: Santelmo actor and reflection regression tests

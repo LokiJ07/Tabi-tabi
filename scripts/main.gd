@@ -551,7 +551,7 @@ func _choose_story_action(index: int) -> void:
 		elif index == 1:
 			_show_dialogue("Watch the two reflected circles. The true light follows the slow current; the false one jitters.")
 		elif index == 0:
-			var choice := santelmo.reflection_near(player.global_position) if santelmo != null else ""
+			var choice: String = santelmo.reflection_near(player.global_position) if santelmo != null else ""
 			if choice == "":
 				_show_dialogue("Walk closer to a reflected circle on the safe bank, then inspect.")
 			elif choice == "CURRENT_ALIGNED":

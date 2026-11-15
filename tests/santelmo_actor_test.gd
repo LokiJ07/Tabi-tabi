@@ -22,10 +22,10 @@ func _run() -> void:
 	_expect(creature.reflection_near(Vector3(-5, 0, 15.5)) == "FALSE_MIRROR", "false marker selected by world proximity")
 	_expect(creature.reflection_near(Vector3(10, 0, 0)) == "", "distant selection prohibited")
 	var facing := Vector3(-8.0, 0.0, 13.0).normalized()
-	var before := creature.alarm
+	var before: float = creature.alarm
 	creature.update_behavior(0.4, Vector3(0, 0, 0), facing, true)
 	_expect(creature.alarm > before, "direct focus increases alarm")
-	var agitated := creature.alarm
+	var agitated: float = creature.alarm
 	creature.update_behavior(0.4, Vector3(0, 0, 0), Vector3.FORWARD, false)
 	_expect(creature.alarm < agitated, "releasing focus calms")
 	creature.set_encounter_phase(3)

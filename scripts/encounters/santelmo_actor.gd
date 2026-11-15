@@ -94,7 +94,7 @@ func reflection_near(point: Vector3, max_distance: float = 1.7) -> String:
 	if phase != 2:
 		return ""
 	for node in [true_reflection, false_reflection]:
-		var diff := node.global_position - point
+		var diff: Vector3 = node.global_position - point
 		diff.y = 0.0
 		if diff.length() <= max_distance:
 			return str(node.name)
