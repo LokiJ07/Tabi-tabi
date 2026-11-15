@@ -75,3 +75,5 @@ jobs:
         run: godot --headless --path . --script res://tests/night01_mangrove_art_test.gd
       - name: Functional title, responsive UI and real-world art integration
         run: godot --headless --path . --script res://tests/night01_title_and_art_test.gd
+      - name: G6 imported illustrated characters, village, and world materials
+        run: godot --headless --path . --script res://tests/night01_illustrated_art_test.gd
