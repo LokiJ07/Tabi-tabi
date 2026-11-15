@@ -21,12 +21,13 @@ func _run() -> void:
 	_expect(creature.reflection_near(Vector3(-8, 0, 15.5)) == "CURRENT_ALIGNED", "true marker selected by world proximity")
 	_expect(creature.reflection_near(Vector3(-5, 0, 15.5)) == "FALSE_MIRROR", "false marker selected by world proximity")
 	_expect(creature.reflection_near(Vector3(10, 0, 0)) == "", "distant selection prohibited")
-	var facing := Vector3(-8.0, 0.0, 13.0).normalized()
+	var observer := Vector3(-6.0, 0.0, 9.0)
+	var facing := Vector3(-2.0, 0.0, 4.0).normalized()
 	var before: float = creature.alarm
-	creature.update_behavior(0.4, Vector3(0, 0, 0), facing, true)
+	creature.update_behavior(0.4, observer, facing, true)
 	_expect(creature.alarm > before, "direct focus increases alarm")
 	var agitated: float = creature.alarm
-	creature.update_behavior(0.4, Vector3(0, 0, 0), Vector3.FORWARD, false)
+	creature.update_behavior(0.4, observer, Vector3.FORWARD, false)
 	_expect(creature.alarm < agitated, "releasing focus calms")
 	creature.set_encounter_phase(3)
 	_expect(not creature.true_reflection.visible, "reflections disappear after solution")
