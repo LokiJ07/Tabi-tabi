@@ -94,7 +94,25 @@ adb shell wm size > build/android-display.txt || true
 adb logcat -d -v brief | grep -Ei 'Godot|EGL|OpenGL|Vulkan|swiftshader|Renderer|SceneShaderGLES3|NIGHT1_QA' | tail -n 300 > build/android-godot-renderer-log.txt || true
 
 # Game must BOTH be in the actual scene and have a visibly varied playfield.
-python3 .github/scripts/assert_gameplay_visible.py build/android-night1-launch.png
+# The Lola prologue can span multiple pages. A retry is permitted only after
+# dismissing a known Android onboarding sheet or advancing that dialogue.
+# Persistent solid/blank gameplay remains a hard failure.
+visible=0
+for attempt in 1 2 3 4; do
+  if python3 .github/scripts/assert_gameplay_visible.py build/android-night1-launch.png; then
+    visible=1
+    break
+  fi
+  echo "Visual check blocked on attempt $attempt; advancing dialogue/dismissing OS onboarding"
+  adb shell input tap 1690 520 || true
+  adb shell input tap 1160 956 || true
+  sleep 2
+  adb exec-out screencap -p > build/android-night1-launch.png
+done
+if [ "$visible" -ne 1 ]; then
+  echo "ERROR: real gameplay playfield remains blank or obscured"
+  exit 1
+fi
 if ! adb shell pidof "$PKG"; then
   echo "ERROR: Android game process is not alive after real scene launch"
   exit 1
