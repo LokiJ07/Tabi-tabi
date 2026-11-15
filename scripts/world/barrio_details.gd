@@ -3,6 +3,7 @@ extends RefCounted
 ## Visual-only props intentionally do not alter tested player collision/nav.
 const ROOT_NAME := "BarrioEnvironmentDetails"
 const NIPA_THATCH: Texture2D = preload("res://assets/world/nipa_thatch_roof.svg")
+const BAMBOO_WALL: Texture2D = preload("res://assets/world/lola_sawali_wall.svg")
 
 
 static func decorate(world: Node3D) -> Node3D:
@@ -62,6 +63,16 @@ static func _box(parent: Node3D, label: String, at: Vector3, dimensions: Vector3
 	return instance
 
 
+static func _woven_wall(parent: Node3D, label: String, at: Vector3, dims: Vector3, shade: Color) -> void:
+	var wall := _box(parent, label, at, dims, shade)
+	var mat := StandardMaterial3D.new()
+	mat.albedo_texture = BAMBOO_WALL
+	mat.albedo_color = shade.lightened(0.25)
+	mat.uv1_scale = Vector3(3.0, 2.0, 3.0)
+	mat.roughness = 0.96
+	wall.material_override = mat
+
+
 static func _sphere(parent: Node3D, label: String, at: Vector3, scale3: Vector3, shade: Color) -> void:
 	var instance := MeshInstance3D.new()
 	instance.name = label
@@ -80,6 +91,17 @@ static func _building(root: Node3D, tag: String, at: Vector3, wall: Color, accen
 	structure.name = tag
 	structure.position = at
 	root.add_child(structure)
+	# True structural wall faces. Earlier versions only drew a decorative
+	# front strip; hiding old cube blockouts left houses visibly hollow.
+	# These four woven panels and posts create a complete raised nipa volume.
+	_woven_wall(structure, "Front woven wall surface", Vector3(0, 1.43, 1.98), Vector3(3.92, 2.80, 0.13), wall)
+	_woven_wall(structure, "Rear woven wall surface", Vector3(0, 1.43, -1.98), Vector3(3.92, 2.80, 0.13), wall.darkened(0.16))
+	_woven_wall(structure, "Left woven wall surface", Vector3(-1.97, 1.43, 0), Vector3(0.13, 2.80, 3.95), wall.darkened(0.1))
+	_woven_wall(structure, "Right woven wall surface", Vector3(1.97, 1.43, 0), Vector3(0.13, 2.80, 3.95), wall)
+	for side_x in [-1.97, 1.97]:
+		for side_z in [-1.98, 1.98]:
+			_box(structure, "Nipa bamboo corner post", Vector3(side_x, 1.46, side_z),
+				Vector3(0.16, 3.02, 0.16), Color("#73543d"))
 	_box(structure, "Woven wall stripe", Vector3(0, 1.25, 2.02), Vector3(3.7, 0.20, 0.06), wall)
 	# Woven bamboo has a distinct rhythm/texture rather than one flat wall.
 	for i in range(9):
