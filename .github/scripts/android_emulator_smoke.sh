@@ -10,10 +10,12 @@ sleep 12
 # Android shows a one-time immersive-mode "Got it" onboarding dialog on first boot.
 # Acknowledge it before recording the actual Godot scene.
 adb shell input keyevent 66 || true
-adb shell input tap 700 505 || true
+adb shell input tap 1310 510 || true
 adb shell settings put system accelerometer_rotation 0 || true
 adb shell settings put system user_rotation 1 || true
 sleep 6
+adb shell input tap 1310 510 || true
+sleep 3
 adb shell wm size > build/android-display.txt || true
 adb exec-out screencap -p > build/android-night1-launch.png || true
 adb logcat -d -s AndroidRuntime:E Godot:E GodotEngine:E > build/android-night1-launch-log.txt || true
