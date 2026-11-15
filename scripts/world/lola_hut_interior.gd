@@ -1,5 +1,8 @@
 extends RefCounted
 const FolkActors = preload("res://scripts/visuals/folk_actors.gd")
+const BAMBOO_FLOOR: Texture2D = preload("res://assets/world/lola_bamboo_floor.svg")
+const SAWALI_WALL: Texture2D = preload("res://assets/world/lola_sawali_wall.svg")
+const BANIG_MAT: Texture2D = preload("res://assets/world/lola_banig_mat.svg")
 ## Prototype player-controlled hut interior in a separate world pocket.
 ## All positions are authored. The exterior hut remains collidable and sealed.
 ## Transition uses interaction, never allows walking through walls.
@@ -47,6 +50,21 @@ static func build(world: Node3D) -> Dictionary:
 		_box(room, "Hut roof support beam %d" % i, Vector3(-3.45 + float(i) * 2.3, 3.12, -3.7), Vector3(0.14, 0.14, 7.0), Color("#6b4935"), false)
 	_box(room, "Front ceiling crossbar", Vector3(0, 3.15, 3.58), Vector3(8.8, 0.16, 0.16), Color("#644331"), false)
 	_box(room, "Woven rug", Vector3(0.0, 0.05, 0.1), Vector3(3.0, 0.07, 2.6), Color(0.62, 0.35, 0.23), false)
+	# Warm handwoven mats and shelves visually ground the room without
+	# changing paths, clue triggers or physics.
+	for i in range(3):
+		_box(room, "Mat selvedge %02d" % i, Vector3(-1.35 + float(i) * 1.35, 0.108, -0.01),
+			Vector3(0.045, 0.016, 2.4), Color("#ebbf83"), false)
+	_box(room, "Rear shelf left", Vector3(-3.28, 2.03, -3.72),
+		Vector3(1.45, 0.12, 0.36), Color("#79543b"), false)
+	_box(room, "Rear shelf cup left", Vector3(-3.62, 2.27, -3.74),
+		Vector3(0.31, 0.42, 0.31), Color("#aa7358"), false)
+	_box(room, "Rear shelf cup right", Vector3(-3.02, 2.26, -3.74),
+		Vector3(0.28, 0.39, 0.31), Color("#cead78"), false)
+	_box(room, "Door frame header", Vector3(0, 2.45, 3.65),
+		Vector3(2.0, 0.16, 0.18), Color("#c29c6c"), false)
+	_box(room, "Window woven curtain", Vector3(2.76, 2.35, -3.7),
+		Vector3(1.55, 0.30, 0.05), Color("#e2c393"), false)
 	_box(room, "Breakfast table", Vector3(1.25, 0.52, -0.65), Vector3(1.85, 0.22, 1.15), Color(0.30, 0.20, 0.13), false)
 	# A separate study desk beside the back wall gives the notebook a
 	# believable, visible tabletop placement instead of sitting in the aisle.
@@ -104,7 +122,20 @@ static func _box(parent: Node3D, label: String, at: Vector3, dimensions: Vector3
 	mesh.mesh = shape
 	var material := StandardMaterial3D.new()
 	material.albedo_color = color
-	material.roughness = 0.86
+	material.roughness = 0.92
+	# Imported original textile artwork is used in the native Godot renderer,
+	# not just in the Android software fallback or asset directory.
+	if label == "Bamboo floor" or label == "Raised bamboo porch":
+		material.albedo_texture = BAMBOO_FLOOR
+		material.albedo_color = Color.WHITE
+		material.uv1_scale = Vector3(4.0, 1.0, 4.0)
+	elif label.contains("woven wall"):
+		material.albedo_texture = SAWALI_WALL
+		material.albedo_color = Color.WHITE
+		material.uv1_scale = Vector3(3.0, 1.0, 2.0)
+	elif label == "Woven rug":
+		material.albedo_texture = BANIG_MAT
+		material.albedo_color = Color.WHITE
 	mesh.material_override = material
 	mesh.position = at
 	parent.add_child(mesh)
