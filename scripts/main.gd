@@ -139,6 +139,9 @@ func _ready() -> void:
 	if story.outcome == "" and not story.prologue_ready():
 		_enter_lola_hut(true)
 	_update_objective()
+	# An observable *game scene* signal: a title/options screen must never
+	# count as a passing Android gameplay smoke test again.
+	print("NIGHT1_QA_GAMEPLAY_SCENE_READY")
 
 
 func _physics_process(delta: float) -> void:
