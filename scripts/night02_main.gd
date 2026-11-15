@@ -8,6 +8,7 @@ const Save = preload("res://scripts/core/night02_save.gd")
 const Night1State = preload("res://scripts/narrative/night01_state.gd")
 const Night1Save = preload("res://scripts/core/save_service.gd")
 const Preferences = preload("res://scripts/core/preferences.gd")
+const Night02Ambience = preload("res://scripts/audio/night02_ambience.gd")
 const MANGO: Texture2D = preload("res://assets/night02/old_mango_tree.svg")
 const KAPRE: Texture2D = preload("res://assets/night02/kapre.svg")
 const BARRIER: Texture2D = preload("res://assets/night02/closed_path_barrier.svg")
@@ -80,6 +81,8 @@ var menu_confirm: ConfirmationDialog
 var quit_confirm: ConfirmationDialog
 var save_error: AcceptDialog
 var ending_panel: PanelContainer
+var ambient_sound: Node
+var debug_dusk_preview := false
 var elapsed := 0.0
 var particle_phase := 0.0
 var last_target := ""
@@ -101,6 +104,10 @@ func _ready() -> void:
 	camera.position_smoothing_speed = 4.0
 	camera.position = player_pos
 	add_child(camera)
+	ambient_sound = Night02Ambience.new()
+	ambient_sound.name = "KapreAtmosphere"
+	add_child(ambient_sound)
+	ambient_sound.set_audio_level(prefs.audio_level)
 	_build_ui()
 	_rebuild_objective()
 	if story.outcome != "":
@@ -137,7 +144,10 @@ func _process(delta: float) -> void:
 	camera.position = player_pos
 	var sheltered := player_pos.distance_to(OBSERVATION) < 125
 	var closed_zone: bool = player_pos.distance_to(TREE) < 115.0 and story.phase < 3
-	story.danger_tick(delta, closed_zone, sheltered, prefs.story_assist)
+	# Reading/dialogue, options and the chapter outcome are fully paused.
+	# Tension MUST NOT drain while the user reads long Filipino dialogue.
+	if not dialogue.visible and not notebook.visible and not options_panel.visible and not ending_panel.visible:
+		story.danger_tick(delta, closed_zone, sheltered, prefs.story_assist)
 	if story.phase == 2 and observe_held and not dialogue.visible and sheltered:
 		if story.observe_from_safety(delta, true, true):
 			observe_held = false
@@ -170,13 +180,17 @@ func _unhandled_input(event: InputEvent) -> void:
 			_open_options()
 	if OS.get_name() == "Android" and OS.has_feature("debug") and event is InputEventKey:
 		var key := event as InputEventKey
-		if key.pressed and not key.echo and [KEY_F7, KEY_F8, KEY_F9].has(key.keycode):
+		if key.pressed and not key.echo and [KEY_F6, KEY_F7, KEY_F8, KEY_F9].has(key.keycode):
 			# Each screenshot uses the real interactive running scene, NEVER
 			# a concept art canvas or a fake static title.
 			_close_dialogue()
 			notebook.hide()
 			options_panel.hide()
-			if key.keycode == KEY_F7:
+			if key.keycode == KEY_F6:
+				debug_dusk_preview = true
+				player_pos = Vector2(110,-140)
+				print("NIGHT2_QA_DUSK_VIEW")
+			elif key.keycode == KEY_F7:
 				player_pos = Vector2(-530,-315)
 				print("NIGHT2_QA_WITNESS_VIEW")
 			elif key.keycode == KEY_F8:
@@ -247,8 +261,25 @@ func _draw() -> void:
 	draw_texture_rect(MARA, Rect2(-525,-385,78,126), false)
 	draw_texture_rect(BANTAY, Rect2(dog_pos-Vector2(45,67),Vector2(90,96)),false)
 	draw_texture_rect(HERO, Rect2(player_pos-Vector2(46,116),Vector2(92,124)),false)
+	# The observation and negotiation stages are genuinely twilight, not
+	# the identical green daytime village with a changed objective label.
+	if story.phase >= 2 or debug_dusk_preview:
+		draw_rect(Rect2(-1500,-1200,3000,2600),Color(.045,.085,.16,.26))
+		# Foreground warm lantern pool on the lookout, plus diffuse fireflies
+		# around the living old mango. Original and low-cost CanvasItem art.
+		draw_circle(OBSERVATION + Vector2(-92,-92),103,Color(1.0,.65,.23,.050))
+		for i in range(19):
+			var firefly_angle := float(i) * 2.39996
+			var firefly_r := 85.0 + float(i % 7) * 24.0
+			var firefly := TREE + Vector2(cos(firefly_angle)*firefly_r,
+				sin(firefly_angle)*firefly_r*.70-120.0)
+			if not prefs.reduced_motion:
+				firefly += Vector2(sin(particle_phase*.64+float(i))*11.0,
+					cos(particle_phase*.73+float(i)*1.6)*8.0)
+			draw_circle(firefly,2.3,Color("#ffe6a1"))
+			draw_circle(firefly,8.0,Color(1.0,.79,.38,.075))
 	_draw_world_labels()
-	if story.phase >= 2 or story.outcome != "":
+	if story.phase >= 2 or story.outcome != "" or debug_dusk_preview:
 		# Suspense arrives only once the safety route is secured.
 		draw_circle(TREE+Vector2(135,-192),35 + sin(particle_phase*1.5)*4.0,Color(1.0,.68,.25,.09))
 	if story.outcome == "resolve":
