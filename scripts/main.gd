@@ -69,6 +69,8 @@ var notebook_panel: PanelContainer
 var notebook_body: Label
 var notebook_guide: Button
 var notebook_chase: Button
+var evidence_heading: Label
+var theory_heading: Label
 var link_light_button: Button
 var link_ledger_button: Button
 var touch_axes := Vector2.ZERO
@@ -676,11 +678,11 @@ func _create_ui() -> void:
 	notebook_body.add_theme_constant_override("line_spacing", 6)
 	notebook_body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	stack.add_child(notebook_body)
-	var links_label := Label.new()
-	links_label.text = "CONNECT EVIDENCE"
-	links_label.name = "EvidenceHeading"
-	links_label.add_theme_font_size_override("font_size", 25)
-	stack.add_child(links_label)
+	evidence_heading = Label.new()
+	evidence_heading.text = "CONNECT EVIDENCE"
+	evidence_heading.name = "EvidenceHeading"
+	evidence_heading.add_theme_font_size_override("font_size", 25)
+	stack.add_child(evidence_heading)
 	link_light_button = Button.new()
 	link_light_button.text = "LINK: DADO + MOORING"
 	link_light_button.custom_minimum_size = Vector2(260, 45)
@@ -693,6 +695,11 @@ func _create_ui() -> void:
 	link_ledger_button.pressed.connect(func(): _link_clues("ledger_mooring"))
 	_style_modal_button(link_ledger_button)
 	stack.add_child(link_ledger_button)
+	theory_heading = Label.new()
+	theory_heading.name = "TheoryHeading"
+	theory_heading.text = "PRIVATE THEORY  |  NOT VERIFIED"
+	theory_heading.add_theme_font_size_override("font_size", 25)
+	stack.add_child(theory_heading)
 	var theory_row := HBoxContainer.new()
 	theory_row.add_theme_constant_override("separation", 10)
 	stack.add_child(theory_row)
@@ -1286,7 +1293,8 @@ func _apply_preferences() -> void:
 			element.remove_theme_constant_override("outline_size")
 	var headers: Array[Label] = [
 		notebook_panel.get_node("NotebookLayout/NotebookHeading") as Label,
-		notebook_panel.get_node("NotebookLayout/NotebookScroll/EvidenceContent/EvidenceHeading") as Label,
+		evidence_heading,
+		theory_heading,
 		prep_panel.get_node("PreparationLayout/PreparationScroll/EquipmentContent/PreparationHeading") as Label,
 		settings_panel.get_node("SettingsLayout/SettingsScroll/OptionsContent/OptionsHeading") as Label
 	]
@@ -1415,6 +1423,7 @@ func _open_notebook() -> void:
 
 func _refresh_notebook() -> void:
 	notebook_body.text = "\n".join(NightJournal.lines(story))
+	evidence_heading.visible = (story.clues.has("light_retreat") and story.clues.has("old_mooring")) or (story.clues.has("old_mooring") and story.clues.has("boatman_name"))
 	link_light_button.visible = story.clues.has("light_retreat") and story.clues.has("old_mooring")
 	link_light_button.disabled = story.phase > 0 or story.evidence_links.has("light_mooring")
 	link_light_button.text = "LINKED: DADO + MOORING" if story.evidence_links.has("light_mooring") else "LINK: DADO + MOORING"
@@ -1425,6 +1434,8 @@ func _refresh_notebook() -> void:
 	_style_modal_button(link_ledger_button, story.evidence_links.has("ledger_mooring"))
 	notebook_guide.disabled = story.outcome != ""
 	notebook_chase.disabled = story.outcome != ""
+	_style_modal_button(notebook_guide, story.hypothesis == "guide")
+	_style_modal_button(notebook_chase, story.hypothesis == "chase")
 
 
 func _link_clues(id: String) -> void:

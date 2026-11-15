@@ -19,6 +19,16 @@ func _run() -> void:
 	check(game._is_reading_ui(), "notebook pauses walking")
 	check(game.notebook_panel.get_node_or_null("NotebookLayout/NotebookScroll") != null, "notebook supports overflowing clues")
 	check(game.notebook_body.get_theme_font_size("font_size") >= 27, "notebook evidence has large readable default font")
+	check(not game.evidence_heading.visible, "no misleading LINK heading when both evidence links are unavailable")
+	check(game.theory_heading.visible and game.theory_heading.text.find("PRIVATE THEORY") >= 0, "theory actions are explicitly separate from evidence links")
+	game.story.observe_clue("light_retreat")
+	game.story.observe_clue("old_mooring")
+	game._refresh_notebook()
+	check(game.evidence_heading.visible, "link heading appears once evidence pairing is available")
+	game._select_theory("guide")
+	var guide_style := game.notebook_guide.get_theme_stylebox("normal") as StyleBoxFlat
+	var chase_style := game.notebook_chase.get_theme_stylebox("normal") as StyleBoxFlat
+	check(guide_style != null and chase_style != null and guide_style.border_color != chase_style.border_color, "selected private theory has visible distinct highlight")
 	check(game.link_light_button.get_theme_font_size("font_size") >= 27, "notebook deduction action is readable")
 	check(game.notebook_panel.anchor_right - game.notebook_panel.anchor_left >= 0.75, "notebook occupies wide readable viewport area")
 	check(game.notebook_panel.anchor_bottom - game.notebook_panel.anchor_top >= 0.85, "notebook fills most of the phone height")
