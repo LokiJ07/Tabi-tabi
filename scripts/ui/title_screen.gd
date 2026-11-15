@@ -237,9 +237,15 @@ func _build_menu() -> void:
 	continue_button = _button("CONTINUE", menu, func(): _enter_game(false))
 	continue_button.disabled = not _has_save()
 	night2_button = _button("NIGHT 2  •  KAPRE", menu, _enter_night2)
-	night2_button.disabled = not _night2_unlocked()
+	var night2_ready: bool = _night2_unlocked()
+	# This is a DEVELOPMENT QA APK: allow direct Kapre testing even if
+	# ephemeral Android signing forced a clean install without Night 1 save.
+	# Production/non-debug releases still require canonical Night 1 completion.
+	night2_button.disabled = not night2_ready and not OS.has_feature("debug")
 	if Night02Save.exists():
-		night2_button.text = "CONTINUE NIGHT 2  •  KAPRE"
+		night2_button.text = "CONTINUE NIGHT 2  •  KAPRE" if night2_ready else "TEST NIGHT 2 (QA)"
+	elif not night2_ready and OS.has_feature("debug"):
+		night2_button.text = "TEST NIGHT 2 (QA)"
 	_button("SETTINGS", menu, _open_settings)
 	_button("CREDITS", menu, _credits)
 	_button("EXIT", menu, func(): get_tree().quit())
@@ -261,7 +267,7 @@ func _night2_unlocked() -> bool:
 
 
 func _enter_night2() -> void:
-	if not _night2_unlocked():
+	if not _night2_unlocked() and not OS.has_feature("debug"):
 		return
 	loading_cover.show()
 	var loading_label := loading_cover.get_node_or_null("LoadingStatus") as Label
