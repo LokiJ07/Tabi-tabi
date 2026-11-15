@@ -16,6 +16,11 @@ adb shell settings put system user_rotation 1 || true
 sleep 6
 adb shell input tap 1700 660 || true
 sleep 3
+# The Android app now opens a functional title scene instead of auto-starting.
+# Capture it separately, then enter the actual playable chapter.
+adb exec-out screencap -p > build/android-night1-title.png || true
+adb shell input tap 540 370 || true
+sleep 7
 # The first story dialogue is modal. Close it before tapping the right HUD
 # notebook shortcut, otherwise the hidden shortcut cannot be activated.
 adb shell input tap 1160 948 || true
