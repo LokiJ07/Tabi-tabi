@@ -6,10 +6,20 @@ APK="build/tabi-tabi-night1-debug.apk"
 mkdir -p build
 adb install -r "$APK"
 adb logcat -c
+adb shell monkey -p "$PKG" -c android.intent.category.LAUNCHER 1
+sleep 10
+# Set the Android test display AFTER app activity startup. Setting it before
+# activity creation was overridden, producing a 1080x2340 portrait screenshot.
 adb shell settings put system accelerometer_rotation 0 || true
 adb shell settings put system user_rotation 1 || true
-adb shell monkey -p "$PKG" -c android.intent.category.LAUNCHER 1
-sleep 13
+sleep 5
+adb exec-out screencap -p > build/android-orientation.png
+# Check actual screencap orientation rather than relying on wm size (which
+# reports the underlying hardware dimensions regardless of current rotation).
+if ! python3 -c 'import struct,sys; d=open(sys.argv[1],"rb").read(24); w,h=struct.unpack(">II",d[16:24]); print("Android screenshot resolution: %sx%s"%(w,h)); sys.exit(0 if w>h else 1)' build/android-orientation.png; then
+  echo "ERROR: Night 1 Android activity is still in portrait; gameplay is landscape only"
+  exit 1
+fi
 
 # Software-rendered AVDs may hang Pixel Launcher or show immersive onboarding.
 # Do not send ordinary menu clicks: earlier smoke tests landed in SETTINGS and
