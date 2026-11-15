@@ -83,6 +83,12 @@ func _run() -> void:
 	check(game.dialogue_text.get_theme_font_size("font_size") >= 28, "large subtitle setting changes text")
 	check(game.notebook_body.get_theme_font_size("font_size") >= 37, "journal scales with large text setting")
 	check(game.pref_text_button.get_theme_font_size("font_size") >= 37, "options buttons also scale with large text setting")
+	var retry_action_found := false
+	for child in game.gameplay_hud.get_children():
+		if child is Button and child.text == "RETRY":
+			retry_action_found = true
+			check(child.get_theme_font_size("font_size") <= 19, "RETRY small action never clips like the Android screenshot")
+	check(retry_action_found, "actual HUD exposes the retry action")
 	game.queue_free()
 	print("Night 1 HUD usability checks: ", "PASS" if errors == 0 else str(errors) + " failures")
 	quit(0 if errors == 0 else 1)
