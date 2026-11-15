@@ -15,8 +15,10 @@ sleep 13
 # Do not send ordinary menu clicks: earlier smoke tests landed in SETTINGS and
 # falsely counted that textured popup as visible "gameplay".
 dismiss_system_anr() {
+  # Never tap fixed screen coordinates to dismiss launcher ANRs:
+  # (780, 555) was the game's SETTINGS button on the test device.
+  # Also do not press BACK blindly: Android might exit the game.
   adb shell am force-stop com.google.android.apps.nexuslauncher >/dev/null 2>&1 || true
-  adb shell input keyevent 4 >/dev/null 2>&1 || true
 }
 dismiss_system_anr
 sleep 2
