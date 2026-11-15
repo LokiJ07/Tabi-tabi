@@ -141,6 +141,7 @@ jobs:
           name: tabi-tabi-emulator-launch-evidence
           path: |
             build/android-night1-launch.png
+            build/android-night1-notebook.png
             build/android-night1-launch-log.txt
             build/android-display.txt
           if-no-files-found: warn

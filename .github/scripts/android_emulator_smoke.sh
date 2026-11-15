@@ -18,6 +18,11 @@ adb shell input tap 1310 510 || true
 sleep 3
 adb shell wm size > build/android-display.txt || true
 adb exec-out screencap -p > build/android-night1-launch.png || true
+# Optional visual QA: tap the right-edge Notebook shortcut on the landscape
+# emulator and preserve a second screenshot for overlap/readability review.
+adb shell input tap 2050 660 || true
+sleep 2
+adb exec-out screencap -p > build/android-night1-notebook.png || true
 adb logcat -d -s AndroidRuntime:E Godot:E GodotEngine:E > build/android-night1-launch-log.txt || true
 if ! adb shell pidof "$PKG"; then
   echo "ERROR: Android game process is not alive after launch"
