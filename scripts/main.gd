@@ -1131,7 +1131,8 @@ func _update_focus_ui() -> void:
 			focus_button.add_theme_stylebox_override("pressed", style)
 			focus_button.add_theme_stylebox_override("hover_pressed", style)
 			focus_button.add_theme_color_override("font_color", Color.WHITE)
-		focus_button.add_theme_font_size_override("font_size", roundi(23.0 * preferences.text_scale))
+		# The full-width FOCUS status stays readable without colliding with its 30px icon.
+		focus_button.add_theme_font_size_override("font_size", roundi(minf(20.0, 18.0 * preferences.text_scale)) if focus_button.icon != null else roundi(23.0 * preferences.text_scale))
 	if focus_feedback == null:
 		return
 	focus_feedback.visible = is_night and story.phase >= 1 and story.phase <= 3
