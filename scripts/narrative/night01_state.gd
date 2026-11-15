@@ -5,6 +5,7 @@ extends RefCounted
 const REQUIRED := ["light_retreat", "old_mooring", "boatman_name"]
 const RESULTS := ["resolve", "drive_away", "partial"]
 var clues: Dictionary = {}
+var evidence_links: Dictionary = {}
 var hypothesis := ""
 var phase := 0
 var outcome := ""
@@ -28,6 +29,26 @@ func choose_hypothesis(value: String) -> void:
 	hypothesis = value
 
 
+func link_evidence(id: String) -> bool:
+	if phase != 0 or outcome != "" or evidence_links.has(id):
+		return false
+	match id:
+		"light_mooring":
+			if not clues.has("light_retreat") or not clues.has("old_mooring"):
+				return false
+		"ledger_mooring":
+			if not clues.has("old_mooring") or not clues.has("boatman_name"):
+				return false
+		_:
+			return false
+	evidence_links[id] = true
+	return true
+
+
+func has_linked_evidence() -> bool:
+	return evidence_links.has("light_mooring") and evidence_links.has("ledger_mooring")
+
+
 func has_complete_evidence() -> bool:
 	for id in REQUIRED:
 		if not clues.has(id):
@@ -36,7 +57,7 @@ func has_complete_evidence() -> bool:
 
 
 func can_begin() -> bool:
-	return outcome == "" and phase == 0 and has_complete_evidence()
+	return outcome == "" and phase == 0 and has_complete_evidence() and has_linked_evidence()
 
 
 func begin() -> bool:
@@ -100,6 +121,7 @@ func to_dict() -> Dictionary:
 	return {
 		"schema": 1,
 		"clues": clues.duplicate(true),
+		"evidence_links": evidence_links.duplicate(true),
 		"hypothesis": hypothesis,
 		"phase": phase,
 		"outcome": outcome,
@@ -127,6 +149,13 @@ func from_dict(raw: Dictionary) -> bool:
 	for id in REQUIRED:
 		if input_clues.get(id, false) == true:
 			clues[id] = true
+	evidence_links = {}
+	var raw_links: Variant = raw.get("evidence_links", {})
+	if typeof(raw_links) == TYPE_DICTIONARY:
+		if raw_links.get("light_mooring", false) == true and clues.has("light_retreat") and clues.has("old_mooring"):
+			evidence_links["light_mooring"] = true
+		if raw_links.get("ledger_mooring", false) == true and clues.has("old_mooring") and clues.has("boatman_name"):
+			evidence_links["ledger_mooring"] = true
 	hypothesis = str(raw.get("hypothesis", ""))
 	phase = restored_phase
 	outcome = restored_result

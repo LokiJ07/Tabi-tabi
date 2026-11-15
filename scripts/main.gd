@@ -48,6 +48,8 @@ var notebook_panel: PanelContainer
 var notebook_body: Label
 var notebook_guide: Button
 var notebook_chase: Button
+var link_light_button: Button
+var link_ledger_button: Button
 var touch_axes := Vector2.ZERO
 var focus_held := false
 var manual_aim := Vector2.ZERO
@@ -461,7 +463,7 @@ func _create_ui() -> void:
 	notebook_panel.anchor_right = 0.74
 	notebook_panel.anchor_top = 0.14
 	notebook_panel.anchor_bottom = 0.14
-	notebook_panel.offset_bottom = 325
+	notebook_panel.offset_bottom = 395
 	root.add_child(notebook_panel)
 	var stack := VBoxContainer.new()
 	stack.add_theme_constant_override("separation", 10)
@@ -475,6 +477,20 @@ func _create_ui() -> void:
 	notebook_body.add_theme_font_size_override("font_size", 21)
 	notebook_body.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	stack.add_child(notebook_body)
+	var links_label := Label.new()
+	links_label.text = "CONNECT EVIDENCE"
+	links_label.add_theme_font_size_override("font_size", 20)
+	stack.add_child(links_label)
+	link_light_button = Button.new()
+	link_light_button.text = "LINK: DADO + MOORING"
+	link_light_button.custom_minimum_size = Vector2(260, 45)
+	link_light_button.pressed.connect(func(): _link_clues("light_mooring"))
+	stack.add_child(link_light_button)
+	link_ledger_button = Button.new()
+	link_ledger_button.text = "LINK: MOORING + MARA"
+	link_ledger_button.custom_minimum_size = Vector2(270, 45)
+	link_ledger_button.pressed.connect(func(): _link_clues("ledger_mooring"))
+	stack.add_child(link_ledger_button)
 	var theory_row := HBoxContainer.new()
 	theory_row.add_theme_constant_override("separation", 10)
 	stack.add_child(theory_row)
@@ -642,7 +658,7 @@ func _update_objective() -> void:
 	elif not is_night:
 		objective.text = "Inspect mooring and speak to Mara, then begin night when ready."
 	elif story.phase == 0:
-		objective.text = "Find three clues (Dado, mooring, Mara), then BEGIN at the river."
+		objective.text = "Collect 3 clues, link evidence pairs in NOTEBOOK, then BEGIN."
 	elif story.phase == 1:
 		objective.text = "Stage 1: Study the light; let its alarm settle, then OBSERVE."
 	elif story.phase == 2:
@@ -660,7 +676,7 @@ func _refresh_choices() -> void:
 	if not is_night:
 		names = ["", "", ""]
 	elif story.phase == 0:
-		names = ["BEGIN" if story.can_begin() else "Find clues", "", ""]
+		names = ["BEGIN" if story.can_begin() else "OPEN NOTEBOOK", "", ""]
 	elif story.phase == 1:
 		names = ["OBSERVE", "", "RETREAT"]
 	elif story.phase == 2:
@@ -679,9 +695,12 @@ func _choose_story_action(index: int) -> void:
 	if not is_night or story.outcome != "":
 		return
 	if story.phase == 0:
-		if index == 0 and story.begin():
-			_save_story_silent()
-			_show_dialogue("The first light rises above the old bank. Watch its response, and do not chase it into the river.")
+		if index == 0:
+			if story.begin():
+				_save_story_silent()
+				_show_dialogue("The first light rises above the old bank. Watch its response, and do not chase it into the river.")
+			else:
+				_open_notebook()
 	elif story.phase == 1:
 		if index == 2:
 			_commit_night("partial")
@@ -768,9 +787,23 @@ func _refresh_notebook() -> void:
 	if lines.is_empty():
 		lines.append("No clues yet. Speak to residents and inspect the old mooring.")
 	var theory_name := "Guide gently" if story.hypothesis == "guide" else "Chase away" if story.hypothesis == "chase" else "Undecided"
-	notebook_body.text = "\n".join(lines) + "\n\nPRIVATE THEORY: " + theory_name
+	notebook_body.text = "\n".join(lines) + "\n\nLINKED: %d / 2  |  THEORY: %s" % [story.evidence_links.size(), theory_name]
+	link_light_button.visible = story.clues.has("light_retreat") and story.clues.has("old_mooring")
+	link_light_button.disabled = story.phase > 0 or story.evidence_links.has("light_mooring")
+	link_light_button.text = "LINKED: DADO + MOORING" if story.evidence_links.has("light_mooring") else "LINK: DADO + MOORING"
+	link_ledger_button.visible = story.clues.has("old_mooring") and story.clues.has("boatman_name")
+	link_ledger_button.disabled = story.phase > 0 or story.evidence_links.has("ledger_mooring")
+	link_ledger_button.text = "LINKED: MOORING + MARA" if story.evidence_links.has("ledger_mooring") else "LINK: MOORING + MARA"
 	notebook_guide.disabled = story.outcome != ""
 	notebook_chase.disabled = story.outcome != ""
+
+
+func _link_clues(id: String) -> void:
+	if story.link_evidence(id):
+		_save_story_silent()
+		_refresh_choices()
+		_update_objective()
+	_refresh_notebook()
 
 
 func _select_theory(value: String) -> void:
