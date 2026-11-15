@@ -3,6 +3,7 @@ extends SceneTree
 ## overlapped phase, alarm, nearby interaction prompt and courage text.
 const GameScene = preload("res://scenes/main.tscn")
 const Santelmo = preload("res://scripts/encounters/santelmo_actor.gd")
+const Save = preload("res://scripts/core/save_service.gd")
 var failures := 0
 
 func check(value: bool, label: String) -> void:
@@ -13,7 +14,14 @@ func check(value: bool, label: String) -> void:
 func _initialize() -> void:
 	call_deferred("_run")
 
+func _clear_fixture_save() -> void:
+	for path in [Save.PATH, Save.PATH + ".bak", Save.PATH + ".tmp"]:
+		if FileAccess.file_exists(path):
+			DirAccess.remove_absolute(ProjectSettings.globalize_path(path))
+
+
 func _run() -> void:
+	_clear_fixture_save()
 	var game = GameScene.instantiate()
 	root.add_child(game)
 	await process_frame
@@ -83,5 +91,7 @@ func _run() -> void:
 	check(not creature.landing_marker.visible, "landing marker hidden before stage 3")
 	creature.queue_free()
 	game.queue_free()
+	await process_frame
+	_clear_fixture_save()
 	print("Stage 3 phone HUD and guidance visibility: ", "PASS" if failures == 0 else str(failures) + " failures")
 	quit(0 if failures == 0 else 1)
