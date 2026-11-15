@@ -13,12 +13,24 @@ var phase := 0
 var outcome := ""
 var committed_events: Dictionary = {}
 var seen_people: Dictionary = {}
+var prologue_flags: Dictionary = {}
 var alarm := 0.0
 var courage := 100.0
 var guide_progress := 0.0
 var encounter_failed := false
 var checkpoint: Dictionary = {}
 var revision_count := 0
+
+
+func inspect_prologue(id: String) -> bool:
+	if not ["blue_notebook", "warm_cup", "river_photo"].has(id) or prologue_flags.has(id):
+		return false
+	prologue_flags[id] = true
+	return true
+
+
+func prologue_ready() -> bool:
+	return prologue_flags.has("blue_notebook") and prologue_flags.has("warm_cup")
 
 
 func observe_clue(id: String) -> bool:
@@ -184,6 +196,7 @@ func to_dict() -> Dictionary:
 		"outcome": outcome,
 		"committed_events": committed_events.duplicate(true),
 		"seen_people": seen_people.duplicate(true),
+		"prologue_flags": prologue_flags.duplicate(true),
 		"alarm": alarm,
 		"courage": courage,
 		"guide_progress": guide_progress,
@@ -228,6 +241,15 @@ func from_dict(raw: Dictionary) -> bool:
 	if outcome != "":
 		committed_events["n1_santelmo_" + outcome] = true
 	seen_people = raw.get("seen_people", {}).duplicate(true)
+	prologue_flags = {}
+	var intro: Variant = raw.get("prologue_flags", null)
+	if typeof(intro) == TYPE_DICTIONARY:
+		for id in ["blue_notebook", "warm_cup", "river_photo"]:
+			if intro.get(id, false) == true:
+				prologue_flags[id] = true
+	else:
+		# Existing prototype saves predate the new intro; preserve their progress.
+		prologue_flags = {"blue_notebook": true, "warm_cup": true}
 	alarm = clampf(float(raw.get("alarm", 0)), 0.0, 1.0)
 	courage = clampf(float(raw.get("courage", 100.0)), 0.0, 100.0)
 	guide_progress = clampf(float(raw.get("guide_progress", 0.0)), 0.0, 1.0)

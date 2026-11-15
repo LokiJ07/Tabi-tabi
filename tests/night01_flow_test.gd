@@ -21,10 +21,20 @@ func _wipe_test_save() -> void:
 			DirAccess.remove_absolute(ProjectSettings.globalize_path(path))
 
 func _meet(game: Variant, id: String) -> void:
-	var actor := game.get_node(id) as Node3D
+	var actor := game.interaction_nodes[id] as Node3D
 	game.player.global_position = actor.global_position + Vector3(0, 0.65, 0)
 	game._interact()
 	game._close_dialogue()
+
+func _setup_prologue(game: Variant) -> void:
+	assert_true(game.in_lola_hut, "fresh new game begins in Lola hut")
+	game._close_dialogue()
+	_meet(game, "BLUE_NOTEBOOK")
+	_meet(game, "WARM_CUP")
+	assert_true(game.story.prologue_ready(), "notebook and breakfast unlocked")
+	_meet(game, "HUT_EXIT")
+	assert_true(not game.in_lola_hut, "door returns safely to village")
+
 
 func _setup_evidence(game: Variant) -> void:
 	_meet(game, "LOLA")
@@ -42,6 +52,7 @@ func _run_one(result: String) -> void:
 	var game = Scene.instantiate()
 	root.add_child(game)
 	await process_frame
+	_setup_prologue(game)
 	_setup_evidence(game)
 	game._toggle_night()
 	assert_true(game.is_night, "night starts with valid four-slot equipment")

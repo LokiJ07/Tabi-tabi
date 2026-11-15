@@ -5,6 +5,7 @@ extends Node3D
 const NightModel = preload("res://scripts/narrative/night01_state.gd")
 const NightDialogue = preload("res://scripts/narrative/night01_dialogue.gd")
 const MorningAftermath = preload("res://scripts/world/night01_aftermath.gd")
+const LolaHut = preload("res://scripts/world/lola_hut_interior.gd")
 const Nearby = preload("res://scripts/ui/nearby_interaction.gd")
 const SantelmoActor = preload("res://scripts/encounters/santelmo_actor.gd")
 const FolkActors = preload("res://scripts/visuals/folk_actors.gd")
@@ -76,6 +77,7 @@ var is_night := false
 var talked_to_lola := false
 var talked_to_dado := false
 var encountered_light := false
+var in_lola_hut := false
 var santelmo
 var ambient_walkers: Array[Node3D] = []
 var elapsed := 0.0
@@ -93,6 +95,8 @@ func _ready() -> void:
 	_create_ui()
 	_apply_preferences()
 	_restore_story()
+	if story.outcome == "" and not story.prologue_ready():
+		_enter_lola_hut(true)
 	_update_objective()
 
 
@@ -199,6 +203,15 @@ func _create_world() -> void:
 	_marker("MOORING", Vector3(-7, 0.1, 13), Color(0.8, 0.76, 0.49))
 	_marker("SABEL", Vector3(3, 0.1, -5), Color(0.75, 0.5, 0.8))
 	_marker("MARA", Vector3(-2, 0.1, -8), Color(0.42, 0.82, 0.61))
+	_box("Lola exterior doorstep", LolaHut.OUTSIDE_DOOR, Vector3(1.9, 0.16, 1.05), Color(0.52, 0.36, 0.21), false)
+	var exterior_door := Node3D.new()
+	exterior_door.name = "HUT_ENTRY"
+	exterior_door.position = LolaHut.OUTSIDE_DOOR
+	add_child(exterior_door)
+	interaction_nodes["HUT_ENTRY"] = exterior_door
+	var room_interactions: Dictionary = LolaHut.build(self)
+	for key in room_interactions:
+		interaction_nodes[key] = room_interactions[key]
 
 
 func _box(name: String, pos: Vector3, size: Vector3, color: Color, solid: bool) -> Node3D:
@@ -504,7 +517,7 @@ func _create_ui() -> void:
 	dialogue.anchor_right = 0.76
 	dialogue.anchor_top = 0.14
 	dialogue.anchor_bottom = 0.14
-	dialogue.offset_bottom = 165
+	dialogue.offset_bottom = 205
 	root.add_child(dialogue)
 	dialogue_text = Label.new()
 	dialogue_text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -728,6 +741,9 @@ func _interact() -> void:
 		_close_dialogue()
 		return
 	var closest: String = _nearby_target()
+	if ["LOLA_HOME", "BLUE_NOTEBOOK", "WARM_CUP", "RIVER_PHOTO", "HUT_EXIT", "HUT_ENTRY"].has(closest):
+		_interact_lola_hut(closest)
+		return
 	if closest == "":
 		_show_dialogue("Move close to a resident or the old mooring to interact.")
 		return
@@ -760,6 +776,64 @@ func _interact() -> void:
 	_update_objective()
 
 
+func _enter_lola_hut(first_visit: bool = false) -> void:
+	if is_night:
+		_show_dialogue("Return to Lola's home in the daylight. The river needs your attention tonight.")
+		return
+	in_lola_hut = true
+	_teleport_with_bantay(LolaHut.INSIDE_SPAWN)
+	_refresh_choices()
+	_update_objective()
+	if first_visit:
+		_show_dialogue("LOLA: Sayu lagi ka nakamata. Bantay naghulat na.\nTan-awa ang BLUE NOTEBOOK ug WARM CUP una mogawas.")
+
+
+func _leave_lola_hut() -> void:
+	if not story.prologue_ready():
+		_show_dialogue("LOLA: Ayaw pagdali. Dad-a ang imong asul nga notebook ug pag-inom sa usa ka tasa una.")
+		return
+	in_lola_hut = false
+	_teleport_with_bantay(LolaHut.OUTSIDE_SPAWN)
+	_refresh_choices()
+	_update_objective()
+	_show_dialogue("LOLA: Ayaw una isulat ang imong gituohan. Paminaw sa, dayon pangita og pamatuod. Duola si Tatay Dado sa suba.")
+
+
+func _teleport_with_bantay(destination: Vector3) -> void:
+	player.global_position = destination
+	player.velocity = Vector3.ZERO
+	bantay.global_position = destination + Vector3(1.0, -0.31, 0.55)
+	bantay.velocity = Vector3.ZERO
+	dog_waypoints.clear()
+	dog_repath_timer = 0.0
+	camera.global_position = player.global_position + Vector3(12, 17, 12)
+	camera.look_at(player.global_position + Vector3(0, 0.7, 0))
+
+
+func _interact_lola_hut(id: String) -> void:
+	match id:
+		"LOLA_HOME":
+			_show_dialogue("LOLA PASING: Sayu lagi ka nakamata. Ayaw pagdali sa suba; unsa may nakita, ug unsay nadungog lang? Ang tinuod dili kinahanglan ipugos.")
+		"HUT_ENTRY":
+			_enter_lola_hut()
+			return
+		"HUT_EXIT":
+			_leave_lola_hut()
+			return
+		"BLUE_NOTEBOOK":
+			story.inspect_prologue("blue_notebook")
+			_show_dialogue("Your blue notebook is ready. Lola's words stay with you: write what you OBSERVE before believing every rumor.")
+		"WARM_CUP":
+			story.inspect_prologue("warm_cup")
+			_show_dialogue("LOLA: Kaon sa. Ang tawo nga walay pamahaw dali ra mahadlok. Bantay rests at your feet.")
+		"RIVER_PHOTO":
+			story.inspect_prologue("river_photo")
+			_show_dialogue("An old photo shows the river before your time. Lola smiles, but isn't ready to explain the missing names.")
+	_save_story_silent()
+	_refresh_choices()
+	_update_objective()
+
+
 func _show_dialogue(value: String) -> void:
 	_close_notebook()
 	_close_prep()
@@ -773,6 +847,9 @@ func _close_dialogue() -> void:
 
 
 func _toggle_night() -> void:
+	if in_lola_hut:
+		_show_dialogue("Finish breakfast and use Lola's door to return outside before starting the night.")
+		return
 	if is_night and story.phase >= 1 and story.phase <= 3:
 		_show_dialogue("The encounter has begun. Use RETREAT or the safe checkpoint, not the day/night switch.")
 		return
@@ -806,10 +883,17 @@ func _toggle_night() -> void:
 
 
 func _update_objective() -> void:
-	if not talked_to_lola:
-		objective.text = "OBJECTIVE: Speak to Lola Pasing (gold marker)."
+	if in_lola_hut:
+		if not story.prologue_flags.has("blue_notebook"):
+			objective.text = "MORNING: Find your BLUE NOTEBOOK on the desk."
+		elif not story.prologue_flags.has("warm_cup"):
+			objective.text = "MORNING: Drink the WARM CUP at Lola's table."
+		else:
+			objective.text = "MORNING: Explore the photo or use HUT EXIT to begin investigating."
+	elif not talked_to_lola:
+		objective.text = "OBJECTIVE: Speak to Lola Pasing near her hut."
 	elif not talked_to_dado:
-		objective.text = "OBJECTIVE: Meet Tatay Dado by the river (blue marker)."
+		objective.text = "OBJECTIVE: Meet Tatay Dado by the safe river landing."
 	elif story.outcome != "":
 		objective.text = "MORNING AFTER: " + story.outcome.to_upper() + " — state saved."
 	elif not is_night:
@@ -833,7 +917,10 @@ func _refresh_choices() -> void:
 		return
 	var names: Array[String] = []
 	if not is_night:
-		names = ["", "", ""]
+		if in_lola_hut and not story.seen_people.has("morning_question"):
+			names = ["BANTAY WOKE ME", "LOLA, ARE YOU RESTED?", ""]
+		else:
+			names = ["", "", ""]
 	elif story.encounter_failed:
 		names = ["RETRY", "ACCEPT PARTIAL", ""]
 	elif story.phase == 0:
@@ -853,6 +940,16 @@ func _refresh_choices() -> void:
 
 
 func _choose_story_action(index: int) -> void:
+	if not is_night and in_lola_hut and not story.seen_people.has("morning_question"):
+		if index == 0:
+			story.seen_people["morning_question"] = "lighthearted"
+			_show_dialogue("APPRENTICE: Mas una man gud nagmata si Bantay.\nLOLA: Kung siya pa lang ang mag-alarm sa buntag, wala na untay kinahanglan nga manok.")
+		elif index == 1:
+			story.seen_people["morning_question"] = "concerned"
+			_show_dialogue("APPRENTICE: Lola, nakapahulay ra ka?\nLOLA: Makahulay ra ko. Ikaw, kaon sa. Ang uban nga kasakit dili madaog sa pagdali.")
+		_save_story_silent()
+		_refresh_choices()
+		return
 	if not is_night or story.outcome != "":
 		return
 	if story.encounter_failed:

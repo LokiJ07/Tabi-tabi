@@ -24,5 +24,7 @@ func _run() -> void:
 	_expect(Nearby.closest(Vector3(-3, 0, 7), targets) == "DADO", "nearest NPC")
 	_expect(Nearby.caption("MARA").find("TEACHER MARA") >= 0, "descriptive name")
 	_expect(Nearby.caption("") == "", "prompt cleared for no target")
+	_expect(Nearby.caption("BLUE_NOTEBOOK").find("BLUE NOTEBOOK") >= 0, "intro notebook prompt legible")
+	_expect(Nearby.closest(Vector3(55.0, 0, 0), {"WARM_CUP": Vector3(55, 0, 1)}) == "WARM_CUP", "interior item works with same proximity system")
 	print("Nearby interaction regression: ", "PASS" if errors == 0 else str(errors) + " failures")
 	quit(0 if errors == 0 else 1)

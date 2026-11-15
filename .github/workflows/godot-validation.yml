@@ -49,3 +49,5 @@ jobs:
         run: godot --headless --path . --script res://tests/night01_aftermath_test.gd
       - name: Full Night 1 scene-to-outcome integration loop
         run: godot --headless --path . --script res://tests/night01_flow_test.gd
+      - name: Lola hut prologue, interactive props and migration
+        run: godot --headless --path . --script res://tests/night01_prologue_test.gd
