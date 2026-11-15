@@ -4,6 +4,14 @@ extends Control
 const GameScene = preload("res://scenes/main.tscn")
 const Save = preload("res://scripts/core/save_service.gd")
 const Preferences = preload("res://scripts/core/preferences.gd")
+const ART_MANGROVE: Texture2D = preload("res://assets/world/mangrove_illustrated.svg")
+const ART_BANANA: Texture2D = preload("res://assets/world/banana_plant.svg")
+const ART_FLOWERS: Texture2D = preload("res://assets/world/hibiscus_bush.svg")
+const ART_LANTERN: Texture2D = preload("res://assets/world/lantern_post.svg")
+const ART_SCHOOL: Texture2D = preload("res://assets/world/school_facade.svg")
+const ART_MARKET: Texture2D = preload("res://assets/world/market_facade.svg")
+const ART_HERO: Texture2D = preload("res://assets/characters/apprentice.svg")
+const ART_BANTAY: Texture2D = preload("res://assets/characters/bantay.svg")
 
 var prefs = Preferences.new()
 var continue_button: Button
@@ -19,6 +27,7 @@ func _ready() -> void:
 	prefs.load_from()
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	resized.connect(queue_redraw)
+	_build_scenic_art()
 	_build_menu()
 	_build_settings()
 	_build_loading()
@@ -40,11 +49,8 @@ func _draw() -> void:
 	for i in range(15):
 		var yy := 495.0 + float(i) * 14.0
 		draw_line(Vector2(480 + float(i % 3) * 8, yy), Vector2(720 + float(i % 5) * 21, yy), Color(0.58, 0.76, 0.70, 0.16), 2)
-	for i in range(8):
-		var cx := 810.0 + float(i) * 65.0
-		_draw_mangrove(Vector2(cx, 416.0 + float(i % 3) * 9.0), 0.75 + 0.16 * float(i % 2))
-	for i in range(4):
-		_draw_hut(Vector2(760 + float(i) * 136.0, 424 + float(i % 2) * 46.0), 0.92 - float(i) * 0.06)
+	# The foreground is now actual imported Godot artwork, not silhouette
+	# circles, roofs and boxes drawn into a mock-looking title canvas.
 	# Lantern pools and original low-cost firefly accents.
 	for i in range(13):
 		var x := 710.0 + float(i % 6) * 85.0
@@ -52,6 +58,37 @@ func _draw() -> void:
 		draw_circle(Vector2(x, y), 4, Color("#f5c876"))
 		draw_circle(Vector2(x, y), 12, Color(1.0, 0.69, 0.24, 0.08))
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+func _build_scenic_art() -> void:
+	# Layer real authored textures on the title background. These SVGs are
+	# shared with playable Night 1, so the menu no longer advertises unrelated art.
+	var scene := Control.new()
+	scene.name = "IllustratedTitleScene"
+	scene.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	scene.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(scene)
+	_title_sprite(scene, "MangroveAtDusk", ART_MANGROVE, Vector4(0.56, 0.12, 1.02, 0.98))
+	_title_sprite(scene, "SchoolhouseAtDusk", ART_SCHOOL, Vector4(0.79, 0.43, 1.06, 0.75))
+	_title_sprite(scene, "MarketAtDusk", ART_MARKET, Vector4(0.60, 0.49, 0.83, 0.77))
+	_title_sprite(scene, "BananaLeavesAtDusk", ART_BANANA, Vector4(0.83, 0.68, 1.03, 1.05))
+	_title_sprite(scene, "VillageLantern", ART_LANTERN, Vector4(0.53, 0.54, 0.67, 0.97))
+	_title_sprite(scene, "ApprenticeAtDusk", ART_HERO, Vector4(0.65, 0.56, 0.79, 0.98))
+	_title_sprite(scene, "BantayAtDusk", ART_BANTAY, Vector4(0.76, 0.76, 0.88, 1.00))
+	_title_sprite(scene, "FloweringShore", ART_FLOWERS, Vector4(0.83, 0.82, 1.04, 1.08))
+
+func _title_sprite(parent: Control, label: String, texture: Texture2D, rect: Vector4) -> void:
+	var art := TextureRect.new()
+	art.name = label
+	art.texture = texture
+	art.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	art.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	art.anchor_left = rect.x
+	art.anchor_top = rect.y
+	art.anchor_right = rect.z
+	art.anchor_bottom = rect.w
+	art.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	parent.add_child(art)
+
 
 func _draw_mangrove(at: Vector2, scale2: float) -> void:
 	var wood := Color("#302f29")
