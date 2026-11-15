@@ -133,7 +133,7 @@ func _process(delta: float) -> void:
 		dog_pos = dog_pos.lerp(player_pos + Vector2(-48, 27), clampf(delta * 2.9, 0.0, 1.0))
 	camera.position = player_pos
 	var sheltered := player_pos.distance_to(OBSERVATION) < 125
-	var closed_zone := player_pos.distance_to(TREE) < 115 and story.phase < 3
+	var closed_zone: bool = player_pos.distance_to(TREE) < 115.0 and story.phase < 3
 	story.danger_tick(delta, closed_zone, sheltered, prefs.story_assist)
 	if story.phase == 2 and observe_held and not dialogue.visible and sheltered:
 		if story.observe_from_safety(delta, true, true):
@@ -262,7 +262,7 @@ func _building_at(at: Vector2, texture: Texture2D, name_text: String) -> void:
 func _draw_evidence() -> void:
 	for id in KEY_ORDER:
 		var pos: Vector2 = TARGETS[id]
-		var done := story.clues.has(id)
+		var done: bool = story.clues.has(id)
 		if id == "fallen_limb":
 			draw_line(pos+Vector2(-85,26),pos+Vector2(60,-20),Color("#59422e"),18,true)
 			for i in range(7):
@@ -634,7 +634,7 @@ func _interact() -> void:
 	_rebuild_objective()
 
 func _rebuild_objective() -> void:
-	var phase_name := ["INVESTIGATION", "ROUTE SAFETY", "WATCH QUIETLY", "NEGOTIATION", "AFTERMATH"][clampi(story.phase,0,4)]
+	var phase_name: String = ["INVESTIGATION", "ROUTE SAFETY", "WATCH QUIETLY", "NEGOTIATION", "AFTERMATH"][clampi(story.phase,0,4)]
 	subtitle.text = "%s  •  EVIDENCE %d/5  •  BARRIERS %d/3" % [phase_name,story.clues.size(),story.barriers.size()]
 	match story.phase:
 		0: objective.text = "Inspect FIVE clues around the mango tree, school and old shelter route."
