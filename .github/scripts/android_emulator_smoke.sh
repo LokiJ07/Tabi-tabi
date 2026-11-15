@@ -24,24 +24,40 @@ dismiss_system_anr
 sleep 2
 adb exec-out screencap -p > build/android-night1-title.png
 
-# Debug APK only: trigger the QA triple tap at the upper-right corner. This is
-# NOT the Start/Settings control, so no device-dependent hitbox assumptions.
-# Verify the exact message printed by the REAL gameplay scene after _ready().
+# Explicitly verify the title scene booted; a dark Android system popup
+# or an Android Home screen must never count as a game launch.
+if ! adb logcat -d -v brief | grep -q "NIGHT1_QA_TITLE_SCENE_READY"; then
+  echo "ERROR: Godot title screen did not start"
+  adb logcat -d | grep -E 'Godot|AndroidRuntime|NIGHT1_QA' | tail -n 70 || true
+  exit 1
+fi
+
+# The real START GAME button occupies this location on our 2340x1080 landscape
+# emulator. The previous fixed (780, 555) recovery tap opened SETTINGS instead.
+adb shell input tap 520 370
+sleep 7
 scene_ready=0
-for attempt in 1 2 3; do
-  adb shell input tap 2230 85
-  adb shell input tap 2230 85
-  adb shell input tap 2230 85
-  sleep 8
-  if adb logcat -d -v brief | grep -q "NIGHT1_QA_GAMEPLAY_SCENE_READY"; then
-    scene_ready=1
-    break
-  fi
-  echo "Game scene not ready on attempt $attempt; clearing system dialog"
-  dismiss_system_anr
-  adb shell monkey -p "$PKG" -c android.intent.category.LAUNCHER 1 || true
-  sleep 4
-done
+if adb logcat -d -v brief | grep -q "NIGHT1_QA_GAMEPLAY_SCENE_READY"; then
+  scene_ready=1
+fi
+# Backup: the debug triple-corner gesture avoids menu coordinate dependence.
+if [ "$scene_ready" -ne 1 ]; then
+  echo "START GAME button did not open scene; invoking debug-only QA entry"
+  for attempt in 1 2; do
+    adb shell input tap 2230 85
+    adb shell input tap 2230 85
+    adb shell input tap 2230 85
+    sleep 6
+    if adb logcat -d -v brief | grep -q "NIGHT1_QA_GAMEPLAY_SCENE_READY"; then
+      scene_ready=1
+      break
+    fi
+    echo "Gameplay not ready; retrying title launch ($attempt)"
+    dismiss_system_anr
+    adb shell monkey -p "$PKG" -c android.intent.category.LAUNCHER 1 || true
+    sleep 4
+  done
+fi
 if [ "$scene_ready" -ne 1 ]; then
   echo "ERROR: real Night 1 gameplay scene never opened; title/settings is not gameplay"
   adb logcat -d | grep -E 'NIGHT1_QA|Godot|AndroidRuntime' | tail -n 90 || true
