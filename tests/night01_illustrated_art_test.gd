@@ -30,6 +30,7 @@ func _run() -> void:
 	check(not (dog.get_node("Head") as MeshInstance3D).visible, "blockout dog face hidden")
 	dog.queue_free()
 
+	check(str(ProjectSettings.get_setting("display/window/stretch/aspect", "")) == "expand", "wide Android screens use full available viewport without black side bars")
 	var game = GameScene.instantiate()
 	root.add_child(game)
 	await process_frame
