@@ -275,10 +275,20 @@ func _create_world() -> void:
 	_house(Vector3(6, 0, 5), "Lola's hut")
 	_house(Vector3(7, 0, -8), "Sabel's store")
 	_house(Vector3(-2, 0, -12), "School")
-	_box("Landing", Vector3(-7, 0.1, 9), Vector3(4.1, 0.3, 3.2), COLORS.wood, false)
-	for x in [-8.6, -7.0, -5.4]:
-		_box("Landing plank", Vector3(x, 0.28, 9), Vector3(0.13, 0.06, 3.0), Color(0.58, 0.38, 0.23), false)
-	river_boat = RiverBanca.build(self, Vector3(-8.6, 0.15, 4.4))
+	# One continuous landing: shore access -> mud bank -> floating river end.
+	# Timber supports sit BELOW the walkway. They are visual-only and
+	# never change the tested Dado/Mooring clue interaction coordinates.
+	_box("Landing", Vector3(-8.55, 0.10, 9), Vector3(7.0, 0.28, 3.05), COLORS.wood, false)
+	for x in [-11.65, -10.92, -10.19, -9.46, -8.73, -8.00, -7.27, -6.54, -5.81]:
+		_box("Landing plank", Vector3(x, 0.28, 9), Vector3(0.10, 0.055, 2.96), Color("#be9562"), false)
+	for x in [-11.35, -8.50, -5.88]:
+		for z in [7.65, 10.36]:
+			_box("Dock stilt", Vector3(x, -0.28, z), Vector3(.18, 1.18, .18), Color("#6b4b34"), false)
+	_box("Dock side rail north", Vector3(-8.55, 0.36, 7.52), Vector3(7.06, .11, .14), Color("#79583d"), false)
+	_box("Dock side rail south", Vector3(-8.55, 0.36, 10.49), Vector3(7.06, .11, .14), Color("#79583d"), false)
+	# The banca must float in the river, not sit on the village dirt/road.
+	# Far enough west that both outriggers are inside the water boundary.
+	river_boat = RiverBanca.build(self, Vector3(-13.0, 0.15, 9.0))
 	var mangrove_index := 0
 	for x in [-19.0, -13.0, 13.0, 19.0]:
 		for z in [-18.0, -5.0, 14.0]:
@@ -365,8 +375,15 @@ func _boundary(at: Vector3, dimensions: Vector3) -> void:
 
 
 func _house(pos: Vector3, name: String) -> void:
-	_box(name, pos + Vector3(0, 1.2, 0), Vector3(4, 2.4, 4), COLORS.wood, true)
-	_box(name + " roof", pos + Vector3(0, 2.75, 0), Vector3(5.0, 0.5, 5.0), COLORS.roof, false)
+	# Retain the same authoritative building collision but NEVER render the
+	# obsolete solid cube/flat roof underneath the authored nipa structures.
+	# The earlier overlap produced broken facades and roofs in actual screenshots.
+	var old_box := _box(name, pos + Vector3(0, 1.2, 0), Vector3(4, 2.4, 4), COLORS.wood, true)
+	old_box.visible = false
+	old_box.set_meta("collision_only_blockout", true)
+	var old_roof := _box(name + " roof", pos + Vector3(0, 2.75, 0), Vector3(5.0, 0.5, 5.0), COLORS.roof, false)
+	old_roof.visible = false
+	old_roof.set_meta("retired_visual_blockout", true)
 
 
 func _tree(pos: Vector3) -> void:
