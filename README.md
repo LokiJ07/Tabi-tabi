@@ -15,7 +15,7 @@ An offline Android isometric 3D folklore mystery-adventure set in the fictional 
 ## Present in the feature branch
 
 - Procedural Barrio Lawom environment with distinct building details, explorable Lola-hut morning prologue, safe riverbank collision, fishing/market props and an original low-poly banca with shaped hull, bamboo outriggers, seats and paddle (rather than a single placeholder boat cube).
-- Isometric camera with actor-targeted cinematic conversation framing; touch movement and independent lantern Focus; distinct 3D NPC silhouettes/outfits for Lola, Dado, Mara and Sabel; original painted four-person bust portrait atlas, speaker-aware cinematic dialogue, blink/speech gestures and reversible reduced-motion transitions.
+- Isometric camera with actor-targeted cinematic conversation framing; touch movement, confirmed HOLD/RELEASE Focus state and independent lantern aim; distinct 3D NPC silhouettes/outfits for Lola, Dado, Mara and Sabel; fixed hand-authored vector busts with unique NPC face shapes and costumes, speaker-aware cinematic dialogue, blink/speech gestures and reversible reduced-motion transitions.
 - Evidence notebook, contextual witness interviews, two clue links and a private revisable theory.
 - Four-slot supply preparation; cloth-wrap lantern calming, signal-bell defensive choice, single-use water recovery.
 - Reactive Santelmo, reflection puzzle with proximity check, **in-world lantern guiding to the safe shore for Resolve**, Courage pressure, no-fail story assist, safe checkpoint retry.
@@ -25,7 +25,7 @@ An offline Android isometric 3D folklore mystery-adventure set in the fictional 
 
 ### Still missing or unverified
 
-- Final cinematic painterly **3D** artwork, fully rigged actor/facial animations, cinematic camera direction, creature VFX and finished voice/sound design. The currently implemented painted *dialogue portraits* are real offline game assets but do not replace these.
+- Final cinematic painterly **3D** artwork, fully rigged actor/facial animations, cinematic camera direction, creature VFX and finished voice/sound design. Dialogue portraits now use consistent hand-authored vector illustrations matching the NPCs' colors and roles; they do not replace finished 3D art.
 - Finished Lola-hut art/cinematics and complete village interactions. Additional visual props and speaker-attributed dialogue overlays exist, but the chapter still needs user-approved production art and pacing.
 - Complete Cebuano/Filipino/English localization, sound preferences, HUD remapping, story cinematics, comprehensive performance presets.
 - Actual phone gameplay validation of the **latest** build, end-to-end uncoached tests, safe-area and FPS/thermal profiling.

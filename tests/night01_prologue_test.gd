@@ -21,6 +21,21 @@ func _run() -> void:
 	var items_again: Dictionary = Hut.build(world)
 	test(world.get_child_count() == count, "interior never duplicated")
 	test(items["BLUE_NOTEBOOK"] == items_again["BLUE_NOTEBOOK"], "interaction nodes reused")
+	var desk := room.get_node("Writing desk top") as MeshInstance3D
+	var book := room.get_node("Blue cloth notebook") as MeshInstance3D
+	var breakfast := room.get_node("Breakfast table") as MeshInstance3D
+	var cup := room.get_node("Warm pottery cup") as MeshInstance3D
+	test(desk != null and book != null and breakfast != null and cup != null, "notebook and cup have proper supporting furniture")
+	if desk != null and book != null:
+		var d_size: Vector3 = (desk.mesh as BoxMesh).size
+		var b_size: Vector3 = (book.mesh as BoxMesh).size
+		test(absf(book.position.x - desk.position.x) + b_size.x / 2 < d_size.x / 2, "notebook rests inside writing desk width")
+		test(absf(book.position.z - desk.position.z) + b_size.z / 2 < d_size.z / 2, "notebook rests inside writing desk depth")
+		test(book.position.y - b_size.y / 2 >= desk.position.y + d_size.y / 2 - 0.04, "notebook sits on desk, not on ground")
+		test(items["BLUE_NOTEBOOK"].position.distance_to(book.position) < 0.1, "notebook interaction matches visible book position")
+	if breakfast != null and cup != null:
+		var table_size: Vector3 = (breakfast.mesh as BoxMesh).size
+		test(absf(cup.position.x - breakfast.position.x) < table_size.x / 2, "cup stays on the breakfast table")
 	var state = State.new()
 	test(not state.prologue_ready(), "new game needs first morning ritual")
 	test(not state.inspect_prologue("unknown"), "invalid prop cannot complete tutorial")

@@ -44,6 +44,23 @@ func _run() -> void:
 	check(game.status_stack.get_child(1) == game.objective and game.status_stack.get_child(2) == game.stage_label, "objective followed by progress, not fixed overlapping coordinates")
 	check(game.objective.text.contains("GREEN") and game.objective.text.contains("SHORE"), "stage 3 guidance includes landing and safe direction")
 	check(game.choice_buttons[0].text == "HOW TO GUIDE", "stage 3 button no longer misleadingly promises immediate resolution")
+	check(game.focus_button.name == "FocusHoldButton", "Focus retains stable UI identity")
+	game.focus_button.button_down.emit()
+	check(game.focus_held, "actual button-down starts sustained Focus")
+	check(game.focus_button.text == "FOCUS HELD", "green active text clearly confirms hold")
+	check(game.focus_feedback.text.find("FOCUS HELD") >= 0, "independent Focus status gives guidance")
+	var held_style := game.focus_button.get_theme_stylebox("normal") as StyleBoxFlat
+	game.focus_button.button_up.emit()
+	check(not game.focus_held, "actual button-up releases Focus")
+	check(game.focus_button.text == "HOLD FOCUS", "button immediately shows released state")
+	var released_style := game.focus_button.get_theme_stylebox("normal") as StyleBoxFlat
+	check(held_style.border_color != released_style.border_color, "Focus active state is visually distinguishable")
+	game.story.guide_progress = 1.0
+	game._refresh_choices()
+	check(game.choice_buttons[0].text == "REMEMBER", "completed guiding displays REMEMBER")
+	check(game.focus_feedback.text.find("TAP REMEMBER") >= 0, "ready prompt explains next step")
+	game._choose_story_action(0)
+	check(game.story.outcome == "resolve", "pressing displayed REMEMBER commits resolve and never shows guide tutorial")
 	check(game.interact_hint.anchor_left > game.status_panel.anchor_right, "nearby prompt on separate side of screen")
 	check(game.santelmo == null or game.santelmo.landing_marker != null, "existing Santelmo encounter is retained")
 

@@ -108,11 +108,21 @@ func choose_reflection(id: String) -> bool:
 	return true
 
 
+func can_remember() -> bool:
+	return phase == 3 and outcome == "" and not encounter_failed and guide_progress >= 0.999
+
+
 func guide_to_landing(delta: float, close_to_landing: bool, focusing: bool, aim_aligned: bool) -> bool:
 	# Holding a softened beam toward the SAFE landing (away from the spirit)
 	# leads Santelmo ashore. Only this progress is continuous; not canonical truth.
 	if phase != 3 or outcome != "" or encounter_failed:
 		return false
+	# Once the player has successfully guided the light ashore the completed
+	# action is canonical, not a temporary button-state dependent on Focus.
+	# Releasing the right thumb to tap REMEMBER must not undo the success.
+	if guide_progress >= 0.999:
+		guide_progress = 1.0
+		return true
 	var good: bool = close_to_landing and focusing and aim_aligned and alarm < 0.55 and clues.has("boatman_name")
 	if good:
 		guide_progress = minf(1.0, guide_progress + maxf(0.0, delta) / 3.0)
@@ -122,7 +132,7 @@ func guide_to_landing(delta: float, close_to_landing: bool, focusing: bool, aim_
 
 
 func commit_result(result: String) -> bool:
-	if result == "resolve" and guide_progress < 0.999:
+	if result == "resolve" and not can_remember():
 		return false
 	if encounter_failed and result != "partial":
 		return false

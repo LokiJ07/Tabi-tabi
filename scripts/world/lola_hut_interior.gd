@@ -25,8 +25,18 @@ static func build(world: Node3D) -> Dictionary:
 	_box(room, "Right woven wall", Vector3(4.5, 1.55, 0), Vector3(0.24, 3.1, 8), Color(0.58, 0.43, 0.26), true)
 	_box(room, "Woven rug", Vector3(0.0, 0.05, 0.1), Vector3(3.0, 0.07, 2.6), Color(0.62, 0.35, 0.23), false)
 	_box(room, "Breakfast table", Vector3(1.25, 0.52, -0.65), Vector3(1.85, 0.22, 1.15), Color(0.30, 0.20, 0.13), false)
+	# A separate study desk beside the back wall gives the notebook a
+	# believable, visible tabletop placement instead of sitting in the aisle.
+	_box(room, "Writing desk top", Vector3(-2.65, 0.57, -2.25), Vector3(1.75, 0.16, 0.96), Color("#78543c"), false)
+	for x in [-3.40, -1.90]:
+		for z in [-2.60, -1.90]:
+			_box(room, "Desk leg", Vector3(x, 0.29, z), Vector3(0.14, 0.58, 0.14), Color("#4e3426"), false)
+	_box(room, "Breakfast table leg left", Vector3(0.55, 0.24, -1.02), Vector3(0.14, 0.48, 0.14), Color("#463022"), false)
+	_box(room, "Breakfast table leg right", Vector3(1.95, 0.24, -0.28), Vector3(0.14, 0.48, 0.14), Color("#463022"), false)
 	_box(room, "Sleep mat", Vector3(-2.6, 0.15, 1.0), Vector3(1.8, 0.19, 2.5), Color(0.39, 0.30, 0.21), false)
-	_box(room, "Blue cloth notebook", Vector3(-2.25, 0.42, -1.0), Vector3(0.65, 0.11, 0.49), Color(0.13, 0.33, 0.57), false)
+	_box(room, "Blue cloth notebook", Vector3(-2.65, 0.73, -2.25), Vector3(0.65, 0.11, 0.49), Color("#285d83"), false)
+	_box(room, "Notebook paper edge", Vector3(-2.65, 0.79, -2.24), Vector3(0.53, 0.018, 0.38), Color("#edddae"), false)
+	_box(room, "Notebook cloth spine", Vector3(-2.95, 0.79, -2.25), Vector3(0.055, 0.025, 0.49), Color("#122d49"), false)
 	_box(room, "Warm pottery cup", Vector3(1.45, 0.75, -0.35), Vector3(0.3, 0.28, 0.3), Color(0.86, 0.71, 0.47), false)
 	_box(room, "River family photograph", Vector3(2.75, 1.67, -3.75), Vector3(1.15, 0.88, 0.10), Color(0.47, 0.62, 0.61), false)
 	_box(room, "Wooden exit door", Vector3(0, 1.20, 3.84), Vector3(1.7, 2.4, 0.18), Color(0.38, 0.23, 0.13), false)
@@ -42,7 +52,7 @@ static func build(world: Node3D) -> Dictionary:
 	elder.rotation.y = -2.35
 	room.add_child(elder)
 	_target(room, "LOLA_HOME", Vector3(-0.35, 0, -2.8))
-	_target(room, "BLUE_NOTEBOOK", Vector3(-2.25, 0, -1.0))
+	_target(room, "BLUE_NOTEBOOK", Vector3(-2.65, 0.73, -2.25))
 	_target(room, "WARM_CUP", Vector3(1.45, 0, -0.35))
 	_target(room, "RIVER_PHOTO", Vector3(2.75, 0, -3.0))
 	_target(room, "HUT_EXIT", Vector3(0, 0, 3.1))

@@ -90,6 +90,9 @@ var link_light_button: Button
 var link_ledger_button: Button
 var touch_axes := Vector2.ZERO
 var focus_held := false
+var focus_button: Button
+var focus_feedback: Label
+var focus_visual_state := -1
 var manual_aim := Vector2.ZERO
 var light_alarm := 0.0
 var guide_was_complete := false
@@ -193,6 +196,7 @@ func _physics_process(delta: float) -> void:
 		alarm_label.visible = is_night and story.phase >= 1 and story.phase <= 3
 	if dog_warning_label != null:
 		dog_warning_label.visible = dog_warning_label.text != ""
+	_update_focus_ui()
 	for i in range(ambient_walkers.size()):
 		var villager := ambient_walkers[i]
 		villager.visible = not is_night
@@ -210,9 +214,9 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_accept"):
 		_interact()
 	if event.is_action_pressed("ui_focus_next"):
-		focus_held = true
+		_set_focus(true)
 	if event.is_action_released("ui_focus_next"):
-		focus_held = false
+		_set_focus(false)
 	if event.is_action_pressed("ui_cancel"):
 		_close_dialogue()
 		_close_notebook()
@@ -391,11 +395,12 @@ func _advance_safe_guiding(delta: float) -> void:
 	to_landing.y = 0.0
 	var close_enough: bool = to_landing.length() < 4.0
 	var direction_correct: bool = to_landing.length() > 0.3 and lamp_heading.dot(to_landing.normalized()) > 0.65
-	var was_ready: bool = story.guide_progress >= 0.999
+	var was_ready: bool = story.can_remember()
 	story.guide_to_landing(delta, close_enough, focus_held, direction_correct)
+	_update_focus_ui()
 	if santelmo != null:
 		santelmo.set_guide_progress(story.guide_progress)
-	if story.guide_progress >= 0.999 and not was_ready:
+	if story.can_remember() and not was_ready:
 		_save_story_silent()
 		_refresh_choices()
 		_update_objective()
@@ -483,8 +488,7 @@ func _is_reading_ui() -> bool:
 
 
 func _clear_touch_input() -> void:
-	focus_held = false
-	manual_aim = Vector2.ZERO
+	_set_focus(false)
 	touch_axes = Vector2.ZERO
 	move_buttons.clear()
 
@@ -624,7 +628,9 @@ func _create_ui() -> void:
 	aim_pad.aim_changed.connect(_on_aim_changed)
 	aim_pad.aim_released.connect(_on_aim_released)
 	gameplay_hud.add_child(aim_pad)
-	_make_button(gameplay_hud, "FOCUS", Vector2(1050, 490), Vector2(180, 60), func(): _set_focus(true), func(): _set_focus(false))
+	focus_button = _make_button(gameplay_hud, "HOLD FOCUS", Vector2(1050, 490), Vector2(180, 60), func(): _set_focus(true), func(): _set_focus(false))
+	focus_button.name = "FocusHoldButton"
+	_update_focus_ui()
 	_make_button(gameplay_hud, "INTERACT", Vector2(1050, 565), Vector2(180, 60), _interact, func(): pass)
 	_make_button(gameplay_hud, "DAY / NIGHT", Vector2(1050, 640), Vector2(180, 56), _toggle_night, func(): pass)
 	_make_button(gameplay_hud, "NOTEBOOK", Vector2(1050, 415), Vector2(180, 56), _open_notebook, func(): pass)
@@ -663,6 +669,12 @@ func _create_ui() -> void:
 	stage_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	stage_label.add_theme_font_size_override("font_size", 20)
 	status_stack.add_child(stage_label)
+	focus_feedback = Label.new()
+	focus_feedback.name = "FocusHoldFeedback"
+	focus_feedback.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	focus_feedback.add_theme_font_size_override("font_size", 18)
+	focus_feedback.add_theme_color_override("font_color", Color("#8ff5cc"))
+	status_stack.add_child(focus_feedback)
 	for i in range(3):
 		var index := i
 		var action := Button.new()
@@ -688,7 +700,8 @@ func _create_ui() -> void:
 	# Keep the briefing order stable even though the labels were created
 	# after the gameplay controls for backwards-compatible references.
 	status_stack.move_child(stage_label, 2)
-	status_stack.move_child(alarm_label, 3)
+	status_stack.move_child(focus_feedback, 3)
+	status_stack.move_child(alarm_label, 4)
 	alarm_label.hide()
 	courage_label.hide()
 	dog_warning_label.hide()
@@ -966,7 +979,7 @@ func _create_ui() -> void:
 	_sync_modal_ui()
 
 
-func _make_button(parent: Control, title: String, pos: Vector2, size: Vector2, down: Callable, up: Callable) -> void:
+func _make_button(parent: Control, title: String, pos: Vector2, size: Vector2, down: Callable, up: Callable) -> Button:
 	var button := Button.new()
 	button.text = title
 	# Anchor controls to bottom corners so they remain reachable on wider phones.
@@ -983,12 +996,53 @@ func _make_button(parent: Control, title: String, pos: Vector2, size: Vector2, d
 	button.button_down.connect(down)
 	button.button_up.connect(up)
 	parent.add_child(button)
+	return button
 
 
 func _set_focus(active: bool) -> void:
+	# The focus button is a HOLD action, not a toggle. Always reflect actual
+	# button-down/keyboard state, including release after completing guidance.
 	focus_held = active
 	if not active:
 		manual_aim = Vector2.ZERO
+	_update_focus_ui()
+
+
+func _update_focus_ui() -> void:
+	if focus_button != null:
+		var active := focus_held and not _is_reading_ui()
+		var state: int = 1 if active else 0
+		if focus_visual_state != state:
+			focus_visual_state = state
+			focus_button.text = "FOCUS HELD" if active else "HOLD FOCUS"
+			var style := StyleBoxFlat.new()
+			style.bg_color = Color("#286d57") if active else Color("#202d35")
+			style.border_color = Color("#a0ffd3") if active else Color("#52616d")
+			style.set_border_width_all(3 if active else 2)
+			style.set_corner_radius_all(8)
+			focus_button.add_theme_stylebox_override("normal", style)
+			focus_button.add_theme_stylebox_override("pressed", style)
+			focus_button.add_theme_stylebox_override("hover_pressed", style)
+			focus_button.add_theme_color_override("font_color", Color.WHITE)
+		focus_button.add_theme_font_size_override("font_size", roundi(23.0 * preferences.text_scale))
+	if focus_feedback == null:
+		return
+	focus_feedback.visible = is_night and story.phase >= 1 and story.phase <= 3
+	if not focus_feedback.visible:
+		return
+	if story.can_remember():
+		focus_feedback.text = "GUIDE COMPLETE  •  TAP REMEMBER"
+	elif focus_held:
+		var to_landing: Vector3 = SantelmoActor.SAFE_LANDING - player.global_position
+		to_landing.y = 0.0
+		if story.phase == 3 and to_landing.length() >= 4.0:
+			focus_feedback.text = "FOCUS HELD  •  MOVE CLOSER TO GREEN RING"
+		elif story.phase == 3 and to_landing.length() > 0.3 and lamp_heading.dot(to_landing.normalized()) <= 0.65:
+			focus_feedback.text = "FOCUS HELD  •  AIM TOWARD SHORE"
+		else:
+			focus_feedback.text = "FOCUS HELD  •  STEADY"
+	else:
+		focus_feedback.text = "FOCUS RELEASED  •  HOLD BUTTON"
 
 
 func _on_aim_changed(value: Vector2) -> void:
@@ -1069,7 +1123,7 @@ func _interact() -> void:
 				story.observe_clue("boatman_name")
 			if is_night:
 				encountered_light = true
-	_show_dialogue(dialogue_line)
+	_show_dialogue(dialogue_line, closest)
 	_save_story_silent()
 	_refresh_choices()
 	_update_objective()
@@ -1123,24 +1177,24 @@ func _interact_lola_hut(id: String) -> void:
 			return
 		"BLUE_NOTEBOOK":
 			story.inspect_prologue("blue_notebook")
-			_show_dialogue("Your blue notebook is ready. Lola's words stay with you: write what you OBSERVE before believing every rumor.")
+			_show_dialogue("NARRATOR: The blue notebook rests on the writing desk beside the wall. Lola's words stay with you: write what you OBSERVE before believing a rumor.")
 		"WARM_CUP":
 			story.inspect_prologue("warm_cup")
 			_show_dialogue("LOLA: Kaon sa. Ang tawo nga walay pamahaw dali ra mahadlok. Bantay rests at your feet.")
 		"RIVER_PHOTO":
 			story.inspect_prologue("river_photo")
-			_show_dialogue("An old photo shows the river before your time. Lola smiles, but isn't ready to explain the missing names.")
+			_show_dialogue("NARRATOR: An old framed photograph hangs along the back wall. The river looks different; Lola isn't ready to explain the missing names.")
 	_save_story_silent()
 	_refresh_choices()
 	_update_objective()
 
 
-func _show_dialogue(value: String) -> void:
+func _show_dialogue(value: String, speaker_context: String = "NARRATOR") -> void:
 	_clear_touch_input()
 	_close_notebook()
 	_close_prep()
 	_close_settings()
-	dialogue_pages = ConversationPages.parse(value)
+	dialogue_pages = ConversationPages.parse(value, speaker_context)
 	dialogue_page = 0
 	dialogue.show()
 	_render_dialogue_page()
@@ -1163,6 +1217,9 @@ func _render_dialogue_page() -> void:
 	]
 	dialogue_text.text = str(item.get("text", ""))
 	dialogue_portrait.call("set_speaker", role)
+	# Physical prop narration keeps the world visible instead of reusing
+	# a misleading anonymous human portrait on every interaction.
+	dialogue_portrait.visible = role != "NARRATOR"
 	dialogue_portrait.set_process(not preferences.reduced_motion)
 	_frame_cinematic_speaker(role)
 	var color: Color = FolkActors.identity(role)["accent"] if role != "NARRATOR" else Color("#d7c69c")
@@ -1248,7 +1305,7 @@ func _toggle_night() -> void:
 func _update_objective() -> void:
 	if in_lola_hut:
 		if not story.prologue_flags.has("blue_notebook"):
-			objective.text = "MORNING: Find your BLUE NOTEBOOK on the desk."
+			objective.text = "MORNING: Find the BLUE NOTEBOOK on Lola's writing desk."
 		elif not story.prologue_flags.has("warm_cup"):
 			objective.text = "MORNING: Drink the WARM CUP at Lola's table."
 		else:
@@ -1293,13 +1350,14 @@ func _refresh_choices() -> void:
 	elif story.phase == 2:
 		names = ["INSPECT LIGHT", "HINT", "RETREAT"]
 	elif story.phase == 3:
-		names = ["REMEMBER" if story.guide_progress >= 0.999 else "HOW TO GUIDE", "DRIVE AWAY" if story.kit.has("signal_bell") else "NEED BELL", "RETREAT"]
+		names = ["REMEMBER" if story.can_remember() else "HOW TO GUIDE", "DRIVE AWAY" if story.kit.has("signal_bell") else "NEED BELL", "RETREAT"]
 	else:
 		names = ["", "", ""]
 	for i in range(choice_buttons.size()):
 		choice_buttons[i].text = names[i]
 		choice_buttons[i].visible = names[i] != ""
 	stage_label.text = MorningAftermath.morning_label(story.outcome) if story.outcome != "" else "CLUES %d/3  •  GUIDE %d%%" % [story.clues.size(), roundi(story.guide_progress * 100.0)] if story.phase == 3 else "CLUES %d/3  •  STAGE %d" % [story.clues.size(), story.phase]
+	_update_focus_ui()
 
 
 func _choose_story_action(index: int) -> void:
@@ -1365,7 +1423,7 @@ func _choose_story_action(index: int) -> void:
 				_show_dialogue("This restless reflection moves against the current. Try the other light.")
 	elif story.phase == 3:
 		if index == 0:
-			if story.guide_progress >= 0.999:
+			if story.can_remember():
 				_commit_night("resolve")
 			else:
 				_show_dialogue("Gently GUIDE the light in the world first. Stand by the GREEN landing ring, hold Focus and aim toward shore, away from the spirit. Then remember Mang Celso.")
@@ -1437,8 +1495,8 @@ func _refresh_options() -> void:
 
 func _apply_preferences() -> void:
 	var scale: float = preferences.text_scale
-	var labels: Array[Label] = [info, objective, stage_label, alarm_label, interact_hint, dog_warning_label, dialogue_text, notebook_body, prep_summary, courage_label]
-	var base_sizes: Array[int] = [24, 22, 20, 18, 21, 18, 25, 27, 26, 20]
+	var labels: Array[Label] = [info, objective, stage_label, alarm_label, interact_hint, dog_warning_label, dialogue_text, notebook_body, prep_summary, courage_label, focus_feedback]
+	var base_sizes: Array[int] = [24, 22, 20, 18, 21, 18, 25, 27, 26, 20, 18]
 	for i in range(labels.size()):
 		var element: Label = labels[i]
 		if element == null:
@@ -1481,6 +1539,7 @@ func _apply_preferences() -> void:
 		_style_modal_button(footer, false, true)
 	if settings_panel != null:
 		_refresh_options()
+	_update_focus_ui()
 
 
 func _cycle_text_size() -> void:

@@ -74,8 +74,10 @@ func _run_one(result: String) -> void:
 			game.lamp_heading = toward_shore.normalized()
 			game.focus_held = true
 			game._advance_safe_guiding(3.3)
-			game.focus_held = false
-			assert_true(game.story.guide_progress >= 0.999, "gently guiding unlocks remembrance")
+			game._set_focus(false)
+			game._advance_safe_guiding(1.25)
+			assert_true(game.story.can_remember(), "released Focus still allows REMEMBER action")
+			assert_true(game.choice_buttons[0].text == "REMEMBER", "button label matches actual ready outcome")
 		game._choose_story_action(0 if result == "resolve" else 1)
 	else:
 		game._choose_story_action(2)

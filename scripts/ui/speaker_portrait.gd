@@ -3,7 +3,9 @@ extends Control
 ## procedurally authored 3D costume. No external textures or extra 3D viewport.
 
 const FolkActors = preload("res://scripts/visuals/folk_actors.gd")
-const PAINTED_SHEET: Texture2D = preload("res://assets/portraits/night01_painted_sheet.png")
+# Night 1 uses fixed role-specific inked portraits generated from the SAME
+# character palette as the 3D actors. The earlier AI collage is deliberately
+# not displayed: it reused facial shapes and mismatched in-world identities.
 var speaker_id := "NARRATOR"
 var breathing := 0.0
 var breath_clock := 0.0
@@ -22,6 +24,8 @@ func set_speaker(who: String) -> void:
 	elif who.to_upper().contains("SANTELMO"):
 		role = "SANTELMO"
 	elif who.to_upper().contains("NARRATOR") or who == "":
+		role = "NARRATOR"
+	if role == "RESIDENT":
 		role = "NARRATOR"
 	speaker_id = role
 	breath_clock = 0.0
@@ -46,31 +50,33 @@ func _ellipse(center: Vector2, radius: Vector2, color: Color) -> void:
 	draw_colored_polygon(points, color)
 
 
-static func painted_region_for(who: String) -> Rect2:
-	match FolkActors.role_id(who):
-		"LOLA":
-			return Rect2(0, 0, 512, 512)
-		"DADO":
-			return Rect2(512, 0, 512, 512)
-		"MARA":
-			return Rect2(0, 512, 512, 512)
-		"SABEL":
-			return Rect2(512, 512, 512, 512)
-	return Rect2()
+static func portrait_identity(who: String) -> Dictionary:
+	var id := FolkActors.role_id(who)
+	if id == "RESIDENT":
+		id = "NARRATOR"
+	var profile := FolkActors.identity(id)
+	# Stable, intentional visual language. Different faces never share one
+	# generated reference image, even if the same NPC speaks many times.
+	var widths := {"LOLA": 45.0, "DADO": 61.0, "MARA": 43.0, "SABEL": 52.0, "APPRENTICE": 49.0}
+	var heights := {"LOLA": 75.0, "DADO": 62.0, "MARA": 74.0, "SABEL": 67.0, "APPRENTICE": 67.0}
+	var spacing := {"LOLA": 19.0, "DADO": 27.0, "MARA": 18.0, "SABEL": 22.0, "APPRENTICE": 22.0}
+	return {
+		"id": id,
+		"shirt": profile["shirt"],
+		"skin": profile["skin"],
+		"hair": profile["hair"],
+		"accent": profile["accent"],
+		"face_width": float(widths.get(id, 51.0)),
+		"face_height": float(heights.get(id, 70.0)),
+		"eye_spacing": float(spacing.get(id, 22.0))
+	}
 
 
 func _draw() -> void:
 	if size.x < 1.0 or size.y < 1.0:
 		return
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2(size.x / 256.0, size.y / 256.0))
-	var region := painted_region_for(speaker_id)
-	if region.size.x > 0.0:
-		# Painterly close-up is a real committed APK texture, not a generated
-		# web preview. The four quadrants share a single compact atlas.
-		draw_texture_rect_region(PAINTED_SHEET, Rect2(0, 0, 256, 256), region)
-		draw_rect(Rect2(1, 1, 254, 254), Color("#947d5b"), false, 3)
-		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
-		return
+	# Original fixed hand-authored silhouettes; no AI collage texture at runtime.
 	draw_rect(Rect2(0, 0, 256, 256), Color("#13232e"))
 	# Film-like rim lights and an intentionally simple inked illustration style.
 	for i in range(7):
@@ -98,7 +104,7 @@ func _draw() -> void:
 		draw_circle(Vector2(151, 126), 5, Color("#1d201e"))
 		draw_circle(Vector2(129, 163), 13, Color("#25221f"))
 		return
-	var identity: Dictionary = FolkActors.identity(speaker_id)
+	var identity: Dictionary = portrait_identity(speaker_id)
 	var shirt: Color = identity["shirt"]
 	var skin: Color = identity["skin"]
 	var hair: Color = identity["hair"]
@@ -128,9 +134,18 @@ func _draw() -> void:
 	elif speaker_id == "APPRENTICE":
 		draw_line(Vector2(84, 188), Vector2(154, 254), Color("#68513c"), 9)
 	# The close-up face is the focus of the storytelling overlay.
-	_ellipse(Vector2(129, 118 + bob), Vector2(57, 76), hair)
-	_ellipse(Vector2(129, 130 + bob), Vector2(51, 70), skin)
-	_ellipse(Vector2(129, 72 + bob), Vector2(56, 34), hair)
+	var fw: float = identity["face_width"]
+	var fh: float = identity["face_height"]
+	_ellipse(Vector2(129, 118 + bob), Vector2(fw + 5.0, fh + 5.0), hair)
+	_ellipse(Vector2(129, 130 + bob), Vector2(fw, fh), skin)
+	_ellipse(Vector2(129, 72 + bob), Vector2(fw + 5.0, 32), hair)
+	# Character-specific facial geometry, not the same stock face recolored.
+	if speaker_id == "DADO":
+		_ellipse(Vector2(129, 167 + bob), Vector2(43, 33), skin.darkened(0.08))
+	elif speaker_id == "MARA":
+		_ellipse(Vector2(129, 118 + bob), Vector2(33, 52), skin.lightened(0.045))
+	elif speaker_id == "SABEL":
+		_ellipse(Vector2(129, 162 + bob), Vector2(38, 29), skin.darkened(0.045))
 	if speaker_id == "LOLA":
 		_ellipse(Vector2(129, 60), Vector2(52, 30), Color("#c1b5a6"))
 		_ellipse(Vector2(174, 71), Vector2(28, 27), Color("#b6ada1"))
@@ -151,10 +166,24 @@ func _draw() -> void:
 	elif speaker_id == "APPRENTICE":
 		_ellipse(Vector2(128, 59), Vector2(60, 25), Color("#ac8751"))
 		draw_rect(Rect2(51, 69, 154, 12), accent)
-	for dx in [-23, 23]:
-		_ellipse(Vector2(129 + dx, 133 + bob), Vector2(5, 6), Color("#211e1e"))
-	_ellipse(Vector2(129, 154 + bob), Vector2(8, 13), skin.darkened(0.12))
-	draw_line(Vector2(114, 173 + bob), Vector2(145, 172 + bob), Color("#704b41"), 3)
+	var gap: float = identity["eye_spacing"]
+	for dx in [-gap, gap]:
+		var y := 130.0 if speaker_id == "LOLA" else 133.0
+		_ellipse(Vector2(129 + dx, y + bob), Vector2(4.2 if speaker_id == "MARA" else 5.5, 4.5 if speaker_id == "LOLA" else 6), Color("#211e1e"))
+	var nose_width := 11.0 if speaker_id == "DADO" else 6.0 if speaker_id == "MARA" else 8.0
+	_ellipse(Vector2(129, 154 + bob), Vector2(nose_width, 12), skin.darkened(0.12))
+	if speaker_id == "LOLA":
+		draw_line(Vector2(111, 172 + bob), Vector2(148, 171 + bob), Color("#784c48"), 2.6)
+		draw_line(Vector2(94, 158 + bob), Vector2(106, 166 + bob), skin.darkened(0.17), 1.6)
+		draw_line(Vector2(152, 166 + bob), Vector2(164, 158 + bob), skin.darkened(0.17), 1.6)
+	elif speaker_id == "DADO":
+		draw_line(Vector2(106, 176 + bob), Vector2(152, 177 + bob), Color("#704b41"), 4)
+	elif speaker_id == "MARA":
+		draw_line(Vector2(118, 173 + bob), Vector2(143, 173 + bob), Color("#71453f"), 2.5)
+	elif speaker_id == "SABEL":
+		draw_line(Vector2(114, 172 + bob), Vector2(146, 174 + bob), Color("#884b51"), 3)
+	else:
+		draw_line(Vector2(114, 173 + bob), Vector2(145, 172 + bob), Color("#704b41"), 3)
 	if speaker_id == "DADO":
 		draw_rect(Rect2(110, 164 + bob, 38, 7), hair)
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
