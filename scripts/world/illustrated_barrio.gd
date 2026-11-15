@@ -36,6 +36,7 @@ static func decorate(world: Node3D) -> Node3D:
 	# Shape the old rectangular flat road into a winding, textured dirt track.
 	# This is a new visual mesh; ground collisions and original road node survive.
 	_build_organic_footpath(root)
+	_build_tidal_shore(root)
 	_build_stilt_rope_fence(root)
 
 	# Brackish tidal edge. Rooted mangroves sit in or next to shallow water,
@@ -124,6 +125,49 @@ static func _build_organic_footpath(parent: Node3D) -> void:
 	mesh.name = "Winding illustrated earthen path"
 	mesh.mesh = trail.commit()
 	parent.add_child(mesh)
+
+## Shared shore profile. Only wet mud / stranded sand occupies this band.
+## Unlike the original hard straight boundary, its lip bends with the tide.
+static func _tidal_edge(z: float) -> float:
+	return -10.07 + 0.34 * sin(z * 0.43) + 0.14 * sin(z * 1.16 + 0.7)
+
+
+static func _build_tidal_shore(parent: Node3D) -> void:
+	# Three low-poly textured strips are cheaper than hundreds of tiny decals.
+	# Collision remains the original tested invisible river bank boundary.
+	for strip in range(3):
+		var tool := SurfaceTool.new()
+		tool.begin(Mesh.PRIMITIVE_TRIANGLES)
+		var material := StandardMaterial3D.new()
+		material.albedo_texture = PATH_TEXTURE
+		material.albedo_color = [Color("#77735b"), Color("#80775b"), Color("#9b916d")][strip]
+		material.roughness = 0.98
+		material.cull_mode = BaseMaterial3D.CULL_DISABLED
+		tool.set_material(material)
+		for i in range(90):
+			var za := -22.0 + float(i) * (44.0 / 90.0)
+			var zb := -22.0 + float(i + 1) * (44.0 / 90.0)
+			var xa := _tidal_edge(za)
+			var xb := _tidal_edge(zb)
+			var left_a := xa - 0.78 + float(strip) * 0.42
+			var right_a := left_a + 0.54
+			var left_b := xb - 0.78 + float(strip) * 0.42
+			var right_b := left_b + 0.54
+			var height := 0.105 + float(strip) * 0.007
+			var a := Vector3(left_a, height, za)
+			var b := Vector3(right_a, height, za)
+			var c := Vector3(left_b, height, zb)
+			var d := Vector3(right_b, height, zb)
+			for v in [a, c, b, b, c, d]:
+				tool.set_normal(Vector3.UP)
+				tool.set_uv(Vector2(v.x * 0.28, v.z * 0.17))
+				tool.add_vertex(v)
+		var mesh := MeshInstance3D.new()
+		mesh.name = ["Estuary wet mud margin", "Irregular tidal shelf", "Sandy riverbank lip"][strip]
+		mesh.mesh = tool.commit()
+		mesh.set_meta("non_collider", true)
+		parent.add_child(mesh)
+
 
 static func _build_stilt_rope_fence(parent: Node3D) -> void:
 	# Safety collision remains unchanged; visible wall is replaced by spaced
