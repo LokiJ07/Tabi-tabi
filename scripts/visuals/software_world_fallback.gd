@@ -89,12 +89,32 @@ func _ground() -> void:
 		uvs.append(Vector2(1, float(i) / 4.0))
 	draw_polygon(pts, PackedColorArray([Color("#cbb99b") if game.is_night else Color.WHITE]), uvs, PATH)
 
-	# The boardwalk extends over a living estuary rather than a featureless box.
-	_quad(PATH, [Vector3(-9.0, 0.22, 7.2), Vector3(-5.1, 0.22, 7.2),
-		Vector3(-5.1, 0.22, 10.65), Vector3(-9.0, 0.22, 10.65)], Color("#bb9364"), 1.5)
-	for i in range(6):
-		var z := 7.4 + float(i) * 0.57
-		draw_line(_screen(Vector3(-9.0, 0.25, z)), _screen(Vector3(-5.2, 0.25, z)), Color("#6b4d36"), 3)
+	# Mud edge and beach foam match the native three-strip estuary layout.
+	# Draw the bank BEFORE the dock and the actors for correct painter order.
+	for strip in range(3):
+		var shore := PackedVector2Array()
+		for i in range(61):
+			var z := -22.0 + float(i) * (44.0 / 60.0)
+			var center := -10.07 + 0.34 * sin(z * 0.43) + 0.14 * sin(z * 1.16 + 0.7)
+			shore.append(_screen(Vector3(center - .78 + float(strip) * .42, .11, z)))
+		for i in range(60, -1, -1):
+			var z := -22.0 + float(i) * (44.0 / 60.0)
+			var center := -10.07 + 0.34 * sin(z * 0.43) + 0.14 * sin(z * 1.16 + 0.7)
+			shore.append(_screen(Vector3(center - .24 + float(strip) * .42, .11, z)))
+		draw_colored_polygon(shore, [Color("#797760"), Color("#8c7c5c"), Color("#b1a17a")][strip])
+	# The old dock stopped short of the water. Now its native and fallback
+	# versions both extend over the muddy bank into the brackish river.
+	_quad(PATH, [Vector3(-12.05, .28, 7.48), Vector3(-5.05, .28, 7.48),
+		Vector3(-5.05, .28, 10.52), Vector3(-12.05, .28, 10.52)], Color("#b39166"), 2.0)
+	for i in range(10):
+		var x := -11.75 + float(i) * .72
+		draw_line(_screen(Vector3(x, .31, 7.5)), _screen(Vector3(x, .31, 10.5)), Color("#634731"), 2.8, true)
+	for x in [-11.35, -8.50, -5.88]:
+		for z in [7.65, 10.36]:
+			draw_line(_screen(Vector3(x, .25, z)), _screen(Vector3(x, -.84, z)), Color("#644e38"), 4.0)
+	for z in [7.52, 10.49]:
+		draw_line(_screen(Vector3(-12.05, .42, z)), _screen(Vector3(-5.05, .42, z)), Color("#74583b"), 3.5, true)
+	_draw_banca()
 	for i in range(15):
 		var z := -21.0 + float(i) * 3.0
 		var post := _screen(Vector3(-9.73, 1.0, z))
@@ -104,6 +124,30 @@ func _ground() -> void:
 		for i in range(32):
 			rope.append(_screen(Vector3(-9.73, height, -21.0 + float(i) * 1.4)))
 		draw_polyline(rope, Color("#e0bc85"), 2.5, true)
+
+func _draw_banca() -> void:
+	# Low-poly craft is projected from the live boat node, never fixed wallpaper.
+	if game == null or game.river_boat == null or not is_instance_valid(game.river_boat):
+		return
+	var p: Vector3 = game.river_boat.global_position
+	var hull := PackedVector2Array([
+		_screen(p + Vector3(0, .20, -1.78)),
+		_screen(p + Vector3(.68, .20, -.95)),
+		_screen(p + Vector3(.75, .20, .85)),
+		_screen(p + Vector3(0, .20, 1.80)),
+		_screen(p + Vector3(-.75, .20, .85)),
+		_screen(p + Vector3(-.68, .20, -.95))
+	])
+	draw_colored_polygon(hull, Color("#715037"))
+	draw_polyline(PackedVector2Array([hull[0],hull[1],hull[2],hull[3],hull[4],hull[5],hull[0]]), Color("#e0b783"), 4.0, true)
+	for z in [-.90, 0.20, 1.02]:
+		draw_line(_screen(p+Vector3(-.60,.25,z)),_screen(p+Vector3(.60,.25,z)),Color("#c6a174"),3.1,true)
+	for side in [-1.0,1.0]:
+		var x := 2.14*side
+		draw_line(_screen(p+Vector3(x,.09,-1.48)),_screen(p+Vector3(x,.09,1.56)),Color("#b39a68"),5.0,true)
+		for z in [-.52,.82]:
+			draw_line(_screen(p+Vector3(.60*side,.24,z)),_screen(p+Vector3(x,.13,z)),Color("#92744e"),2.4,true)
+
 
 func _art(texture: Texture2D, at: Vector3, width_units: float, bottom_aligned: bool = true, color: Color = Color.WHITE) -> void:
 	var world_w := _scale_units(width_units)
