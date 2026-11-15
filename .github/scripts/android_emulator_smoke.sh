@@ -10,12 +10,16 @@ sleep 12
 # Android shows a one-time immersive-mode "Got it" onboarding dialog on first boot.
 # Acknowledge it before recording the actual Godot scene.
 adb shell input keyevent 66 || true
-adb shell input tap 1310 510 || true
+adb shell input tap 1700 660 || true
 adb shell settings put system accelerometer_rotation 0 || true
 adb shell settings put system user_rotation 1 || true
 sleep 6
-adb shell input tap 1310 510 || true
+adb shell input tap 1700 660 || true
 sleep 3
+# The first story dialogue is modal. Close it before tapping the right HUD
+# notebook shortcut, otherwise the hidden shortcut cannot be activated.
+adb shell input tap 1160 948 || true
+sleep 2
 adb shell wm size > build/android-display.txt || true
 adb exec-out screencap -p > build/android-night1-launch.png || true
 # Optional visual QA: tap the right-edge Notebook shortcut on the landscape
