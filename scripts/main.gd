@@ -196,6 +196,16 @@ func _physics_process(delta: float) -> void:
 		var elder := get_node_or_null(LolaHut.NODE_NAME + "/Lola seated") as Node3D
 		FolkActors.animate_expression(elder, elapsed, speaking_role == "LOLA", preferences.reduced_motion)
 	camera_director.tick(camera, player, delta, preferences.reduced_motion)
+	# Lola's cutaway is a single 9x8m interior. During free exploration,
+	# anchor the view to the room (not every player step) so furniture, exit,
+	# and 2 rear walls stay composed. Story close-ups are unaffected.
+	if in_lola_hut and not camera_director.is_framing():
+		var room_center: Vector3 = LolaHut.CENTER + Vector3(0, 0.65, 0)
+		var room_camera: Vector3 = room_center + Vector3(12, 17, 12)
+		var smooth: float = 1.0 if preferences.reduced_motion else clampf(delta * 4.5, 0.0, 1.0)
+		camera.global_position = camera.global_position.lerp(room_camera, smooth)
+		camera.look_at(room_center)
+		camera.size = lerpf(camera.size, 14.7, smooth)
 	RiverBanca.animate(river_boat, elapsed, preferences.reduced_motion)
 	elapsed += delta
 	if is_night and santelmo != null:
