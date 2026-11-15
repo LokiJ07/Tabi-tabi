@@ -26,7 +26,11 @@ sleep 7
 adb shell input tap 1160 948 || true
 sleep 2
 adb shell wm size > build/android-display.txt || true
-adb exec-out screencap -p > build/android-night1-launch.png || true
+adb exec-out screencap -p > build/android-night1-launch.png
+# Visual acceptance happens before screenshot-only notebook steps. Previous
+# pipelines passed while GLES3 shader failure drew no village, just cyan.
+adb logcat -d -v brief | grep -Ei 'Godot|EGL|OpenGL|Vulkan|swiftshader|Renderer|SceneShaderGLES3' | tail -n 300 > build/android-godot-renderer-log.txt || true
+python3 .github/scripts/assert_gameplay_visible.py build/android-night1-launch.png
 # Optional visual QA: tap the right-edge Notebook shortcut on the landscape
 # emulator and preserve a second screenshot for overlap/readability review.
 adb shell input tap 2050 660 || true
