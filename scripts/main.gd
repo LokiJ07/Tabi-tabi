@@ -468,6 +468,40 @@ func _style_modal(panel: PanelContainer) -> void:
 	panel.mouse_filter = Control.MOUSE_FILTER_STOP
 
 
+func _menu_style(fill: Color, outline: Color) -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = fill
+	style.border_color = outline
+	style.set_border_width_all(2)
+	style.set_corner_radius_all(9)
+	style.content_margin_left = 18.0
+	style.content_margin_right = 18.0
+	style.content_margin_top = 7.0
+	style.content_margin_bottom = 7.0
+	return style
+
+
+func _style_modal_button(button: Button, selected: bool = false, footer: bool = false) -> void:
+	# The default Godot Button font and disabled palette were nearly invisible
+	# on the user's landscape phone. Explicit styles cover every state.
+	var edge := Color(0.43, 0.75, 0.65) if selected else Color(0.34, 0.48, 0.56)
+	var background := Color(0.14, 0.25, 0.27) if selected else Color(0.14, 0.20, 0.26)
+	button.add_theme_stylebox_override("normal", _menu_style(background, edge))
+	button.add_theme_stylebox_override("hover", _menu_style(Color(0.22, 0.34, 0.39), Color(0.65, 0.83, 0.81)))
+	button.add_theme_stylebox_override("pressed", _menu_style(Color(0.26, 0.40, 0.39), Color(0.90, 0.80, 0.49)))
+	button.add_theme_stylebox_override("hover_pressed", _menu_style(Color(0.26, 0.40, 0.39), Color(0.90, 0.80, 0.49)))
+	button.add_theme_stylebox_override("focus", _menu_style(Color(0.0, 0.0, 0.0, 0.0), Color(0.98, 0.84, 0.46)))
+	button.add_theme_stylebox_override("disabled", _menu_style(Color(0.11, 0.18, 0.21), edge.darkened(0.15)))
+	button.add_theme_color_override("font_color", Color(0.96, 0.97, 0.96))
+	button.add_theme_color_override("font_hover_color", Color.WHITE)
+	button.add_theme_color_override("font_pressed_color", Color.WHITE)
+	button.add_theme_color_override("font_focus_color", Color.WHITE)
+	button.add_theme_color_override("font_disabled_color", Color(0.85, 0.91, 0.90))
+	button.add_theme_font_size_override("font_size", roundi((25.0 if footer else 27.0) * preferences.text_scale))
+	button.alignment = HORIZONTAL_ALIGNMENT_CENTER if footer else HORIZONTAL_ALIGNMENT_LEFT
+	button.custom_minimum_size = Vector2(button.custom_minimum_size.x, maxf(button.custom_minimum_size.y, 63.0))
+
+
 func _sync_modal_ui() -> void:
 	if gameplay_hud == null or modal_backdrop == null:
 		return
@@ -604,6 +638,7 @@ func _create_ui() -> void:
 	dialogue_close.text = "CONTINUE / CLOSE"
 	dialogue_close.custom_minimum_size = Vector2(240, 52)
 	dialogue_close.pressed.connect(_close_dialogue)
+	_style_modal_button(dialogue_close, false, true)
 	dialogue_layout.add_child(dialogue_close)
 	dialogue.hide()
 	notebook_panel = PanelContainer.new()
@@ -619,6 +654,7 @@ func _create_ui() -> void:
 	notebook_layout.add_theme_constant_override("separation", 12)
 	notebook_panel.add_child(notebook_layout)
 	var title := Label.new()
+	title.name = "NotebookHeading"
 	title.text = "FIELD NOTEBOOK  |  NIGHT 1"
 	title.add_theme_font_size_override("font_size", 25)
 	notebook_layout.add_child(title)
@@ -636,22 +672,26 @@ func _create_ui() -> void:
 	notebook_scroll.add_child(stack)
 	notebook_body = Label.new()
 	notebook_body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	notebook_body.add_theme_font_size_override("font_size", 21)
+	notebook_body.add_theme_font_size_override("font_size", 27)
+	notebook_body.add_theme_constant_override("line_spacing", 6)
 	notebook_body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	stack.add_child(notebook_body)
 	var links_label := Label.new()
 	links_label.text = "CONNECT EVIDENCE"
-	links_label.add_theme_font_size_override("font_size", 20)
+	links_label.name = "EvidenceHeading"
+	links_label.add_theme_font_size_override("font_size", 25)
 	stack.add_child(links_label)
 	link_light_button = Button.new()
 	link_light_button.text = "LINK: DADO + MOORING"
 	link_light_button.custom_minimum_size = Vector2(260, 45)
 	link_light_button.pressed.connect(func(): _link_clues("light_mooring"))
+	_style_modal_button(link_light_button)
 	stack.add_child(link_light_button)
 	link_ledger_button = Button.new()
 	link_ledger_button.text = "LINK: MOORING + MARA"
 	link_ledger_button.custom_minimum_size = Vector2(270, 45)
 	link_ledger_button.pressed.connect(func(): _link_clues("ledger_mooring"))
+	_style_modal_button(link_ledger_button)
 	stack.add_child(link_ledger_button)
 	var theory_row := HBoxContainer.new()
 	theory_row.add_theme_constant_override("separation", 10)
@@ -660,17 +700,20 @@ func _create_ui() -> void:
 	notebook_guide.text = "GUIDE GENTLY"
 	notebook_guide.custom_minimum_size = Vector2(170, 48)
 	notebook_guide.pressed.connect(func(): _select_theory("guide"))
+	_style_modal_button(notebook_guide)
 	theory_row.add_child(notebook_guide)
 	notebook_chase = Button.new()
 	notebook_chase.text = "CHASE AWAY"
 	notebook_chase.custom_minimum_size = Vector2(170, 48)
 	notebook_chase.pressed.connect(func(): _select_theory("chase"))
+	_style_modal_button(notebook_chase)
 	theory_row.add_child(notebook_chase)
 	var close_button := Button.new()
 	close_button.text = "CLOSE NOTEBOOK"
 	close_button.custom_minimum_size = Vector2(200, 48)
 	close_button.pressed.connect(_close_notebook)
 	close_button.name = "CloseNotebook"
+	_style_modal_button(close_button, false, true)
 	notebook_layout.add_child(close_button)
 	notebook_panel.hide()
 	# Four active equipment slots, persisted with Night 1 state.
@@ -699,29 +742,33 @@ func _create_ui() -> void:
 	kit_stack.add_theme_constant_override("separation", 10)
 	kit_scroll.add_child(kit_stack)
 	var kit_title := Label.new()
+	kit_title.name = "PreparationHeading"
 	kit_title.text = "RIVER PREPARATION | CHOOSE FOUR"
 	kit_title.add_theme_font_size_override("font_size", 24)
 	kit_stack.add_child(kit_title)
 	prep_summary = Label.new()
-	prep_summary.add_theme_font_size_override("font_size", 20)
+	prep_summary.add_theme_font_size_override("font_size", 26)
 	kit_stack.add_child(prep_summary)
 	for item in story.kit.ITEMS:
 		var item_id: String = item
 		var item_button := Button.new()
 		item_button.custom_minimum_size = Vector2(360, 49)
 		item_button.pressed.connect(func(): _toggle_kit_item(item_id))
+		_style_modal_button(item_button, story.kit.has(item_id))
 		prep_buttons[item_id] = item_button
 		kit_stack.add_child(item_button)
 	prep_water_button = Button.new()
 	prep_water_button.custom_minimum_size = Vector2(360, 49)
 	prep_water_button.text = "USE WATER FLASK (NIGHT)"
 	prep_water_button.pressed.connect(_use_water)
+	_style_modal_button(prep_water_button)
 	kit_stack.add_child(prep_water_button)
 	var kit_close := Button.new()
 	kit_close.text = "CLOSE PREPARATION"
 	kit_close.custom_minimum_size = Vector2(260, 48)
 	kit_close.pressed.connect(_close_prep)
 	kit_close.name = "ClosePreparation"
+	_style_modal_button(kit_close, false, true)
 	prep_layout.add_child(kit_close)
 	prep_panel.hide()
 	# Persistent accessibility options; deliberately not a second gameplay save.
@@ -760,38 +807,46 @@ func _create_ui() -> void:
 	options_stack.add_theme_constant_override("separation", 13)
 	settings_scroll.add_child(options_stack)
 	var options_heading := Label.new()
+	options_heading.name = "OptionsHeading"
 	options_heading.text = "ACCESSIBILITY / GAME OPTIONS"
 	options_heading.add_theme_font_size_override("font_size", 23)
 	options_stack.add_child(options_heading)
 	pref_text_button = Button.new()
 	pref_text_button.custom_minimum_size = Vector2(360, 50)
 	pref_text_button.pressed.connect(_cycle_text_size)
+	_style_modal_button(pref_text_button)
 	options_stack.add_child(pref_text_button)
 	pref_motion_button = Button.new()
 	pref_motion_button.custom_minimum_size = Vector2(360, 50)
 	pref_motion_button.pressed.connect(_toggle_reduced_motion)
+	_style_modal_button(pref_motion_button)
 	options_stack.add_child(pref_motion_button)
 	pref_contrast_button = Button.new()
 	pref_contrast_button.custom_minimum_size = Vector2(360, 50)
 	pref_contrast_button.pressed.connect(_toggle_contrast)
+	_style_modal_button(pref_contrast_button)
 	options_stack.add_child(pref_contrast_button)
 	pref_hint_button = Button.new()
 	pref_hint_button.custom_minimum_size = Vector2(360, 50)
 	pref_hint_button.pressed.connect(_cycle_hint_level)
+	_style_modal_button(pref_hint_button)
 	options_stack.add_child(pref_hint_button)
 	pref_assist_button = Button.new()
 	pref_assist_button.custom_minimum_size = Vector2(360, 50)
 	pref_assist_button.pressed.connect(_toggle_story_assist)
+	_style_modal_button(pref_assist_button)
 	options_stack.add_child(pref_assist_button)
 	pref_audio_button = Button.new()
 	pref_audio_button.custom_minimum_size = Vector2(360, 50)
 	pref_audio_button.pressed.connect(_cycle_audio_level)
+	_style_modal_button(pref_audio_button)
 	options_stack.add_child(pref_audio_button)
 	var exit_options := Button.new()
 	exit_options.text = "CLOSE OPTIONS"
 	exit_options.custom_minimum_size = Vector2(360, 50)
 	exit_options.pressed.connect(_close_settings)
 	exit_options.name = "CloseSettings"
+	_style_modal_button(exit_options, false, true)
 	settings_layout.add_child(exit_options)
 	settings_panel.hide()
 	_sync_modal_ui()
@@ -1215,7 +1270,7 @@ func _refresh_options() -> void:
 func _apply_preferences() -> void:
 	var scale: float = preferences.text_scale
 	var labels: Array[Label] = [info, objective, stage_label, alarm_label, interact_hint, dog_warning_label, dialogue_text, notebook_body, prep_summary, courage_label]
-	var base_sizes: Array[int] = [24, 22, 20, 18, 21, 18, 22, 21, 20, 20]
+	var base_sizes: Array[int] = [24, 22, 20, 18, 21, 18, 25, 27, 26, 20]
 	for i in range(labels.size()):
 		var element: Label = labels[i]
 		if element == null:
@@ -1229,6 +1284,28 @@ func _apply_preferences() -> void:
 			element.remove_theme_color_override("font_color")
 			element.remove_theme_color_override("font_outline_color")
 			element.remove_theme_constant_override("outline_size")
+	var headers: Array[Label] = [
+		notebook_panel.get_node("NotebookLayout/NotebookHeading") as Label,
+		notebook_panel.get_node("NotebookLayout/NotebookScroll/EvidenceContent/EvidenceHeading") as Label,
+		prep_panel.get_node("PreparationLayout/PreparationScroll/EquipmentContent/PreparationHeading") as Label,
+		settings_panel.get_node("SettingsLayout/SettingsScroll/OptionsContent/OptionsHeading") as Label
+	]
+	for heading in headers:
+		heading.add_theme_font_size_override("font_size", roundi(30.0 * scale))
+		heading.add_theme_color_override("font_color", Color(0.98, 0.89, 0.68))
+	for button in [link_light_button, link_ledger_button, notebook_guide, notebook_chase]:
+		_style_modal_button(button)
+	for id in prep_buttons:
+		_style_modal_button(prep_buttons[id] as Button, story.kit.has(id))
+	for button in [prep_water_button, pref_text_button, pref_motion_button, pref_contrast_button, pref_hint_button, pref_assist_button, pref_audio_button]:
+		_style_modal_button(button)
+	for footer in [
+		notebook_panel.get_node("NotebookLayout/CloseNotebook") as Button,
+		prep_panel.get_node("PreparationLayout/ClosePreparation") as Button,
+		settings_panel.get_node("SettingsLayout/CloseSettings") as Button,
+		dialogue.get_node("DialogueLayout/CloseDialogue") as Button
+	]:
+		_style_modal_button(footer, false, true)
 	if settings_panel != null:
 		_refresh_options()
 
@@ -1288,11 +1365,17 @@ func _close_prep() -> void:
 
 
 func _refresh_prep() -> void:
-	prep_summary.text = "EQUIPPED: %d / 4  |  %s" % [story.kit.selected.size(), "READY" if story.kit.is_ready() else "SELECT FOUR"]
+	if story.outcome != "":
+		prep_summary.text = "NIGHT 1 COMPLETE  |  EQUIPMENT LOCKED  |  %d / 4" % story.kit.selected.size()
+	elif is_night or story.phase > 0:
+		prep_summary.text = "NIGHT IN PROGRESS  |  EQUIPPED: %d / 4" % story.kit.selected.size()
+	else:
+		prep_summary.text = "TAP TO EQUIP / REMOVE  |  %d / 4  |  %s" % [story.kit.selected.size(), "READY" if story.kit.is_ready() else "SELECT FOUR"]
 	for id in story.kit.ITEMS:
 		var item_button: Button = prep_buttons[id]
-		item_button.text = ("[EQUIPPED] " if story.kit.has(id) else "[AVAILABLE] ") + str(story.kit.NAMES[id])
+		item_button.text = ("EQUIPPED   •   " if story.kit.has(id) else "AVAILABLE   •   ") + str(story.kit.NAMES[id])
 		item_button.disabled = is_night or story.phase > 0 or story.outcome != ""
+		_style_modal_button(item_button, story.kit.has(id))
 	prep_water_button.visible = is_night and story.phase >= 1 and story.phase <= 3
 	prep_water_button.disabled = not story.kit.has("water_flask") or story.kit.is_used("water_flask") or story.encounter_failed
 	prep_water_button.text = "DRINK WATER (restores courage)" if not story.kit.is_used("water_flask") else "WATER USED"
@@ -1335,9 +1418,11 @@ func _refresh_notebook() -> void:
 	link_light_button.visible = story.clues.has("light_retreat") and story.clues.has("old_mooring")
 	link_light_button.disabled = story.phase > 0 or story.evidence_links.has("light_mooring")
 	link_light_button.text = "LINKED: DADO + MOORING" if story.evidence_links.has("light_mooring") else "LINK: DADO + MOORING"
+	_style_modal_button(link_light_button, story.evidence_links.has("light_mooring"))
 	link_ledger_button.visible = story.clues.has("old_mooring") and story.clues.has("boatman_name")
 	link_ledger_button.disabled = story.phase > 0 or story.evidence_links.has("ledger_mooring")
 	link_ledger_button.text = "LINKED: MOORING + MARA" if story.evidence_links.has("ledger_mooring") else "LINK: MOORING + MARA"
+	_style_modal_button(link_ledger_button, story.evidence_links.has("ledger_mooring"))
 	notebook_guide.disabled = story.outcome != ""
 	notebook_chase.disabled = story.outcome != ""
 
