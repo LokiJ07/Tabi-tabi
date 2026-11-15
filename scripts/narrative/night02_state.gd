@@ -7,6 +7,7 @@ const RESULTS := ["resolve", "partial", "retreat"]
 const BARRIER_POSITIONS := ["west_approach", "south_approach", "shelter_turn"]
 
 var night1_outcome := ""
+var player_position := Vector2(-510, 140)
 var clues: Dictionary = {}
 var warnings: Dictionary = {}
 var barriers: Dictionary = {}
@@ -162,6 +163,7 @@ func _snapshot() -> Dictionary:
 func to_dict() -> Dictionary:
 	return {
 		"schema": 2, "night1_outcome": night1_outcome,
+		"player_position": [player_position.x, player_position.y],
 		"clues": clues.duplicate(true), "warnings": warnings.duplicate(true),
 		"barriers": barriers.duplicate(true), "seen": seen.duplicate(true),
 		"phase": phase, "observation": observation, "alarm": alarm,
@@ -195,6 +197,11 @@ func from_dict(d: Dictionary) -> bool:
 	phase = p
 	outcome = result
 	night1_outcome = str(d.get("night1_outcome", ""))
+	var pos_data = d.get("player_position", [-510.0, 140.0])
+	if typeof(pos_data) == TYPE_ARRAY and pos_data.size() == 2:
+		var pos := Vector2(float(pos_data[0]), float(pos_data[1]))
+		if pos.is_finite() and absf(pos.x) <= 950.0 and absf(pos.y) <= 730.0:
+			player_position = pos
 	warnings = d["warnings"].duplicate(true)
 	seen = d["seen"].duplicate(true)
 	observation = clampf(float(d.get("observation", 0.0)), 0.0, 1.0)
