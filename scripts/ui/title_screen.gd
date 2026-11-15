@@ -44,6 +44,15 @@ func _ready() -> void:
 		print("NIGHT1_QA_TITLE_SCENE_READY")
 
 func _input(event: InputEvent) -> void:
+	# Debug APK screenshot automation can launch the ACTUAL Night 2 scene
+	# without fabricating an unlocked Night 1 save. Production has no shortcut.
+	if OS.get_name() == "Android" and OS.has_feature("debug") and event is InputEventKey:
+		var key := event as InputEventKey
+		if key.pressed and key.keycode == KEY_F10:
+			print("NIGHT2_QA_DEBUG_ENTRY")
+			get_tree().change_scene_to_packed(Night02Scene)
+			get_viewport().set_input_as_handled()
+			return
 	# Debug-only QA gesture, a backup when Android's screenshot automation
 	# cannot reliably tap the real START GAME button. Support touch AND mouse
 	# because Android emulator adb input may emulate either event type.
