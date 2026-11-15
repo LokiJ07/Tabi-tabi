@@ -5,6 +5,11 @@ PKG="org.tabitabi.nightone"
 APK="build/tabi-tabi-night1-debug.apk"
 mkdir -p build
 adb install -r "$APK"
+# Android's immersive-mode first-run warning is a SYSTEM overlay. On a fresh
+# emulator it blocks every tap on the Night 1 dialogue and persisted even
+# after the previous fixed-coordinate "Got it" tap. Confirm immersive mode
+# through Android's secure settings before starting the game activity.
+adb shell settings put secure immersive_mode_confirmations confirmed || true
 adb logcat -c
 adb shell monkey -p "$PKG" -c android.intent.category.LAUNCHER 1
 sleep 10
