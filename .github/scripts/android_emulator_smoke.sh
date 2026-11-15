@@ -143,6 +143,23 @@ adb shell input tap 1940 60 || true
 sleep 2
 adb exec-out screencap -p > build/android-night1-options.png || true
 
+# Real QA screenshots from the running Night 1 game scene, captured by
+# debug-only F6/F7/F8 location keys (not generated illustrations).
+capture_live_view() {
+  local key="$1" label="$2" filename="$3"
+  adb shell input keyevent "$key"
+  sleep 4
+  if ! adb logcat -d -v brief | grep -q "NIGHT1_QA_VIEW_$label"; then
+    echo "ERROR: Night 1 QA view $label was not activated in actual gameplay"
+    exit 1
+  fi
+  adb exec-out screencap -p > "build/$filename"
+  python3 .github/scripts/assert_gameplay_visible.py "build/$filename"
+}
+capture_live_view 136 VILLAGE android-night1-village.png
+capture_live_view 137 SHORE android-night1-shore-dock.png
+capture_live_view 138 NIGHT android-night1-night-river.png
+
 adb logcat -d -s AndroidRuntime:E Godot:E GodotEngine:E > build/android-night1-launch-log.txt || true
 if grep -q "FATAL EXCEPTION" build/android-night1-launch-log.txt; then
   cat build/android-night1-launch-log.txt
