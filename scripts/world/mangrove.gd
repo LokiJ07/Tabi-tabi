@@ -55,6 +55,14 @@ static func build(parent: Node3D, at: Vector3, index: int = 0) -> Node3D:
 		var bend := Vector3(cos(angle) * reach * 0.48, 0.78, sin(angle) * reach * 0.48)
 		_segment(tree, "PropRoot_%02d_A" % i, Vector3(0.06, 1.55, 0), bend, 0.097, trunk.darkened(0.12))
 		_segment(tree, "PropRoot_%02d_B" % i, bend, edge, 0.072, trunk.darkened(0.20))
+	# Fine tapering rootlets give depth beneath the main six structural stilts.
+	# They sit outside the walkable path and have no collision shapes.
+	for i in range(6):
+		var root_angle := TAU * (float(i) + 0.5) / 6.0 + float(index) * 0.23
+		var offset := Vector3(cos(root_angle), 0, sin(root_angle))
+		var root_start := Vector3(0.10, 1.17, 0.03) + offset * 0.20
+		var root_tip := offset * (0.82 + float(i % 2) * 0.24) + Vector3(0, -0.07, 0)
+		_segment(tree, "FineStiltRoot_%02d" % i, root_start, root_tip, 0.045, trunk.darkened(0.23))
 	# Short branches hold a broad, asymmetrical estuarine crown.
 	for i in range(4):
 		var angle := TAU * float(i) / 4.0 + 0.4
