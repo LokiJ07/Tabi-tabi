@@ -30,7 +30,15 @@ func _run() -> void:
 	var village := game.get_node_or_null("BarrioEnvironmentDetails") as Node3D
 	check(village != null, "all three authored nipa structures still exist")
 	for name in ["Lola woven home", "Sabel riverside store", "Mara schoolhouse"]:
-		check(village.get_node_or_null(name) != null, name + " still renders")
+		var structure := village.get_node_or_null(name) as Node3D
+		check(structure != null, name + " still renders")
+		if structure != null:
+			for side in [-1, 1]:
+				var roof := structure.get_node_or_null("Layered roof %d" % side) as MeshInstance3D
+				check(roof != null, name + ": proper pitched nipa roof geometry")
+				if roof != null:
+					var mat := roof.material_override as StandardMaterial3D
+					check(mat != null and mat.albedo_texture != null, name + ": roof actually uses authored thatch texture")
 	var boat := game.river_boat as Node3D
 	check(boat != null, "native banca exists")
 	if boat != null:
