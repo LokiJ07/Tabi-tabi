@@ -1,10 +1,12 @@
 extends RefCounted
+const NightKit = preload("res://scripts/items/night01_inventory.gd")
 ## Night 1 canonical outcome / evidence model.
 ## No scene nodes, UI or mutable global autoload dependencies.
 
 const REQUIRED := ["light_retreat", "old_mooring", "boatman_name"]
 const RESULTS := ["resolve", "drive_away", "partial"]
 var clues: Dictionary = {}
+var kit = NightKit.new()
 var evidence_links: Dictionary = {}
 var hypothesis := ""
 var phase := 0
@@ -57,7 +59,7 @@ func has_complete_evidence() -> bool:
 
 
 func can_begin() -> bool:
-	return outcome == "" and phase == 0 and has_complete_evidence() and has_linked_evidence()
+	return outcome == "" and phase == 0 and has_complete_evidence() and has_linked_evidence() and kit.is_ready()
 
 
 func begin() -> bool:
@@ -91,11 +93,20 @@ func choose_reflection(id: String) -> bool:
 
 
 func commit_result(result: String) -> bool:
+	if result == "drive_away" and not kit.has("signal_bell"):
+		return false
 	if phase != 3 or outcome != "" or not RESULTS.has(result):
 		return false
 	outcome = result
 	committed_events["n1_santelmo_" + result] = true
 	phase = 4
+	return true
+
+
+func shade_lantern() -> bool:
+	if phase != 1 or outcome != "" or not kit.consume("cloth_wrap"):
+		return false
+	alarm = maxf(0.0, alarm - 0.34)
 	return true
 
 
@@ -121,6 +132,7 @@ func to_dict() -> Dictionary:
 	return {
 		"schema": 1,
 		"clues": clues.duplicate(true),
+		"kit": kit.to_dict(),
 		"evidence_links": evidence_links.duplicate(true),
 		"hypothesis": hypothesis,
 		"phase": phase,
@@ -156,6 +168,11 @@ func from_dict(raw: Dictionary) -> bool:
 			evidence_links["light_mooring"] = true
 		if raw_links.get("ledger_mooring", false) == true and clues.has("old_mooring") and clues.has("boatman_name"):
 			evidence_links["ledger_mooring"] = true
+	# Older save files did not have inventory; defaults allow a safe upgrade.
+	kit = NightKit.new()
+	if raw.has("kit"):
+		if not kit.from_dict(raw.get("kit")):
+			return false
 	hypothesis = str(raw.get("hypothesis", ""))
 	phase = restored_phase
 	outcome = restored_result

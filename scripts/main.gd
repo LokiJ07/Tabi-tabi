@@ -44,6 +44,9 @@ var info: Label
 var objective: Label
 var dialogue: PanelContainer
 var dialogue_text: Label
+var prep_panel: PanelContainer
+var prep_summary: Label
+var prep_buttons: Dictionary = {}
 var notebook_panel: PanelContainer
 var notebook_body: Label
 var notebook_guide: Button
@@ -137,6 +140,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel"):
 		_close_dialogue()
 		_close_notebook()
+		_close_prep()
 
 
 func _create_world() -> void:
@@ -403,6 +407,7 @@ func _create_ui() -> void:
 	_make_button(root, "INTERACT", Vector2(1050, 565), Vector2(180, 60), _interact, func(): pass)
 	_make_button(root, "DAY / NIGHT", Vector2(1050, 640), Vector2(180, 56), _toggle_night, func(): pass)
 	_make_button(root, "NOTEBOOK", Vector2(1050, 415), Vector2(180, 56), _open_notebook, func(): pass)
+	_make_button(root, "PREPARE", Vector2(1050, 276), Vector2(180, 56), _open_prep, func(): pass)
 	_make_button(root, "SAVE", Vector2(1050, 345), Vector2(85, 52), _save_story, func(): pass)
 	_make_button(root, "RETRY", Vector2(1142, 345), Vector2(88, 52), _retry_story, func(): pass)
 	interact_hint = Label.new()
@@ -510,6 +515,37 @@ func _create_ui() -> void:
 	close_button.pressed.connect(_close_notebook)
 	stack.add_child(close_button)
 	notebook_panel.hide()
+	# Four active equipment slots, persisted with Night 1 state.
+	prep_panel = PanelContainer.new()
+	prep_panel.anchor_left = 0.23
+	prep_panel.anchor_right = 0.77
+	prep_panel.anchor_top = 0.08
+	prep_panel.anchor_bottom = 0.08
+	prep_panel.offset_bottom = 555
+	root.add_child(prep_panel)
+	var kit_stack := VBoxContainer.new()
+	kit_stack.add_theme_constant_override("separation", 8)
+	prep_panel.add_child(kit_stack)
+	var kit_title := Label.new()
+	kit_title.text = "RIVER PREPARATION | CHOOSE FOUR"
+	kit_title.add_theme_font_size_override("font_size", 24)
+	kit_stack.add_child(kit_title)
+	prep_summary = Label.new()
+	prep_summary.add_theme_font_size_override("font_size", 20)
+	kit_stack.add_child(prep_summary)
+	for item in story.kit.ITEMS:
+		var item_id: String = item
+		var item_button := Button.new()
+		item_button.custom_minimum_size = Vector2(360, 49)
+		item_button.pressed.connect(func(): _toggle_kit_item(item_id))
+		prep_buttons[item_id] = item_button
+		kit_stack.add_child(item_button)
+	var kit_close := Button.new()
+	kit_close.text = "CLOSE PREPARATION"
+	kit_close.custom_minimum_size = Vector2(260, 48)
+	kit_close.pressed.connect(_close_prep)
+	kit_stack.add_child(kit_close)
+	prep_panel.hide()
 
 
 func _make_button(parent: Control, title: String, pos: Vector2, size: Vector2, down: Callable, up: Callable) -> void:
@@ -566,13 +602,16 @@ func _nearby_target() -> String:
 func _update_interact_hint() -> void:
 	if interact_hint == null:
 		return
-	if dialogue.visible or notebook_panel.visible:
+	if dialogue.visible or notebook_panel.visible or prep_panel.visible:
 		interact_hint.text = ""
 		return
 	interact_hint.text = Nearby.caption(_nearby_target())
 
 
 func _interact() -> void:
+	if prep_panel.visible:
+		_close_prep()
+		return
 	if notebook_panel.visible:
 		_close_notebook()
 		return
@@ -614,6 +653,7 @@ func _interact() -> void:
 
 func _show_dialogue(value: String) -> void:
 	_close_notebook()
+	_close_prep()
 	dialogue_text.text = value + "\n\n[INTERACT to close]"
 	dialogue.show()
 
@@ -623,6 +663,10 @@ func _close_dialogue() -> void:
 
 
 func _toggle_night() -> void:
+	if not is_night and not story.kit.is_ready():
+		_open_prep()
+		return
+	_close_prep()
 	if story.outcome != "":
 		_show_dialogue("The next morning has begun. Your outcome is already committed; no repeat rewards.")
 		return
@@ -656,7 +700,7 @@ func _update_objective() -> void:
 	elif story.outcome != "":
 		objective.text = "MORNING AFTER: " + story.outcome.to_upper() + " — state saved."
 	elif not is_night:
-		objective.text = "Inspect mooring and speak to Mara, then begin night when ready."
+		objective.text = "Meet Mara, prepare four items, then choose the night."
 	elif story.phase == 0:
 		objective.text = "Collect 3 clues, link evidence pairs in NOTEBOOK, then BEGIN."
 	elif story.phase == 1:
@@ -678,11 +722,11 @@ func _refresh_choices() -> void:
 	elif story.phase == 0:
 		names = ["BEGIN" if story.can_begin() else "OPEN NOTEBOOK", "", ""]
 	elif story.phase == 1:
-		names = ["OBSERVE", "", "RETREAT"]
+		names = ["OBSERVE", "SHADE LAMP" if story.kit.has("cloth_wrap") and not story.kit.is_used("cloth_wrap") else "", "RETREAT"]
 	elif story.phase == 2:
 		names = ["INSPECT LIGHT", "HINT", "RETREAT"]
 	elif story.phase == 3:
-		names = ["REMEMBER", "DRIVE AWAY", "RETREAT"]
+		names = ["REMEMBER", "DRIVE AWAY" if story.kit.has("signal_bell") else "NEED BELL", "RETREAT"]
 	else:
 		names = ["", "", ""]
 	for i in range(choice_buttons.size()):
@@ -704,6 +748,11 @@ func _choose_story_action(index: int) -> void:
 	elif story.phase == 1:
 		if index == 2:
 			_commit_night("partial")
+		elif index == 1 and story.shade_lantern():
+			if santelmo != null:
+				santelmo.alarm = story.alarm
+			_show_dialogue("Cloth softens the lantern beam. The light settles. One cloth wrap used.")
+			_save_story_silent()
 		elif index == 0:
 			if story.advance_observation():
 				_save_story_silent()
@@ -730,7 +779,10 @@ func _choose_story_action(index: int) -> void:
 		if index == 0:
 			_commit_night("resolve")
 		elif index == 1:
-			_commit_night("drive_away")
+			if story.kit.has("signal_bell"):
+				_commit_night("drive_away")
+			else:
+				_show_dialogue("No warning bell is prepared. Choose remembrance or return safely.")
 		elif index == 2:
 			_commit_night("partial")
 	if santelmo != null:
@@ -767,7 +819,36 @@ func _commit_night(result: String) -> void:
 	_save_story_silent()
 
 
+func _open_prep() -> void:
+	_close_dialogue()
+	_close_notebook()
+	prep_panel.show()
+	_refresh_prep()
+
+
+func _close_prep() -> void:
+	if prep_panel != null:
+		prep_panel.hide()
+
+
+func _refresh_prep() -> void:
+	prep_summary.text = "EQUIPPED: %d / 4  |  %s" % [story.kit.selected.size(), "READY" if story.kit.is_ready() else "SELECT FOUR"]
+	for id in story.kit.ITEMS:
+		var item_button: Button = prep_buttons[id]
+		item_button.text = ("[EQUIPPED] " if story.kit.has(id) else "[AVAILABLE] ") + str(story.kit.NAMES[id])
+		item_button.disabled = is_night or story.phase > 0 or story.outcome != ""
+
+
+func _toggle_kit_item(id: String) -> void:
+	if is_night or story.phase > 0 or story.outcome != "":
+		return
+	if story.kit.toggle(id):
+		_save_story_silent()
+	_refresh_prep()
+
+
 func _open_notebook() -> void:
+	_close_prep()
 	if notebook_panel.visible:
 		_close_notebook()
 		return

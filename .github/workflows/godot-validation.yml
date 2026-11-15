@@ -39,3 +39,5 @@ jobs:
         run: godot --headless --path . --script res://tests/night01_dialogue_test.gd
       - name: Nearby NPC interaction prompts
         run: godot --headless --path . --script res://tests/nearby_interaction_test.gd
+      - name: Four-slot preparation and save regression
+        run: godot --headless --path . --script res://tests/night01_inventory_test.gd

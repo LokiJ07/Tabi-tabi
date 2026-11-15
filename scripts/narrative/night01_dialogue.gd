@@ -12,10 +12,18 @@ static func response(who: String, story: RefCounted, is_night: bool) -> String:
 				return "LOLA PASING: Nakakuha ka sa tulo ka timailhan. Dili tanan kahayag peligro. Pangutan-a ang imong nahibaloan, dili ang imong kahadlok."
 			return "LOLA PASING: Ayaw una isulat ang imong gituohan. Paminaw sa, dayon pangita og pamatuod."
 		"DADO":
+			if story.outcome == "resolve":
+				return "TATAY DADO: Wala na siya nibalik. Dili ko malimot sa imong gibuhat. Ang karaang mooring dili na pareho kagabii."
+			if story.outcome == "drive_away":
+				return "TATAY DADO: Luwas na ang landing, pero murag bugnaw gihapon ang daang mooring. Bantayan nato."
+			if story.outcome == "partial":
+				return "TATAY DADO: Salamat nga niuli ka nga luwas. Naa pa tay panahon sa pagpaminaw ug pagsusi."
 			if revisiting:
 				return "TATAY DADO: Mao ra ang akong nakita: mosibog ang kahayag kon tutokan. Wala ko kahibalo kon unsa gyud siya."
 			return "TATAY DADO: Gamay nga kahayag. Kung akong tutokan, mosibog. Kung molingi ko, murag naghulat."
 		"SABEL":
+			if story.outcome != "":
+				return "ALING SABEL: Ang suba adunay iyang mga istorya. Ayaw lang kalimot nga ang mga pangalan sa tawo adunay pamilya nga buhi pa."
 			if story.seen_people.has("privacy_agreed"):
 				return "ALING SABEL: Salamat. Ang istorya sa pamilya kinahanglan dili himuong tsismis."
 			return "ALING SABEL: Usa ka boatman si Mang Celso. Ayaw ipakaylap ang mga detalye sa iyang pamilya. Ang respeto dili baligya."
