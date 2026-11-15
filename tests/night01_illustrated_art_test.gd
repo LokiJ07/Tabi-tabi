@@ -54,6 +54,15 @@ func _run() -> void:
 	check(game.get_node_or_null("Ground collision") != null, "ground collision preserved after visual pass")
 	check(game.apprentice_visual.get_node_or_null("IllustratedSprite") != null, "player itself uses visible new character art")
 	check(game.bantay_visual.get_node_or_null("IllustratedSprite") != null, "following Bantay uses new dog art")
+	for action in ["PREPARE", "NOTEBOOK", "HOLD FOCUS", "INTERACT", "DAY / NIGHT"]:
+		var found := false
+		for node in game.gameplay_hud.get_children():
+			if node is Button and (node as Button).text == action:
+				found = true
+				check((node as Button).icon != null, action + ": Android HUD shows an original imported icon")
+				check((node as Button).get_theme_font_size("font_size") <= 20, action + ": icon and label fit narrow action")
+		check(found, action + ": action preserved in HUD")
+
 	var first := Art.decorate(game)
 	check(first == scene_art, "reapplying art does not duplicate sprites")
 	game.queue_free()
