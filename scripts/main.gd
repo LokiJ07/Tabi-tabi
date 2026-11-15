@@ -10,6 +10,9 @@ const LolaHut = preload("res://scripts/world/lola_hut_interior.gd")
 const Nearby = preload("res://scripts/ui/nearby_interaction.gd")
 const SantelmoActor = preload("res://scripts/encounters/santelmo_actor.gd")
 const FolkActors = preload("res://scripts/visuals/folk_actors.gd")
+const SpeakerPortrait = preload("res://scripts/ui/speaker_portrait.gd")
+const ConversationPages = preload("res://scripts/narrative/conversation_pages.gd")
+const BarrioDetails = preload("res://scripts/world/barrio_details.gd")
 const BantayRoute = preload("res://scripts/ai/bantay_route.gd")
 const BantayAwareness = preload("res://scripts/ai/bantay_awareness.gd")
 const AimPad = preload("res://scripts/ui/aim_pad.gd")
@@ -62,6 +65,11 @@ var info: Label
 var objective: Label
 var dialogue: PanelContainer
 var dialogue_text: Label
+var dialogue_portrait: Control
+var dialogue_speaker: Label
+var dialogue_next_button: Button
+var dialogue_pages: Array[Dictionary] = []
+var dialogue_page := 0
 var prep_panel: PanelContainer
 var prep_summary: Label
 var prep_buttons: Dictionary = {}
@@ -223,6 +231,7 @@ func _create_world() -> void:
 	var room_interactions: Dictionary = LolaHut.build(self)
 	for key in room_interactions:
 		interaction_nodes[key] = room_interactions[key]
+	BarrioDetails.decorate(self)
 
 
 func _box(name: String, pos: Vector3, size: Vector3, color: Color, solid: bool) -> Node3D:
@@ -510,6 +519,7 @@ func _sync_modal_ui() -> void:
 	var active: bool = _is_reading_ui()
 	gameplay_hud.visible = not active
 	modal_backdrop.visible = active
+	modal_backdrop.color = Color(0.015, 0.035, 0.05, 0.30 if dialogue != null and dialogue.visible else 0.76)
 
 
 func _create_ui() -> void:
@@ -613,16 +623,22 @@ func _create_ui() -> void:
 	modal_backdrop.hide()
 	dialogue = PanelContainer.new()
 	dialogue.name = "DialoguePanel"
-	dialogue.anchor_left = 0.12
-	dialogue.anchor_right = 0.88
-	dialogue.anchor_top = 0.55
-	dialogue.anchor_bottom = 0.94
+	dialogue.anchor_left = 0.08
+	dialogue.anchor_right = 0.92
+	dialogue.anchor_top = 0.44
+	dialogue.anchor_bottom = 0.955
 	_style_modal(dialogue)
 	root.add_child(dialogue)
 	var dialogue_layout := VBoxContainer.new()
 	dialogue_layout.name = "DialogueLayout"
 	dialogue_layout.add_theme_constant_override("separation", 12)
 	dialogue.add_child(dialogue_layout)
+	dialogue_speaker = Label.new()
+	dialogue_speaker.name = "CurrentSpeaker"
+	dialogue_speaker.text = "BARRIO LAWOM"
+	dialogue_speaker.add_theme_color_override("font_color", Color("#e8d3a4"))
+	dialogue_speaker.add_theme_font_size_override("font_size", 28)
+	dialogue_layout.add_child(dialogue_speaker)
 	var dialogue_scroll := ScrollContainer.new()
 	dialogue_scroll.name = "DialogueScroll"
 	dialogue_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
@@ -630,17 +646,30 @@ func _create_ui() -> void:
 	dialogue_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	dialogue_scroll.follow_focus = true
 	dialogue_layout.add_child(dialogue_scroll)
+	var portrait_row := HBoxContainer.new()
+	portrait_row.name = "PortraitAndText"
+	portrait_row.add_theme_constant_override("separation", 22)
+	portrait_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	dialogue_scroll.add_child(portrait_row)
+	dialogue_portrait = SpeakerPortrait.new()
+	dialogue_portrait.name = "SpeakerBustPortrait"
+	dialogue_portrait.custom_minimum_size = Vector2(225, 215)
+	dialogue_portrait.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	portrait_row.add_child(dialogue_portrait)
 	dialogue_text = Label.new()
 	dialogue_text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	dialogue_text.add_theme_font_size_override("font_size", 22)
+	dialogue_text.add_theme_font_size_override("font_size", 25)
+	dialogue_text.custom_minimum_size = Vector2(390, 180)
 	dialogue_text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	dialogue_scroll.add_child(dialogue_text)
+	dialogue_text.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	portrait_row.add_child(dialogue_text)
 	var dialogue_close := Button.new()
 	dialogue_close.name = "CloseDialogue"
-	dialogue_close.text = "CONTINUE / CLOSE"
+	dialogue_close.text = "CONTINUE"
 	dialogue_close.custom_minimum_size = Vector2(240, 52)
-	dialogue_close.pressed.connect(_close_dialogue)
+	dialogue_close.pressed.connect(_advance_dialogue)
 	_style_modal_button(dialogue_close, false, true)
+	dialogue_next_button = dialogue_close
 	dialogue_layout.add_child(dialogue_close)
 	dialogue.hide()
 	notebook_panel = PanelContainer.new()
@@ -930,7 +959,7 @@ func _interact() -> void:
 		_close_notebook()
 		return
 	if dialogue.visible:
-		_close_dialogue()
+		_advance_dialogue()
 		return
 	var closest: String = _nearby_target()
 	if ["LOLA_HOME", "BLUE_NOTEBOOK", "WARM_CUP", "RIVER_PHOTO", "HUT_EXIT", "HUT_ENTRY"].has(closest):
@@ -1031,14 +1060,53 @@ func _show_dialogue(value: String) -> void:
 	_close_notebook()
 	_close_prep()
 	_close_settings()
-	dialogue_text.text = value
+	dialogue_pages = ConversationPages.parse(value)
+	dialogue_page = 0
 	dialogue.show()
+	_render_dialogue_page()
 	_sync_modal_ui()
+	if not preferences.reduced_motion:
+		dialogue.modulate.a = 0.0
+		var fade := create_tween()
+		fade.tween_property(dialogue, "modulate:a", 1.0, 0.22)
+	else:
+		dialogue.modulate.a = 1.0
+
+
+func _render_dialogue_page() -> void:
+	if dialogue_pages.is_empty():
+		return
+	var item: Dictionary = dialogue_pages[dialogue_page]
+	var role: String = str(item.get("speaker", "NARRATOR"))
+	dialogue_speaker.text = "%s   |   %d / %d" % [
+		ConversationPages.display_name(role), dialogue_page + 1, dialogue_pages.size()
+	]
+	dialogue_text.text = str(item.get("text", ""))
+	dialogue_portrait.call("set_speaker", role)
+	dialogue_portrait.set_process(not preferences.reduced_motion)
+	var color: Color = FolkActors.identity(role)["accent"] if role != "NARRATOR" else Color("#d7c69c")
+	dialogue_speaker.add_theme_color_override("font_color", color.lightened(0.15))
+	dialogue_next_button.text = "NEXT SPEAKER  >" if dialogue_page + 1 < dialogue_pages.size() else "CONTINUE / CLOSE"
+	var scroller := dialogue.get_node("DialogueLayout/DialogueScroll") as ScrollContainer
+	scroller.scroll_vertical = 0
+
+
+func _advance_dialogue() -> void:
+	if dialogue == null or not dialogue.visible:
+		return
+	if dialogue_page + 1 >= dialogue_pages.size():
+		_close_dialogue()
+		return
+	dialogue_page += 1
+	_render_dialogue_page()
 
 
 func _close_dialogue() -> void:
 	if dialogue != null:
 		dialogue.hide()
+		dialogue.modulate.a = 1.0
+	dialogue_pages.clear()
+	dialogue_page = 0
 	_clear_touch_input()
 	_sync_modal_ui()
 
@@ -1298,6 +1366,10 @@ func _apply_preferences() -> void:
 		prep_panel.get_node("PreparationLayout/PreparationScroll/EquipmentContent/PreparationHeading") as Label,
 		settings_panel.get_node("SettingsLayout/SettingsScroll/OptionsContent/OptionsHeading") as Label
 	]
+	if dialogue_speaker != null:
+		dialogue_speaker.add_theme_font_size_override("font_size", roundi(30.0 * scale))
+	if dialogue_portrait != null:
+		dialogue_portrait.set_process(not preferences.reduced_motion)
 	for heading in headers:
 		heading.add_theme_font_size_override("font_size", roundi(30.0 * scale))
 		heading.add_theme_color_override("font_color", Color(0.98, 0.89, 0.68))

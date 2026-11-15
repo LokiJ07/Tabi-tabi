@@ -22,6 +22,26 @@ func _run() -> void:
 	var quiet: Node3D = Actors.person("Villager", Color(0.4, 0.4, 0.3), Color(0.3, 0.3, 0.3))
 	root.add_child(quiet)
 	_expect(quiet.get_node_or_null("SalakotBrim") == null, "civilian variation without player hat")
+	var expected := {
+		"LOLA": ["WovenShawl", "SilverBun", "LongSkirt"],
+		"DADO": ["FishingHatBrim", "FisherVest", "Moustache"],
+		"MARA": ["GlassesLeft", "Ledger", "TeacherCollarLeft"],
+		"SABEL": ["IndigoHeadWrap", "MarketApron", "ApronPocket"]
+	}
+	var visible_shirts := {}
+	for role in expected:
+		var character: Node3D = Actors.person(role, Color.BLACK, Color.BLACK)
+		root.add_child(character)
+		_expect(character.get_meta("character_id") == role, "distinct character id " + role)
+		for prop in expected[role]:
+			_expect(character.get_node_or_null(prop) != null, role + " signature prop " + prop)
+		var torso := character.get_node_or_null("Torso") as MeshInstance3D
+		var color: Color = (torso.material_override as StandardMaterial3D).albedo_color
+		_expect(not visible_shirts.has(color.to_html()), "distinct costume color " + role)
+		visible_shirts[color.to_html()] = true
+		character.queue_free()
+	_expect(Actors.role_id("Lola seated") == "LOLA", "indoor Lola matches outside identity")
+	_expect(Actors.identity("DADO")["name"] != Actors.identity("MARA")["name"], "speaker names remain distinct")
 	var bantay: Node3D = Actors.dog()
 	root.add_child(bantay)
 	_expect(bantay.get_node_or_null("Tail") != null, "tail present")

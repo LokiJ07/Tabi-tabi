@@ -59,3 +59,7 @@ jobs:
         run: godot --headless --path . --script res://tests/living_ambience_test.gd
       - name: Source-aware Night 1 journal and single bestiary entry
         run: godot --headless --path . --script res://tests/night01_journal_test.gd
+      - name: Night 1 speaker portraits and cinematic dialogue progression
+        run: godot --headless --path . --script res://tests/night01_cinematic_test.gd
+      - name: Distinct Barrio Lawom environmental storytelling
+        run: godot --headless --path . --script res://tests/barrio_details_test.gd
