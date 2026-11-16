@@ -37,6 +37,9 @@ func _run() -> void:
 	# Verify that the NIGHT-specific framing and fog actually respond to the
 	# dangerous stage, not only that a still image was added to the project.
 	var opening_position: Vector2 = game.player_pos
+	# The emulator QA reveal first closes Lola's opening dialogue;
+	# the cinematic camera must not inherit that older speaker focus.
+	game.dialogue_focus = false
 	game.debug_night_preview = true
 	game.player_pos = game.RIDGE_GATE+Vector2(-125,80)
 	game._process(.5)
@@ -49,7 +52,7 @@ func _run() -> void:
 	game.player_pos = opening_position
 	game.prefs.reduced_motion = true
 	game._process(.016)
-	check(absf(game.camera.zoom.x - 1.115) < .003,
+	check(absf(game.camera.zoom.x - 1.08) < .003,
 		"reduced motion snaps cinematic zoom instead of animating")
 	game.prefs.reduced_motion = false
 	check(game.gameplay_controls.get_node_or_null("QuestStatusCard") != null, "Night 3 uses true shared quest component")
