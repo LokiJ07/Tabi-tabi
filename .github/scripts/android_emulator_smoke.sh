@@ -11,18 +11,30 @@ adb install -r "$APK"
 # through Android's secure settings before starting the game activity.
 adb shell settings put secure immersive_mode_confirmations confirmed || true
 adb logcat -c
-adb shell monkey -p "$PKG" -c android.intent.category.LAUNCHER 1
-sleep 10
-# Set the Android test display AFTER app activity startup. Setting it before
-# activity creation was overridden, producing a 1080x2340 portrait screenshot.
-adb shell settings put system accelerometer_rotation 0 || true
-adb shell settings put system user_rotation 1 || true
-sleep 5
-adb exec-out screencap -p > build/android-orientation.png
-# Check actual screencap orientation rather than relying on wm size (which
-# reports the underlying hardware dimensions regardless of current rotation).
-if ! python3 -c 'import struct,sys; d=open(sys.argv[1],"rb").read(24); w,h=struct.unpack(">II",d[16:24]); print("Android screenshot resolution: %sx%s"%(w,h)); sys.exit(0 if w>h else 1)' build/android-orientation.png; then
-  echo "ERROR: Night 1 Android activity is still in portrait; gameplay is landscape only"
+# Some fresh Android 35 AVDs ignore the first rotation request because the
+# launcher is still foreground during first-run Godot activity startup.
+# Retry the actual game activity and the window manager's user-rotation lock;
+# never spoof screenshot dimensions or treat the Android home screen as a game.
+landscape_ready=0
+for attempt in 1 2 3; do
+  adb shell monkey -p "$PKG" -c android.intent.category.LAUNCHER 1
+  sleep 8
+  adb shell settings put system accelerometer_rotation 0 || true
+  adb shell settings put system user_rotation 1 || true
+  adb shell wm user-rotation lock 1 || true
+  sleep 4
+  adb exec-out screencap -p > build/android-orientation.png
+  if python3 -c 'import struct,sys; d=open(sys.argv[1],"rb").read(24); w,h=struct.unpack(">II",d[16:24]); print("Android screenshot resolution: %sx%s"%(w,h)); sys.exit(0 if w>h else 1)' build/android-orientation.png; then
+    landscape_ready=1
+    break
+  fi
+  echo "Landscape activity not ready (attempt $attempt); relaunching game"
+  adb shell am force-stop "$PKG" || true
+done
+if [ "$landscape_ready" -ne 1 ]; then
+  echo "ERROR: Android game activity failed landscape after real launch retries"
+  adb shell dumpsys activity activities | grep -E 'mResumedActivity|topResumedActivity' | head -n 10 || true
+  adb logcat -d | grep -E 'NIGHT1_QA|ActivityTaskManager|Godot|AndroidRuntime' | tail -n 100 || true
   exit 1
 fi
 
