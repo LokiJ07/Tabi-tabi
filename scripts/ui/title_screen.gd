@@ -49,9 +49,13 @@ func _input(event: InputEvent) -> void:
 	if OS.get_name() == "Android" and OS.has_feature("debug") and event is InputEventKey:
 		var key := event as InputEventKey
 		if key.pressed and key.keycode == KEY_F10:
+			var viewport := get_viewport()
+			if viewport != null:
+				viewport.set_input_as_handled()
 			print("NIGHT2_QA_DEBUG_ENTRY")
+			# Freeing the title is deferred by scene change; never access its
+			# viewport after change_scene_to_packed() removes the current scene.
 			get_tree().change_scene_to_packed(Night02Scene)
-			get_viewport().set_input_as_handled()
 			return
 	# Debug-only QA gesture, a backup when Android's screenshot automation
 	# cannot reliably tap the real START GAME button. Support touch AND mouse
