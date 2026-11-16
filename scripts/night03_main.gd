@@ -115,6 +115,8 @@ func _ready() -> void:
 	camera.position_smoothing_enabled = not prefs.reduced_motion
 	camera.position_smoothing_speed = 4.2
 	camera.position = player_pos
+	# Bring the traveler into frame without altering the touch HUD anchors.
+	camera.zoom = Vector2(1.08,1.08)
 	add_child(camera)
 	ambient = Sound.new()
 	ambient.name = "RidgeInsectsAndWind"
@@ -164,6 +166,13 @@ func _process(delta: float) -> void:
 	camera_blend = lerpf(camera_blend,goal_blend,1.0 if prefs.reduced_motion else clampf(delta*3.8,0.0,1.0))
 	camera.position = player_pos + (focus_point-player_pos).limit_length(85.0)*camera_blend
 	camera.offset = camera.offset.lerp(look_direction*61.0,clampf(delta*8.0,0.0,1.0))
+	# An intentional, gentle push-in when the ridge becomes threatening.
+	# Reduced Motion disables the animated interpolation entirely.
+	var ridge_zoom := 1.08 if _stage() < 2 else 1.15
+	if dialogue_focus and dialogue.visible:
+		ridge_zoom += .035
+	camera.zoom = camera.zoom.lerp(Vector2.ONE*ridge_zoom,
+		1.0 if prefs.reduced_motion else clampf(delta*2.0,0.0,1.0))
 	if not blocked and not travel_in_progress and player_pos.distance_to(ConnectedWorld.TRAIL_RIDGE) < 54.0:
 		_return_to_mango()
 		return
@@ -358,23 +367,43 @@ func _draw() -> void:
 		draw_line(mark+Vector2(-7,-88),mark+Vector2(64,-75),Color("#d4b482"),3)
 		if marked:
 			_poly([mark+Vector2(53,-72),mark+Vector2(92,-56),mark+Vector2(53,-39)],Color("#a4c9a4"))
-	# False lanterns remain distant and NEVER become a forced path marker.
+	# False lights mimic rescue lanterns but stay visually separate from the
+	# authentic stone-route evidence and never obscure its interaction area.
 	if _stage() >= 2:
 		for i in range(9):
 			var false_light := FALSE_FORK + Vector2(85+float(i)*47.0,
 				-42+sin(float(i)*2.1)*70.0)
 			var sway := sin(particles*1.2+float(i))*7.0 if not prefs.reduced_motion else 0.0
-			draw_circle(false_light+Vector2(0,sway),22,Color(1.0,.54,.15,.06))
-			draw_circle(false_light+Vector2(0,sway),3,Color("#eab66d",.9))
-	# Full creature appears ONLY once a genuine route has been checked.
+			var point := false_light+Vector2(0,sway)
+			draw_circle(point,40,Color(1.0,.52,.19,.018))
+			draw_circle(point,21,Color(1.0,.54,.15,.06))
+			draw_circle(point,7,Color("#efbb72",.28))
+			draw_circle(point,3,Color("#ffdf9a",.90))
+	# The flood-damaged ridge darkens the WORLD first; actors and the
+	# actual witness are then rendered above that pass for mobile readability.
+	if _stage() == 1:
+		draw_rect(Rect2(-1250,-1100,2600,2400),Color(.20,.09,.04,.16))
+	elif _stage() >= 2:
+		draw_rect(Rect2(-1250,-1100,2600,2400),Color(.02,.045,.09,.42))
+		for ring in range(4,0,-1):
+			var r := 65.0+float(ring)*32.0
+			draw_circle(player_pos+Vector2(0,-49),r,
+				Color(1.0,.70,.32,.010+float(5-ring)*.009))
+		draw_circle(SAFE_LOOKOUT+Vector2(-66,-74),160,Color(1.0,.64,.24,.075))
+	# Full creature appears ONLY after the verified route; no day spoiler.
 	if (story.phase == 4 and story.outcome == "") or debug_night_preview:
 		var shift := sin(particles*.75)*4.0 if not prefs.reduced_motion else 0.0
-		draw_texture_rect(TIKBALANG,Rect2(RIDGE_GATE+Vector2(-156,-468+shift),
-			Vector2(300,465)),false,Color("#d9cdbb"))
-	# Hero and Bantay share the exact approved Night 1/2 art identities.
+		var witness := RIDGE_GATE+Vector2(-4,-255)
+		for ring in range(4,0,-1):
+			draw_circle(witness,75.0+float(ring)*36.0,
+				Color(.68,.34,.16,.009+float(5-ring)*.006))
+		draw_texture_rect(TIKBALANG,Rect2(RIDGE_GATE+Vector2(-174,-518+shift),
+			Vector2(348,522)),false,Color("#e0d6c6"))
+	# Keep original shared protagonists readable against darkness. Their
+	# draw order is world-depth based and HUD/cinematic layers stay untouched.
 	var actors := [
-		{"at":bantay_pos+Vector2(0,19),"tex":BANTAY,"size":Vector2(83,90)},
-		{"at":player_pos+Vector2(0,8),"tex":HERO,"size":Vector2(91,121)}
+		{"at":bantay_pos+Vector2(0,19),"tex":BANTAY,"size":Vector2(95,104)},
+		{"at":player_pos+Vector2(0,8),"tex":HERO,"size":Vector2(106,141)}
 	]
 	actors.sort_custom(func(a: Dictionary,b: Dictionary)->bool:
 		return (a["at"] as Vector2).y < (b["at"] as Vector2).y)
@@ -382,12 +411,6 @@ func _draw() -> void:
 		var where: Vector2 = actor["at"]
 		var dimensions: Vector2 = actor["size"]
 		draw_texture_rect(actor["tex"],Rect2(where-Vector2(dimensions.x*.5,dimensions.y),dimensions),false)
-	# Atmospheric darkness is deliberately under all HUD and text.
-	if _stage() == 1:
-		draw_rect(Rect2(-1250,-1100,2600,2400),Color(.20,.09,.04,.16))
-	elif _stage() >= 2:
-		draw_rect(Rect2(-1250,-1100,2600,2400),Color(.02,.045,.09,.42))
-		draw_circle(SAFE_LOOKOUT+Vector2(-66,-74),160,Color(1.0,.64,.24,.075))
 	# In-world wayfinding signs are small, correctly oriented and non-obstructive.
 	var font := ThemeDB.fallback_font
 	draw_string(font,ConnectedWorld.TRAIL_RIDGE+Vector2(-125,90),
