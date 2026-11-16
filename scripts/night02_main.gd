@@ -11,6 +11,7 @@ const Preferences = preload("res://scripts/core/preferences.gd")
 const Night02Ambience = preload("res://scripts/audio/night02_ambience.gd")
 const ConnectedWorld = preload("res://scripts/core/connected_world.gd")
 const SharedHUD = preload("res://scripts/ui/shared_hud.gd")
+const SharedAtmosphere = preload("res://scripts/visuals/shared_immersive_atmosphere.gd")
 const MANGO: Texture2D = preload("res://assets/night02/old_mango_tree.svg")
 const KAPRE: Texture2D = preload("res://assets/night02/kapre.svg")
 const BARRIER: Texture2D = preload("res://assets/night02/closed_path_barrier.svg")
@@ -89,6 +90,7 @@ var quit_confirm: ConfirmationDialog
 var save_error: AcceptDialog
 var ending_panel: PanelContainer
 var ambient_sound: Node
+var atmosphere_fx
 var debug_dusk_preview := false
 var debug_night_reveal := false # QA only, never saved
 var elapsed := 0.0
@@ -202,6 +204,10 @@ func _process(delta: float) -> void:
 	danger.text = "COURAGE %d  •  TENSION %d%%" % [roundi(story.courage), roundi(story.alarm * 100.0)]
 	if ambient_sound != null:
 		ambient_sound.set_night_stage(_light_stage())
+		ambient_sound.set_tension(story.alarm)
+	if atmosphere_fx != null:
+		var pressure := maxf(story.alarm,(100.0-story.courage)/100.0*.75)
+		atmosphere_fx.configure(2,_light_stage(),pressure,prefs.reduced_motion)
 	_sync_gameplay_hud()
 	queue_redraw()
 
@@ -580,6 +586,12 @@ func _draw_world_labels() -> void:
 
 
 func _build_ui() -> void:
+	var fx_layer := CanvasLayer.new()
+	fx_layer.name = "SharedNightAtmosphere"
+	fx_layer.layer = 5 # below the chapter HUD and dialogue at layer 6
+	add_child(fx_layer)
+	atmosphere_fx = SharedAtmosphere.new()
+	fx_layer.add_child(atmosphere_fx)
 	hud = CanvasLayer.new()
 	hud.name = "Night2HUD"
 	hud.layer = 6
@@ -597,13 +609,13 @@ func _build_ui() -> void:
 	var status := PanelContainer.new()
 	status.name = "ObjectiveCard"
 	status.anchor_left = 0.0
-	status.anchor_right = 0.44
+	status.anchor_right = 0.37
 	status.anchor_top = 0.0
 	status.anchor_bottom = 0.0
 	status.offset_left = 16.0
 	status.offset_right = -8.0
 	status.offset_top = 10.0
-	status.offset_bottom = 250.0
+	status.offset_bottom = 218.0
 	SharedHUD.style_status_panel(status)
 	gameplay_controls.add_child(status)
 	var stack := VBoxContainer.new()
@@ -611,13 +623,13 @@ func _build_ui() -> void:
 	status.add_child(stack)
 	var heading := Label.new()
 	heading.text = "TABI-TABI  •  NIGHT 2  /  KAPRE"
-	heading.add_theme_font_size_override("font_size", 24)
+	heading.add_theme_font_size_override("font_size", 22)
 	heading.add_theme_color_override("font_color", Color("#f0d19c"))
 	stack.add_child(heading)
 	objective = Label.new()
 	objective.name = "ObjectiveText"
 	objective.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	objective.add_theme_font_size_override("font_size", roundi(22.0*prefs.text_scale))
+	objective.add_theme_font_size_override("font_size", roundi(20.0*prefs.text_scale))
 	stack.add_child(objective)
 	subtitle = Label.new()
 	subtitle.add_theme_font_size_override("font_size", 17)
@@ -630,8 +642,8 @@ func _build_ui() -> void:
 	stack.add_child(danger)
 	waypoint_label = Label.new()
 	waypoint_label.name = "NextLocationCompass"
-	waypoint_label.anchor_left = .475
-	waypoint_label.anchor_right = .80
+	waypoint_label.anchor_left = .445
+	waypoint_label.anchor_right = .65
 	waypoint_label.anchor_top = .035
 	waypoint_label.anchor_bottom = .135
 	waypoint_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -651,7 +663,7 @@ func _build_ui() -> void:
 	gameplay_controls.add_child(progress)
 	interaction_hint = Label.new()
 	interaction_hint.name = "InteractionHint"
-	interaction_hint.anchor_left = .60
+	interaction_hint.anchor_left = .67
 	interaction_hint.anchor_right = .86
 	interaction_hint.anchor_top = 0.0
 	interaction_hint.anchor_bottom = 0.0
