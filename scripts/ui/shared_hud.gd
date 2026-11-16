@@ -124,6 +124,50 @@ const ACTION_POSITIONS := {
 	"SAFE RETREAT": Vector2(1050, 640)
 }
 
+static func style_modal_panel(panel: PanelContainer) -> void:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color("#092936")
+	style.border_color = Color("#d0a65b")
+	style.set_border_width_all(2)
+	style.set_corner_radius_all(12)
+	style.content_margin_left = 22
+	style.content_margin_right = 22
+	style.content_margin_top = 16
+	style.content_margin_bottom = 16
+	panel.add_theme_stylebox_override("panel", style)
+	panel.mouse_filter = Control.MOUSE_FILTER_STOP
+
+static func modal_button_style(fill: Color, outline: Color) -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = fill
+	style.border_color = outline
+	style.set_border_width_all(2)
+	style.set_corner_radius_all(9)
+	style.content_margin_left = 18
+	style.content_margin_right = 18
+	style.content_margin_top = 7
+	style.content_margin_bottom = 7
+	return style
+
+static func style_modal_button(button: Button, selected: bool = false, footer: bool = false, text_scale: float = 1.0) -> void:
+	# Identical to Night 1's readable modal choices / notebook / options.
+	var edge := Color("#ffd47a") if selected else Color("#bb995c")
+	var background := Color("#295643") if selected else Color("#0d3443")
+	button.add_theme_stylebox_override("normal", modal_button_style(background, edge))
+	button.add_theme_stylebox_override("hover", modal_button_style(Color("#184d59"),Color("#ffdf96")))
+	button.add_theme_stylebox_override("pressed", modal_button_style(Color("#2a5644"),Color("#fbd485")))
+	button.add_theme_stylebox_override("hover_pressed", modal_button_style(Color(.26,.40,.39),Color(.90,.80,.49)))
+	button.add_theme_stylebox_override("focus",modal_button_style(Color(0,0,0,0),Color("#ffde92")))
+	button.add_theme_stylebox_override("disabled", modal_button_style(Color(.11,.18,.21),edge.darkened(.15)))
+	button.add_theme_color_override("font_color",Color("#f8e8c7"))
+	button.add_theme_color_override("font_hover_color",Color.WHITE)
+	button.add_theme_color_override("font_pressed_color",Color.WHITE)
+	button.add_theme_color_override("font_focus_color",Color.WHITE)
+	button.add_theme_color_override("font_disabled_color",Color(.85,.91,.90))
+	button.add_theme_font_size_override("font_size",roundi((25.0 if footer else 27.0)*text_scale))
+	button.alignment = HORIZONTAL_ALIGNMENT_CENTER if footer else HORIZONTAL_ALIGNMENT_LEFT
+	button.custom_minimum_size = Vector2(button.custom_minimum_size.x,maxf(button.custom_minimum_size.y,63.0))
+
 static func style_game_button(button: Button, font_size: int = 19, touch: bool = false, text_scale: float = 1.0) -> void:
 	var normal := StyleBoxFlat.new()
 	normal.bg_color = Color("#082b37")
