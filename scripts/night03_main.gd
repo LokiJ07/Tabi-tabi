@@ -841,6 +841,12 @@ func _show_dialogue(who: String,message: String,choices: Array) -> void:
 		var action: String = str(option["action"])
 		var btn := _modal_button(dialogue_choices,str(option["label"]),func(): _press_choice(action))
 		btn.name = "Choice_"+action
+		if choices.size() >= 3:
+			# The route-verification puzzle has three real choices. Preserve
+			# all three readable touch buttons above the bottom screen edge.
+			btn.custom_minimum_size = Vector2(360,50)
+			btn.add_theme_font_size_override("font_size",roundi(20.0*prefs.text_scale))
+	dialogue.anchor_top = .34 if choices.size() >= 3 else .44
 	if is_creature:
 		focus_point = RIDGE_GATE
 	elif role.contains("BANTAY"):
