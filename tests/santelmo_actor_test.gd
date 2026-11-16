@@ -1,0 +1,41 @@
+extends SceneTree
+const Santelmo = preload("res://scripts/encounters/santelmo_actor.gd")
+var errors := 0
+
+func _initialize() -> void:
+	call_deferred("_run")
+
+func _expect(ok: bool, message: String) -> void:
+	if not ok:
+		errors += 1
+		printerr("Santelmo regression: " + message)
+
+func _run() -> void:
+	var creature = Santelmo.new()
+	root.add_child(creature)
+	_expect(creature.true_reflection != null, "actual river-aligned marker exists")
+	_expect(not creature.true_reflection.visible, "reflections hidden before puzzle")
+	creature.set_encounter_phase(2)
+	_expect(creature.true_reflection.visible, "true marker shown in phase two")
+	_expect(creature.false_reflection.visible, "false marker shown in phase two")
+	_expect(creature.reflection_near(Vector3(-8, 0, 15.5)) == "CURRENT_ALIGNED", "true marker selected by world proximity")
+	_expect(creature.reflection_near(Vector3(-5, 0, 15.5)) == "FALSE_MIRROR", "false marker selected by world proximity")
+	_expect(creature.reflection_near(Vector3(10, 0, 0)) == "", "distant selection prohibited")
+	var observer := Vector3(-6.0, 0.0, 9.0)
+	var facing := Vector3(-2.0, 0.0, 4.0).normalized()
+	var before: float = creature.alarm
+	creature.update_behavior(0.4, observer, facing, true)
+	_expect(creature.alarm > before, "direct focus increases alarm")
+	var agitated: float = creature.alarm
+	creature.update_behavior(0.4, observer, Vector3.FORWARD, false)
+	_expect(creature.alarm < agitated, "releasing focus calms")
+	creature.set_encounter_phase(3)
+	_expect(not creature.true_reflection.visible, "reflections disappear after solution")
+	_expect(creature.landing_marker.visible, "visible target ring for guiding")
+	creature.set_guide_progress(0.85)
+	creature.update_behavior(0.5, Vector3(-6.0, 0.0, 9.0), Vector3.FORWARD, false)
+	_expect(creature.landing_marker.global_position.distance_to(creature.SAFE_LANDING) < 0.1, "target marker anchored in world space")
+	_expect(creature.guide_progress > 0.8, "actor receives guiding progress")
+	creature.queue_free()
+	print("Santelmo visual model tests: ", "PASS" if errors == 0 else str(errors) + " failures")
+	quit(0 if errors == 0 else 1)

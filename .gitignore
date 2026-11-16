@@ -1,0 +1,11 @@
+# Godot generated cache and import artifacts
+.godot/
+.import/
+.export/
+export.cfg
+*.tmp
+.DS_Store
+# Local keys, never commit signing secrets
+*.keystore
+*.jks
+android/build/

@@ -1,0 +1,164 @@
+extends RefCounted
+const FolkActors = preload("res://scripts/visuals/folk_actors.gd")
+const BAMBOO_FLOOR: Texture2D = preload("res://assets/world/lola_bamboo_floor.svg")
+const SAWALI_WALL: Texture2D = preload("res://assets/world/lola_sawali_wall.svg")
+const BANIG_MAT: Texture2D = preload("res://assets/world/lola_banig_mat.svg")
+## Prototype player-controlled hut interior in a separate world pocket.
+## All positions are authored. The exterior hut remains collidable and sealed.
+## Transition uses interaction, never allows walking through walls.
+
+const CENTER := Vector3(55.0, 0.0, 0.0)
+const INSIDE_SPAWN := Vector3(55.0, 0.76, 1.3)
+const OUTSIDE_SPAWN := Vector3(6.0, 0.76, 8.9)
+const OUTSIDE_DOOR := Vector3(6.0, 0.15, 8.05)
+const NODE_NAME := "LolaHutInterior"
+
+static func build(world: Node3D) -> Dictionary:
+	var existing := world.get_node_or_null(NODE_NAME) as Node3D
+	if existing != null:
+		return _targets(existing)
+	var room := Node3D.new()
+	room.name = NODE_NAME
+	room.position = CENTER
+	world.add_child(room)
+	# A complete environment under the isolated interior pocket is essential.
+	# Previously the camera saw an open brown box floating in empty cyan sky.
+	# This non-colliding yard continues underneath the whole camera footprint.
+	_box(room, "Hut surrounding earth", Vector3(0, -0.50, 0), Vector3(36, 0.32, 32), Color("#526048"), false)
+	_box(room, "Hut garden silt", Vector3(-8.4, -0.31, -1.4), Vector3(3.9, 0.09, 10.2), Color("#68694a"), false)
+	_box(room, "Hut entrance stepping path", Vector3(0, -0.30, 7), Vector3(2.5, 0.09, 8), Color("#9d8360"), false)
+	_box(room, "Raised bamboo porch", Vector3(0, -0.08, 4.57), Vector3(5.1, 0.24, 2.15), Color("#a07a54"), false)
+	for i in range(8):
+		_box(room, "Yard porch timber %02d" % i, Vector3(-2.18 + float(i) * 0.62, 0.055, 4.59), Vector3(0.07, 0.025, 2.02), Color("#6c513b"), false)
+	for i in range(7):
+		var z := -7.5 + float(i) * 2.45
+		_box(room, "Surrounding planted reed %02d" % i, Vector3(-6.8, 0.16, z), Vector3(0.16, 1.0, 0.14), Color("#43653f") if i % 2 == 0 else Color("#64834d"), false)
+	_box(room, "Bamboo floor", Vector3(0, -0.21, 0), Vector3(9, 0.4, 8), Color(0.49, 0.35, 0.23), true)
+	_box(room, "Back woven wall", Vector3(0, 1.55, -4), Vector3(9, 3.1, 0.24), Color(0.63, 0.46, 0.28), true)
+	# The camera approaches from +X/+Z: those two near walls must NOT
+	# obscure the room. Keep only side jamb colliders around a real doorway.
+	# Doorway opens 2.4m wide and remains reachable from HUT_EXIT.
+	_box(room, "Front woven wall left", Vector3(-2.85, 1.55, 4), Vector3(3.3, 3.1, 0.24), Color(0.55, 0.39, 0.25), true)
+	_box(room, "Front woven wall right", Vector3(2.85, 1.55, 4), Vector3(3.3, 3.1, 0.24), Color(0.55, 0.39, 0.25), true)
+	_box(room, "Left woven wall", Vector3(-4.5, 1.55, 0), Vector3(0.24, 3.1, 8), Color(0.58, 0.43, 0.26), true)
+	_box(room, "Right woven wall", Vector3(4.5, 1.55, 0), Vector3(0.24, 3.1, 8), Color(0.58, 0.43, 0.26), true)
+	# Cutaway presentation: hide camera-side wall meshes but RETAIN collision.
+	# A single coherent rear-wall-and-floor layout is shared with fallback.
+	for wall_name in ["Front woven wall left", "Front woven wall right", "Right woven wall"]:
+		var facing_wall := room.get_node(wall_name) as MeshInstance3D
+		facing_wall.visible = false
+	# Cross-bamboo weave and roof beam silhouettes are seen from overhead
+	# without covering the playable room with a solid opaque roof.
+	for i in range(11):
+		var wall_x := -4.05 + float(i) * 0.81
+		_box(room, "Back-wall split bamboo %02d" % i, Vector3(wall_x, 1.45, -3.82), Vector3(0.075, 2.61, 0.06), Color("#96704b"), false)
+	for i in range(6):
+		var wall_y := 0.45 + float(i) * 0.44
+		_box(room, "Back-wall woven rib %02d" % i, Vector3(0, wall_y, -3.79), Vector3(8.66, 0.07, 0.065), Color("#c09a67"), false)
+	for i in range(4):
+		_box(room, "Hut roof support beam %d" % i, Vector3(-3.45 + float(i) * 2.3, 3.12, -3.7), Vector3(0.14, 0.14, 7.0), Color("#6b4935"), false)
+	_box(room, "Front ceiling crossbar", Vector3(0, 3.15, 3.58), Vector3(8.8, 0.16, 0.16), Color("#644331"), false)
+	_box(room, "Woven rug", Vector3(0.0, 0.05, 0.1), Vector3(3.0, 0.07, 2.6), Color(0.62, 0.35, 0.23), false)
+	# Warm handwoven mats and shelves visually ground the room without
+	# changing paths, clue triggers or physics.
+	for i in range(3):
+		_box(room, "Mat selvedge %02d" % i, Vector3(-1.35 + float(i) * 1.35, 0.108, -0.01),
+			Vector3(0.045, 0.016, 2.4), Color("#ebbf83"), false)
+	_box(room, "Rear shelf left", Vector3(-3.28, 2.03, -3.72),
+		Vector3(1.45, 0.12, 0.36), Color("#79543b"), false)
+	_box(room, "Rear shelf cup left", Vector3(-3.62, 2.27, -3.74),
+		Vector3(0.31, 0.42, 0.31), Color("#aa7358"), false)
+	_box(room, "Rear shelf cup right", Vector3(-3.02, 2.26, -3.74),
+		Vector3(0.28, 0.39, 0.31), Color("#cead78"), false)
+	_box(room, "Door frame header", Vector3(0, 2.45, 3.65),
+		Vector3(2.0, 0.16, 0.18), Color("#c29c6c"), false)
+	_box(room, "Window woven curtain", Vector3(2.76, 2.35, -3.7),
+		Vector3(1.55, 0.30, 0.05), Color("#e2c393"), false)
+	_box(room, "Breakfast table", Vector3(1.25, 0.52, -0.65), Vector3(1.85, 0.22, 1.15), Color(0.30, 0.20, 0.13), false)
+	# A separate study desk beside the back wall gives the notebook a
+	# believable, visible tabletop placement instead of sitting in the aisle.
+	_box(room, "Writing desk top", Vector3(-2.65, 0.57, -2.25), Vector3(1.75, 0.16, 0.96), Color("#78543c"), false)
+	for x in [-3.40, -1.90]:
+		for z in [-2.60, -1.90]:
+			_box(room, "Desk leg", Vector3(x, 0.29, z), Vector3(0.14, 0.58, 0.14), Color("#4e3426"), false)
+	_box(room, "Breakfast table leg left", Vector3(0.55, 0.24, -1.02), Vector3(0.14, 0.48, 0.14), Color("#463022"), false)
+	_box(room, "Breakfast table leg right", Vector3(1.95, 0.24, -0.28), Vector3(0.14, 0.48, 0.14), Color("#463022"), false)
+	_box(room, "Sleep mat", Vector3(-2.6, 0.15, 1.0), Vector3(1.8, 0.19, 2.5), Color(0.39, 0.30, 0.21), false)
+	_box(room, "Blue cloth notebook", Vector3(-2.65, 0.73, -2.25), Vector3(0.65, 0.11, 0.49), Color("#285d83"), false)
+	_box(room, "Notebook paper edge", Vector3(-2.65, 0.79, -2.24), Vector3(0.53, 0.018, 0.38), Color("#edddae"), false)
+	_box(room, "Notebook cloth spine", Vector3(-2.95, 0.79, -2.25), Vector3(0.055, 0.025, 0.49), Color("#122d49"), false)
+	_box(room, "Warm pottery cup", Vector3(1.45, 0.75, -0.35), Vector3(0.3, 0.28, 0.3), Color(0.86, 0.71, 0.47), false)
+	_box(room, "River family photograph", Vector3(2.75, 1.67, -3.75), Vector3(1.15, 0.88, 0.10), Color(0.47, 0.62, 0.61), false)
+	# Door arch and plank threshold, never a free-floating opaque exit slab.
+	_box(room, "Door jamb left", Vector3(-1.27, 1.16, 3.84), Vector3(.13, 2.32, .17), Color("#60422e"), false)
+	_box(room, "Door jamb right", Vector3(1.27, 1.16, 3.84), Vector3(.13, 2.32, .17), Color("#60422e"), false)
+	_box(room, "Door lintel", Vector3(0, 2.28, 3.84), Vector3(2.72, .16, .20), Color("#b79165"), false)
+	_box(room, "Wooden exit door", Vector3(0, -0.10, 3.84), Vector3(2.4, .18, .65), Color("#805938"), false)
+	var light := OmniLight3D.new()
+	light.name = "Warm morning lamp"
+	light.position = Vector3(0, 2.75, 0)
+	light.light_color = Color(1.0, 0.79, 0.54)
+	light.light_energy = 1.25
+	light.omni_range = 11.0
+	room.add_child(light)
+	var elder := FolkActors.person("Lola seated", Color(0.66, 0.47, 0.33), Color(0.32, 0.28, 0.31))
+	elder.position = Vector3(-0.35, 0.0, -2.8)
+	elder.rotation.y = -2.35
+	room.add_child(elder)
+	_target(room, "LOLA_HOME", Vector3(-0.35, 0, -2.8))
+	_target(room, "BLUE_NOTEBOOK", Vector3(-2.65, 0.73, -2.25))
+	_target(room, "WARM_CUP", Vector3(1.45, 0, -0.35))
+	_target(room, "RIVER_PHOTO", Vector3(2.75, 0, -3.0))
+	_target(room, "HUT_EXIT", Vector3(0, 0, 3.1))
+	return _targets(room)
+
+
+static func _targets(room: Node3D) -> Dictionary:
+	var output := {}
+	for id in ["LOLA_HOME", "BLUE_NOTEBOOK", "WARM_CUP", "RIVER_PHOTO", "HUT_EXIT"]:
+		output[id] = room.get_node(id)
+	return output
+
+
+static func _target(room: Node3D, id: String, at: Vector3) -> void:
+	var node := Node3D.new()
+	node.name = id
+	node.position = at
+	room.add_child(node)
+
+
+static func _box(parent: Node3D, label: String, at: Vector3, dimensions: Vector3, color: Color, physical: bool) -> void:
+	var mesh := MeshInstance3D.new()
+	mesh.name = label
+	var shape := BoxMesh.new()
+	shape.size = dimensions
+	mesh.mesh = shape
+	var material := StandardMaterial3D.new()
+	material.albedo_color = color
+	material.roughness = 0.92
+	# Imported original textile artwork is used in the native Godot renderer,
+	# not just in the Android software fallback or asset directory.
+	if label == "Bamboo floor" or label == "Raised bamboo porch":
+		material.albedo_texture = BAMBOO_FLOOR
+		material.albedo_color = Color.WHITE
+		material.uv1_scale = Vector3(4.0, 1.0, 4.0)
+	elif label.contains("woven wall"):
+		material.albedo_texture = SAWALI_WALL
+		material.albedo_color = Color.WHITE
+		material.uv1_scale = Vector3(3.0, 1.0, 2.0)
+	elif label == "Woven rug":
+		material.albedo_texture = BANIG_MAT
+		material.albedo_color = Color.WHITE
+	mesh.material_override = material
+	mesh.position = at
+	parent.add_child(mesh)
+	if physical:
+		var body := StaticBody3D.new()
+		body.name = label + " collision"
+		body.position = at
+		var collider := CollisionShape3D.new()
+		var hitbox := BoxShape3D.new()
+		hitbox.size = dimensions
+		collider.shape = hitbox
+		body.add_child(collider)
+		parent.add_child(body)

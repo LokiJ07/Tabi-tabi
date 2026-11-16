@@ -1,0 +1,5 @@
+# G5 — Shaped traditional banca asset and renderer boundaries
+
+The old river boat in `main.gd` was a single unconvincing rectangular cuboid. `scripts/world/river_banca.gd` builds a tapered triangular `ArrayMesh` hull with a dark wood material, three slatted seats, outrigger beams/bamboo floats, bindings and a paddle. Idle floating has subtle visual-only rock; Reduced Motion disables it. No gameplay collision/path geometry is modified. Setup is idempotent, and CI checks hull surface creation, prop counts, scene wiring and reduced-motion behavior.
+
+The goal is to improve the visible riverside silhouette with original lightweight geometry while leaving Night 1 quests unchanged. The external connected 3D generation provider reported **no remaining Plus monthly credits** when attempted; no externally generated GLB was imported this pass. The procedural banca is not equivalent to a production commissioned artist mesh. Actual rendered geometry requires a physical GPU test because the Android SwiftShader emulator has a known fragment uniform shader failure.

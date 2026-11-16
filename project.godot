@@ -1,0 +1,34 @@
+; Engine configuration file.
+; TABI-TABI / G0-G1 foundation
+config_version=5
+
+[application]
+config/name="TABI-TABI"
+run/main_scene="res://scenes/title.tscn"
+config/icon="res://assets/branding/tabi_tabi_icon.svg"
+config/features=PackedStringArray("4.3", "GL Compatibility")
+config/description="Barrio Lawom — Night 1 vertical slice"
+
+[display]
+window/size/viewport_width=1280
+window/size/viewport_height=720
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+; Night 1 is a landscape-only game. SENSOR (6) allowed portrait and
+; squeezed the menu into a tall unusable Android screen.
+window/handheld/orientation=4
+
+[rendering]
+; Bound per-surface GLES3 shader light arrays for low-limit Android/SwiftShader.
+; Only two local lights may influence one mesh simultaneously; Night 1 uses
+; targeted lantern, spirit, and one directional key rather than 8+8 lights.
+limits/opengl/max_lights_per_object=2
+limits/opengl/max_renderable_lights=12
+textures/vram_compression/import_etc2_astc=true
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
+textures/default_filters/use_nearest_mipmap_filter=false
+environment/defaults/default_clear_color=Color(0.18, 0.26, 0.27, 1)
+
+[physics]
+3d/default_gravity=24.0

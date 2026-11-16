@@ -1,0 +1,168 @@
+name: Android debug APK
+on:
+  workflow_dispatch:
+  push:
+    branches: ['feature/**']
+permissions:
+  contents: write
+concurrency:
+  group: night1-rolling-preview
+  cancel-in-progress: true
+jobs:
+  android-debug:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools'
+      - name: Install Android platform and build tools
+        run: sdkmanager 'platforms;android-35' 'build-tools;35.0.0'
+      - name: Install Godot 4.3
+        run: |
+          curl -fL --retry 3 -o godot.zip "https://github.com/godotengine/godot-builds/releases/download/4.3-stable/Godot_v4.3-stable_linux.x86_64.zip"
+          unzip -q godot.zip
+          chmod +x Godot_v4.3-stable_linux.x86_64
+          sudo mv Godot_v4.3-stable_linux.x86_64 /usr/local/bin/godot
+      - name: Install Android export templates
+        run: |
+          curl -fL --retry 3 -o templates.tpz "https://github.com/godotengine/godot-builds/releases/download/4.3-stable/Godot_v4.3-stable_export_templates.tpz"
+          mkdir -p "$HOME/.local/share/godot/export_templates/4.3.stable"
+          unzip -q templates.tpz -d exported
+          cp exported/templates/* "$HOME/.local/share/godot/export_templates/4.3.stable/"
+      - name: Create ephemeral test signing key
+        run: |
+          keytool -genkeypair -alias androiddebugkey -keyalg RSA -keysize 2048 -validity 3650 -keystore "$RUNNER_TEMP/debug.keystore" -storepass android -keypass android -dname "CN=TabiTabi Debug, O=Development, C=PH"
+      - name: Configure Godot Android editor paths
+        run: |
+          mkdir -p "$HOME/.config/godot"
+          cat > "$HOME/.config/godot/editor_settings-4.tres" <<EOF
+          [gd_resource type="EditorSettings" format=3]
+
+          [resource]
+          export/android/android_sdk_path = "$ANDROID_HOME"
+          export/android/java_sdk_path = "$JAVA_HOME"
+          EOF
+          cp "$HOME/.config/godot/editor_settings-4.tres" "$HOME/.config/godot/editor_settings-4.3.tres"
+      - name: Set monotonic Android QA version
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import os
+          path = Path("export_presets.cfg")
+          lines = path.read_text().splitlines()
+          run = int(os.environ["GITHUB_RUN_NUMBER"])
+          lines = [f"version/code={run}" if line.startswith("version/code=") else
+                   f'version/name="0.9.0-night1-qa.{run}"' if line.startswith("version/name=") else
+                   line for line in lines]
+          path.write_text("\n".join(lines) + "\n")
+          print("Android QA version", run)
+          PY
+      - name: Import project
+        run: godot --headless --editor --path . --import --quit
+      - name: Gate the preview on essential story and equipment tests
+        run: |
+          godot --headless --path . --script res://tests/night01_state_test.gd
+          godot --headless --path . --script res://tests/night01_inventory_test.gd
+          godot --headless --path . --script res://tests/preferences_test.gd
+          godot --headless --path . --script res://tests/night01_courage_test.gd
+          godot --headless --path . --script res://tests/night01_aftermath_test.gd
+          godot --headless --path . --script res://tests/night01_flow_test.gd
+          godot --headless --path . --script res://tests/night01_prologue_test.gd
+          godot --headless --path . --script res://tests/night01_save_recovery_test.gd
+          godot --headless --path . --script res://tests/night01_hud_test.gd
+          godot --headless --path . --script res://tests/night01_stage3_hud_test.gd
+          godot --headless --path . --script res://tests/folk_actors_test.gd
+          godot --headless --path . --script res://tests/night01_cinematic_test.gd
+          godot --headless --path . --script res://tests/night01_camera_test.gd
+          godot --headless --path . --script res://tests/barrio_lighting_test.gd
+          godot --headless --path . --script res://tests/river_banca_test.gd
+          godot --headless --path . --script res://tests/barrio_details_test.gd
+          godot --headless --path . --script res://tests/night01_mangrove_art_test.gd
+          godot --headless --path . --script res://tests/night01_title_and_art_test.gd
+          godot --headless --path . --script res://tests/night01_navigation_test.gd
+          godot --headless --path . --script res://tests/night01_illustrated_art_test.gd
+          godot --headless --path . --script res://tests/night01_world_cohesion_test.gd
+          godot --headless --path . --script res://tests/living_ambience_test.gd
+          godot --headless --path . --script res://tests/night01_journal_test.gd
+      - name: Export debug APK
+        env:
+          GODOT_ANDROID_KEYSTORE_DEBUG_PATH: ${{ runner.temp }}/debug.keystore
+          GODOT_ANDROID_KEYSTORE_DEBUG_USER: androiddebugkey
+          GODOT_ANDROID_KEYSTORE_DEBUG_PASSWORD: android
+        run: |
+          mkdir -p build
+          godot --headless --path . --export-debug Android build/tabi-tabi-night1-debug.apk
+          test -s build/tabi-tabi-night1-debug.apk
+      - name: Verify signed APK and architecture entries
+        run: |
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose build/tabi-tabi-night1-debug.apk
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging build/tabi-tabi-night1-debug.apk | head -n 4
+          unzip -Z1 build/tabi-tabi-night1-debug.apk | grep -Fqx "lib/arm64-v8a/libgodot_android.so"
+          unzip -Z1 build/tabi-tabi-night1-debug.apk | grep -Fqx "lib/x86_64/libgodot_android.so"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tabi-tabi-night1-debug-apk
+          path: build/tabi-tabi-night1-debug.apk
+          if-no-files-found: error
+          retention-days: 14
+      - name: Publish rolling Night 1 prerelease (direct APK URL)
+        if: github.ref == 'refs/heads/feature/night1-foundation'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if ! gh release view night1-dev >/dev/null 2>&1; then
+            gh release create night1-dev --target "$GITHUB_SHA" --prerelease --title "TABI-TABI — Night 1 Development Preview" --notes "Experimental Android ARM64 debug build. Not a completed game or production release. Use for evaluation only; each CI run uses a temporary signing key, so different APKs may require uninstalling."
+          fi
+          gh release upload night1-dev build/tabi-tabi-night1-debug.apk --clobber
+          echo "Direct APK: https://github.com/${GITHUB_REPOSITORY}/releases/download/night1-dev/tabi-tabi-night1-debug.apk"
+  emulator-smoke:
+    needs: android-debug
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: tabi-tabi-night1-debug-apk
+          path: build
+      - name: Enable Linux KVM acceleration
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Install and launch Android APK on emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          target: google_apis
+          profile: pixel_5
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none
+          script: bash .github/scripts/android_emulator_smoke.sh
+      - name: Save Android launch screenshot and crash logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tabi-tabi-emulator-launch-evidence
+          path: |
+            build/android-night1-title.png
+            build/android-night1-launch.png
+            build/android-night1-village.png
+            build/android-night1-shore-dock.png
+            build/android-night1-night-river.png
+            build/android-night1-notebook.png
+            build/android-night1-notebook-scrolled.png
+            build/android-night1-preparation.png
+            build/android-night1-options.png
+            build/android-godot-renderer-log.txt
+            build/android-night1-launch-log.txt
+            build/android-display.txt
+          if-no-files-found: warn
+          retention-days: 7
