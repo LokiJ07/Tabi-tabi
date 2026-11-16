@@ -59,8 +59,8 @@ func _run() -> void:
 		await process_frame
 		await process_frame
 		var back = current_scene
-		check(back != null and back.name == "Main", "return crossing loads same original Barrio gameplay")
-		if back != null and back.name == "Main":
+		check(back != null and back.name == "TabiTabi", "return crossing loads same original Barrio gameplay")
+		if back != null and back.name == "TabiTabi":
 			check(back.player.global_position.distance_to(World.ARRIVAL_BARRIO) < 2.0, "returns at correct path entrance, not random spawn")
 			check(back.story.outcome == "partial", "Night 1 case and consequences intact")
 			back.queue_free()
