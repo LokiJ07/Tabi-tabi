@@ -13,6 +13,7 @@ const SharedHUD = preload("res://scripts/ui/shared_hud.gd")
 const SharedMotion = preload("res://scripts/ui/shared_dialogue_motion.gd")
 const SharedAtmosphere = preload("res://scripts/visuals/shared_immersive_atmosphere.gd")
 const DimensionalArt = preload("res://scripts/visuals/layered_25d.gd")
+const NightWindows = preload("res://scripts/visuals/nighttime_windows.gd")
 const Landscape = preload("res://scripts/visuals/folklore_landscape_25d.gd")
 const Sound = preload("res://scripts/audio/night02_ambience.gd")
 const Portrait = preload("res://scripts/ui/speaker_portrait.gd")
@@ -427,6 +428,11 @@ func _draw() -> void:
 	if _stage() >= 1:
 		Landscape.mist(self,Vector2(-65,430),560.0,particles,
 			not prefs.reduced_motion,_stage()>=2)
+	# Flood-watchpost is an isolated shelter, not a crowded house. Its
+	# small window glows after dusk without adding a phantom outdoor NPC.
+	if _stage() >= 2:
+		NightWindows.paint_window(self,SAFE_LOOKOUT+Vector2(-38,-114),
+			Vector2(36,40),3,true,particles,prefs.reduced_motion)
 	# Full creature appears ONLY after the verified route; no day spoiler.
 	if (story.phase == 4 and story.outcome == "") or debug_night_preview:
 		var shift := sin(particles*.75)*4.0 if not prefs.reduced_motion else 0.0

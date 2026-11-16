@@ -10,6 +10,7 @@ const World = preload("res://scripts/core/connected_world.gd")
 const Preferences = preload("res://scripts/core/preferences.gd")
 const SharedHUD = preload("res://scripts/ui/shared_hud.gd")
 const DimensionalArt = preload("res://scripts/visuals/layered_25d.gd")
+const NightWindows = preload("res://scripts/visuals/nighttime_windows.gd")
 const Landscape = preload("res://scripts/visuals/folklore_landscape_25d.gd")
 const Atmosphere = preload("res://scripts/visuals/shared_immersive_atmosphere.gd")
 const Ambient = preload("res://scripts/audio/night02_ambience.gd")
@@ -276,7 +277,8 @@ func _house() -> void:
 		door+Vector2(51,-179),door+Vector2(-31,-179)]),Color("#342c2c"))
 	draw_line(door+Vector2(-30,-179),door+Vector2(52,-179),Color("#e0c18a"),6)
 	# Actual lit wake windows and different wall-facing perspective.
-	var glow := Color("#d49d65") if _stage() < 2 else Color("#f4ca83")
+	var glow := Color("#444b49") if _stage() < 2 else Color("#4d4643")
+	# Illumination is painted AFTER nighttime darkness, not baked into day walls.
 	for shift in [Vector2(-145,-141),Vector2(152,-141)]:
 		draw_rect(Rect2(door+shift,Vector2(80,77)),glow)
 		draw_rect(Rect2(door+shift,Vector2(80,77)),Color("#503d31"),false,5)
@@ -374,14 +376,29 @@ func _draw() -> void:
 		Landscape.mist(self,Vector2(120,285),700.0,elapsed,not prefs.reduced_motion,true)
 		for point in [Vector2(-290,20),Vector2(260,5),Vector2(455,-95)]:
 			draw_circle(point,132,Color(1,.65,.30,.05))
-	# Human faces always drawn on top of dusk grade; depth sorted by foot.
-	var people := [
-		{"at":Vector2(-420,-180),"tex":NENA,"size":Vector2(107,140)},
-		{"at":Vector2(-515,145),"tex":SABEL,"size":Vector2(91,125)},
-		{"at":Vector2(-265,100),"tex":MARA,"size":Vector2(95,130)},
-		{"at":bantay_pos+Vector2(0,19),"tex":BANTAY,"size":Vector2(96,104)},
-		{"at":player_pos+Vector2(0,8),"tex":HERO,"size":Vector2(108,142)}
-	]
+	# The wake is brightly attended INSIDE at night, not a crowd of idle
+	# daytime NPC sprites frozen outside. Windows and curtains convey their
+	# safe presence behind the walls during the defensive encounter.
+	if _stage() >= 2:
+		var door := (WAKE_HOUSE+Vector2(-290,110)).lerp(WAKE_HOUSE+Vector2(220,160),.43)
+		for i in range(2):
+			var shift := Vector2(-145,-141) if i == 0 else Vector2(152,-141)
+			NightWindows.paint_window(self,door+shift+Vector2(40,38),
+				Vector2(80,77),1 if i == 0 else 0,true,elapsed,prefs.reduced_motion)
+		# Rear entrance remains a danger cue: mostly dark, not a safe exit.
+		NightWindows.paint_window(self,Vector2(365,-303),Vector2(53,51),
+			2,true,elapsed,prefs.reduced_motion,false)
+	# Human cast is rendered above the warmth. Story dialogue and evidence
+	# still work when residents have moved inside, not been deleted.
+	var people: Array[Dictionary] = []
+	if NightWindows.outdoor_actor_visible(4,_stage(),"NENA"):
+		people.append({"at":Vector2(-420,-180),"tex":NENA,"size":Vector2(107,140)})
+	if NightWindows.outdoor_actor_visible(4,_stage(),"SABEL"):
+		people.append({"at":Vector2(-515,145),"tex":SABEL,"size":Vector2(91,125)})
+	if NightWindows.outdoor_actor_visible(4,_stage(),"MARA"):
+		people.append({"at":Vector2(-265,100),"tex":MARA,"size":Vector2(95,130)})
+	people.append({"at":bantay_pos+Vector2(0,19),"tex":BANTAY,"size":Vector2(96,104)})
+	people.append({"at":player_pos+Vector2(0,8),"tex":HERO,"size":Vector2(108,142)})
 	people.sort_custom(func(a: Dictionary,b: Dictionary)->bool:
 		return (a["at"] as Vector2).y < (b["at"] as Vector2).y)
 	for actor in people:
