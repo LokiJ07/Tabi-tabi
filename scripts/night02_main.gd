@@ -380,13 +380,14 @@ func _draw() -> void:
 		var width: float = actor["width"]
 		var height: float = actor["height"]
 		draw_texture_rect(actor["texture"],Rect2(foot-Vector2(width*.5,height),Vector2(width,height)),false)
-	# The observation and negotiation stages are genuinely twilight, not
-	# the identical green daytime village with a changed objective label.
-	if story.phase >= 2 or debug_dusk_preview:
-		draw_rect(Rect2(-1500,-1200,3000,2600),Color(.045,.085,.16,.26))
-		# Foreground warm lantern pool on the lookout, plus diffuse fireflies
-		# around the living old mango. Original and low-cost CanvasItem art.
-		draw_circle(OBSERVATION + Vector2(-92,-92),103,Color(1.0,.65,.23,.050))
+	# Time-of-day follows story stage, never an arbitrary realtime clock.
+	# Keep paths and clue shapes readable for accessibility during darkness.
+	var light_stage := _light_stage()
+	if light_stage == 1:
+		draw_rect(Rect2(-1500,-1200,3000,2600),Color(.27,.10,.04,.19))
+	elif light_stage >= 2:
+		draw_rect(Rect2(-1500,-1200,3000,2600),Color(.015,.032,.11,.48))
+		draw_circle(OBSERVATION + Vector2(-92,-92),130,Color(1.0,.65,.23,.065))
 		for i in range(19):
 			var firefly_angle := float(i) * 2.39996
 			var firefly_r := 85.0 + float(i % 7) * 24.0
@@ -397,14 +398,30 @@ func _draw() -> void:
 					cos(particle_phase*.73+float(i)*1.6)*8.0)
 			draw_circle(firefly,2.3,Color("#ffe6a1"))
 			draw_circle(firefly,8.0,Color(1.0,.79,.38,.075))
+		_draw_kapre_smoke()
 	_draw_world_labels()
-	if story.phase >= 2 or story.outcome != "" or debug_dusk_preview:
-		# Suspense arrives only once the safety route is secured.
-		draw_circle(TREE+Vector2(135,-192),35 + sin(particle_phase*1.5)*4.0,Color(1.0,.68,.25,.09))
 	if story.outcome == "resolve":
 		draw_arc(TREE, 157, 0, TAU, 80, Color("#bcd79d",.58), 3.0)
 	elif story.outcome == "partial":
 		draw_arc(TREE, 157, 0, TAU, 80, Color("#e2b879",.58), 3.0)
+
+func _draw_kapre_smoke() -> void:
+	# First nighttime manifestation: a cigar ember and drifting smoke.
+	# The body remains hidden until the player's respectful greeting.
+	var cigar_tip := TREE + Vector2(216,-365)
+	var pulse := .86 + .14 * sin(particle_phase * 4.2)
+	draw_circle(cigar_tip,26.0 * pulse,Color(1.0,.35,.08,.065))
+	draw_circle(cigar_tip,11.0 * pulse,Color(1.0,.45,.13,.16))
+	draw_circle(cigar_tip,4.5,Color("#ffbd57"))
+	draw_circle(cigar_tip,2.4,Color("#fff0bc"))
+	for i in range(13):
+		var drift := fposmod(particle_phase*.14 + float(i)/13.0,1.0)
+		var bend := sin(drift * TAU * 1.3 + float(i) * .65)
+		var center := cigar_tip + Vector2(bend * 28.0 + drift*20.0,-drift*177.0)
+		var opacity := (1.0-drift) * (.15 if _kapre_revealed() else .20)
+		draw_circle(center,10.0 + drift*19.0,Color(.76,.81,.77,opacity*.38))
+		draw_arc(center,11.0+drift*19.0,PI*.18,PI*1.47,
+			12,Color(.78,.84,.79,opacity),2.4,true)
 
 func _polyline(points: Array[Vector2], color: Color, width: float) -> void:
 	draw_polyline(PackedVector2Array(points), color, width, true)
