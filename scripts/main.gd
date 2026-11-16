@@ -27,6 +27,7 @@ const UI_DAYNIGHT: Texture2D = preload("res://assets/ui/daynight.svg")
 const Mangrove = preload("res://scripts/world/mangrove.gd")
 const CinematicCamera = preload("res://scripts/visuals/cinematic_camera.gd")
 const SharedHUD = preload("res://scripts/ui/shared_hud.gd")
+const SharedDialogueMotion = preload("res://scripts/ui/shared_dialogue_motion.gd")
 const SharedAtmosphere = preload("res://scripts/visuals/shared_immersive_atmosphere.gd")
 const BarrioLighting = preload("res://scripts/visuals/barrio_lighting.gd")
 const RiverBanca = preload("res://scripts/world/river_banca.gd")
@@ -1357,15 +1358,9 @@ func _show_dialogue(value: String, speaker_context: String = "NARRATOR") -> void
 	_close_settings()
 	dialogue_pages = ConversationPages.parse(value, speaker_context)
 	dialogue_page = 0
-	dialogue.show()
+	SharedDialogueMotion.reveal(dialogue,preferences.reduced_motion)
 	_render_dialogue_page()
 	_sync_modal_ui()
-	if not preferences.reduced_motion:
-		dialogue.modulate.a = 0.0
-		var fade := create_tween()
-		fade.tween_property(dialogue, "modulate:a", 1.0, 0.22)
-	else:
-		dialogue.modulate.a = 1.0
 
 
 func _render_dialogue_page() -> void:
@@ -1386,6 +1381,8 @@ func _render_dialogue_page() -> void:
 	var color: Color = FolkActors.identity(role)["accent"] if role != "NARRATOR" else Color("#d7c69c")
 	dialogue_speaker.add_theme_color_override("font_color", color.lightened(0.15))
 	dialogue_next_button.text = "NEXT SPEAKER  >" if dialogue_page + 1 < dialogue_pages.size() else "CONTINUE / CLOSE"
+	if dialogue_page > 0:
+		SharedDialogueMotion.speaker_change([dialogue_speaker,dialogue_text,dialogue_portrait],preferences.reduced_motion)
 	var scroller := dialogue.get_node("DialogueLayout/DialogueScroll") as ScrollContainer
 	scroller.scroll_vertical = 0
 
@@ -1422,8 +1419,7 @@ func _advance_dialogue() -> void:
 func _close_dialogue() -> void:
 	camera_director.release()
 	if dialogue != null:
-		dialogue.hide()
-		dialogue.modulate.a = 1.0
+		SharedDialogueMotion.conceal(dialogue,preferences.reduced_motion)
 	dialogue_pages.clear()
 	dialogue_page = 0
 	_clear_touch_input()
