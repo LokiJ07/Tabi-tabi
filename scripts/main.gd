@@ -254,6 +254,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		var key := event as InputEventKey
 		if key.pressed and not key.echo:
 			match key.keycode:
+				KEY_F5:
+					_qa_show_world_view(Vector3(2.0, 0.75, -19.65), false, "NORTH_TRAIL")
+					get_viewport().set_input_as_handled()
+					return
 				KEY_F6:
 					_qa_show_world_view(Vector3(2.0, 0.75, -4.0), false, "VILLAGE")
 					get_viewport().set_input_as_handled()
