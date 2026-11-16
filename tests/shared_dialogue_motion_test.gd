@@ -42,6 +42,14 @@ func _run() -> void:
 	Motion.reveal(panel,true)
 	check(panel.visible and is_equal_approx(panel.modulate.a,1.0)
 		and panel.scale == Vector2.ONE, "reduced motion reveals with no scaling or delay")
+	var hud := Control.new()
+	ui.add_child(hud)
+	Motion.restore_gameplay(hud,false)
+	check(hud.modulate.a < 1.0, "HUD return has actual opacity easing")
+	Motion.reset_gameplay(hud)
+	check(is_equal_approx(hud.modulate.a,1.0), "new modal cancels in-flight HUD easing")
+	Motion.restore_gameplay(hud,true)
+	check(is_equal_approx(hud.modulate.a,1.0), "Reduced Motion leaves HUD immediately fully legible")
 	ui.queue_free()
 	await process_frame
 
@@ -59,6 +67,8 @@ func _run() -> void:
 	night1._close_dialogue()
 	check(not night1.dialogue.visible and night1.gameplay_hud.visible,
 		"Night 1 close returns HUD instantly while visual fade finishes")
+	check(night1.gameplay_hud.modulate.a < 1.0,
+		"Night 1 uses soft HUD return instead of abrupt control appearance")
 	night1.preferences.reduced_motion = true
 	night1._show_dialogue("NARRATOR: Reduced motion is readable.")
 	check(night1.dialogue.modulate.a == 1.0 and night1.dialogue.scale == Vector2.ONE,
@@ -75,6 +85,8 @@ func _run() -> void:
 	night2._choose("close")
 	check(not night2.dialogue.visible and night2.gameplay_controls.visible,
 		"Night 2 closes dialogue without holding movement or save state")
+	check(night2.gameplay_controls.modulate.a < 1.0,
+		"Night 2 returns its identical HUD using the same 0.16-second ease")
 	night2.player_pos = night2.TREE + Vector2(-120.0,50.0)
 	night2._show_dialogue("KAPRE","Ayaw og kahadlok sa kahoy.",
 		[{"label":"CONTINUE","action":"close"}])
