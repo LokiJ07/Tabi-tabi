@@ -230,6 +230,8 @@ func _draw_village() -> void:
 	# Far background keeps the actual north region textured and recognizable
 	# on Android SwiftShader, even outside the physically walkable boundary.
 	var upland: Array[Vector3] = [
+		Vector3(9.5, 0, -30), Vector3(12.5, 0, -27),
+		Vector3(15.5, 0, -25), Vector3(9.0, 0, -26),
 		Vector3(13, 0, -34), Vector3(18, 0, -40),
 		Vector3(23, 0, -35), Vector3(28, 0, -42),
 		Vector3(33, 0, -34), Vector3(37, 0, -47),
