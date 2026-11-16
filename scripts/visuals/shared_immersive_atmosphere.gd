@@ -57,15 +57,37 @@ func _draw() -> void:
 				var x := fposmod(float(i*137) + clock*float(36 + i%4*10),w+120.0)-60.0
 				var y := fposmod(float(i*83) + clock*float(96+i%5*13),h+90.0)-45.0
 				draw_line(Vector2(x,y),Vector2(x-13,y+28),Color(.70,.85,.90,.045),1.4,true)
-	else:
-		# Mangrove/mango understory: low, slow-moving fog with leaf
-		# silhouettes in the margins, not on the center objective.
+	elif chapter_id == 2:
+		# Preserve the approved Kapre fog exactly as it appeared in Night 2.
 		var fog_alpha := .026 + tension*.032
 		for i in range(8):
 			var x := float(i)*w/7.0 - (0.0 if reduced_motion else fposmod(clock*12.0,float(w)/7.0))
 			var y := h*(.78 + .04*sin(float(i)*1.8))
 			draw_circle(Vector2(x,y),h*(.06 + float(i%3)*.018),
 				Color(.70,.81,.75,fog_alpha))
+	else:
+		# The ridge is a separate elevation/weather system: pale, low cloud
+		# wisps follow the slope, with subtle moving gaps. Drawn below the
+		# HUD and above the world, never intercepting gameplay touch events.
+		# All animation stops entirely when Reduced Motion is enabled.
+		var ridge_alpha := .017 + tension*.018
+		for i in range(10):
+			var step := float(i)
+			var drift := 0.0 if reduced_motion else sin(clock*(.22+float(i%3)*.07)+step*1.3)*17.0
+			var x := (step+.35)*w/10.0+drift
+			var y := h*(.75+.045*sin(step*1.1))
+			draw_circle(Vector2(x,y),h*(.052+float(i%3)*.012),
+				Color(.63,.77,.76,ridge_alpha))
+		# Thin cloud at the far upper edges reinforces height and distance
+		# without placing opaque fog over the evidence, notebook or faces.
+		if light_stage >= 2:
+			for i in range(5):
+				var step := float(i)
+				var sway := 0.0 if reduced_motion else sin(clock*.28+step)*11.0
+				var x := step*w/4.0+sway
+				var y := h*(.12+.024*sin(step*1.6))
+				draw_circle(Vector2(x,y),h*.044,
+					Color(.49,.62,.68,.012+tension*.010))
 	# A softened peripheral heartbeat responds to genuinely rising danger.
 	if tension >= .55:
 		var beat := 0.0 if reduced_motion else pow(maxf(0.0,sin(clock*6.9)),8.0)
