@@ -723,7 +723,12 @@ func _sync_modal_ui() -> void:
 	if gameplay_hud == null or modal_backdrop == null:
 		return
 	var active: bool = _is_reading_ui()
+	var was_visible := gameplay_hud.visible
 	gameplay_hud.visible = not active
+	if active and was_visible:
+		SharedDialogueMotion.reset_gameplay(gameplay_hud)
+	elif not active and not was_visible:
+		SharedDialogueMotion.restore_gameplay(gameplay_hud,preferences.reduced_motion)
 	modal_backdrop.visible = active
 	modal_backdrop.color = Color(0.015, 0.035, 0.05, 0.30 if dialogue != null and dialogue.visible else 0.76)
 
