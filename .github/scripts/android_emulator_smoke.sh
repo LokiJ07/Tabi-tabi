@@ -157,6 +157,7 @@ capture_live_view() {
   python3 .github/scripts/assert_gameplay_visible.py "build/$filename"
 }
 capture_live_view 135 NORTH_TRAIL android-night1-connected-trail.png
+python3 .github/scripts/assert_north_trail_terrain.py build/android-night1-connected-trail.png
 capture_live_view 136 VILLAGE android-night1-village.png
 capture_live_view 137 SHORE android-night1-shore-dock.png
 capture_live_view 138 NIGHT android-night1-night-river.png
