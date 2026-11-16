@@ -48,12 +48,22 @@ dismiss_system_anr() {
   adb shell am force-stop com.google.android.apps.nexuslauncher >/dev/null 2>&1 || true
 }
 dismiss_system_anr
-sleep 2
+# Godot may still be importing its first-run SVG cache on SwiftShader even
+# after Android has switched into landscape. The prior CI snapshot captured
+# the genuine Godot splash screen, then prematurely failed after two seconds.
+# Wait for the exact in-engine title log, not an arbitrary time or screenshot.
+title_ready=0
+for attempt in $(seq 1 20); do
+  if adb logcat -d -v brief | grep -q "NIGHT1_QA_TITLE_SCENE_READY"; then
+    title_ready=1
+    break
+  fi
+  sleep 3
+done
 adb exec-out screencap -p > build/android-night1-title.png
 
-# Explicitly verify the title scene booted; a dark Android system popup
-# or an Android Home screen must never count as a game launch.
-if ! adb logcat -d -v brief | grep -q "NIGHT1_QA_TITLE_SCENE_READY"; then
+# Never count Godot's splash logo or system launcher as the real title.
+if [ "$title_ready" -ne 1 ]; then
   echo "ERROR: Godot title screen did not start"
   adb logcat -d | grep -E 'Godot|AndroidRuntime|NIGHT1_QA' | tail -n 70 || true
   exit 1
