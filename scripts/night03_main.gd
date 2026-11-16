@@ -703,7 +703,7 @@ func _refresh_hint() -> void:
 	var difference: Vector2 = next["point"]-player_pos
 	var angle := atan2(difference.y,difference.x)
 	var octant := posmod(roundi((angle+PI)/(PI/4.0)),8)
-	var compass := ["←","↖","↑","↗","→","↘","↓","↙"][octant]
+	var compass: String = ["←","↖","↑","↗","→","↘","↓","↙"][octant]
 	if difference.length() < 122.0:
 		compass = "◆"
 	waypoint.text = compass+"  "+str(next["name"])+"\n%d STEPS" % roundi(difference.length()/11.0)
