@@ -12,13 +12,14 @@ const LABELS := {
 	"LOLA_HOME": "LOLA PASING",
 	"BLUE_NOTEBOOK": "BLUE NOTEBOOK",
 	"WARM_CUP": "WARM CUP",
-	"RIVER_PHOTO": "OLD RIVER PHOTO"
+	"RIVER_PHOTO": "OLD RIVER PHOTO",
+	"MANGO_TRAIL": "NORTH TRAIL • OLD MANGO TREE"
 }
 
 static func closest(origin: Vector3, targets: Dictionary) -> String:
 	var nearest := ""
 	var best := RANGE
-	for id in ["LOLA", "DADO", "MOORING", "SABEL", "MARA", "HUT_ENTRY", "HUT_EXIT", "LOLA_HOME", "BLUE_NOTEBOOK", "WARM_CUP", "RIVER_PHOTO"]:
+	for id in ["LOLA", "DADO", "MOORING", "SABEL", "MARA", "HUT_ENTRY", "HUT_EXIT", "LOLA_HOME", "BLUE_NOTEBOOK", "WARM_CUP", "RIVER_PHOTO", "MANGO_TRAIL"]:
 		if not targets.has(id):
 			continue
 		var point: Vector3 = targets[id]
