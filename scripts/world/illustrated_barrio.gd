@@ -54,6 +54,23 @@ static func decorate(world: Node3D) -> Node3D:
 		_sprite(root, "Painted estuary mangrove %02d" % i, ROOTS, grove_positions[i],
 			0.0070 if i % 2 == 0 else 0.0063, true, i % 3 == 0)
 
+	# The northern forest connector must not end in empty colored space.
+	# Tidal trees stay west of the path; inland banana and flowers frame the
+	# old mango grove entrance without obstructing player collision.
+	for i in range(7):
+		var north_z := -24.3 - float(i) * 2.13
+		_sprite(root, "Northern estuary mangrove %02d" % i, ROOTS,
+			Vector3(-16.5 - float(i % 2) * 3.0, 2.38, north_z), 0.0071, true, i % 3 == 0)
+	for i in range(8):
+		var north_z := -23.1 - float(i) * 1.91
+		_sprite(root, "Northern village foliage %02d" % i, BANANA,
+			Vector3(9.0 + float(i % 3) * 2.7, 2.24, north_z),
+			0.0078, true, i % 3 == 1)
+	for i in range(7):
+		var north_z := -23.5 - float(i) * 1.99
+		_sprite(root, "Old Mango route wildflowers %02d" % i, FLOWERS,
+			Vector3(4.7 + float(i % 3) * .5, .87, north_z),
+			0.0051, true, i % 2 == 0)
 	# Lush village silhouettes around the outside of the play path.
 	# Still allows player interaction with Lola, Dado, Mara and Sabel.
 	var banana_positions := [
@@ -107,8 +124,8 @@ static func _build_organic_footpath(parent: Node3D) -> void:
 	mat.roughness = 0.96
 	trail.set_material(mat)
 	for i in range(90):
-		var z0 := -20.5 + float(i) * (41.0 / 90.0)
-		var z1 := -20.5 + float(i + 1) * (41.0 / 90.0)
+		var z0 := -38.0 + float(i) * (58.5 / 90.0)
+		var z1 := -38.0 + float(i + 1) * (58.5 / 90.0)
 		var x0 := _path_center(z0)
 		var x1 := _path_center(z1)
 		var w0 := _path_half_width(z0)
@@ -145,8 +162,8 @@ static func _build_tidal_shore(parent: Node3D) -> void:
 		material.cull_mode = BaseMaterial3D.CULL_DISABLED
 		tool.set_material(material)
 		for i in range(90):
-			var za := -22.0 + float(i) * (44.0 / 90.0)
-			var zb := -22.0 + float(i + 1) * (44.0 / 90.0)
+			var za := -38.0 + float(i) * (60.0 / 90.0)
+			var zb := -38.0 + float(i + 1) * (60.0 / 90.0)
 			var xa := _tidal_edge(za)
 			var xb := _tidal_edge(zb)
 			var left_a := xa - 0.78 + float(strip) * 0.42
