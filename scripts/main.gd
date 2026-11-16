@@ -921,7 +921,7 @@ func _create_ui() -> void:
 	dialogue_close.name = "CloseDialogue"
 	dialogue_close.text = "CONTINUE"
 	dialogue_close.custom_minimum_size = Vector2(240, 52)
-	dialogue_close.pressed.connect(_advance_dialogue)
+	dialogue_close.pressed.connect(_on_dialogue_continue_pressed)
 	_style_modal_button(dialogue_close, false, true)
 	dialogue_next_button = dialogue_close
 	dialogue_layout.add_child(dialogue_close)
@@ -1377,6 +1377,7 @@ func _render_dialogue_page() -> void:
 		ConversationPages.display_name(role), dialogue_page + 1, dialogue_pages.size()
 	]
 	dialogue_text.text = str(item.get("text", ""))
+	SharedDialogueMotion.reveal_text(dialogue_text,preferences.reduced_motion)
 	dialogue_portrait.call("set_speaker", role)
 	# Physical prop narration keeps the world visible instead of reusing
 	# a misleading anonymous human portrait on every interaction.
@@ -1409,6 +1410,13 @@ func _frame_cinematic_speaker(role: String) -> void:
 	else:
 		target = player
 	camera_director.focus_on(target, role)
+
+
+func _on_dialogue_continue_pressed() -> void:
+	# First tap reveals remaining text; second tap progresses the conversation.
+	if SharedDialogueMotion.finish_text(dialogue_text):
+		return
+	_advance_dialogue()
 
 
 func _advance_dialogue() -> void:
