@@ -156,12 +156,68 @@ capture_live_view() {
   adb exec-out screencap -p > "build/$filename"
   python3 .github/scripts/assert_gameplay_visible.py "build/$filename"
 }
+capture_live_view 135 NORTH_TRAIL android-night1-connected-trail.png
+python3 .github/scripts/assert_north_trail_terrain.py build/android-night1-connected-trail.png
 capture_live_view 136 VILLAGE android-night1-village.png
 capture_live_view 137 SHORE android-night1-shore-dock.png
 capture_live_view 138 NIGHT android-night1-night-river.png
 python3 .github/scripts/assert_night_atmosphere.py build/android-night1-shore-dock.png build/android-night1-night-river.png
 
+# On the Night 2 development branch, launch the REAL new chapter through
+# its debug-only title shortcut. Never silently treat Night 1 screenshots as
+# Kapre evidence; verify the new scene's exact engine log marker first.
+if [ "${GITHUB_REF:-}" = "refs/heads/feature/night2-kapre" ]; then
+  adb shell am force-stop "$PKG" || true
+  adb shell monkey -p "$PKG" -c android.intent.category.LAUNCHER 1
+  sleep 7
+  adb shell input keyevent 140  # Android F10, QA only: enter Night 2 scene
+  sleep 7
+  if ! adb logcat -d -v brief | grep -q "NIGHT2_QA_SCENE_READY"; then
+    echo "ERROR: Night 2 Kapre scene did not actually launch"
+    adb logcat -d | grep -E 'NIGHT2_QA|Godot|AndroidRuntime' | tail -n 100 || true
+    exit 1
+  fi
+  adb exec-out screencap -p > build/android-night2-intro.png
+  for item in "137 WITNESS witness" "138 ROUTE shelter-route" "139 MANGO kapre-tree"; do
+    set -- $item
+    adb shell input keyevent "$1"
+    sleep 4
+    if ! adb logcat -d -v brief | grep -q "NIGHT2_QA_${2}_VIEW"; then
+      echo "ERROR: Chapter 2 ${2} viewport not drawn from live gameplay"
+      exit 1
+    fi
+    adb exec-out screencap -p > "build/android-night2-${3}.png"
+    python3 .github/scripts/assert_gameplay_visible.py "build/android-night2-${3}.png"
+  done
+  adb shell input keyevent 136  # F6: in-engine twilight/lantern art preview
+  sleep 3
+  if ! adb logcat -d -v brief | grep -q "NIGHT2_QA_DUSK_VIEW"; then
+    echo "ERROR: Kapre twilight view did not render from actual Godot gameplay"
+    exit 1
+  fi
+  adb exec-out screencap -p > build/android-night2-dusk.png
+  python3 .github/scripts/assert_gameplay_visible.py build/android-night2-dusk.png
+  adb shell input keyevent 135  # F5: view live walkable road back to Barrio
+  sleep 4
+  if ! adb logcat -d -v brief | grep -q "NIGHT2_QA_RETURN_TRAIL_VIEW"; then
+    echo "ERROR: Kapre return-to-Barrio trail is not in the running game"
+    exit 1
+  fi
+  adb exec-out screencap -p > build/android-night2-return-trail.png
+  python3 .github/scripts/assert_gameplay_visible.py build/android-night2-return-trail.png
+  adb logcat -d -v brief | grep -Ei 'NIGHT2_QA|Godot|AndroidRuntime' | tail -n 160 > build/android-night2-log.txt || true
+  echo "PASS: actual Kapre intro, witness area, shelter and mango tree run on Android"
+fi
+
 adb logcat -d -s AndroidRuntime:E Godot:E GodotEngine:E > build/android-night1-launch-log.txt || true
+# An emulator "launch PASS" must never conceal a GDScript exception. Godot
+# software renderers can log shader link errors on SwiftShader (handled by the
+# live 2.5D fallback); only genuine script/runtime failures are fatal here.
+adb logcat -d -v brief > build/android-entire-run-log.txt || true
+if grep -E "USER SCRIPT ERROR:|SCRIPT ERROR:|Invalid call\. Nonexistent function" build/android-entire-run-log.txt; then
+  echo "ERROR: Android gameplay contains Godot script exceptions"
+  exit 1
+fi
 if grep -q "FATAL EXCEPTION" build/android-night1-launch-log.txt; then
   cat build/android-night1-launch-log.txt
   exit 1

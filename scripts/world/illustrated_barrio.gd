@@ -5,6 +5,7 @@ const ROOT_NAME := "Night1IllustratedWorld"
 const ROOTS: Texture2D = preload("res://assets/world/mangrove_illustrated.svg")
 const FLOWERS: Texture2D = preload("res://assets/world/hibiscus_bush.svg")
 const BANANA: Texture2D = preload("res://assets/world/banana_plant.svg")
+const NORTH_FOREST: Texture2D = preload("res://assets/world/north_forest_tree.svg")
 const LANTERN: Texture2D = preload("res://assets/world/lantern_post.svg")
 const NIPA: Texture2D = preload("res://assets/world/nipa_facade.svg")
 const SCHOOL: Texture2D = preload("res://assets/world/school_facade.svg")
@@ -54,6 +55,38 @@ static func decorate(world: Node3D) -> Node3D:
 		_sprite(root, "Painted estuary mangrove %02d" % i, ROOTS, grove_positions[i],
 			0.0070 if i % 2 == 0 else 0.0063, true, i % 3 == 0)
 
+	# The northern forest connector must not end in empty colored space.
+	# Tidal trees stay west of the path; inland banana and flowers frame the
+	# old mango grove entrance without obstructing player collision.
+	for i in range(7):
+		var north_z := -24.3 - float(i) * 2.13
+		_sprite(root, "Northern estuary mangrove %02d" % i, ROOTS,
+			Vector3(-16.5 - float(i % 2) * 3.0, 2.38, north_z), 0.0071, true, i % 3 == 0)
+	for i in range(8):
+		var north_z := -23.1 - float(i) * 1.91
+		_sprite(root, "Northern village foliage %02d" % i, BANANA,
+			Vector3(9.0 + float(i % 3) * 2.7, 2.24, north_z),
+			0.0078, true, i % 3 == 1)
+	for i in range(7):
+		var north_z := -23.5 - float(i) * 1.99
+		_sprite(root, "Old Mango route wildflowers %02d" % i, FLOWERS,
+			Vector3(4.7 + float(i % 3) * .5, .87, north_z),
+			0.0051, true, i % 2 == 0)
+	# The north-bound route opens into a real wooded upland, not empty
+	# green terrain. These illustrated Visayan broadleaf silhouettes sit
+	# BEYOND the safe trail, so they add depth without blocking collision.
+	var upland: Array[Vector3] = [
+		Vector3(9.5, 3.85, -30), Vector3(12.5, 3.72, -27),
+		Vector3(15.5, 3.92, -25), Vector3(9.0, 3.68, -26),
+		Vector3(13, 3.72, -34), Vector3(18, 3.85, -40),
+		Vector3(23, 3.80, -35), Vector3(28, 4.10, -42),
+		Vector3(33, 3.70, -34), Vector3(37, 4.20, -47),
+		Vector3(16, 3.95, -48), Vector3(25, 4.00, -51),
+		Vector3(9, 3.58, -45), Vector3(33, 4.00, -53)
+	]
+	for i in range(upland.size()):
+		_sprite(root, "Northern wild broadleaf %02d" % i, NORTH_FOREST,
+			upland[i], 0.0061 + float(i % 3) * .0008, true, i % 2 == 0)
 	# Lush village silhouettes around the outside of the play path.
 	# Still allows player interaction with Lola, Dado, Mara and Sabel.
 	var banana_positions := [
@@ -107,8 +140,8 @@ static func _build_organic_footpath(parent: Node3D) -> void:
 	mat.roughness = 0.96
 	trail.set_material(mat)
 	for i in range(90):
-		var z0 := -20.5 + float(i) * (41.0 / 90.0)
-		var z1 := -20.5 + float(i + 1) * (41.0 / 90.0)
+		var z0 := -38.0 + float(i) * (58.5 / 90.0)
+		var z1 := -38.0 + float(i + 1) * (58.5 / 90.0)
 		var x0 := _path_center(z0)
 		var x1 := _path_center(z1)
 		var w0 := _path_half_width(z0)
@@ -145,8 +178,8 @@ static func _build_tidal_shore(parent: Node3D) -> void:
 		material.cull_mode = BaseMaterial3D.CULL_DISABLED
 		tool.set_material(material)
 		for i in range(90):
-			var za := -22.0 + float(i) * (44.0 / 90.0)
-			var zb := -22.0 + float(i + 1) * (44.0 / 90.0)
+			var za := -38.0 + float(i) * (60.0 / 90.0)
+			var zb := -38.0 + float(i + 1) * (60.0 / 90.0)
 			var xa := _tidal_edge(za)
 			var xb := _tidal_edge(zb)
 			var left_a := xa - 0.78 + float(strip) * 0.42

@@ -12,6 +12,8 @@ const NIPA: Texture2D = preload("res://assets/world/nipa_facade.svg")
 const MARKET: Texture2D = preload("res://assets/world/market_facade.svg")
 const SCHOOL: Texture2D = preload("res://assets/world/school_facade.svg")
 const BANANA: Texture2D = preload("res://assets/world/banana_plant.svg")
+const NORTH_FOREST: Texture2D = preload("res://assets/world/north_forest_tree.svg")
+const NORTH_GROVE = preload("res://scripts/world/north_grove_layout.gd")
 const HIBISCUS: Texture2D = preload("res://assets/world/hibiscus_bush.svg")
 const LAMP: Texture2D = preload("res://assets/world/lantern_post.svg")
 const HERO: Texture2D = preload("res://assets/characters/apprentice.svg")
@@ -68,21 +70,32 @@ func _quad(texture: Texture2D, corners: Array[Vector3], tint: Color, uv_repeat: 
 
 func _ground() -> void:
 	draw_rect(Rect2(Vector2.ZERO, size), Color("#274e4a") if game.is_night else Color("#6e998e"))
-	_quad(SOIL, [Vector3(-23, -0.06, -23), Vector3(23, -0.06, -23),
-		Vector3(23, -0.06, 23), Vector3(-23, -0.06, 23)], _tint(), 5.0)
-	_quad(WATER, [Vector3(-23, 0.06, -23), Vector3(-9.56, 0.06, -23),
-		Vector3(-9.56, 0.06, 23), Vector3(-23, 0.06, 23)],
+	_quad(SOIL, [Vector3(-44, -0.06, -55), Vector3(44, -0.06, -55),
+		Vector3(44, -0.06, 35), Vector3(-44, -0.06, 35)], _tint(), 9.0)
+	# Exactly the same hand-painted moss/fern forest floor as native Godot.
+	# It is drawn BEFORE props and has transparent edges, never a green box.
+	for patch in NORTH_GROVE.FLOOR_PATCHES:
+		var center: Vector3 = patch["center"]
+		var half: Vector2 = patch["size"] * 0.5
+		_quad(NORTH_GROVE.FLOOR_TEXTURE, [
+			center + Vector3(-half.x, 0, -half.y),
+			center + Vector3(half.x, 0, -half.y),
+			center + Vector3(half.x, 0, half.y),
+			center + Vector3(-half.x, 0, half.y)
+		], Color.WHITE)
+	_quad(WATER, [Vector3(-44, 0.06, -43), Vector3(-9.56, 0.06, -43),
+		Vector3(-9.56, 0.06, 35), Vector3(-44, 0.06, 35)],
 		Color("#8cbfc5") if game.is_night else Color.WHITE, 3.0)
 	var pts := PackedVector2Array()
 	var uvs := PackedVector2Array()
 	for i in range(49):
-		var z := -22.0 + float(i) * 0.92
+		var z := -38.0 + float(i) * (60.0 / 48.0)
 		var center := 0.54 * sin(z * 0.2) + 0.23 * sin(z * 0.54)
 		var half := 2.5 + 0.24 * sin(z * 0.36 + 1.1)
 		pts.append(_screen(Vector3(center - half, 0.08, z)))
 		uvs.append(Vector2(0, float(i) / 4.0))
 	for i in range(48, -1, -1):
-		var z := -22.0 + float(i) * 0.92
+		var z := -38.0 + float(i) * (60.0 / 48.0)
 		var center := 0.54 * sin(z * 0.2) + 0.23 * sin(z * 0.54)
 		var half := 2.5 + 0.24 * sin(z * 0.36 + 1.1)
 		pts.append(_screen(Vector3(center + half, 0.08, z)))
@@ -94,11 +107,11 @@ func _ground() -> void:
 	for strip in range(3):
 		var shore := PackedVector2Array()
 		for i in range(61):
-			var z := -22.0 + float(i) * (44.0 / 60.0)
+			var z := -38.0 + float(i) * (60.0 / 60.0)
 			var center := -10.07 + 0.34 * sin(z * 0.43) + 0.14 * sin(z * 1.16 + 0.7)
 			shore.append(_screen(Vector3(center - .78 + float(strip) * .42, .11, z)))
 		for i in range(60, -1, -1):
-			var z := -22.0 + float(i) * (44.0 / 60.0)
+			var z := -38.0 + float(i) * (60.0 / 60.0)
 			var center := -10.07 + 0.34 * sin(z * 0.43) + 0.14 * sin(z * 1.16 + 0.7)
 			shore.append(_screen(Vector3(center - .24 + float(strip) * .42, .11, z)))
 		draw_colored_polygon(shore, [Color("#797760"), Color("#8c7c5c"), Color("#b1a17a")][strip])
@@ -214,6 +227,32 @@ func _draw_village() -> void:
 		var z: float = [-18.1,-13.1,-4.9,1.7,9.0,16.3,-15.3,20.0][i]
 		var x: float = [-19.3,-14.0,-18.7,-14.2,-18.4,-13.9,-11.4,-17.2][i]
 		props.append({"at": Vector3(x, 0.03, z), "type": "sprite", "texture": MANGROVE, "width": 4.5})
+	for i in range(7):
+		var far_z := -24.3 - float(i) * 2.13
+		props.append({"at": Vector3(-16.5 - float(i % 2) * 3.0, 0, far_z),
+			"type": "sprite", "texture": MANGROVE, "width": 4.5})
+	for i in range(8):
+		var far_z := -23.1 - float(i) * 1.91
+		props.append({"at": Vector3(9.0 + float(i % 3) * 2.7, 0, far_z),
+			"type": "sprite", "texture": BANANA, "width": 4.0})
+	for i in range(7):
+		var far_z := -23.5 - float(i) * 1.99
+		props.append({"at": Vector3(4.7 + float(i % 3) * .5, 0, far_z),
+			"type": "sprite", "texture": HIBISCUS, "width": 1.9})
+	# Far background keeps the actual north region textured and recognizable
+	# on Android SwiftShader, even outside the physically walkable boundary.
+	var upland: Array[Vector3] = [
+		Vector3(9.5, 0, -30), Vector3(12.5, 0, -27),
+		Vector3(15.5, 0, -25), Vector3(9.0, 0, -26),
+		Vector3(13, 0, -34), Vector3(18, 0, -40),
+		Vector3(23, 0, -35), Vector3(28, 0, -42),
+		Vector3(33, 0, -34), Vector3(37, 0, -47),
+		Vector3(16, 0, -48), Vector3(25, 0, -51),
+		Vector3(9, 0, -45), Vector3(33, 0, -53)
+	]
+	for i in range(upland.size()):
+		props.append({"at": upland[i], "type": "sprite",
+			"texture": NORTH_FOREST, "width": 4.4 + float(i % 3) * .44})
 	for at in [Vector3(14.5, 0, -19.3), Vector3(16.7, 0, -8.5),
 		Vector3(14.8, 0, 3.8), Vector3(18.3, 0, 15), Vector3(11.2, 0, 17.9)]:
 		props.append({"at": at, "type": "sprite", "texture": BANANA, "width": 4.0})
@@ -246,6 +285,23 @@ func _draw_village() -> void:
 			_paint_building(entry["at"], entry["texture"], entry["roof"])
 		else:
 			_art(entry["texture"], entry["at"], entry["width"], true, _tint())
+
+	# Actual North Trail crossing to the Old Mango Grove: same 3D marker
+	# positions as the native renderer, and visible in software Android.
+	var trail := Vector3(1.0, 0, -32.28)
+	for x in [-.65, 2.65]:
+		draw_line(_screen(Vector3(x, .04, -32.28)),
+			_screen(Vector3(x, 1.87, -32.28)), Color("#805e43"), 6.0, true)
+	_hut_face([Vector3(-.82, 1.4, -32.28), Vector3(2.82, 1.4, -32.28),
+		Vector3(2.82, 1.98, -32.28), Vector3(-.82, 1.98, -32.28)], Color("#bd9b6a"),
+		Color("#674a37"), 3.0)
+	var trail_text := _screen(trail + Vector3(-1.55, 1.72, -.03))
+	draw_string(ThemeDB.fallback_font, trail_text, "NORTH TRAIL • MANGO TREE",
+		HORIZONTAL_ALIGNMENT_LEFT, 250, 15, Color("#2d342e"))
+	for i in range(23):
+		var z := -15.15 - float(i) * .74
+		draw_line(_screen(Vector3(-.4, .12, z)), _screen(Vector3(2.4, .12, z)),
+			Color("#c7a579"), 3.0, true)
 
 	if game.is_night:
 		# Real Night 1 low-light grade. Earlier software previews barely

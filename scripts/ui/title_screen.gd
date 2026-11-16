@@ -2,6 +2,9 @@ extends Control
 ## Actual interactive offline title screen (not a concept image).
 ## The hand-authored background scales with the landscape viewport.
 const GameScene = preload("res://scenes/main.tscn")
+const Night02Scene = preload("res://scenes/night02.tscn")
+const Night01State = preload("res://scripts/narrative/night01_state.gd")
+const Night02Save = preload("res://scripts/core/night02_save.gd")
 const Save = preload("res://scripts/core/save_service.gd")
 const Preferences = preload("res://scripts/core/preferences.gd")
 const ART_MANGROVE: Texture2D = preload("res://assets/world/mangrove_illustrated.svg")
@@ -15,6 +18,7 @@ const ART_BANTAY: Texture2D = preload("res://assets/characters/bantay.svg")
 
 var prefs = Preferences.new()
 var continue_button: Button
+var night2_button: Button
 var settings_panel: PanelContainer
 var settings_backdrop: ColorRect
 var font_button: Button
@@ -40,6 +44,19 @@ func _ready() -> void:
 		print("NIGHT1_QA_TITLE_SCENE_READY")
 
 func _input(event: InputEvent) -> void:
+	# Debug APK screenshot automation can launch the ACTUAL Night 2 scene
+	# without fabricating an unlocked Night 1 save. Production has no shortcut.
+	if OS.get_name() == "Android" and OS.has_feature("debug") and event is InputEventKey:
+		var key := event as InputEventKey
+		if key.pressed and key.keycode == KEY_F10:
+			var viewport := get_viewport()
+			if viewport != null:
+				viewport.set_input_as_handled()
+			print("NIGHT2_QA_DEBUG_ENTRY")
+			# Freeing the title is deferred by scene change; never access its
+			# viewport after change_scene_to_packed() removes the current scene.
+			get_tree().change_scene_to_packed(Night02Scene)
+			return
 	# Debug-only QA gesture, a backup when Android's screenshot automation
 	# cannot reliably tap the real START GAME button. Support touch AND mouse
 	# because Android emulator adb input may emulate either event type.
@@ -216,25 +233,53 @@ func _build_menu() -> void:
 	menu.name = "MainMenu"
 	menu.anchor_left = 0.065
 	menu.anchor_right = 0.415
-	menu.anchor_top = 0.30
-	menu.anchor_bottom = 0.87
+	menu.anchor_top = 0.285
+	menu.anchor_bottom = 0.945
 	menu.add_theme_constant_override("separation", 10)
 	add_child(menu)
 	_button("START GAME", menu, _start_game)
 	continue_button = _button("CONTINUE", menu, func(): _enter_game(false))
 	continue_button.disabled = not _has_save()
+	night2_button = _button("NIGHT 2  •  KAPRE", menu, _enter_night2)
+	var night2_ready: bool = _night2_unlocked()
+	# This is a DEVELOPMENT QA APK: allow direct Kapre testing even if
+	# ephemeral Android signing forced a clean install without Night 1 save.
+	# Production/non-debug releases still require canonical Night 1 completion.
+	night2_button.disabled = not night2_ready and not OS.has_feature("debug")
+	if Night02Save.exists():
+		night2_button.text = "CONTINUE NIGHT 2  •  KAPRE" if night2_ready else "TEST NIGHT 2 (QA)"
+	elif not night2_ready and OS.has_feature("debug"):
+		night2_button.text = "TEST NIGHT 2 (QA)"
 	_button("SETTINGS", menu, _open_settings)
 	_button("CREDITS", menu, _credits)
 	_button("EXIT", menu, func(): get_tree().quit())
 	var chapter := Label.new()
-	chapter.text = "NIGHT 1   /   SANTELMO"
+	chapter.text = "NIGHT 1 • SANTELMO    /    NIGHT 2 • THE OLD MANGO TREE"
 	chapter.anchor_left = 0.075
 	chapter.anchor_right = 0.55
-	chapter.anchor_top = 0.92
-	chapter.anchor_bottom = 0.99
+	chapter.anchor_top = 0.958
+	chapter.anchor_bottom = 0.996
 	chapter.add_theme_font_size_override("font_size", 26)
 	chapter.add_theme_color_override("font_color", Color("#f7d58c"))
 	add_child(chapter)
+
+func _night2_unlocked() -> bool:
+	# Any canonically completed Night 1 outcome can move forward. Night 2
+	# never overwrites the existing Santelmo save, even after SAFE RETREAT.
+	var previous := Night01State.new()
+	return not Save.read(previous).is_empty() and previous.outcome != ""
+
+
+func _enter_night2() -> void:
+	if not _night2_unlocked() and not OS.has_feature("debug"):
+		return
+	loading_cover.show()
+	var loading_label := loading_cover.get_node_or_null("LoadingStatus") as Label
+	if loading_label != null:
+		loading_label.text = "Opening Night 2: The Giant in the Mango Tree..."
+	await get_tree().process_frame
+	get_tree().change_scene_to_packed(Night02Scene)
+
 
 func _has_save() -> bool:
 	return FileAccess.file_exists(Save.PATH) or FileAccess.file_exists(Save.PATH + ".bak")
@@ -280,6 +325,7 @@ func _build_loading() -> void:
 	title.add_theme_color_override("font_color", Color("#f6d68d"))
 	loading_cover.add_child(title)
 	var progress := Label.new()
+	progress.name = "LoadingStatus"
 	progress.text = "Opening Night 1: Santelmo..."
 	progress.anchor_left = 0.20
 	progress.anchor_right = 0.80
@@ -350,7 +396,7 @@ func _open_settings() -> void:
 func _credits() -> void:
 	var dialog := AcceptDialog.new()
 	dialog.title = "TABI-TABI — Credits"
-	dialog.dialog_text = "Barrio Lawom • Night 1: Santelmo\nAn original Filipino folklore investigation adventure.\nPrototype visual art and local offline story systems."
+	dialog.dialog_text = "Barrio Lawom • Night 1: Santelmo / Night 2: Kapre\nAn original Filipino folklore investigation adventure.\nPrototype visual art and local offline story systems."
 	add_child(dialog)
 	dialog.popup_centered(Vector2i(630, 250))
 	dialog.confirmed.connect(dialog.queue_free)

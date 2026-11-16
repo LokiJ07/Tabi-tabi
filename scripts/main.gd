@@ -32,6 +32,9 @@ const BantayRoute = preload("res://scripts/ai/bantay_route.gd")
 const BantayAwareness = preload("res://scripts/ai/bantay_awareness.gd")
 const AimPad = preload("res://scripts/ui/aim_pad.gd")
 const SaveService = preload("res://scripts/core/save_service.gd")
+const Night02Scene = preload("res://scenes/night02.tscn")
+const ConnectedWorld = preload("res://scripts/core/connected_world.gd")
+const NorthGrove = preload("res://scripts/world/north_grove_layout.gd")
 const Preferences = preload("res://scripts/core/preferences.gd")
 const LivingSound = preload("res://scripts/audio/living_ambience.gd")
 const PLAYER_SPEED := 4.2
@@ -49,6 +52,7 @@ var gameplay_hud: Control
 var modal_backdrop: ColorRect
 var settings_panel: PanelContainer
 var save_main_menu_button: Button
+var begin_night2_button: Button
 var quit_game_button: Button
 var main_menu_confirmation: ConfirmationDialog
 var quit_game_confirmation: ConfirmationDialog
@@ -141,6 +145,7 @@ func _ready() -> void:
 	_create_ui()
 	_apply_preferences()
 	_restore_story()
+	_apply_connected_world_arrival()
 	if story.outcome == "" and not story.prologue_ready():
 		_enter_lola_hut(true)
 	_update_objective()
@@ -250,6 +255,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		var key := event as InputEventKey
 		if key.pressed and not key.echo:
 			match key.keycode:
+				KEY_F5:
+					_qa_show_world_view(Vector3(1.0, 0.75, -31.1), false, "NORTH_TRAIL")
+					get_viewport().set_input_as_handled()
+					return
 				KEY_F6:
 					_qa_show_world_view(Vector3(2.0, 0.75, -4.0), false, "VILLAGE")
 					get_viewport().set_input_as_handled()
@@ -298,21 +307,25 @@ func _qa_show_world_view(destination: Vector3, night_view: bool, label: String) 
 
 
 func _create_world() -> void:
-	_box("Ground", Vector3(0, -0.35, 0), Vector3(46, 0.65, 46), COLORS.earth, true)
+	# The backdrop must extend past the walkable north trail. Earlier the soil
+	# stopped at z=-23 so the route ended in a cyan void on Android.
+	_box("Ground", Vector3(0, -0.35, -10), Vector3(88, 0.65, 90), COLORS.earth, true)
 	var blockout_road := _box("Main footpath", Vector3(0, 0.015, 0), Vector3(5, 0.08, 38), COLORS.path, false)
 	blockout_road.visible = false  # the winding illustrated footpath now replaces this rectangle
-	river_surface = _box("River", Vector3(-16, 0.02, 0), Vector3(12, 0.08, 46), COLORS.river, false) as MeshInstance3D
+	river_surface = _box("River", Vector3(-16, 0.02, -9), Vector3(12, 0.08, 66), COLORS.river, false) as MeshInstance3D
 	for z in [4.0, 11.0, 18.0]:
 		_box("Reed", Vector3(-9.1, 0.4, z), Vector3(0.13, 0.7, 0.11), Color(0.43, 0.53, 0.26), false)
 	for z in [-16.0, -10.0, 0.0, 7.0, 15.0]:
 		_box("River shimmer", Vector3(-15.0, 0.08, z), Vector3(4.3, 0.025, 0.12), Color(0.22, 0.59, 0.61), false)
-	var old_barrier := _box("River bank safety fence", Vector3(-9.7, 0.5, 0), Vector3(0.25, 1.0, 46), COLORS.wood, true)
+	var old_barrier := _box("River bank safety fence", Vector3(-9.7, 0.5, -7), Vector3(0.25, 1.0, 66), COLORS.wood, true)
 	old_barrier.visible = false  # invisible solid boundary; visible art uses woven ropes and posts
 	# Collision-only boundaries prevent accidental falls beyond the playable blockout.
-	_boundary(Vector3(-23.0, 1.0, 0.0), Vector3(0.3, 3.0, 46.0))
-	_boundary(Vector3(23.0, 1.0, 0.0), Vector3(0.3, 3.0, 46.0))
-	_boundary(Vector3(0.0, 1.0, -23.0), Vector3(46.0, 3.0, 0.3))
-	_boundary(Vector3(0.0, 1.0, 23.0), Vector3(46.0, 3.0, 0.3))
+	_boundary(Vector3(-23.0, 1.0, -7.0), Vector3(0.3, 3.0, 65.0))
+	_boundary(Vector3(23.0, 1.0, -7.0), Vector3(0.3, 3.0, 65.0))
+	# The only travel portal is the marked forest trail near z=-32;
+	# the invisible perimeter remains beyond it for safe Android physics.
+	_boundary(Vector3(0.0, 1.0, -39.0), Vector3(46.0, 3.0, 0.3))
+	_boundary(Vector3(0.0, 1.0, 25.0), Vector3(46.0, 3.0, 0.3))
 	_house(Vector3(6, 0, 5), "Lola's hut")
 	_house(Vector3(7, 0, -8), "Sabel's store")
 	_house(Vector3(-2, 0, -12), "School")
@@ -360,6 +373,55 @@ func _create_world() -> void:
 	BarrioDetails.decorate(self)
 	EnvironmentPolish.decorate(self)
 	IllustratedBarrio.decorate(self)
+	NorthGrove.decorate(self)
+	_build_mango_tree_trail()
+
+
+func _build_mango_tree_trail() -> void:
+	# One walkable in-world north trail exits Barrio Lawom toward the old
+	# mango tree. Separate Godot scenes are streamed regions of ONE map.
+	var at: Vector3 = ConnectedWorld.TRAIL_BARRIO
+	var gate := Node3D.new()
+	gate.name = "MANGO_TRAIL"
+	gate.position = at
+	add_child(gate)
+	interaction_nodes["MANGO_TRAIL"] = gate
+	# Clear bamboo trail guide: worn timber sleepers lead right to the map
+	# boundary, not a disconnected level-select button.
+	for i in range(23):
+		var z := -15.15 - float(i) * .74
+		_box("Old Mango Trail sleeper %02d" % i,
+			Vector3(1.0, 0.085, z), Vector3(2.80, .10, .17),
+			Color("#aa855c") if i % 2 == 0 else Color("#836345"), false)
+	for x in [-0.65, 2.65]:
+		_box("Mango Trail bamboo marker", Vector3(x, .88, -32.28),
+			Vector3(.13, 1.76, .14), Color("#886a46"), false)
+	_box("Mango Trail signboard", Vector3(1.0, 1.73, -32.28),
+		Vector3(3.57, .52, .14), Color("#c6a474"), false)
+	_box("Mango Trail bamboo roof", Vector3(1.0, 2.04, -32.25),
+		Vector3(4.1, .17, .53), Color("#75563b"), false)
+	var sign := Label3D.new()
+	sign.name = "North Trail sign lettering"
+	sign.text = "OLD MANGO GROVE  •  NORTH"
+	sign.font_size = 42
+	sign.pixel_size = .0043
+	sign.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	sign.modulate = Color("#f8e5b5")
+	sign.position = Vector3(1.0, 1.68, -32.1)
+	add_child(sign)
+	# Actual target coordinates remain within the existing village boundary.
+
+
+func _apply_connected_world_arrival() -> void:
+	var arrival: Dictionary = ConnectedWorld.consume_arrival("barrio_lawom")
+	if arrival.is_empty():
+		return
+	if str(arrival.get("from", "")) != "old_mango":
+		return
+	player.global_position = ConnectedWorld.ARRIVAL_BARRIO
+	bantay.global_position = ConnectedWorld.ARRIVAL_BARRIO + Vector3(1.1, -.27, .4)
+	_clear_touch_input()
+	print("TABI_WORLD_ARRIVAL_BARRIO_FROM_MANGO")
 
 
 func _box(name: String, pos: Vector3, size: Vector3, color: Color, solid: bool) -> Node3D:
@@ -1161,6 +1223,14 @@ func _create_ui() -> void:
 	options_stack.add_child(pref_audio_button)
 	# Important navigation stays fixed BELOW the scroll area, not buried in
 	# adjustable preferences. All actions require confirmation.
+	begin_night2_button = Button.new()
+	begin_night2_button.name = "BeginNight2Kapre"
+	begin_night2_button.text = "NEXT CHAPTER: NIGHT 2 • KAPRE"
+	begin_night2_button.custom_minimum_size = Vector2(320, 56)
+	begin_night2_button.disabled = true
+	begin_night2_button.pressed.connect(_begin_night2)
+	_style_modal_button(begin_night2_button, false, true)
+	settings_layout.add_child(begin_night2_button)
 	save_main_menu_button = Button.new()
 	save_main_menu_button.name = "SaveAndMainMenu"
 	save_main_menu_button.text = "SAVE & MAIN MENU"
@@ -1317,6 +1387,9 @@ func _interact() -> void:
 		_advance_dialogue()
 		return
 	var closest: String = _nearby_target()
+	if closest == "MANGO_TRAIL":
+		_enter_mango_trail()
+		return
 	if ["LOLA_HOME", "BLUE_NOTEBOOK", "WARM_CUP", "RIVER_PHOTO", "HUT_EXIT", "HUT_ENTRY"].has(closest):
 		_interact_lola_hut(closest)
 		return
@@ -1553,6 +1626,8 @@ func _update_objective() -> void:
 		objective.text = "STAGE 3 • Stand by GREEN ring. HOLD FOCUS; aim toward SHORE." if story.guide_progress < 0.999 else "The light reached shore. Choose REMEMBER, DRIVE AWAY, or RETREAT."
 	else:
 		objective.text = "Night 1 completed."
+	if begin_night2_button != null:
+		begin_night2_button.disabled = story.outcome == ""
 
 
 func _refresh_choices() -> void:
@@ -1745,6 +1820,33 @@ func _save_before_navigation() -> bool:
 	return true
 
 
+func _enter_mango_trail() -> void:
+	if story.outcome == "":
+		_show_dialogue("The old mango trail is visible, but the Santelmo investigation is not complete. Finish Night 1 before heading north with Bantay.")
+		return
+	if not _save_before_navigation():
+		return
+	if not ConnectedWorld.begin_travel("barrio_lawom", "old_mango", story.outcome):
+		navigation_error_dialog.dialog_text = "Could not record the journey. You remain in Barrio Lawom."
+		navigation_error_dialog.popup_centered(Vector2i(620, 210))
+		return
+	_clear_touch_input()
+	print("TABI_WORLD_TRAVEL_BARRIO_TO_MANGO")
+	get_tree().change_scene_to_packed(Night02Scene)
+
+
+func _begin_night2() -> void:
+	if story.outcome == "":
+		_show_dialogue("Complete Night 1 before entering the old mango tree.")
+		return
+	if not _save_before_navigation():
+		return
+	if not ConnectedWorld.begin_travel("barrio_lawom", "old_mango", story.outcome):
+		navigation_error_dialog.popup_centered(Vector2i(620, 210))
+		return
+	get_tree().change_scene_to_packed(Night02Scene)
+
+
 func _save_and_return_to_menu() -> void:
 	if not _save_before_navigation():
 		return
@@ -1818,6 +1920,7 @@ func _apply_preferences() -> void:
 		prep_panel.get_node("PreparationLayout/ClosePreparation") as Button,
 		settings_panel.get_node("SettingsLayout/CloseSettings") as Button,
 		save_main_menu_button,
+		begin_night2_button,
 		quit_game_button,
 		dialogue.get_node("DialogueLayout/CloseDialogue") as Button
 	]:
