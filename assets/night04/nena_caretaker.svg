@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="330" height="440" viewBox="0 0 330 440">
+<title>Aling Nena — tired, kind wake caretaker</title>
+<defs>
+<linearGradient id="skin" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#dbab84"/><stop offset=".57" stop-color="#c39173"/><stop offset="1" stop-color="#795543"/></linearGradient>
+<linearGradient id="robe" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#8a8f80"/><stop offset=".44" stop-color="#50685d"/><stop offset="1" stop-color="#293e40"/></linearGradient>
+<linearGradient id="hair" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#57504b"/><stop offset="1" stop-color="#242b2f"/></linearGradient>
+</defs>
+<ellipse cx="170" cy="412" rx="87" ry="13" fill="#101b1d" opacity=".24"/>
+<path d="M108 310L151 316L142 391L103 393Z M180 316L224 312L233 393L187 393Z" fill="#423e42" stroke="#302f32" stroke-width="6"/>
+<path d="M99 382L150 384L154 409L90 409Z M184 383L236 385L247 408L178 410Z" fill="#5d453f" stroke="#393034" stroke-width="6"/>
+<path d="M99 233Q112 211 141 213L198 213Q229 212 240 241L250 321Q179 354 89 327Z" fill="url(#robe)" stroke="#313b3e" stroke-width="9"/>
+<path d="M104 239Q78 251 71 311L77 347Q91 355 109 331L130 266Z
+M231 243Q257 257 261 321L246 350Q224 353 213 329L204 267Z" fill="url(#robe)" stroke="#35413f" stroke-width="7"/>
+<path d="M112 240Q165 273 220 233L231 259Q171 304 101 262Z" fill="#e5dac5" stroke="#a3a392" stroke-width="6"/>
+<path d="M112 263Q137 283 155 300L188 302L217 274M121 326Q179 348 238 320" fill="none" stroke="#9bb0a1" opacity=".6" stroke-width="4"/>
+<path d="M140 209L138 227Q167 244 195 223L189 204Z" fill="url(#skin)" stroke="#7f5e4b" stroke-width="5"/>
+<path d="M108 115Q110 67 164 62Q225 64 231 121L218 208Q203 229 168 231Q132 224 115 203Z"
+fill="url(#skin)" stroke="#8d6049" stroke-width="7"/>
+<path d="M106 136Q91 70 133 55Q169 36 205 53Q252 83 233 146
+Q220 105 190 96Q150 117 114 142Z" fill="url(#hair)" stroke="#383938" stroke-width="8"/>
+<path d="M204 64Q260 48 256 100Q244 122 228 106" fill="url(#hair)" stroke="#343637" stroke-width="7"/>
+<path d="M128 153Q147 146 157 156M179 156Q197 144 213 155" fill="none" stroke="#55443e" stroke-width="7" stroke-linecap="round"/>
+<path d="M130 171Q145 161 159 173M179 172Q198 160 209 170" fill="none" stroke="#514443" stroke-width="5" stroke-linecap="round"/>
+<ellipse cx="146" cy="175" rx="5" ry="7" fill="#292b2c"/><ellipse cx="194" cy="175" rx="5" ry="7" fill="#292b2c"/>
+<path d="M167 175L165 198Q177 201 185 197M150 211Q169 219 194 207" fill="none" stroke="#936353" stroke-width="4" stroke-linecap="round"/>
+<path d="M124 189Q136 200 150 192M189 192Q203 198 218 185" fill="none" stroke="#f3caa3" opacity=".45" stroke-width="3"/>
+<!-- Cup held with tired but competent hands. -->
+<path d="M93 312Q115 307 131 324L149 344Q149 358 137 361Q106 352 91 336Z" fill="url(#skin)" stroke="#815a49" stroke-width="5"/>
+<path d="M221 323Q240 309 250 325L240 352Q223 356 206 348Z" fill="url(#skin)" stroke="#815a49" stroke-width="5"/>
+<rect x="142" y="316" width="60" height="39" rx="5" fill="#d8c4a6" stroke="#6c5c4b" stroke-width="5"/>
+<path d="M201 322Q223 320 222 335Q219 353 201 347" fill="none" stroke="#d8c4a6" stroke-width="7"/>
+<path d="M153 307Q144 291 157 280M179 305Q167 287 180 272" stroke="#c6b9ab" opacity=".55" stroke-width="4" fill="none"/>
+</svg>

@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="620" viewBox="0 0 760 620">
+<title>Manananggal — winged nighttime silhouette, non-graphic folklore artwork</title>
+<defs>
+<linearGradient id="wing" x1="0" y1="0" x2="1" y2="1">
+<stop stop-color="#76807e"/><stop offset=".2" stop-color="#303a43"/><stop offset=".62" stop-color="#171e2b"/><stop offset="1" stop-color="#0a1822"/></linearGradient>
+<linearGradient id="cloth" x1="0" y1="0" x2="1" y2="1">
+<stop stop-color="#887573"/><stop offset=".33" stop-color="#554b50"/><stop offset="1" stop-color="#171b25"/></linearGradient>
+<linearGradient id="skin" x1="0" y1="0" x2="1" y2="1">
+<stop stop-color="#9c806e"/><stop offset=".44" stop-color="#735e5c"/><stop offset="1" stop-color="#322c33"/></linearGradient>
+<radialGradient id="eye"><stop stop-color="#fff4bc"/><stop offset=".35" stop-color="#f6ba83"/><stop offset="1" stop-color="#a74d42"/></radialGradient>
+</defs>
+<!-- Flight form is atmospheric, with explicitly no gore or exposed anatomy. -->
+<path d="M335 258Q242 169 129 119L37 95L77 166L28 208L114 219L51 290
+L172 269L109 355L227 296L277 337L342 326Z" fill="url(#wing)" stroke="#151b22" stroke-width="15"/>
+<path d="M422 256Q521 165 640 108L723 82L686 156L736 193L651 219L720 279
+L603 270L659 341L532 287L486 340L414 321Z" fill="url(#wing)" stroke="#111b25" stroke-width="15"/>
+<g fill="none" stroke="#87908a" opacity=".27" stroke-width="8">
+<path d="M332 268Q220 194 69 147M318 291Q202 254 77 204M321 301Q216 306 103 349
+M425 266Q543 193 696 138M439 292Q576 259 707 206M429 306Q542 302 661 335"/>
+</g>
+<path d="M283 295Q266 355 291 422L343 473L380 452L413 473L473 418
+Q491 337 458 284L431 271L380 286L333 272Z"
+fill="url(#cloth)" stroke="#202028" stroke-width="12"/>
+<path d="M305 329Q358 363 451 322M321 405Q374 424 447 399" fill="none"
+stroke="#b8a99c" opacity=".32" stroke-width="8"/>
+<path d="M312 451Q355 489 387 490Q434 481 459 446L472 475
+Q417 540 365 531Q319 514 289 477Z" fill="#1c2431" stroke="#1a1f29" stroke-width="11"/>
+<path d="M323 281Q261 286 245 354L210 416L227 439Q261 437 281 396L336 337Z
+M433 284Q487 272 508 355L554 415L533 438Q503 435 480 401L426 333Z"
+fill="url(#skin)" stroke="#2b2b33" stroke-width="13"/>
+<path d="M209 413L189 440L177 472M227 431L222 470M536 416L571 455L580 481M541 430L547 476"
+stroke="#6d6564" stroke-width="9" fill="none" stroke-linecap="round"/>
+<!-- Long wind-blown hair frames a distinctly non-human face. -->
+<path d="M333 133Q324 90 352 72Q396 49 425 91L445 136L469 256L426 283
+L342 286L294 241Z" fill="#1c242e" stroke="#151c27" stroke-width="15"/>
+<path d="M328 140Q348 109 382 114Q411 109 434 144L430 219
+Q405 262 376 266Q344 250 324 215Z" fill="url(#skin)" stroke="#302d33" stroke-width="11"/>
+<path d="M323 161Q348 137 369 157M389 153Q420 137 438 161" stroke="#242630" stroke-width="17" fill="none"/>
+<path d="M346 173Q355 167 370 174L361 184Z M393 174Q410 168 420 172L409 183Z"
+fill="#c97857"/>
+<circle cx="359" cy="176" r="9" fill="url(#eye)"/><circle cx="407" cy="176" r="9" fill="url(#eye)"/>
+<path d="M382 184L370 213L391 218" stroke="#aa9181" stroke-width="5" fill="none"/>
+<path d="M364 236Q380 245 403 230" stroke="#49383b" stroke-width="6" fill="none" stroke-linecap="round"/>
+<path d="M310 146Q304 229 283 266M450 142Q462 229 481 280" stroke="#1a2530"
+stroke-width="27" fill="none" stroke-linecap="round"/>
+<path d="M321 176Q319 235 301 266M440 183Q446 245 470 278" stroke="#a29e90"
+stroke-width="4" fill="none" opacity=".24"/>
+</svg>
