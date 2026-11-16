@@ -200,7 +200,7 @@ func _button(label: String, parent: Node, action: Callable) -> Button:
 	b.text = label
 	b.name = label.replace(" ", "")
 	b.clip_text = true
-	b.custom_minimum_size = Vector2(380, 62)
+	b.custom_minimum_size = Vector2(380, 56)
 	b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	b.add_theme_font_size_override("font_size", roundi(29.0 * prefs.text_scale))
 	b.add_theme_color_override("font_color", Color("#fbeccc"))
@@ -244,7 +244,7 @@ func _build_menu() -> void:
 	menu.anchor_right = 0.415
 	menu.anchor_top = 0.285
 	menu.anchor_bottom = 0.945
-	menu.add_theme_constant_override("separation", 10)
+	menu.add_theme_constant_override("separation", 8)
 	add_child(menu)
 	_button("START GAME", menu, _start_game)
 	continue_button = _button("CONTINUE", menu, func(): _enter_game(false))
@@ -266,16 +266,20 @@ func _build_menu() -> void:
 		night3_button.text = "CONTINUE NIGHT 3  •  TIKBALANG"
 	elif not night3_ready and OS.has_feature("debug"):
 		night3_button.text = "TEST NIGHT 3 (QA)"
+	# Chapter labels can become much longer than the original six-button
+	# title layout. Keep EVERY visible label inside its unchanged left column.
+	night2_button.add_theme_font_size_override("font_size", roundi(23.0*prefs.text_scale))
+	night3_button.add_theme_font_size_override("font_size", roundi(22.0*prefs.text_scale))
 	_button("SETTINGS", menu, _open_settings)
 	_button("CREDITS", menu, _credits)
 	_button("EXIT", menu, func(): get_tree().quit())
 	var chapter := Label.new()
-	chapter.text = "NIGHT 1 • SANTELMO    /    NIGHT 2 • KAPRE    /    NIGHT 3 • TIKBALANG"
+	chapter.text = "SANTELMO  /  KAPRE  /  TIKBALANG"
 	chapter.anchor_left = 0.075
 	chapter.anchor_right = 0.55
 	chapter.anchor_top = 0.958
 	chapter.anchor_bottom = 0.996
-	chapter.add_theme_font_size_override("font_size", 26)
+	chapter.add_theme_font_size_override("font_size", 23)
 	chapter.add_theme_color_override("font_color", Color("#f7d58c"))
 	add_child(chapter)
 
