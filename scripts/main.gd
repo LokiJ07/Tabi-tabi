@@ -807,38 +807,12 @@ func _create_ui() -> void:
 	root.add_child(gameplay_hud)
 	# A vertical, wrapping status card prevents the objective, clue progress,
 	# Santelmo alarm, companion alerts and courage from occupying fixed Y slots.
-	status_panel = PanelContainer.new()
-	status_panel.name = "QuestStatusCard"
-	status_panel.anchor_left = 0.0
-	status_panel.anchor_right = 0.37  # same compact size as Night 2; preserve world sightlines
-	status_panel.anchor_top = 0.0
-	status_panel.anchor_bottom = 0.0
-	status_panel.offset_left = 16.0
-	status_panel.offset_right = -8.0
-	status_panel.offset_top = 10.0
-	status_panel.offset_bottom = 250.0  # updated from live text minimum size
-	status_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	SharedHUD.style_status_panel(status_panel)
-	gameplay_hud.add_child(status_panel)
-	status_stack = VBoxContainer.new()
-	status_stack.name = "StatusRows"
-	status_stack.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	status_stack.add_theme_constant_override("separation", 6)
+	var status := SharedHUD.create_status_card(gameplay_hud, "TABI-TABI  •  BARRIO LAWOM", preferences.text_scale)
+	status_panel = status["panel"]
+	status_stack = status["stack"]
+	info = status["heading"]
+	objective = status["objective"]
 	status_stack.minimum_size_changed.connect(func(): call_deferred("_fit_status_card"))
-	status_panel.add_child(status_stack)
-	info = Label.new()
-	info.name = "VillageHeading"
-	info.text = "TABI-TABI  •  BARRIO LAWOM"
-	info.add_theme_font_size_override("font_size", 22)
-	info.add_theme_color_override("font_color", Color("#f3e2b8"))
-	status_stack.add_child(info)
-	objective = Label.new()
-	objective.name = "QuestObjective"
-	objective.add_theme_font_size_override("font_size", 22)
-	objective.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	objective.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	objective.add_theme_color_override("font_color", Color("#f2f5f2"))
-	status_stack.add_child(objective)
 	_make_button(gameplay_hud, "◀", Vector2(20, 575), Vector2(70, 65), func(): _set_button_axis("left", true), func(): _set_button_axis("left", false))
 	_make_button(gameplay_hud, "▶", Vector2(170, 575), Vector2(70, 65), func(): _set_button_axis("right", true), func(): _set_button_axis("right", false))
 	_make_button(gameplay_hud, "▲", Vector2(95, 505), Vector2(70, 65), func(): _set_button_axis("up", true), func(): _set_button_axis("up", false))
@@ -864,22 +838,7 @@ func _create_ui() -> void:
 	_make_button(gameplay_hud, "PREPARE", Vector2(1050, 276), Vector2(180, 56), _open_prep, func(): pass)
 	_make_button(gameplay_hud, "SAVE", Vector2(1050, 345), Vector2(85, 52), _save_story, func(): pass)
 	_make_button(gameplay_hud, "RETRY", Vector2(1142, 345), Vector2(88, 52), _retry_story, func(): pass)
-	interact_hint = Label.new()
-	# The interaction prompt occupies a separate top-right zone instead of
-	# crossing the left-hand objective/status card.
-	interact_hint.name = "NearbyPrompt"
-	interact_hint.anchor_left = 0.67
-	interact_hint.anchor_right = 0.86
-	interact_hint.anchor_top = 0.0
-	interact_hint.anchor_bottom = 0.0
-	interact_hint.offset_top = 9
-	interact_hint.offset_bottom = 89
-	interact_hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	interact_hint.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	interact_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	interact_hint.add_theme_font_size_override("font_size", 21)
-	interact_hint.add_theme_color_override("font_color", Color(0.98, 0.86, 0.60))
-	gameplay_hud.add_child(interact_hint)
+	interact_hint = SharedHUD.make_nearby_prompt(gameplay_hud, preferences.text_scale)
 	courage_label = Label.new()
 	courage_label.name = "CourageStatus"
 	courage_label.add_theme_font_size_override("font_size", 20)
@@ -1136,18 +1095,7 @@ func _create_ui() -> void:
 	prep_layout.add_child(kit_close)
 	prep_panel.hide()
 	# Persistent accessibility options; deliberately not a second gameplay save.
-	var options_button := Button.new()
-	options_button.text = "OPTIONS"
-	options_button.anchor_left = 1.0
-	options_button.anchor_right = 1.0
-	options_button.offset_left = -171
-	options_button.offset_right = -20
-	options_button.offset_top = 14
-	options_button.offset_bottom = 60
-	SharedHUD.place_action_button(options_button, "OPTIONS")
-	_style_game_button(options_button, "OPTIONS")
-	options_button.pressed.connect(_open_settings)
-	gameplay_hud.add_child(options_button)
+	SharedHUD.make_options_button(gameplay_hud, _open_settings, preferences.text_scale)
 	settings_panel = PanelContainer.new()
 	settings_panel.name = "SettingsPanel"
 	settings_panel.anchor_left = 0.10
@@ -1244,37 +1192,7 @@ func _create_ui() -> void:
 
 
 func _make_button(parent: Control, title: String, pos: Vector2, size: Vector2, down: Callable, up: Callable) -> Button:
-	var button := Button.new()
-	button.text = title
-	button.clip_text = true
-	# Anchor controls to bottom corners so they remain reachable on wider phones.
-	button.anchor_left = 1.0 if pos.x > 900 else 0.0
-	button.anchor_right = button.anchor_left
-	button.anchor_top = 1.0
-	button.anchor_bottom = 1.0
-	button.offset_left = pos.x - (1280.0 if pos.x > 900 else 0.0)
-	button.offset_top = pos.y - 720.0
-	button.offset_right = button.offset_left + size.x
-	button.offset_bottom = button.offset_top + size.y
-	button.custom_minimum_size = size
-	button.size = size
-	button.button_down.connect(down)
-	button.button_up.connect(up)
-	_style_game_button(button, title, size.x < 95.0)
-	# Icons are imported vector game assets, not emoji glyphs that differ across
-	# Android devices. Smaller text fits beside them inside the touch targets.
-	match title:
-		"PREPARE": button.icon = UI_PREPARE
-		"FIELD NOTES": button.icon = UI_NOTEBOOK
-		"HOLD FOCUS": button.icon = UI_FOCUS
-		"INTERACT": button.icon = UI_INTERACT
-		"DAY / NIGHT": button.icon = UI_DAYNIGHT
-	if button.icon != null:
-		button.icon_alignment = HORIZONTAL_ALIGNMENT_LEFT
-		button.add_theme_font_size_override("font_size", 19)
-		button.add_theme_constant_override("h_separation", 4)
-	parent.add_child(button)
-	return button
+	return SharedHUD.make_gameplay_button(parent, title, pos, size, down, up, preferences.text_scale)
 
 
 func _set_focus(active: bool) -> void:
