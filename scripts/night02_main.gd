@@ -9,6 +9,7 @@ const Night1State = preload("res://scripts/narrative/night01_state.gd")
 const Night1Save = preload("res://scripts/core/save_service.gd")
 const Preferences = preload("res://scripts/core/preferences.gd")
 const Night02Ambience = preload("res://scripts/audio/night02_ambience.gd")
+const ConnectedWorld = preload("res://scripts/core/connected_world.gd")
 const MANGO: Texture2D = preload("res://assets/night02/old_mango_tree.svg")
 const KAPRE: Texture2D = preload("res://assets/night02/kapre.svg")
 const BARRIER: Texture2D = preload("res://assets/night02/closed_path_barrier.svg")
@@ -87,6 +88,7 @@ var elapsed := 0.0
 var particle_phase := 0.0
 var last_target := ""
 var movement_enabled := true
+var travel_in_progress := false
 
 func _ready() -> void:
 	name = "TabiTabiNight2"
@@ -96,6 +98,11 @@ func _ready() -> void:
 		story.night1_outcome = previous.outcome
 	Save.read(story) # Distinct save, never rewrites Night 1.
 	player_pos = story.player_position
+	# One world: walk into the Kapre region from the Barrio Lawom trail.
+	var arrived: Dictionary = ConnectedWorld.consume_arrival("old_mango")
+	if str(arrived.get("from", "")) == "barrio_lawom":
+		player_pos = ConnectedWorld.ARRIVAL_MANGO
+		print("TABI_WORLD_ARRIVAL_MANGO_FROM_BARRIO")
 	dog_pos = player_pos + Vector2(-52, 31)
 	camera = Camera2D.new()
 	camera.name = "Night2IsometricCamera"
@@ -142,6 +149,8 @@ func _process(delta: float) -> void:
 			player_pos = TREE + tree_offset.normalized() * 70 if tree_offset.length() > .01 else TREE + Vector2(-70, 0)
 		dog_pos = dog_pos.lerp(player_pos + Vector2(-48, 27), clampf(delta * 2.9, 0.0, 1.0))
 	camera.position = player_pos
+	if not travel_in_progress and player_pos.distance_to(ConnectedWorld.TRAIL_MANGO) < 53.0:
+		_return_to_barrio()
 	var sheltered := player_pos.distance_to(OBSERVATION) < 125
 	var closed_zone: bool = player_pos.distance_to(TREE) < 115.0 and story.phase < 3
 	# Reading/dialogue, options and the chapter outcome are fully paused.
@@ -221,6 +230,11 @@ func _draw() -> void:
 		var x := -830 + float(i) * 116
 		var y := 347 - float(i) * 64
 		draw_line(Vector2(x, y), Vector2(x + 48, y - 26), Color(.90,.74,.54,.32), 2.0)
+	# Real walkable path linking the existing refuge detour to Barrio Lawom.
+	_polyline([Vector2(-765, 485), Vector2(-685, 460), Vector2(-570, 520),
+		Vector2(-420, 280)], Color("#5c624a"), 69)
+	_polyline([Vector2(-765, 485), Vector2(-685, 460), Vector2(-570, 520),
+		Vector2(-420, 280)], Color("#b6a47b"), 45)
 	# The former shelter line marks the re-routed safe path, turning away
 	# from the giant tree, rather than a flat danger-zone sticker.
 	_polyline([Vector2(-570,520),Vector2(-420,280),Vector2(-440,70),Vector2(-650,-280)], Color("#67785a"), 64)
@@ -230,6 +244,13 @@ func _draw() -> void:
 		var y := -580.0 + float((i * 193) % 1170)
 		if Vector2(x,y).distance_to(TREE) > 230:
 			draw_texture_rect(HIBISCUS, Rect2(x-34, y-41, 74, 62), false, Color("#a1bd94"))
+	# The boundary crossing is part of the illustrated world, not a menu.
+	var trail_marker: Vector2 = ConnectedWorld.TRAIL_MANGO
+	draw_line(trail_marker+Vector2(-45,-24),trail_marker+Vector2(-45,46),Color("#6f5037"),8.0,true)
+	draw_line(trail_marker+Vector2(48,-24),trail_marker+Vector2(48,46),Color("#6f5037"),8.0,true)
+	_polygon([trail_marker+Vector2(-67,-54),trail_marker+Vector2(69,-54),
+		trail_marker+Vector2(69,-15),trail_marker+Vector2(-67,-15)],Color("#bf9f6d"))
+	draw_line(trail_marker+Vector2(-67,-54),trail_marker+Vector2(69,-54),Color("#e5c98e"),4)
 	# A recognizable village refuge, and Mara's school with its own facade.
 	_building_at(Vector2(-600, -445), SCHOOL, "MARA • SCHOOL")
 	_building_at(Vector2(-610, 410), HOUSE, "SAFE SHELTER")
@@ -359,6 +380,9 @@ func _draw_evidence() -> void:
 func _draw_world_labels() -> void:
 	var font := ThemeDB.fallback_font
 	draw_string(font,TREE+Vector2(-173,105),"OLD MANGO • KEEP DISTANCE",HORIZONTAL_ALIGNMENT_LEFT,420,21,Color("#e6d8b2"))
+	var trail: Vector2 = ConnectedWorld.TRAIL_MANGO
+	draw_string(font,trail+Vector2(-145,76),"← BARRIO LAWOM • TRAIL",
+		HORIZONTAL_ALIGNMENT_LEFT,350,24,Color("#ffe0a4"))
 	if story.phase == 2:
 		draw_string(font,OBSERVATION+Vector2(-138,100),"SAFE LOOKOUT • HOLD OBSERVE",HORIZONTAL_ALIGNMENT_LEFT,360,19,Color("#ffe1a2"))
 	if story.phase >= 1 and story.phase <= 2:
@@ -632,6 +656,8 @@ func _press_move(direction: String, pressed: bool) -> void:
 		float(held_moves.get("down", false))-float(held_moves.get("up", false)))
 
 func _nearby() -> String:
+	if player_pos.distance_to(ConnectedWorld.TRAIL_MANGO) < ConnectedWorld.TRAVEL_RANGE_2D:
+		return "return_barrio"
 	if story.phase == 0:
 		for id in KEY_ORDER:
 			if not story.clues.has(id) and player_pos.distance_to(TARGETS[id]) < 105:
@@ -701,7 +727,9 @@ func _update_hint() -> void:
 	if near == last_target and interaction_hint.text != "":
 		return
 	last_target = near
-	if near == "":
+	if near == "return_barrio":
+		interaction_hint.text = "BARRIO LAWOM • FOLLOW TRAIL TO RETURN"
+	elif near == "":
 		interaction_hint.text = "EXPLORE • Follow the highlighted clue / safe route"
 	elif near == "observe":
 		interaction_hint.text = "SAFE LOOKOUT • HOLD OBSERVE to watch from shelter"
@@ -718,6 +746,9 @@ func _interact() -> void:
 	if notebook.visible or options_panel.visible or ending_panel.visible:
 		return
 	var target := _nearby()
+	if target == "return_barrio":
+		_return_to_barrio()
+		return
 	if target == "":
 		_show_dialogue("BANTAY", "Bantay sniffs the wind. Move closer to the highlighted clue or safe route marker.", [{"label":"CONTINUE", "action":"close"}])
 		return
@@ -889,7 +920,27 @@ func _open_options() -> void:
 
 func _auto_save() -> bool:
 	story.player_position = player_pos
-	return Save.write(story)
+	var saved := Save.write(story)
+	if saved and story.outcome != "":
+		ConnectedWorld.note_outcome(2, story.outcome)
+	return saved
+
+
+func _return_to_barrio() -> void:
+	if travel_in_progress:
+		return
+	if not _auto_save():
+		save_error.popup_centered(Vector2i(610, 190))
+		return
+	if not ConnectedWorld.begin_travel("old_mango", "barrio_lawom", story.night1_outcome):
+		save_error.popup_centered(Vector2i(610, 190))
+		return
+	travel_in_progress = true
+	observe_held = false
+	motion = Vector2.ZERO
+	held_moves.clear()
+	print("TABI_WORLD_TRAVEL_MANGO_TO_BARRIO")
+	get_tree().change_scene_to_file(ConnectedWorld.scene_for("barrio_lawom"))
 
 func _save_and_notify() -> void:
 	if _auto_save():
