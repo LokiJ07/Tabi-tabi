@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="800" viewBox="0 0 600 800">
+<title>Kapre of the old mango — seated night encounter sprite</title>
+<defs>
+ <linearGradient id="body" x1="0" y1="0" x2=".95" y2=".85">
+  <stop stop-color="#211e20"/><stop offset=".28" stop-color="#513a32"/>
+  <stop offset=".61" stop-color="#735044"/><stop offset="1" stop-color="#211d20"/>
+ </linearGradient>
+ <linearGradient id="lit" x1="0" y1="0" x2="1" y2=".7">
+  <stop stop-color="#88614d"/><stop offset=".47" stop-color="#594037"/><stop offset="1" stop-color="#30292a"/>
+ </linearGradient>
+ <linearGradient id="smoke" x1="0" y1="0" x2="1" y2="1">
+  <stop stop-color="#b9b1a3" stop-opacity=".4"/><stop offset="1" stop-color="#a8c5b5" stop-opacity="0"/>
+ </linearGradient>
+ <radialGradient id="ember"><stop stop-color="#fff1b5"/><stop offset=".35" stop-color="#ffb144"/><stop offset="1" stop-color="#8f391d"/></radialGradient>
+</defs>
+<!-- Hanging leg; the right foot drops BELOW the branch while the other knee rests on it. -->
+<path d="M381 475 C437 487 473 535 462 597 L496 699 Q508 744 473 765 L430 765
+ Q411 734 421 701 L387 616 L337 570Z" fill="#2b2524" stroke="#1a1c20" stroke-width="18"/>
+<path d="M424 598 Q449 620 467 692" fill="none" stroke="#9b684d" stroke-width="8" opacity=".40"/>
+<path d="M449 745 Q482 727 506 740 L526 778 L447 791 Q422 788 416 768Z" fill="#282827" stroke="#1a1a1e" stroke-width="13"/>
+<!-- Bent leg resting horizontally on the branch; knee at far left. -->
+<path d="M237 472 Q119 483 93 578 Q71 620 99 660 Q145 691 193 662
+ L275 609 Q328 624 354 568 L319 493Z" fill="url(#body)" stroke="#221f23" stroke-width="19"/>
+<path d="M124 615 Q116 646 171 641 L261 594" fill="none" stroke="#b18a64" stroke-width="8" opacity=".30"/>
+<path d="M73 638 Q99 661 164 651 Q193 676 173 710 L76 710 Q49 700 44 668Z" fill="#2d2a28" stroke="#1d1d20" stroke-width="13"/>
+<!-- Upper back and hunched shoulders; woolly silhouettes and thick forearms. -->
+<path d="M160 204 Q95 225 83 326 L106 449 Q130 487 159 453
+ L210 400 L223 541 Q298 600 417 530 L411 400 Q450 468 480 443
+ Q527 405 493 293 Q453 214 390 211Z" fill="url(#body)" stroke="#201d20" stroke-width="20"/>
+<!-- Exaggerated slouched shoulder and chest folds grounded in tree-giant anatomy. -->
+<path d="M160 236 Q229 287 287 252 Q362 289 421 240 M227 332 Q277 369 326 337
+ M234 411 Q302 439 367 411" fill="none" stroke="#b18a66" stroke-width="12" opacity=".25"/>
+<path d="M209 524 Q300 550 409 510 L422 578 Q315 612 215 577Z" fill="#443a31" stroke="#1f2223" stroke-width="12"/>
+<path d="M213 538 L395 538 M231 568 L391 560" stroke="#ab815d" stroke-width="5" opacity=".47"/>
+<!-- Left hand grips a branch just beneath the knee. -->
+<path d="M107 408 Q86 453 116 522 Q136 552 159 542 L186 503
+ L162 476 L148 424Z" fill="url(#lit)" stroke="#201e20" stroke-width="12"/>
+<path d="M121 500 L146 520 M135 487 L159 508" stroke="#a77d63" stroke-width="7" opacity=".55"/>
+<!-- Right arm is raised towards face holding a thick rolled cigar. -->
+<path d="M437 284 Q480 320 464 376 L422 426 Q389 432 374 393
+ L406 351 L387 321Z" fill="url(#body)" stroke="#221e21" stroke-width="18"/>
+<path d="M411 359 Q424 339 452 330 L479 306 Q499 301 516 320
+ Q512 350 488 355 L445 383Z" fill="url(#lit)" stroke="#211c1e" stroke-width="12"/>
+<path d="M483 316 L537 296" stroke="#a37a5f" stroke-width="24" stroke-linecap="round"/>
+<path d="M497 308 L539 293" stroke="#6e4c39" stroke-width="17" stroke-linecap="round"/>
+<ellipse cx="543" cy="291" rx="10" ry="12" fill="url(#ember)" transform="rotate(70 543 291)"/>
+<!-- Neck beard and hair create a mature, mysterious visage, not a cartoon grin. -->
+<path d="M184 230 L209 156 Q209 69 291 62 Q380 55 402 154 L391 242
+ L358 285 L319 328 L283 306 L234 314 L215 270Z"
+ fill="#202123" stroke="#171b1d" stroke-width="25"/>
+<path d="M210 138 Q208 57 295 44 Q400 39 417 151 L378 124 L349 101
+ L304 117 L275 103 L242 130 L219 191Z" fill="#1c2324" stroke="#161b1d" stroke-width="18"/>
+<path d="M231 147 Q258 119 295 144 L326 129 Q359 121 384 150
+ L382 210 Q360 251 319 273 Q264 257 227 219Z" fill="url(#lit)" stroke="#2a2524" stroke-width="12"/>
+<!-- Deep sockets and narrow amber eye glint; expression reserved, watchful. -->
+<path d="M235 166 Q259 147 283 161 M323 157 Q349 147 374 165"
+ fill="none" stroke="#241f1e" stroke-width="20" stroke-linecap="round"/>
+<path d="M250 171 L267 172 M341 171 L358 174" fill="none" stroke="#c79759" stroke-width="7" stroke-linecap="round"/>
+<path d="M301 170 L289 212 L321 214" fill="none" stroke="#3a2b28" stroke-width="10"/>
+<path d="M262 224 Q306 236 345 221" fill="none" stroke="#281e1e" stroke-width="10" stroke-linecap="round"/>
+<path d="M232 225 Q235 297 273 326 L302 319 L323 337 L353 322
+ Q396 286 387 225 Q362 264 340 264 L326 294 L306 282 L285 292
+ L264 270Z" fill="#252627" stroke="#1b1e20" stroke-width="10"/>
+<!-- Scattered body hair catches barely any moonlight. -->
+<g fill="none" stroke="#c39b70" stroke-width="4" stroke-linecap="round" opacity=".23">
+ <path d="M161 295 l-7 21 m30-4 l-3 20 m31 54 l6 18 m81-89 l-4 15
+ M380 331 l10 15 m17 83 l9 16 M153 399 l-4 12 m109 58 l6 18
+ M339 465 l3 14 M116 558 l8 21 m270 78 l6 17"/>
+</g>
+<!-- Backlit wisps stay in this sprite, larger animated smoke is drawn in world space. -->
+<path d="M542 275 Q556 247 537 218 Q522 197 538 178 Q553 162 546 145"
+ fill="none" stroke="url(#smoke)" stroke-width="9" stroke-linecap="round"/>
+</svg>
