@@ -167,7 +167,7 @@ func _process(delta: float) -> void:
 	# The Tikbalang is tall enough that tracking the player's feet alone
 	# crops off its face. Only after a legitimate reveal (or QA preview),
 	# draw the camera toward the witness as the player approaches the gate.
-	var witness_visible := (story.phase == 4 and story.outcome == "") or debug_night_preview
+	var witness_visible: bool = (story.phase == 4 and story.outcome == "") or debug_night_preview
 	var witness_pull := Vector2.ZERO
 	if witness_visible:
 		var distance_to_witness := player_pos.distance_to(RIDGE_GATE)
