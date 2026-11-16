@@ -58,6 +58,7 @@ jobs:
           lines = path.read_text().splitlines()
           run = int(os.environ["GITHUB_RUN_NUMBER"])
           lines = [f"version/code={run}" if line.startswith("version/code=") else
+                   f'version/name="0.11.0-night3-qa.{run}"' if os.environ.get("GITHUB_REF", "").endswith("night03-tikbalang-connected") and line.startswith("version/name=") else
                    f'version/name="0.10.0-night2-qa.{run}"' if os.environ.get("GITHUB_REF", "").endswith("night2-kapre") and line.startswith("version/name=") else
                    f'version/name="0.9.0-night1-qa.{run}"' if line.startswith("version/name=") else
                    line for line in lines]
