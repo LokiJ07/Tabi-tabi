@@ -46,16 +46,21 @@ func _run() -> void:
 	check(scene_art.get_node_or_null("Painted estuary mangrove 00") is Sprite3D, "mangrove illustration used on shore")
 	check(scene_art.get_node_or_null("Illustrated garden hibiscus 00") is Sprite3D, "flower garden illustration present")
 	var village := game.get_node_or_null("BarrioEnvironmentDetails") as Node3D
-	check(village.get_node_or_null("Lola woven home/Lola authored bamboo facade") != null, "Lola facade is an imported asset")
-	check(village.get_node_or_null("Sabel riverside store/Sabel illustrated market facade") != null, "Sabel storefront is an imported asset")
-	check(village.get_node_or_null("Mara schoolhouse/Mara illustrated school facade") != null, "school has authored facade")
+	for house in ["Lola woven home", "Sabel riverside store", "Mara schoolhouse"]:
+		var volume := village.get_node_or_null(house) as Node3D
+		check(volume != null, house + ": architectural volume exists")
+		if volume != null:
+			check(volume.get_node_or_null("Front woven wall surface") is MeshInstance3D, house + ": textured front wall")
+			check(volume.get_node_or_null("Layered roof 1") is MeshInstance3D, house + ": 3D roof plane")
+			for child in volume.get_children():
+				check(not child is Sprite3D, house + ": no pasted flat facade billboard")
 	for label in ["Ground", "Main footpath", "River"]:
 		var mesh := game.get_node_or_null(label) as MeshInstance3D
 		check(mesh != null and (mesh.material_override as StandardMaterial3D).albedo_texture != null, label + " uses tiled imported art")
 	check(game.get_node_or_null("Ground collision") != null, "ground collision preserved after visual pass")
 	check(game.apprentice_visual.get_node_or_null("IllustratedSprite") != null, "player itself uses visible new character art")
 	check(game.bantay_visual.get_node_or_null("IllustratedSprite") != null, "following Bantay uses new dog art")
-	for action in ["PREPARE", "NOTEBOOK", "HOLD FOCUS", "INTERACT", "DAY / NIGHT"]:
+	for action in ["PREPARE", "FIELD NOTES", "HOLD FOCUS", "INTERACT", "DAY / NIGHT"]:
 		var found := false
 		for node in game.gameplay_hud.get_children():
 			if node is Button and (node as Button).text == action:

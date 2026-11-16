@@ -95,9 +95,22 @@ func _run_one(result: String) -> void:
 	await process_frame
 
 func _run() -> void:
-	await _run_one("resolve")
-	await _run_one("drive_away")
-	await _run_one("partial")
+	# Run each complete outcome in its own process on CI. Godot's headless
+	# dummy renderer can exhaust native mesh resources after repeatedly
+	# constructing the entire 3D Barrio in one process. The default CLI
+	# behavior still runs all three outcomes for local/regression use.
+	var scenarios: Array[String] = ["resolve", "drive_away", "partial"]
+	var requested: PackedStringArray = OS.get_cmdline_user_args()
+	if not requested.is_empty():
+		var chosen := requested[0]
+		if not scenarios.has(chosen):
+			printerr("Unknown Night 1 full-flow scenario: ", chosen)
+			quit(2)
+			return
+		scenarios = [chosen]
+	for scenario in scenarios:
+		await _run_one(scenario)
 	_wipe_test_save()
-	print("Full Night 1 scene flow: ", "PASS" if failures == 0 else str(failures) + " failures")
+	print("Full Night 1 scene flow (%s): " % ",".join(scenarios),
+		"PASS" if failures == 0 else str(failures) + " failures")
 	quit(0 if failures == 0 else 1)

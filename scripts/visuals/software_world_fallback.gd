@@ -207,8 +207,15 @@ func _paint_building(at: Vector3, texture: Texture2D, roof: Color) -> void:
 		var z := -1.85 + float(i) * .93
 		_hut_line(at + Vector3(-2.40,2.97,z), at + Vector3(-.06,ridge_top-.03,z), roof.lightened(.24), 2.0)
 		_hut_line(at + Vector3(.08,ridge_top-.04,z), at + Vector3(2.40,2.96,z), roof.darkened(.24), 2.0)
-	# Facade texture is grounded in the real wall plane, directly below gable.
-	_art(texture, at + Vector3(0, .13, 2.15), 3.90, true, _tint())
+	# Native-world parity: front wall details are drawn on projected 3D planes.
+	# Never paint an entire flat storefront on top of the textured wall.
+	_hut_face([at + Vector3(-1.05,.17,2.09), at + Vector3(.07,.17,2.09),
+		at + Vector3(.07,1.99,2.09), at + Vector3(-1.05,1.99,2.09)],
+		Color("#47352d"), Color("#c7a071"), 3.0)
+	_hut_face([at + Vector3(.76,1.22,2.10), at + Vector3(1.52,1.22,2.10),
+		at + Vector3(1.52,1.97,2.10), at + Vector3(.76,1.97,2.10)],
+		Color("#1d3a43"), Color("#b89568"), 3.0)
+	_hut_line(at + Vector3(1.14,1.22,2.11), at + Vector3(1.14,1.97,2.11), Color("#dec397"), 2.0)
 	# Small timber porch with individual floorboard seams and short steps.
 	_hut_face([at + Vector3(-1.71,.30,2.20), at + Vector3(1.71,.30,2.20),
 		at + Vector3(1.71,.30,3.28), at + Vector3(-1.71,.30,3.28)],

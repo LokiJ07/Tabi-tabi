@@ -26,6 +26,9 @@ const UI_INTERACT: Texture2D = preload("res://assets/ui/interact.svg")
 const UI_DAYNIGHT: Texture2D = preload("res://assets/ui/daynight.svg")
 const Mangrove = preload("res://scripts/world/mangrove.gd")
 const CinematicCamera = preload("res://scripts/visuals/cinematic_camera.gd")
+const SharedHUD = preload("res://scripts/ui/shared_hud.gd")
+const SharedDialogueMotion = preload("res://scripts/ui/shared_dialogue_motion.gd")
+const SharedAtmosphere = preload("res://scripts/visuals/shared_immersive_atmosphere.gd")
 const BarrioLighting = preload("res://scripts/visuals/barrio_lighting.gd")
 const RiverBanca = preload("res://scripts/world/river_banca.gd")
 const BantayRoute = preload("res://scripts/ai/bantay_route.gd")
@@ -87,6 +90,7 @@ var dog_repath_timer := 0.0
 var camera_director = CinematicCamera.new()
 var camera: Camera3D
 var software_world_fallback: Control
+var atmosphere_fx
 var lantern: SpotLight3D
 var status_panel: PanelContainer
 var status_stack: VBoxContainer
@@ -142,6 +146,7 @@ func _ready() -> void:
 	_create_lighting()
 	_create_audio()
 	_create_software_world_fallback()
+	_create_immersive_atmosphere()
 	_create_ui()
 	_apply_preferences()
 	_restore_story()
@@ -214,6 +219,8 @@ func _physics_process(delta: float) -> void:
 	RiverBanca.animate(river_boat, elapsed, preferences.reduced_motion)
 	elapsed += delta
 	if is_night and santelmo != null:
+		# Keep world and encounter animations progressing in the background,
+		# but never drain courage while the player is reading a modal.
 		light_alarm = santelmo.update_behavior(delta, player.global_position, lamp_heading, focus_held)
 		story.alarm = light_alarm
 		_advance_safe_guiding(delta)
@@ -221,7 +228,7 @@ func _physics_process(delta: float) -> void:
 		if encounter_autosave_clock >= 10.0 and story.outcome == "" and story.phase >= 1:
 			encounter_autosave_clock = 0.0
 			_save_story_silent()
-		if story.tick_courage(delta, preferences.story_assist):
+		if not _is_reading_ui() and story.tick_courage(delta, preferences.story_assist):
 			_show_dialogue("Bantay leads you back from the frightening light. You can RETRY the safe checkpoint or ACCEPT PARTIAL.")
 			_refresh_choices()
 			_update_objective()
@@ -234,6 +241,13 @@ func _physics_process(delta: float) -> void:
 	if dog_warning_label != null:
 		dog_warning_label.visible = dog_warning_label.text != ""
 	_update_focus_ui()
+	# Peripheral cues and a low-frequency sound pulse respond to actual
+	# encounter danger. No scripted jumpscares, no forced camera shakes.
+	var fear := maxf(light_alarm, (100.0-story.courage)/100.0*.70)
+	if living_sound != null:
+		living_sound.set_pressure(fear if is_night and not in_lola_hut else 0.0)
+	if atmosphere_fx != null:
+		atmosphere_fx.configure(1, 2 if is_night and not in_lola_hut else 0, fear, preferences.reduced_motion)
 	for i in range(ambient_walkers.size()):
 		var villager := ambient_walkers[i]
 		villager.visible = not is_night
@@ -272,7 +286,10 @@ func _unhandled_input(event: InputEvent) -> void:
 					get_viewport().set_input_as_handled()
 					return
 	if event.is_action_pressed("ui_accept"):
-		_interact()
+		if dialogue != null and dialogue.visible:
+			_on_dialogue_continue_pressed()
+		else:
+			_interact()
 	if event.is_action_pressed("ui_focus_next"):
 		_set_focus(true)
 	if event.is_action_released("ui_focus_next"):
@@ -694,89 +711,27 @@ func _fit_status_card() -> void:
 
 
 func _style_modal(panel: PanelContainer) -> void:
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color("#092936")
-	style.border_color = Color("#d0a65b")
-	style.set_border_width_all(2)
-	style.set_corner_radius_all(12)
-	style.content_margin_left = 22.0
-	style.content_margin_right = 22.0
-	style.content_margin_top = 16.0
-	style.content_margin_bottom = 16.0
-	panel.add_theme_stylebox_override("panel", style)
-	panel.mouse_filter = Control.MOUSE_FILTER_STOP
-
+	SharedHUD.style_modal_panel(panel)
 
 func _menu_style(fill: Color, outline: Color) -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	style.bg_color = fill
-	style.border_color = outline
-	style.set_border_width_all(2)
-	style.set_corner_radius_all(9)
-	style.content_margin_left = 18.0
-	style.content_margin_right = 18.0
-	style.content_margin_top = 7.0
-	style.content_margin_bottom = 7.0
-	return style
-
+	return SharedHUD.modal_button_style(fill,outline)
 
 func _style_game_button(button: Button, title: String, touch: bool = false) -> void:
-	# Shared Night 1 visual language from the approved art guide.
-	var base := StyleBoxFlat.new()
-	base.bg_color = Color("#082b37")
-	base.border_color = Color("#c69b55")
-	base.set_border_width_all(2)
-	base.set_corner_radius_all(13 if touch else 8)
-	base.content_margin_left = 11
-	base.content_margin_right = 11
-	var over := base.duplicate() as StyleBoxFlat
-	over.bg_color = Color("#154758")
-	over.border_color = Color("#f5ce7a")
-	var held := base.duplicate() as StyleBoxFlat
-	held.bg_color = Color("#365442")
-	held.border_color = Color("#ffd47a")
-	held.set_border_width_all(3)
-	button.add_theme_stylebox_override("normal", base)
-	button.add_theme_stylebox_override("hover", over)
-	button.add_theme_stylebox_override("pressed", held)
-	button.add_theme_stylebox_override("hover_pressed", held)
-	button.add_theme_color_override("font_color", Color("#f8e8c7"))
-	button.add_theme_color_override("font_hover_color", Color.WHITE)
-	button.add_theme_color_override("font_pressed_color", Color("#fff4d1"))
-	# SAVE / RETRY are narrow split actions: shrink their type rather than
-	# silently clipping the last character on a real Android screenshot.
-	button.add_theme_font_size_override("font_size", 18 if touch and title.length() > 2 else 23)
-	button.alignment = HORIZONTAL_ALIGNMENT_CENTER
-	button.set_meta("art_theme", "night1-gold-navy")
-	button.clip_text = true
-
+	SharedHUD.style_game_button(button, 18 if touch and title.length() > 2 else 23, touch)
 
 func _style_modal_button(button: Button, selected: bool = false, footer: bool = false) -> void:
-	# The default Godot Button font and disabled palette were nearly invisible
-	# on the user's landscape phone. Explicit styles cover every state.
-	var edge := Color("#ffd47a") if selected else Color("#bb995c")
-	var background := Color("#295643") if selected else Color("#0d3443")
-	button.add_theme_stylebox_override("normal", _menu_style(background, edge))
-	button.add_theme_stylebox_override("hover", _menu_style(Color("#184d59"), Color("#ffdf96")))
-	button.add_theme_stylebox_override("pressed", _menu_style(Color("#2a5644"), Color("#fbd485")))
-	button.add_theme_stylebox_override("hover_pressed", _menu_style(Color(0.26, 0.40, 0.39), Color(0.90, 0.80, 0.49)))
-	button.add_theme_stylebox_override("focus", _menu_style(Color(0.0, 0.0, 0.0, 0.0), Color("#ffde92")))
-	button.add_theme_stylebox_override("disabled", _menu_style(Color(0.11, 0.18, 0.21), edge.darkened(0.15)))
-	button.add_theme_color_override("font_color", Color("#f8e8c7"))
-	button.add_theme_color_override("font_hover_color", Color.WHITE)
-	button.add_theme_color_override("font_pressed_color", Color.WHITE)
-	button.add_theme_color_override("font_focus_color", Color.WHITE)
-	button.add_theme_color_override("font_disabled_color", Color(0.85, 0.91, 0.90))
-	button.add_theme_font_size_override("font_size", roundi((25.0 if footer else 27.0) * preferences.text_scale))
-	button.alignment = HORIZONTAL_ALIGNMENT_CENTER if footer else HORIZONTAL_ALIGNMENT_LEFT
-	button.custom_minimum_size = Vector2(button.custom_minimum_size.x, maxf(button.custom_minimum_size.y, 63.0))
-
+	SharedHUD.style_modal_button(button,selected,footer,preferences.text_scale)
 
 func _sync_modal_ui() -> void:
 	if gameplay_hud == null or modal_backdrop == null:
 		return
 	var active: bool = _is_reading_ui()
+	var was_visible := gameplay_hud.visible
 	gameplay_hud.visible = not active
+	if active and was_visible:
+		SharedDialogueMotion.reset_gameplay(gameplay_hud)
+	elif not active and not was_visible:
+		SharedDialogueMotion.restore_gameplay(gameplay_hud,preferences.reduced_motion)
 	modal_backdrop.visible = active
 	modal_backdrop.color = Color(0.015, 0.035, 0.05, 0.30 if dialogue != null and dialogue.visible else 0.76)
 
@@ -797,6 +752,14 @@ func _create_software_world_fallback() -> void:
 	print("Night 1: using LIVE 2.5D gameplay renderer on ", adapter_name)
 
 
+func _create_immersive_atmosphere() -> void:
+	var canvas := CanvasLayer.new()
+	canvas.name = "SharedNightAtmosphere"
+	canvas.layer = 1 # above Android fallback, strictly below HUD layer 2
+	add_child(canvas)
+	atmosphere_fx = SharedAtmosphere.new()
+	canvas.add_child(atmosphere_fx)
+
 func _create_ui() -> void:
 	var canvas := CanvasLayer.new()
 	canvas.name = "HUD"
@@ -814,47 +777,12 @@ func _create_ui() -> void:
 	root.add_child(gameplay_hud)
 	# A vertical, wrapping status card prevents the objective, clue progress,
 	# Santelmo alarm, companion alerts and courage from occupying fixed Y slots.
-	status_panel = PanelContainer.new()
-	status_panel.name = "QuestStatusCard"
-	status_panel.anchor_left = 0.0
-	status_panel.anchor_right = 0.44  # keep the world visible beside the objective
-	status_panel.anchor_top = 0.0
-	status_panel.anchor_bottom = 0.0
-	status_panel.offset_left = 16.0
-	status_panel.offset_right = -8.0
-	status_panel.offset_top = 10.0
-	status_panel.offset_bottom = 250.0  # updated from live text minimum size
-	status_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var status_style := StyleBoxFlat.new()
-	status_style.bg_color = Color(0.035, 0.075, 0.09, 0.83)
-	status_style.border_color = Color("#c29a55")
-	status_style.set_border_width_all(2)
-	status_style.set_corner_radius_all(9)
-	status_style.content_margin_left = 13
-	status_style.content_margin_right = 13
-	status_style.content_margin_top = 8
-	status_style.content_margin_bottom = 8
-	status_panel.add_theme_stylebox_override("panel", status_style)
-	gameplay_hud.add_child(status_panel)
-	status_stack = VBoxContainer.new()
-	status_stack.name = "StatusRows"
-	status_stack.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	status_stack.add_theme_constant_override("separation", 6)
+	var status := SharedHUD.create_status_card(gameplay_hud, "TABI-TABI  •  BARRIO LAWOM", preferences.text_scale)
+	status_panel = status["panel"]
+	status_stack = status["stack"]
+	info = status["heading"]
+	objective = status["objective"]
 	status_stack.minimum_size_changed.connect(func(): call_deferred("_fit_status_card"))
-	status_panel.add_child(status_stack)
-	info = Label.new()
-	info.name = "VillageHeading"
-	info.text = "TABI-TABI  •  BARRIO LAWOM"
-	info.add_theme_font_size_override("font_size", 24)
-	info.add_theme_color_override("font_color", Color("#f3e2b8"))
-	status_stack.add_child(info)
-	objective = Label.new()
-	objective.name = "QuestObjective"
-	objective.add_theme_font_size_override("font_size", 22)
-	objective.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	objective.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	objective.add_theme_color_override("font_color", Color("#f2f5f2"))
-	status_stack.add_child(objective)
 	_make_button(gameplay_hud, "◀", Vector2(20, 575), Vector2(70, 65), func(): _set_button_axis("left", true), func(): _set_button_axis("left", false))
 	_make_button(gameplay_hud, "▶", Vector2(170, 575), Vector2(70, 65), func(): _set_button_axis("right", true), func(): _set_button_axis("right", false))
 	_make_button(gameplay_hud, "▲", Vector2(95, 505), Vector2(70, 65), func(): _set_button_axis("up", true), func(): _set_button_axis("up", false))
@@ -876,26 +804,11 @@ func _create_ui() -> void:
 	_update_focus_ui()
 	_make_button(gameplay_hud, "INTERACT", Vector2(1050, 565), Vector2(180, 60), _interact, func(): pass)
 	_make_button(gameplay_hud, "DAY / NIGHT", Vector2(1050, 640), Vector2(180, 56), _toggle_night, func(): pass)
-	_make_button(gameplay_hud, "NOTEBOOK", Vector2(1050, 415), Vector2(180, 56), _open_notebook, func(): pass)
+	_make_button(gameplay_hud, "FIELD NOTES", Vector2(1050, 415), Vector2(180, 56), _open_notebook, func(): pass)
 	_make_button(gameplay_hud, "PREPARE", Vector2(1050, 276), Vector2(180, 56), _open_prep, func(): pass)
 	_make_button(gameplay_hud, "SAVE", Vector2(1050, 345), Vector2(85, 52), _save_story, func(): pass)
 	_make_button(gameplay_hud, "RETRY", Vector2(1142, 345), Vector2(88, 52), _retry_story, func(): pass)
-	interact_hint = Label.new()
-	# The interaction prompt occupies a separate top-right zone instead of
-	# crossing the left-hand objective/status card.
-	interact_hint.name = "NearbyPrompt"
-	interact_hint.anchor_left = 0.60
-	interact_hint.anchor_right = 0.86
-	interact_hint.anchor_top = 0.0
-	interact_hint.anchor_bottom = 0.0
-	interact_hint.offset_top = 9
-	interact_hint.offset_bottom = 89
-	interact_hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	interact_hint.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	interact_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	interact_hint.add_theme_font_size_override("font_size", 21)
-	interact_hint.add_theme_color_override("font_color", Color(0.98, 0.86, 0.60))
-	gameplay_hud.add_child(interact_hint)
+	interact_hint = SharedHUD.make_nearby_prompt(gameplay_hud, preferences.text_scale)
 	courage_label = Label.new()
 	courage_label.name = "CourageStatus"
 	courage_label.add_theme_font_size_override("font_size", 20)
@@ -1011,7 +924,7 @@ func _create_ui() -> void:
 	dialogue_close.name = "CloseDialogue"
 	dialogue_close.text = "CONTINUE"
 	dialogue_close.custom_minimum_size = Vector2(240, 52)
-	dialogue_close.pressed.connect(_advance_dialogue)
+	dialogue_close.pressed.connect(_on_dialogue_continue_pressed)
 	_style_modal_button(dialogue_close, false, true)
 	dialogue_next_button = dialogue_close
 	dialogue_layout.add_child(dialogue_close)
@@ -1152,16 +1065,7 @@ func _create_ui() -> void:
 	prep_layout.add_child(kit_close)
 	prep_panel.hide()
 	# Persistent accessibility options; deliberately not a second gameplay save.
-	var options_button := Button.new()
-	options_button.text = "OPTIONS"
-	options_button.anchor_left = 1.0
-	options_button.anchor_right = 1.0
-	options_button.offset_left = -171
-	options_button.offset_right = -20
-	options_button.offset_top = 14
-	options_button.offset_bottom = 60
-	options_button.pressed.connect(_open_settings)
-	gameplay_hud.add_child(options_button)
+	SharedHUD.make_options_button(gameplay_hud, _open_settings, preferences.text_scale)
 	settings_panel = PanelContainer.new()
 	settings_panel.name = "SettingsPanel"
 	settings_panel.anchor_left = 0.10
@@ -1258,37 +1162,7 @@ func _create_ui() -> void:
 
 
 func _make_button(parent: Control, title: String, pos: Vector2, size: Vector2, down: Callable, up: Callable) -> Button:
-	var button := Button.new()
-	button.text = title
-	button.clip_text = true
-	# Anchor controls to bottom corners so they remain reachable on wider phones.
-	button.anchor_left = 1.0 if pos.x > 900 else 0.0
-	button.anchor_right = button.anchor_left
-	button.anchor_top = 1.0
-	button.anchor_bottom = 1.0
-	button.offset_left = pos.x - (1280.0 if pos.x > 900 else 0.0)
-	button.offset_top = pos.y - 720.0
-	button.offset_right = button.offset_left + size.x
-	button.offset_bottom = button.offset_top + size.y
-	button.custom_minimum_size = size
-	button.size = size
-	button.button_down.connect(down)
-	button.button_up.connect(up)
-	_style_game_button(button, title, size.x < 95.0)
-	# Icons are imported vector game assets, not emoji glyphs that differ across
-	# Android devices. Smaller text fits beside them inside the touch targets.
-	match title:
-		"PREPARE": button.icon = UI_PREPARE
-		"NOTEBOOK": button.icon = UI_NOTEBOOK
-		"HOLD FOCUS": button.icon = UI_FOCUS
-		"INTERACT": button.icon = UI_INTERACT
-		"DAY / NIGHT": button.icon = UI_DAYNIGHT
-	if button.icon != null:
-		button.icon_alignment = HORIZONTAL_ALIGNMENT_LEFT
-		button.add_theme_font_size_override("font_size", 19)
-		button.add_theme_constant_override("h_separation", 4)
-	parent.add_child(button)
-	return button
+	return SharedHUD.make_gameplay_button(parent, title, pos, size, down, up, preferences.text_scale)
 
 
 func _set_focus(active: bool) -> void:
@@ -1492,15 +1366,9 @@ func _show_dialogue(value: String, speaker_context: String = "NARRATOR") -> void
 	_close_settings()
 	dialogue_pages = ConversationPages.parse(value, speaker_context)
 	dialogue_page = 0
-	dialogue.show()
+	SharedDialogueMotion.reveal(dialogue,preferences.reduced_motion)
 	_render_dialogue_page()
 	_sync_modal_ui()
-	if not preferences.reduced_motion:
-		dialogue.modulate.a = 0.0
-		var fade := create_tween()
-		fade.tween_property(dialogue, "modulate:a", 1.0, 0.22)
-	else:
-		dialogue.modulate.a = 1.0
 
 
 func _render_dialogue_page() -> void:
@@ -1512,6 +1380,7 @@ func _render_dialogue_page() -> void:
 		ConversationPages.display_name(role), dialogue_page + 1, dialogue_pages.size()
 	]
 	dialogue_text.text = str(item.get("text", ""))
+	SharedDialogueMotion.reveal_text(dialogue_text,preferences.reduced_motion)
 	dialogue_portrait.call("set_speaker", role)
 	# Physical prop narration keeps the world visible instead of reusing
 	# a misleading anonymous human portrait on every interaction.
@@ -1521,6 +1390,8 @@ func _render_dialogue_page() -> void:
 	var color: Color = FolkActors.identity(role)["accent"] if role != "NARRATOR" else Color("#d7c69c")
 	dialogue_speaker.add_theme_color_override("font_color", color.lightened(0.15))
 	dialogue_next_button.text = "NEXT SPEAKER  >" if dialogue_page + 1 < dialogue_pages.size() else "CONTINUE / CLOSE"
+	if dialogue_page > 0:
+		SharedDialogueMotion.speaker_change([dialogue_speaker,dialogue_text,dialogue_portrait],preferences.reduced_motion)
 	var scroller := dialogue.get_node("DialogueLayout/DialogueScroll") as ScrollContainer
 	scroller.scroll_vertical = 0
 
@@ -1544,6 +1415,13 @@ func _frame_cinematic_speaker(role: String) -> void:
 	camera_director.focus_on(target, role)
 
 
+func _on_dialogue_continue_pressed() -> void:
+	# First tap reveals remaining text; second tap progresses the conversation.
+	if SharedDialogueMotion.finish_text(dialogue_text):
+		return
+	_advance_dialogue()
+
+
 func _advance_dialogue() -> void:
 	if dialogue == null or not dialogue.visible:
 		return
@@ -1557,8 +1435,7 @@ func _advance_dialogue() -> void:
 func _close_dialogue() -> void:
 	camera_director.release()
 	if dialogue != null:
-		dialogue.hide()
-		dialogue.modulate.a = 1.0
+		SharedDialogueMotion.conceal(dialogue,preferences.reduced_motion)
 	dialogue_pages.clear()
 	dialogue_page = 0
 	_clear_touch_input()

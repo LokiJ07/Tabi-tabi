@@ -15,6 +15,12 @@ func _run() -> void:
 	root.add_child(game)
 	await process_frame
 	game._close_dialogue()
+	check(game.atmosphere_fx != null, "Night 1 uses shared visual tension effect")
+	if game.atmosphere_fx != null:
+		check(game.atmosphere_fx.mouse_filter == Control.MOUSE_FILTER_IGNORE, "fear effects never steal touches")
+		game.atmosphere_fx.configure(1,2,.80,true)
+		check(is_equal_approx(game.atmosphere_fx.tension,.80) and game.atmosphere_fx.reduced_motion, "Night 1 sensory FX honors accessibility")
+	check(is_equal_approx(game.status_panel.anchor_right, .37), "Night 1 status card is compact common width")
 	game._open_notebook()
 	check(game._is_reading_ui(), "notebook pauses walking")
 	check(game.notebook_panel.get_node_or_null("NotebookLayout/NotebookScroll") != null, "notebook supports overflowing clues")

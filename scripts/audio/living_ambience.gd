@@ -8,6 +8,10 @@ var day_player: AudioStreamPlayer
 var night_player: AudioStreamPlayer
 var night_active := false
 var audio_level := 1
+var pressure := 0.0
+var heartbeat_player: AudioStreamPlayer
+var heartbeat_playback: AudioStreamGeneratorPlayback
+var pulse_clock := 0.0
 
 
 func _ready() -> void:
@@ -23,6 +27,18 @@ func _ready() -> void:
 	add_child(night_player)
 	day_player.play()
 	night_player.play()
+	# Separate original low-frequency pulse. Quiet until the Santelmo
+	# becomes genuinely threatening. Zero extra assets or network calls.
+	heartbeat_player = AudioStreamPlayer.new()
+	heartbeat_player.name = "QuietSantelmoPressurePulse"
+	var pulse_stream := AudioStreamGenerator.new()
+	pulse_stream.mix_rate = float(SAMPLE_RATE)
+	pulse_stream.buffer_length = .18
+	heartbeat_player.stream = pulse_stream
+	heartbeat_player.volume_db = -80.0
+	add_child(heartbeat_player)
+	heartbeat_player.play()
+	heartbeat_playback = heartbeat_player.get_stream_playback() as AudioStreamGeneratorPlayback
 	set_process(true)
 
 
@@ -34,12 +50,25 @@ func set_audio_level(level: int) -> void:
 	audio_level = clampi(level, 0, 2)
 
 
+func set_pressure(value: float) -> void:
+	pressure = clampf(value,0.0,1.0)
+
 func _process(delta: float) -> void:
 	var base_db := -80.0 if audio_level == 0 else -24.0 if audio_level == 1 else -14.0
 	if day_player != null:
 		day_player.volume_db = lerpf(day_player.volume_db, -80.0 if night_active else base_db, minf(1.0, delta * 1.8))
 	if night_player != null:
 		night_player.volume_db = lerpf(night_player.volume_db, base_db if night_active else -80.0, minf(1.0, delta * 1.8))
+	if heartbeat_player != null:
+		var loudness := -80.0 if audio_level == 0 or not night_active or pressure < .35 else -31.0 if audio_level == 1 else -23.0
+		heartbeat_player.volume_db = lerpf(heartbeat_player.volume_db,loudness,minf(1.0,delta*2.0))
+	if heartbeat_playback != null:
+		var frames := mini(heartbeat_playback.get_frames_available(),900)
+		for i in range(frames):
+			pulse_clock += 1.0/float(SAMPLE_RATE)
+			var beat := pow(maxf(0.0,sin(pulse_clock*TAU*1.15)),15.0)
+			var sample := .010 * beat * pressure * sin(pulse_clock*TAU*78.0)
+			heartbeat_playback.push_frame(Vector2(sample,sample))
 
 
 static func create_loop(night: bool) -> AudioStreamWAV:

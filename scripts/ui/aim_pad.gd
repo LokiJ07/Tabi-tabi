@@ -3,6 +3,7 @@ extends Control
 signal aim_changed(direction: Vector2)
 signal aim_released
 
+var prompt_text := "LANTERN AIM"
 var active_pointer := -1
 var using_mouse := false
 
@@ -14,7 +15,7 @@ func _ready() -> void:
 	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(bg)
 	var title := Label.new()
-	title.text = "LANTERN AIM"
+	title.text = prompt_text
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	title.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
