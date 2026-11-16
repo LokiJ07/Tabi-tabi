@@ -178,7 +178,7 @@ python3 .github/scripts/assert_night_atmosphere.py build/android-night1-shore-do
 # On the Night 2 development branch, launch the REAL new chapter through
 # its debug-only title shortcut. Never silently treat Night 1 screenshots as
 # Kapre evidence; verify the new scene's exact engine log marker first.
-if [ "${GITHUB_REF:-}" = "refs/heads/feature/night2-kapre" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/hud-house-depth-fix" ]; then
+if [ "${GITHUB_REF:-}" = "refs/heads/feature/night2-kapre" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/hud-house-depth-fix" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night03-tikbalang-connected" ]; then
   adb shell am force-stop "$PKG" || true
   adb shell monkey -p "$PKG" -c android.intent.category.LAUNCHER 1
   sleep 7
@@ -238,6 +238,38 @@ if [ "${GITHUB_REF:-}" = "refs/heads/feature/night2-kapre" ] || [ "${GITHUB_REF:
   python3 .github/scripts/assert_gameplay_visible.py build/android-night2-return-trail.png
   adb logcat -d -v brief | grep -Ei 'NIGHT2_QA|Godot|AndroidRuntime' | tail -n 160 > build/android-night2-log.txt || true
   echo "PASS: actual Kapre intro, witness area, shelter and mango tree run on Android"
+fi
+
+# Night 3 uses the SAME running Godot APK, original ridge artwork, and
+# actual scene title debug shortcut. These captures are never concept art.
+if [ "${GITHUB_REF:-}" = "refs/heads/feature/night03-tikbalang-connected" ]; then
+  adb shell am force-stop "$PKG" || true
+  adb shell monkey -p "$PKG" -c android.intent.category.LAUNCHER 1
+  sleep 7
+  adb shell input keyevent 141  # F11: development-only REAL Night 3 entry
+  sleep 8
+  if ! adb logcat -d -v brief | grep -q "NIGHT3_QA_SCENE_READY"; then
+    echo "ERROR: authentic Night 3 Tikbalang scene did not launch"
+    adb logcat -d | grep -E 'NIGHT3_QA|Godot|AndroidRuntime' | tail -n 100 || true
+    exit 1
+  fi
+  adb exec-out screencap -p > build/android-night3-intro.png
+  for item in "133 RIDGE_DAY ridge-day" "136 WATCHPOST watchpost" "139 TIKBALANG_NIGHT tikbalang-night" "135 BACK_TRAIL back-trail"; do
+    set -- $item
+    adb shell input keyevent "$1"
+    sleep 4
+    if ! adb logcat -d -v brief | grep -q "NIGHT3_QA_$2"; then
+      echo "ERROR: authentic Night 3 $2 camera state not reached"
+      exit 1
+    fi
+    adb exec-out screencap -p > "build/android-night3-$3.png"
+    python3 .github/scripts/assert_gameplay_visible.py "build/android-night3-$3.png"
+  done
+  if cmp -s build/android-night3-ridge-day.png build/android-night3-tikbalang-night.png; then
+    echo "ERROR: Night 3 daytime and nocturnal Tikbalang are identical"
+    exit 1
+  fi
+  echo "PASS: actual Tikbalang Night 3 intro, bamboo ridge, safe lookout, night reveal and connected trail"
 fi
 
 adb logcat -d -s AndroidRuntime:E Godot:E GodotEngine:E > build/android-night1-launch-log.txt || true

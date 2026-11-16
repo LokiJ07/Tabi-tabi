@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/night03_main.gd" id="1_night03"]
+
+[node name="TabiTabiNight3" type="Node2D"]
+script = ExtResource("1_night03")

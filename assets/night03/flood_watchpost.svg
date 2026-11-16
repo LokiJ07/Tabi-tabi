@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="470" viewBox="0 0 640 470">
+<defs><linearGradient id="wall" x1="0" x2="1"><stop stop-color="#ac8b67"/><stop offset="1" stop-color="#655946"/></linearGradient><pattern id="woven" width="26" height="24" patternUnits="userSpaceOnUse"><path d="M0 0L26 24M26 0L0 24" stroke="#d0b58b" stroke-width="2" opacity=".4"/></pattern></defs>
+<ellipse cx="340" cy="420" rx="260" ry="33" fill="#1b2924" opacity=".34"/>
+<path d="M116 312L414 385L522 318L231 247Z" fill="#54442f"/><path d="M147 313L413 371L482 316L228 262Z" fill="#8c7352"/>
+<path d="M154 302L174 429M397 353L416 452M480 310L488 421M227 264L236 368" stroke="#5b4734" stroke-width="19"/>
+<path d="M163 132L398 183L398 352L163 292Z" fill="url(#wall)" stroke="#544b37" stroke-width="9"/>
+<path d="M164 132L397 183L397 352L164 292Z" fill="url(#woven)"/>
+<path d="M397 183L492 133L492 305L397 352Z" fill="#6c6149" stroke="#514937" stroke-width="8"/>
+<path d="M140 135L304 38L522 136L393 207Z" fill="#403c36" stroke="#342e27" stroke-width="12"/>
+<path d="M146 129L302 48L507 140L390 194Z" fill="#897354"/>
+<path d="M166 128L306 58L487 144" stroke="#cfaa79" stroke-width="7" fill="none"/>
+<path d="M251 190L336 209L336 339L251 320Z" fill="#3a3630" stroke="#d0ae7c" stroke-width="8"/>
+<path d="M262 230L323 246" stroke="#bb9b67" stroke-width="5"/>
+<path d="M434 237L461 224L461 270L434 285Z" fill="#213f44" stroke="#c49e6a" stroke-width="7"/>
+<path d="M247 310L335 332L353 351L238 321Z" fill="#ad8d61"/>
+<path d="M218 359L351 389M201 379L371 419M182 399L388 445" stroke="#a88b60" stroke-width="11"/>
+<path d="M90 405Q147 388 198 409M387 436Q443 409 515 419" stroke="#636b4a" stroke-width="14" fill="none"/>
+</svg>

@@ -144,6 +144,9 @@ func _ready() -> void:
 	if str(arrived.get("from", "")) == "barrio_lawom":
 		player_pos = ConnectedWorld.ARRIVAL_MANGO
 		print("TABI_WORLD_ARRIVAL_MANGO_FROM_BARRIO")
+	elif str(arrived.get("from", "")) == "night03":
+		player_pos = ConnectedWorld.ARRIVAL_MANGO_RIDGE
+		print("TABI_WORLD_ARRIVAL_MANGO_FROM_RIDGE")
 	dog_pos = player_pos + Vector2(-52, 31)
 	camera = Camera2D.new()
 	camera.name = "Night2IsometricCamera"
@@ -357,6 +360,16 @@ func _draw() -> void:
 		var y := -580.0 + float((i * 193) % 1170)
 		if Vector2(x,y).distance_to(TREE) > 230:
 			draw_texture_rect(HIBISCUS, Rect2(x-34, y-41, 74, 62), false, Color("#a1bd94"))
+	# North-east passage is the actual continuation from the mango-grove
+	# washout into Tikbalang's ridge; not a disconnected chapter selector.
+	_polyline([Vector2(540,-330),Vector2(670,-448),
+		ConnectedWorld.TRAIL_MANGO_RIDGE],Color("#526147"),70)
+	_polyline([Vector2(540,-330),Vector2(670,-448),
+		ConnectedWorld.TRAIL_MANGO_RIDGE],Color("#b6a17a"),46)
+	var ridge_sign: Vector2 = ConnectedWorld.TRAIL_MANGO_RIDGE
+	draw_line(ridge_sign+Vector2(-10,-73),ridge_sign+Vector2(-10,43),Color("#66492e"),10,true)
+	draw_line(ridge_sign+Vector2(-50,-62),ridge_sign+Vector2(79,-55),Color("#c3a171"),17,true)
+	draw_line(ridge_sign+Vector2(-50,-62),ridge_sign+Vector2(79,-55),Color("#e3c88e"),3,true)
 	# The boundary crossing is part of the illustrated world, not a menu.
 	var trail_marker: Vector2 = ConnectedWorld.TRAIL_MANGO
 	draw_line(trail_marker+Vector2(-45,-24),trail_marker+Vector2(-45,46),Color("#6f5037"),8.0,true)
@@ -620,6 +633,8 @@ func _draw_world_labels() -> void:
 	var trail: Vector2 = ConnectedWorld.TRAIL_MANGO
 	draw_string(font,trail+Vector2(-145,76),"← BARRIO LAWOM • TRAIL",
 		HORIZONTAL_ALIGNMENT_LEFT,350,24,Color("#ffe0a4"))
+	draw_string(font,ConnectedWorld.TRAIL_MANGO_RIDGE+Vector2(-235,98),
+		"NORTH RIDGE • TIKBALANG  →",HORIZONTAL_ALIGNMENT_LEFT,410,19,Color("#f0d6a2"))
 	if story.phase == 2:
 		draw_string(font,OBSERVATION+Vector2(-138,100),"SAFE LOOKOUT • HOLD OBSERVE",HORIZONTAL_ALIGNMENT_LEFT,360,19,Color("#ffe1a2"))
 	if story.phase >= 1 and story.phase <= 2:
@@ -928,6 +943,8 @@ func _press_move(direction: String, pressed: bool) -> void:
 func _nearby() -> String:
 	if player_pos.distance_to(ConnectedWorld.TRAIL_MANGO) < ConnectedWorld.TRAVEL_RANGE_2D:
 		return "return_barrio"
+	if player_pos.distance_to(ConnectedWorld.TRAIL_MANGO_RIDGE) < ConnectedWorld.TRAVEL_RANGE_2D:
+		return "ridge_gate"
 	if story.phase == 0:
 		for id in KEY_ORDER:
 			if not story.clues.has(id) and player_pos.distance_to(TARGETS[id]) < 105:
@@ -999,6 +1016,8 @@ func _update_hint() -> void:
 	last_target = near
 	if near == "return_barrio":
 		interaction_hint.text = "BARRIO LAWOM • FOLLOW TRAIL TO RETURN"
+	elif near == "ridge_gate":
+		interaction_hint.text = "INTERACT • NORTH RIDGE / NIGHT 3" if story.outcome != "" else "NORTH RIDGE LOCKED • FINISH KAPRE CASE"
 	elif near == "":
 		interaction_hint.text = "EXPLORE • Follow the highlighted clue / safe route"
 	elif near == "observe":
@@ -1018,6 +1037,9 @@ func _interact() -> void:
 	var target := _nearby()
 	if target == "return_barrio":
 		_return_to_barrio()
+		return
+	if target == "ridge_gate":
+		_enter_ridge()
 		return
 	if target == "":
 		_show_dialogue("BANTAY", "Bantay sniffs the wind. Move closer to the highlighted clue or safe route marker.", [{"label":"CONTINUE", "action":"close"}])
@@ -1228,6 +1250,28 @@ func _auto_save() -> bool:
 	if saved and story.outcome != "":
 		ConnectedWorld.note_outcome(2, story.outcome)
 	return saved
+
+
+func _enter_ridge() -> void:
+	if travel_in_progress:
+		return
+	if story.outcome == "":
+		_show_dialogue("BANTAY","Before the north ridge is safe to enter, finish the Kapre investigation and mark the dangerous mango approaches.",
+			[{"label":"FINISH NIGHT 2","action":"close"}])
+		return
+	if not _auto_save():
+		save_error.popup_centered(Vector2i(610,190))
+		return
+	if not ConnectedWorld.begin_travel("old_mango","night03",story.outcome):
+		_show_dialogue("FIELD RECORD","The North Ridge needs a confirmed Night 2 completion in the shared story ledger. Save and finish the Kapre chapter first.",
+			[{"label":"CHECK PROGRESS","action":"close"}])
+		return
+	travel_in_progress = true
+	observe_held = false
+	motion = Vector2.ZERO
+	held_moves.clear()
+	print("TABI_WORLD_TRAVEL_MANGO_TO_RIDGE")
+	get_tree().change_scene_to_file(ConnectedWorld.scene_for("night03"))
 
 
 func _return_to_barrio() -> void:

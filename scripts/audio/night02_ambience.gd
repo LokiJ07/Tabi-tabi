@@ -14,6 +14,13 @@ var night_stage := 0
 var pressure := 0.0
 
 func _ready() -> void:
+	# CI's headless integration runner has no audio device. Creating a real
+	# generator/playback while rapidly switching three streamed scenes can
+	# leave ALSA teardown hanging AFTER the tests already print PASS. Runtime
+	# Android/desktop keeps the full original procedural soundtrack.
+	if DisplayServer.get_name() == "headless":
+		set_process(false)
+		return
 	player = AudioStreamPlayer.new()
 	player.name = "KapreForestAndFloodAmbience"
 	var stream := AudioStreamGenerator.new()
@@ -36,6 +43,16 @@ func set_night_stage(value: int) -> void:
 
 func set_tension(value: float) -> void:
 	pressure = clampf(value,0.0,1.0)
+
+func _exit_tree() -> void:
+	# This procedural generator is shared by the Kapre and Tikbalang scenes.
+	# Streamed region changes may free two emitters in one frame. Stop audio
+	# before their C++ playback resources disappear, avoiding shutdown stalls.
+	set_process(false)
+	if player != null and is_instance_valid(player):
+		player.stop()
+	playback = null
+
 
 func _process(_delta: float) -> void:
 	if playback == null or level == 0:
