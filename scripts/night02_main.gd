@@ -23,6 +23,8 @@ const SCHOOL: Texture2D = preload("res://assets/world/school_facade.svg")
 const HIBISCUS: Texture2D = preload("res://assets/world/hibiscus_bush.svg")
 const LANTERN: Texture2D = preload("res://assets/world/lantern_post.svg")
 const SOIL: Texture2D = preload("res://assets/world/soil_ground.svg")
+const NORTH_FOREST: Texture2D = preload("res://assets/world/north_forest_tree.svg")
+const FOREST_UNDERSTORY: Texture2D = preload("res://assets/world/north_grove_understory.svg")
 
 const TREE := Vector2(245, -120)
 const OBSERVATION := Vector2(-25, -330)
@@ -225,6 +227,29 @@ func _draw() -> void:
 		var color := Color("#304a3b").lerp(Color("#557052"), float(i) / 29.0)
 		draw_rect(Rect2(-1040, y, 2200, 57), color)
 	draw_texture_rect(SOIL, Rect2(-925, -685, 1830, 1390), false, Color(1.0, 1.0, 1.0, .23))
+	# Match Barrio Lawom's north grove: its hand-painted fern / moss texture
+	# and the same original broadleaf tree illustrations continue into Kapre's
+	# region. All trees are OUTSIDE the traversable road and clue hit areas.
+	for patch_center in [
+		Vector2(-818, 285), Vector2(-794, -55), Vector2(-605, 607),
+		Vector2(-336, 555), Vector2(585, 485), Vector2(730, -180)
+	]:
+		draw_texture_rect(FOREST_UNDERSTORY,
+			Rect2(patch_center - Vector2(250, 205), Vector2(500, 410)), false, Color.WHITE)
+	for tree_data in [
+		{"foot": Vector2(-898, 178), "scale": .90},
+		{"foot": Vector2(-886, 582), "scale": 1.10},
+		{"foot": Vector2(-595, 692), "scale": .87},
+		{"foot": Vector2(-286, 667), "scale": 1.0},
+		{"foot": Vector2(725, 590), "scale": 1.05},
+		{"foot": Vector2(812, -84), "scale": .95}
+	]:
+		var foot: Vector2 = tree_data["foot"]
+		var scale_factor: float = tree_data["scale"]
+		var width := 225.0 * scale_factor
+		var height := 300.0 * scale_factor
+		draw_texture_rect(NORTH_FOREST, Rect2(foot - Vector2(width*.5, height),
+			Vector2(width, height)), false, Color.WHITE)
 	# Great Flood washout — a continuous diagonal corridor with shallow
 	# eroded banks and dried floodwater scars.
 	_polygon([Vector2(-910,330),Vector2(810,-590),Vector2(950,-535),Vector2(-760,430)], Color("#5f5a45"))
