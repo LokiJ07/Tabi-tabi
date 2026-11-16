@@ -178,6 +178,16 @@ if [ "${GITHUB_REF:-}" = "refs/heads/feature/night2-kapre" ] || [ "${GITHUB_REF:
     exit 1
   fi
   adb exec-out screencap -p > build/android-night2-intro.png
+  # Same exact camera for folklore correctness: daytime tree must be empty,
+  # the full Kapre appears only in the dedicated night capture.
+  adb shell input keyevent 133  # F3: daylight mango, real world camera
+  sleep 4
+  if ! adb logcat -d -v brief | grep -q "NIGHT2_QA_MANGO_DAY_VIEW"; then
+    echo "ERROR: Night 2 daytime reference did not render"
+    exit 1
+  fi
+  adb exec-out screencap -p > build/android-night2-mango-day.png
+  python3 .github/scripts/assert_gameplay_visible.py build/android-night2-mango-day.png
   for item in "137 WITNESS witness" "138 ROUTE shelter-route" "139 MANGO kapre-tree"; do
     set -- $item
     adb shell input keyevent "$1"
@@ -197,6 +207,15 @@ if [ "${GITHUB_REF:-}" = "refs/heads/feature/night2-kapre" ] || [ "${GITHUB_REF:
   fi
   adb exec-out screencap -p > build/android-night2-dusk.png
   python3 .github/scripts/assert_gameplay_visible.py build/android-night2-dusk.png
+  # These are two distinct *live* render states with the same camera. A
+  # screenshot with the giant visible in daylight invalidates this milestone.
+  test -s build/android-night2-mango-day.png
+  test -s build/android-night2-kapre-tree.png
+  test -s build/android-night2-dusk.png
+  if cmp -s build/android-night2-mango-day.png build/android-night2-kapre-tree.png; then
+    echo "ERROR: Kapre daytime and nighttime captures were identical"
+    exit 1
+  fi
   adb shell input keyevent 135  # F5: view live walkable road back to Barrio
   sleep 4
   if ! adb logcat -d -v brief | grep -q "NIGHT2_QA_RETURN_TRAIL_VIEW"; then
