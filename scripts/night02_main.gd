@@ -11,6 +11,7 @@ const Preferences = preload("res://scripts/core/preferences.gd")
 const Night02Ambience = preload("res://scripts/audio/night02_ambience.gd")
 const ConnectedWorld = preload("res://scripts/core/connected_world.gd")
 const SharedHUD = preload("res://scripts/ui/shared_hud.gd")
+const AimPad = preload("res://scripts/ui/aim_pad.gd")
 const SharedAtmosphere = preload("res://scripts/visuals/shared_immersive_atmosphere.gd")
 const MANGO: Texture2D = preload("res://assets/night02/old_mango_tree.svg")
 const KAPRE: Texture2D = preload("res://assets/night02/kapre_perched.svg")
@@ -65,6 +66,7 @@ var prefs = Preferences.new()
 var player_pos := Vector2(-510, 140)
 var dog_pos := Vector2(-580, 192)
 var motion := Vector2.ZERO
+var look_direction := Vector2.ZERO
 var held_moves: Dictionary = {}
 var observe_held := false
 var camera: Camera2D
@@ -180,6 +182,7 @@ func _process(delta: float) -> void:
 			player_pos = TREE + tree_offset.normalized() * 70 if tree_offset.length() > .01 else TREE + Vector2(-70, 0)
 		dog_pos = dog_pos.lerp(player_pos + Vector2(-48, 27), clampf(delta * 2.9, 0.0, 1.0))
 	camera.position = player_pos
+	camera.offset = camera.offset.lerp(look_direction * 65.0, clampf(delta*9.0, 0.0, 1.0))
 	if not travel_in_progress and player_pos.distance_to(ConnectedWorld.TRAIL_MANGO) < 53.0:
 		_return_to_barrio()
 	var sheltered := player_pos.distance_to(OBSERVATION) < 125
@@ -223,6 +226,7 @@ func _sync_gameplay_hud() -> void:
 		held_moves.clear()
 		motion = Vector2.ZERO
 		observe_held = false
+		look_direction = Vector2.ZERO
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_accept") and not dialogue.visible:
@@ -659,35 +663,42 @@ func _build_ui() -> void:
 	progress.visible = false
 	gameplay_controls.add_child(progress)
 	interaction_hint = SharedHUD.make_nearby_prompt(gameplay_controls, prefs.text_scale)
-	# Compact directional cluster on bottom LEFT. Action stack on right,
-	# never over the center character or target.
-	# Same thumb positions as Night 1; no per-chapter control drift.
-	var moves := [
-		["up", "▲"], ["left", "◀"], ["right", "▶"], ["down", "▼"]]
-	for entry in moves:
-		var dir_name: String = entry[0]
-		var direction := Button.new()
-		direction.name = "Move_" + dir_name
-		direction.text = entry[1]
-		SharedHUD.place_move_button(direction, dir_name)
-		_button_style(direction, 23)
-		direction.button_down.connect(func(): _press_move(dir_name, true))
-		direction.button_up.connect(func(): _press_move(dir_name, false))
-		direction.mouse_exited.connect(func(): _press_move(dir_name, false))
-		gameplay_controls.add_child(direction)
-	var actions := Control.new()
-	actions.name = "Night2Actions"
-	actions.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	actions.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	gameplay_controls.add_child(actions)
-	_action(actions, "INTERACT", _interact)
-	var hold := _action(actions, "HOLD OBSERVE", func(): pass)
-	hold.button_down.connect(func(): observe_held = true)
-	hold.button_up.connect(func(): observe_held = false)
-	hold.mouse_exited.connect(func(): observe_held = false)
-	_action(actions, "FIELD NOTES", _open_notebook)
-	_action(actions, "SAFE RETREAT", _request_retreat)
-	_action(actions, "OPTIONS", _open_options)
+	# Exactly the same Night 1 physical layout, icons, input affordances,
+	# and 1280x720 responsive anchors. Only the two chapter actions differ.
+	for item in [
+		["left","◀",Vector2(20,575)], ["right","▶",Vector2(170,575)],
+		["up","▲",Vector2(95,505)], ["down","▼",Vector2(95,645)]
+	]:
+		var dir_name: String = item[0]
+		var move := SharedHUD.make_gameplay_button(gameplay_controls,item[1],item[2],
+			Vector2(70,65),func(): _press_move(dir_name,true),func(): _press_move(dir_name,false),prefs.text_scale)
+		move.name = "Move_" + dir_name
+		move.mouse_exited.connect(func(): _press_move(dir_name,false))
+	var look := AimPad.new()
+	look.name = "Night2LookPad"
+	look.prompt_text = "LOOK AROUND"
+	look.anchor_left = 1.0
+	look.anchor_right = 1.0
+	look.anchor_top = 1.0
+	look.anchor_bottom = 1.0
+	look.offset_left = -435.0
+	look.offset_right = -260.0
+	look.offset_top = -205.0
+	look.offset_bottom = -40.0
+	look.aim_changed.connect(func(direction: Vector2): look_direction = direction)
+	look.aim_released.connect(func(): look_direction = Vector2.ZERO)
+	gameplay_controls.add_child(look)
+	var observe := _gameplay_button("HOLD OBSERVE", Vector2(1050,490),Vector2(180,60),func(): pass)
+	observe.button_down.connect(func(): observe_held = true)
+	observe.button_up.connect(func(): observe_held = false)
+	observe.mouse_exited.connect(func(): observe_held = false)
+	_gameplay_button("INTERACT",Vector2(1050,565),Vector2(180,60),_interact)
+	_gameplay_button("SAFE RETREAT",Vector2(1050,640),Vector2(180,56),_request_retreat)
+	_gameplay_button("FIELD NOTES",Vector2(1050,415),Vector2(180,56),_open_notebook)
+	_gameplay_button("PREPARE",Vector2(1050,276),Vector2(180,56),_open_safety_preparation)
+	_gameplay_button("SAVE",Vector2(1050,345),Vector2(85,52),_save_and_notify)
+	_gameplay_button("RETRY",Vector2(1142,345),Vector2(88,52),_retry_night2)
+	action_buttons["OPTIONS"] = SharedHUD.make_options_button(gameplay_controls,_open_options,prefs.text_scale)
 
 	dialogue = PanelContainer.new()
 	dialogue.name = "Night2Dialogue"
@@ -811,6 +822,43 @@ func _panel_style() -> StyleBoxFlat:
 
 func _button_style(button: Button, font_size: int = 19) -> void:
 	SharedHUD.style_game_button(button, font_size, true, prefs.text_scale)
+
+func _gameplay_button(label: String, at: Vector2, dimensions: Vector2, callback: Callable) -> Button:
+	var b := SharedHUD.make_gameplay_button(gameplay_controls,label,at,dimensions,
+		func(): pass,func(): pass,prefs.text_scale)
+	b.name = label.replace(" ","").replace("/","")
+	b.pressed.connect(callback)
+	action_buttons[label] = b
+	return b
+
+func _open_safety_preparation() -> void:
+	if dialogue.visible or ending_panel.visible or notebook.visible or options_panel.visible:
+		return
+	var route_done := story.barriers.size()
+	_show_dialogue("SAFETY PREPARATION",
+		"Before confronting the resident of the old mango, study the unstable roots and falling branches.\n" +
+		"Evidence: %d/5   •   Closed routes: %d/3\n" % [story.clues.size(),route_done] +
+		"Approach the bamboo lookout only after securing the shortcuts. Keep Bantay nearby; never climb the old tree.",
+		[{"label":"UNDERSTOOD","action":"close"}])
+
+func _retry_night2() -> void:
+	if dialogue.visible or notebook.visible or options_panel.visible:
+		return
+	if story.outcome != "":
+		_show_ending()
+		return
+	if not story.safe_retry():
+		return
+	player_pos = OBSERVATION + Vector2(-95,40) if story.phase >= 2 else Vector2(-510,140)
+	dog_pos = player_pos + Vector2(-52,31)
+	observe_held = false
+	look_direction = Vector2.ZERO
+	motion = Vector2.ZERO
+	held_moves.clear()
+	_auto_save()
+	_show_dialogue("SAFE RETRY","Returned to a safe location without losing your recorded clues.",
+		[{"label":"CONTINUE","action":"close"}])
+	_rebuild_objective()
 
 func _action(parent: Node, label: String, callback: Callable) -> Button:
 	var b := Button.new()
