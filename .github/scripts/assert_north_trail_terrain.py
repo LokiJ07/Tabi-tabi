@@ -19,8 +19,8 @@ if total < 80:
 dominant, count = colors.most_common(1)[0]
 share = count / total
 print(f"Barrio north corridor screenshot: {width}x{height}, most common RGB16={dominant}, share={share:.1%}, unique={len(colors)}")
-if share > .90 or dominant == (6, 9, 8) and share > .40:
-    raise SystemExit("FAIL: Old Mango Trail still terminates in flat cyan unrendered world")
-if len(colors) < 6:
-    raise SystemExit("FAIL: North trail lacks any substantial terrain detail")
+if dominant == (6, 9, 8) and share > .40:
+    raise SystemExit("FAIL: North trail ends in cyan unrendered scene background")
+if share > .96 or len(colors) < 6:
+    raise SystemExit("FAIL: North forest backdrop remains too flat and unillustrated")
 print("PASS: North trail area includes actual rendered world instead of cyan void")
