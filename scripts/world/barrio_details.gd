@@ -119,7 +119,7 @@ static func _building(root: Node3D, tag: String, at: Vector3, wall: Color, accen
 	_box(structure, "Window cross brace", Vector3(1.10, 1.53, 2.18), Vector3(0.06, 0.59, 0.05), Color("#d2b383"))
 	for side in [-1, 1]:
 		var roof := _box(structure, "Layered roof %d" % side, Vector3(1.24 * side, 3.06, 0), Vector3(2.94, 0.15, 4.72), accent)
-		roof.rotation.z = 0.19 * float(side)
+		roof.rotation.z = -0.19 * float(side)
 		# Layered thatch is a real material on the angled roof, not extra
 		# detached decorations floating over the original blockout.
 		var thatch_mat := StandardMaterial3D.new()
@@ -133,13 +133,18 @@ static func _building(root: Node3D, tag: String, at: Vector3, wall: Color, accen
 			var thatch := _box(structure, "Layered roof cap %d_%d" % [side, j],
 				Vector3(1.24 * side, 3.17, -1.75 + float(j) * 0.88),
 				Vector3(3.04, 0.045, 0.43), Color("#957451") if j % 2 == 0 else Color("#71523e"))
-			thatch.rotation.z = 0.19 * float(side)
+			thatch.rotation.z = -0.19 * float(side)
 			var cap_mat := StandardMaterial3D.new()
 			cap_mat.albedo_texture = NIPA_THATCH
 			cap_mat.albedo_color = Color("#e7d2a6")
 			cap_mat.uv1_scale = Vector3(1.5, 1.0, 1.5)
 			cap_mat.roughness = 1.0
 			thatch.material_override = cap_mat
+	_box(structure, "Real bamboo roof ridge", Vector3(0, 3.36, 0), Vector3(0.14, 0.16, 4.95), Color("#6b4932"))
+	for step in range(3):
+		_box(structure, "Raised entry step %d" % step,
+			Vector3(-0.35, 0.13 - float(step) * 0.035, 3.0 + float(step) * 0.31),
+			Vector3(1.60 + float(step) * 0.15, 0.15, 0.30), Color("#8b6746"))
 	_box(structure, "Raised porch edge", Vector3(0, 0.18, 2.46), Vector3(3.2, 0.16, 0.76), Color("#72513c"))
 	for j in range(6):
 		_box(structure, "Porch floorboards %d" % j, Vector3(-1.37 + float(j) * 0.56, 0.28, 2.5),
