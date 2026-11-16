@@ -34,6 +34,7 @@ const AimPad = preload("res://scripts/ui/aim_pad.gd")
 const SaveService = preload("res://scripts/core/save_service.gd")
 const Night02Scene = preload("res://scenes/night02.tscn")
 const ConnectedWorld = preload("res://scripts/core/connected_world.gd")
+const NorthGrove = preload("res://scripts/world/north_grove_layout.gd")
 const Preferences = preload("res://scripts/core/preferences.gd")
 const LivingSound = preload("res://scripts/audio/living_ambience.gd")
 const PLAYER_SPEED := 4.2
@@ -372,6 +373,7 @@ func _create_world() -> void:
 	BarrioDetails.decorate(self)
 	EnvironmentPolish.decorate(self)
 	IllustratedBarrio.decorate(self)
+	NorthGrove.decorate(self)
 	_build_mango_tree_trail()
 
 
