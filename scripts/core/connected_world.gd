@@ -120,7 +120,7 @@ static func seven_night_chain_is_connected() -> bool:
 	var seen := {"barrio_lawom": true}
 	var pending: Array[String] = ["barrio_lawom"]
 	while not pending.is_empty():
-		var at := pending.pop_front()
+		var at: String = pending.pop_front()
 		for neighbor in CONNECTIONS.get(at, []):
 			if not seen.has(neighbor):
 				seen[neighbor] = true
