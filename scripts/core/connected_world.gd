@@ -20,9 +20,9 @@ const CONNECTIONS := {
 	"night06": ["night05", "night07"],
 	"night07": ["night06"]
 }
-const TRAIL_BARRIO := Vector3(2.0, 0.20, -20.0)
+const TRAIL_BARRIO := Vector3(1.0, 0.20, -32.0)
 const TRAIL_MANGO := Vector2(-765.0, 485.0)
-const ARRIVAL_BARRIO := Vector3(2.0, 0.75, -17.8)
+const ARRIVAL_BARRIO := Vector3(1.0, 0.75, -29.1)
 const ARRIVAL_MANGO := Vector2(-635.0, 385.0)
 const TRAVEL_RANGE_3D := 3.35
 const TRAVEL_RANGE_2D := 118.0
