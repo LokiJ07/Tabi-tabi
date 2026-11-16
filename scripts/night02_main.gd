@@ -10,6 +10,7 @@ const Night1Save = preload("res://scripts/core/save_service.gd")
 const Preferences = preload("res://scripts/core/preferences.gd")
 const Night02Ambience = preload("res://scripts/audio/night02_ambience.gd")
 const ConnectedWorld = preload("res://scripts/core/connected_world.gd")
+const SharedHUD = preload("res://scripts/ui/shared_hud.gd")
 const MANGO: Texture2D = preload("res://assets/night02/old_mango_tree.svg")
 const KAPRE: Texture2D = preload("res://assets/night02/kapre.svg")
 const BARRIER: Texture2D = preload("res://assets/night02/closed_path_barrier.svg")
@@ -65,6 +66,7 @@ var held_moves: Dictionary = {}
 var observe_held := false
 var camera: Camera2D
 var hud: CanvasLayer
+var gameplay_controls: Control
 var objective: Label
 var subtitle: Label
 var danger: Label
@@ -360,15 +362,96 @@ func _polygon(points: Array[Vector2], color: Color) -> void:
 	draw_colored_polygon(PackedVector2Array(points), color)
 
 func _building_at(at: Vector2, texture: Texture2D, name_text: String) -> void:
-	var base := Rect2(at-Vector2(115,150),Vector2(230,160))
-	draw_colored_polygon(PackedVector2Array([
-		at+Vector2(-121,-108),at+Vector2(0,-216),at+Vector2(121,-108),
-		at+Vector2(105,-91),at+Vector2(0,-192),at+Vector2(-105,-91)]), Color("#74513a"))
-	draw_texture_rect(texture,base,false)
-	draw_line(at+Vector2(-104,1),at+Vector2(104,1),Color("#e2c08a"),6)
-	# World labels are small and below the buildings, never above residents.
+	# Hand-built 2.5D isometric architecture, NOT a stretched 2D facade.
+	# A footprint, four real corners, two roof planes and raised porch share
+	# one projected origin, so the house sits ON the ground rather than hovering.
+	var school := texture == SCHOOL
+	var wall_front := Color("#c1ac85") if school else Color("#bd9b70")
+	var wall_side := Color("#8b7963") if school else Color("#826b52")
+	var roof_lit := Color("#65817d") if school else Color("#ac8056")
+	var roof_shadow := Color("#405a5b") if school else Color("#725239")
+	var front_l := at + Vector2(-106, -5)
+	var front_r := at + Vector2(76, 37)
+	var back_r := at + Vector2(158, -21)
+	var back_l := at + Vector2(-24, -63)
+	var rise := Vector2(0, -132)
+	var roof_front_l := front_l + rise + Vector2(-12, -8)
+	var roof_front_r := front_r + rise + Vector2(12, -8)
+	var roof_back_l := back_l + rise + Vector2(-12, -8)
+	var roof_back_r := back_r + rise + Vector2(12, -8)
+	var ridge_front := at + Vector2(-15, -232)
+	var ridge_back := at + Vector2(67, -290)
+	# Shadow/raised floor: projecting the same footprint grounds the stilts.
+	_polygon([front_l+Vector2(-20,13),front_r+Vector2(15,14),
+		back_r+Vector2(17,15),back_l+Vector2(-15,13)],Color(0.08,0.12,0.11,.37))
+	_polygon([front_l,front_r,back_r,back_l], Color("#624d39"))
+	for foot in [front_l, front_r, back_r]:
+		draw_line(foot + Vector2(0, -11), foot + Vector2(0, 29), Color("#6f5239"), 12, true)
+		draw_line(foot + Vector2(0, -11), foot + Vector2(0, 29), Color("#ae8b61"), 3, true)
+	# Rear-facing side darkens naturally; front wall remains visually distinct.
+	_polygon([front_r,back_r,back_r+rise,front_r+rise], wall_side)
+	_polygon([front_l,front_r,front_r+rise,front_l+rise],wall_front)
+	# Individual bamboo battens follow the front wall's perspective exactly.
+	for i in range(11):
+		var p := front_l.lerp(front_r, float(i)/10.0)
+		draw_line(p+Vector2(0,-1), p+rise+Vector2(0,4),
+			Color("#916e4d") if i % 2 == 0 else Color("#d7bd90"), 2.6, true)
+	for j in range(4):
+		var h := float(j+1)/5.0
+		draw_line(front_l.lerp(front_l+rise,h),front_r.lerp(front_r+rise,h),
+			Color("#937656"), 2.0, true)
+	# The entrance is part of the wall, not painted across the whole building.
+	var door_l := front_l.lerp(front_r,.32)
+	var door_r := front_l.lerp(front_r,.58)
+	_polygon([door_l,door_r,door_r+Vector2(0,-90),door_l+Vector2(0,-90)],
+		Color("#46372e"))
+	draw_line(door_l+Vector2(0,-92),door_r+Vector2(0,-92),Color("#e2c392"),6)
+	draw_circle(door_r.lerp(door_l,.18)+Vector2(0,-43),3,Color("#e7c178"))
+	# Side window bends with the right wall's own perspective.
+	var window_l := front_r.lerp(back_r,.30)+Vector2(0,-69)
+	var window_r := front_r.lerp(back_r,.72)+Vector2(0,-69)
+	_polygon([window_l,window_r,window_r+Vector2(0,-35),window_l+Vector2(0,-35)],
+		Color("#203d40"))
+	draw_line(window_l.lerp(window_r,.5),window_l.lerp(window_r,.5)+Vector2(0,-35),
+		Color("#e2c493"),3)
+	draw_line(window_l+Vector2(0,-17),window_r+Vector2(0,-17),Color("#d4ae78"),3)
+	# A gable and TWO separate roof surfaces with visible eave thickness.
+	_polygon([roof_front_l,ridge_front,roof_front_r],roof_shadow)
+	_polygon([roof_front_l,ridge_front,ridge_back,roof_back_l],roof_lit)
+	_polygon([ridge_front,roof_front_r,roof_back_r,ridge_back],roof_shadow)
+	draw_line(ridge_front,ridge_back,Color("#ead3a2"),5,true)
+	for i in range(1,7):
+		var t := float(i)/7.0
+		draw_line(roof_front_l.lerp(ridge_front,t),roof_back_l.lerp(ridge_back,t),
+			Color("#e0bb82") if i % 2 == 0 else Color("#85613c"),2,true)
+		draw_line(ridge_front.lerp(roof_front_r,t),ridge_back.lerp(roof_back_r,t),
+			Color("#9d7e59"),2,true)
+	draw_line(roof_front_l,roof_front_r,Color("#59452f"),6,true)
+	draw_line(roof_front_r,roof_back_r,Color("#463b33"),5,true)
+	# Raised porch and short stairs connect the door visually to the terrain.
+	var porch_l := front_l + Vector2(-4,5)
+	var porch_r := front_r + Vector2(2,5)
+	_polygon([porch_l,porch_r,porch_r+Vector2(-35,27),porch_l+Vector2(-35,27)],
+		Color("#9b7851"))
+	for i in range(5):
+		var line_start := porch_l.lerp(porch_r,float(i+1)/6.0)
+		draw_line(line_start,line_start+Vector2(-35,27),Color("#624934"),2)
+	for i in range(3):
+		var step_at := door_l.lerp(door_r,.5)+Vector2(-23-float(i)*5,13+float(i)*13)
+		draw_line(step_at,step_at+Vector2(76+float(i)*7,13),
+			Color("#6f5035"),8,true)
+	if school:
+		# School-specific timber plaque fixed to the side wall.
+		var sign_at := front_r.lerp(back_r,.55)+Vector2(0,-104)
+		draw_line(sign_at+Vector2(-21,0),sign_at+Vector2(24,10),Color("#ead29b"),9,true)
+	else:
+		# Home-specific hanging lamp anchored to the eave support.
+		draw_line(roof_front_l+Vector2(17,7),roof_front_l+Vector2(17,36),Color("#7a5638"),2)
+		draw_circle(roof_front_l+Vector2(17,39),7,Color("#e2b968",.85))
+	# Small world text remains BELOW the footprint, clear of player and roofs.
 	var font := ThemeDB.fallback_font
-	draw_string(font,at+Vector2(-85,32),name_text,HORIZONTAL_ALIGNMENT_LEFT,180,19,Color("#f0dbaa"))
+	draw_string(font,at+Vector2(-80,77),name_text,
+		HORIZONTAL_ALIGNMENT_LEFT,185,18,Color("#f0dbaa"))
 
 func _draw_evidence() -> void:
 	for id in KEY_ORDER:
