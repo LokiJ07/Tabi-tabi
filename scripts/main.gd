@@ -27,6 +27,7 @@ const UI_DAYNIGHT: Texture2D = preload("res://assets/ui/daynight.svg")
 const Mangrove = preload("res://scripts/world/mangrove.gd")
 const CinematicCamera = preload("res://scripts/visuals/cinematic_camera.gd")
 const SharedHUD = preload("res://scripts/ui/shared_hud.gd")
+const SharedAtmosphere = preload("res://scripts/visuals/shared_immersive_atmosphere.gd")
 const BarrioLighting = preload("res://scripts/visuals/barrio_lighting.gd")
 const RiverBanca = preload("res://scripts/world/river_banca.gd")
 const BantayRoute = preload("res://scripts/ai/bantay_route.gd")
@@ -88,6 +89,7 @@ var dog_repath_timer := 0.0
 var camera_director = CinematicCamera.new()
 var camera: Camera3D
 var software_world_fallback: Control
+var atmosphere_fx: Control
 var lantern: SpotLight3D
 var status_panel: PanelContainer
 var status_stack: VBoxContainer
@@ -143,6 +145,7 @@ func _ready() -> void:
 	_create_lighting()
 	_create_audio()
 	_create_software_world_fallback()
+	_create_immersive_atmosphere()
 	_create_ui()
 	_apply_preferences()
 	_restore_story()
@@ -235,6 +238,11 @@ func _physics_process(delta: float) -> void:
 	if dog_warning_label != null:
 		dog_warning_label.visible = dog_warning_label.text != ""
 	_update_focus_ui()
+	# Peripheral environmental cues grow with Santelmo pressure but never
+	# displace the camera or mask touch controls and dialogue.
+	if atmosphere_fx != null:
+		var fear := maxf(light_alarm, (100.0-story.courage)/100.0*.70)
+		atmosphere_fx.configure(1, 2 if is_night and not in_lola_hut else 0, fear, preferences.reduced_motion)
 	for i in range(ambient_walkers.size()):
 		var villager := ambient_walkers[i]
 		villager.visible = not is_night
@@ -770,6 +778,14 @@ func _create_software_world_fallback() -> void:
 	print("Night 1: using LIVE 2.5D gameplay renderer on ", adapter_name)
 
 
+func _create_immersive_atmosphere() -> void:
+	var canvas := CanvasLayer.new()
+	canvas.name = "SharedNightAtmosphere"
+	canvas.layer = 1 # above Android fallback, strictly below HUD layer 2
+	add_child(canvas)
+	atmosphere_fx = SharedAtmosphere.new()
+	canvas.add_child(atmosphere_fx)
+
 func _create_ui() -> void:
 	var canvas := CanvasLayer.new()
 	canvas.name = "HUD"
@@ -790,7 +806,7 @@ func _create_ui() -> void:
 	status_panel = PanelContainer.new()
 	status_panel.name = "QuestStatusCard"
 	status_panel.anchor_left = 0.0
-	status_panel.anchor_right = 0.44  # keep the world visible beside the objective
+	status_panel.anchor_right = 0.37  # same compact size as Night 2; preserve world sightlines
 	status_panel.anchor_top = 0.0
 	status_panel.anchor_bottom = 0.0
 	status_panel.offset_left = 16.0
@@ -809,7 +825,7 @@ func _create_ui() -> void:
 	info = Label.new()
 	info.name = "VillageHeading"
 	info.text = "TABI-TABI  •  BARRIO LAWOM"
-	info.add_theme_font_size_override("font_size", 24)
+	info.add_theme_font_size_override("font_size", 22)
 	info.add_theme_color_override("font_color", Color("#f3e2b8"))
 	status_stack.add_child(info)
 	objective = Label.new()
@@ -840,7 +856,7 @@ func _create_ui() -> void:
 	_update_focus_ui()
 	_make_button(gameplay_hud, "INTERACT", Vector2(1050, 565), Vector2(180, 60), _interact, func(): pass)
 	_make_button(gameplay_hud, "DAY / NIGHT", Vector2(1050, 640), Vector2(180, 56), _toggle_night, func(): pass)
-	_make_button(gameplay_hud, "NOTEBOOK", Vector2(1050, 415), Vector2(180, 56), _open_notebook, func(): pass)
+	_make_button(gameplay_hud, "FIELD NOTES", Vector2(1050, 415), Vector2(180, 56), _open_notebook, func(): pass)
 	_make_button(gameplay_hud, "PREPARE", Vector2(1050, 276), Vector2(180, 56), _open_prep, func(): pass)
 	_make_button(gameplay_hud, "SAVE", Vector2(1050, 345), Vector2(85, 52), _save_story, func(): pass)
 	_make_button(gameplay_hud, "RETRY", Vector2(1142, 345), Vector2(88, 52), _retry_story, func(): pass)
@@ -848,7 +864,7 @@ func _create_ui() -> void:
 	# The interaction prompt occupies a separate top-right zone instead of
 	# crossing the left-hand objective/status card.
 	interact_hint.name = "NearbyPrompt"
-	interact_hint.anchor_left = 0.60
+	interact_hint.anchor_left = 0.67
 	interact_hint.anchor_right = 0.86
 	interact_hint.anchor_top = 0.0
 	interact_hint.anchor_bottom = 0.0
