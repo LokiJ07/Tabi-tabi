@@ -12,6 +12,8 @@ const Preferences = preload("res://scripts/core/preferences.gd")
 const SharedHUD = preload("res://scripts/ui/shared_hud.gd")
 const SharedMotion = preload("res://scripts/ui/shared_dialogue_motion.gd")
 const SharedAtmosphere = preload("res://scripts/visuals/shared_immersive_atmosphere.gd")
+const DimensionalArt = preload("res://scripts/visuals/layered_25d.gd")
+const Landscape = preload("res://scripts/visuals/folklore_landscape_25d.gd")
 const Sound = preload("res://scripts/audio/night02_ambience.gd")
 const Portrait = preload("res://scripts/ui/speaker_portrait.gd")
 const AimPad = preload("res://scripts/ui/aim_pad.gd")
@@ -65,6 +67,8 @@ var observe_held := false
 var travel_in_progress := false
 var elapsed := 0.0
 var particles := 0.0
+var walk_phase := 0.0
+var walk_weight := 0.0
 var debug_night_preview := false
 var hud: CanvasLayer
 var gameplay_controls: Control
@@ -97,6 +101,7 @@ var ambient
 
 func _ready() -> void:
 	name = "TabiTabiNight3"
+	set_meta("dimensional_art", DimensionalArt.STYLE_ID)
 	prefs.load_from()
 	var previous := Night02State.new()
 	if Night02Save.read(previous):
@@ -152,7 +157,11 @@ func _process(delta: float) -> void:
 	if blocked:
 		axis = Vector2.ZERO
 	axis = axis.limit_length()
+	walk_weight = lerpf(walk_weight, 1.0 if axis.length() > .02 else 0.0,
+		1.0 if prefs.reduced_motion else clampf(delta * 9.0,0.0,1.0))
 	if axis.length() > .02:
+		if not prefs.reduced_motion:
+			walk_phase += delta * 8.5
 		var heading := Vector2(axis.x + axis.y*.43, axis.y*.79 - axis.x*.16).normalized()
 		var moved := player_pos + heading*PLAYER_SPEED*delta
 		moved.x = clampf(moved.x,MAP_BOUNDS.position.x+45.0,MAP_BOUNDS.end.x-45.0)
@@ -286,6 +295,7 @@ func _path(points: Array, edge: Color, fill: Color, width: float) -> void:
 func _draw() -> void:
 	# Ground: layered ridge contours, flooded terrace, textured forest floor.
 	draw_rect(Rect2(-1250,-1100,2600,2400),Color("#223e36"))
+	Landscape.parallax_ridges(self,Rect2(-1250,-1100,2600,2400),camera.position,3,_stage())
 	for i in range(34):
 		var yy := -925.0+float(i)*58.0
 		var tint := Color("#30483a").lerp(Color("#566448"),float(i)/33.0)
@@ -312,6 +322,10 @@ func _draw() -> void:
 		Vector2(380,-450),Vector2(640,-357)],Color("#53664b"),Color("#9d896c"),56.0)
 	_path([Vector2(-520,145),Vector2(-170,245),Vector2(126,260),
 		Vector2(220,50)],Color("#5c5a47"),Color("#9e8060"),59.0)
+	# Broken shoulder stones follow the rising ridge and do not replace the
+	# existing walkable trail, real ravine collision or clue interactions.
+	Landscape.trail_stones(self,Vector2(-910,405),Vector2(-305,-70),29,70,_stage()>=2)
+	Landscape.trail_stones(self,Vector2(105,-118),Vector2(640,-357),22,70,_stage()>=2)
 	# The physical ford is made of stones, NOT walk-through empty water.
 	for i in range(7):
 		var xx := -148.0+float(i)*38.0
@@ -320,6 +334,9 @@ func _draw() -> void:
 			Vector2(xx+15,yy-15),Vector2(xx+27,yy+3),
 			Vector2(xx+12,yy+15)],Color("#7a7667"))
 		draw_line(Vector2(xx-7,yy-7),Vector2(xx+13,yy-9),Color("#d1bd91"),2,true)
+	for cliff_rock in [Vector2(-215,362),Vector2(180,514),Vector2(-65,655),
+		Vector2(345,-565),Vector2(515,-510),Vector2(720,-270)]:
+		Landscape.rock(self,cliff_rock,64.0,_stage()<2)
 	for pos in [Vector2(-890,-430),Vector2(-755,-630),Vector2(-520,-650),
 		Vector2(-20,-610),Vector2(410,-640),Vector2(760,-570),
 		Vector2(870,35),Vector2(690,520),Vector2(-420,625),
@@ -334,11 +351,14 @@ func _draw() -> void:
 	]:
 		var p: Vector2 = data[0]
 		var scale_bamboo: float = data[1]
-		draw_texture_rect(BAMBOO,Rect2(p-Vector2(142*scale_bamboo,344*scale_bamboo),
-			Vector2(284*scale_bamboo,380*scale_bamboo)),false)
+		DimensionalArt.paint_grounded(self, BAMBOO,
+			p + Vector2(0,36*scale_bamboo),
+			Vector2(284*scale_bamboo,380*scale_bamboo), Color.WHITE, .26)
 	# Old flood watchpost is a roofed, three-dimensional landmark.
-	draw_texture_rect(WATCHPOST,Rect2(-350,-560,410,330),false)
-	draw_texture_rect(LANTERN,Rect2(-252,-448,56,127),false)
+	DimensionalArt.paint_grounded(self, WATCHPOST,
+		Vector2(-145,-230), Vector2(410,330), Color.WHITE, .38)
+	DimensionalArt.lantern(self, LANTERN,
+		Vector2(-224,-321), Vector2(56,127), _stage() >= 1)
 	# Meaningful clue props, four unique physical silhouettes.
 	for id in Story.CLUES:
 		var clue: Vector2 = CLUES_AT[id]
@@ -399,6 +419,11 @@ func _draw() -> void:
 			draw_circle(player_pos+Vector2(0,-49),r,
 				Color(1.0,.70,.32,.010+float(5-ring)*.009))
 		draw_circle(SAFE_LOOKOUT+Vector2(-66,-74),160,Color(1.0,.64,.24,.075))
+	# The ravine has its own horizontal mist plane, projected behind all
+	# characters; it never hides a route-puzzle control or clue marker.
+	if _stage() >= 1:
+		Landscape.mist(self,Vector2(-65,430),560.0,particles,
+			not prefs.reduced_motion,_stage()>=2)
 	# Full creature appears ONLY after the verified route; no day spoiler.
 	if (story.phase == 4 and story.outcome == "") or debug_night_preview:
 		var shift := sin(particles*.75)*4.0 if not prefs.reduced_motion else 0.0
@@ -408,8 +433,9 @@ func _draw() -> void:
 				Color(.68,.34,.16,.009+float(5-ring)*.006))
 		# Maintain the original horse-human proportions while keeping both
 		# horn tips in the landscape viewport at the closest QA camera pose.
-		draw_texture_rect(TIKBALANG,Rect2(RIDGE_GATE+Vector2(-159,-449+shift),
-			Vector2(318,450)),false,Color("#e0d6c6"))
+		DimensionalArt.paint_grounded(self, TIKBALANG,
+			RIDGE_GATE+Vector2(0,1+shift), Vector2(318,450),
+			Color("#e0d6c6"), .50)
 	# Keep original shared protagonists readable against darkness. Their
 	# draw order is world-depth based and HUD/cinematic layers stay untouched.
 	var actors := [
@@ -421,7 +447,13 @@ func _draw() -> void:
 	for actor in actors:
 		var where: Vector2 = actor["at"]
 		var dimensions: Vector2 = actor["size"]
-		draw_texture_rect(actor["tex"],Rect2(where-Vector2(dimensions.x*.5,dimensions.y),dimensions),false)
+		var is_player: bool = actor["tex"] == HERO
+		var is_dog: bool = actor["tex"] == BANTAY
+		var lift := 0.0
+		if not prefs.reduced_motion and (is_player or is_dog):
+			lift = absf(sin(walk_phase * (1.12 if is_dog else 1.0))) * (3.0 if is_player else 2.1) * walk_weight
+		DimensionalArt.paint_grounded(self, actor["tex"], where, dimensions,
+			Color.WHITE, .43, lift)
 	# In-world wayfinding signs are small, correctly oriented and non-obstructive.
 	var font := ThemeDB.fallback_font
 	draw_string(font,ConnectedWorld.TRAIL_RIDGE+Vector2(-125,90),

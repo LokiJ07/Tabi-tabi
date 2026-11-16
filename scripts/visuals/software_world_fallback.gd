@@ -4,6 +4,8 @@ extends Control
 ## the 3D world. This 2.5D CanvasItem draws their live positions using the
 ## same imported textures as the normal renderer, never a static screenshot.
 ## This layer is activated ONLY for known Android SwiftShader/Emulator adapters.
+const DimensionalArt = preload("res://scripts/visuals/layered_25d.gd")
+const Landscape = preload("res://scripts/visuals/folklore_landscape_25d.gd")
 const SOIL: Texture2D = preload("res://assets/world/soil_ground.svg")
 const PATH: Texture2D = preload("res://assets/world/earthen_path.svg")
 const WATER: Texture2D = preload("res://assets/world/tidal_water.svg")
@@ -86,6 +88,23 @@ func _ground() -> void:
 	_quad(WATER, [Vector3(-44, 0.06, -43), Vector3(-9.56, 0.06, -43),
 		Vector3(-9.56, 0.06, 35), Vector3(-44, 0.06, 35)],
 		Color("#8cbfc5") if game.is_night else Color.WHITE, 3.0)
+	# Brackish water needs more than one blue polygon on the emulator:
+	# perspective ripples are projected in the SAME 3D world coordinates as
+	# the river. No screen-sized image or expensive spatial shader is used.
+	for i in range(55):
+		var z := -39.0 + float(i) * 1.32
+		var x := -31.0 + float(i % 7) * 2.82 + sin(float(i) * 2.13) * .91
+		var swell := .32 + float(i % 5) * .08
+		var from: Vector2 = _screen(Vector3(x - swell, .087, z))
+		var to: Vector2 = _screen(Vector3(x + swell, .087, z + .12))
+		draw_line(from, to, Color(.77, .91, .90, .095 if game.is_night else .16),
+			1.2, true)
+	# A thin floodwater edge reinforces the coast's change of elevation.
+	var tide_line := PackedVector2Array()
+	for i in range(52):
+		var z := -38.0 + float(i) * 1.17
+		tide_line.append(_screen(Vector3(-10.38 + .34 * sin(z * .43), .12, z)))
+	draw_polyline(tide_line, Color(.82, .91, .81, .21), 2.0, true)
 	var pts := PackedVector2Array()
 	var uvs := PackedVector2Array()
 	for i in range(49):
@@ -115,6 +134,17 @@ func _ground() -> void:
 			var center := -10.07 + 0.34 * sin(z * 0.43) + 0.14 * sin(z * 1.16 + 0.7)
 			shore.append(_screen(Vector3(center - .24 + float(strip) * .42, .11, z)))
 		draw_colored_polygon(shore, [Color("#797760"), Color("#8c7c5c"), Color("#b1a17a")][strip])
+	# Shoreline reeds and small tidal stones are projected at the actual
+	# riverbank. They stay decor-only and never become false collision.
+	for i in range(17):
+		var z := -35.0 + float(i)*3.1
+		var shore_x := -10.4 + .34*sin(z*.43)
+		var foot := _screen(Vector3(shore_x, .10, z))
+		var reeds_size := _scale_units(.52+float(i%3)*.12)
+		Landscape.reeds(self,foot,reeds_size,game.elapsed*.21 if game.is_night else 0.0,game.is_night)
+		if i%3 == 0:
+			Landscape.rock(self,foot+Vector2(_scale_units(.45),9.0),
+				maxf(9.0,_scale_units(.22)),not game.is_night)
 	# The old dock stopped short of the water. Now its native and fallback
 	# versions both extend over the muddy bank into the brackish river.
 	_quad(PATH, [Vector3(-12.05, .28, 7.48), Vector3(-5.05, .28, 7.48),
@@ -174,7 +204,8 @@ func _art(texture: Texture2D, at: Vector3, width_units: float, bottom_aligned: b
 	# Skip art far outside view: this fallback must still run on old CPUs.
 	if not rect.intersects(Rect2(-200, -200, size.x + 400, size.y + 400)):
 		return
-	draw_texture_rect(texture, rect, false, color)
+	DimensionalArt.paint_grounded(self, texture,
+		Vector2(rect.position.x + rect.size.x * .5, rect.end.y), rect.size, color, .25)
 
 func _paint_building(at: Vector3, texture: Texture2D, roof: Color) -> void:
 	# Volume-first 2.5D: a REAL gabled nipa house with four spatial wall
