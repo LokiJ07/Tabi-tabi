@@ -156,6 +156,7 @@ capture_live_view() {
   adb exec-out screencap -p > "build/$filename"
   python3 .github/scripts/assert_gameplay_visible.py "build/$filename"
 }
+capture_live_view 135 NORTH_TRAIL android-night1-connected-trail.png
 capture_live_view 136 VILLAGE android-night1-village.png
 capture_live_view 137 SHORE android-night1-shore-dock.png
 capture_live_view 138 NIGHT android-night1-night-river.png
@@ -195,6 +196,14 @@ if [ "${GITHUB_REF:-}" = "refs/heads/feature/night2-kapre" ]; then
   fi
   adb exec-out screencap -p > build/android-night2-dusk.png
   python3 .github/scripts/assert_gameplay_visible.py build/android-night2-dusk.png
+  adb shell input keyevent 135  # F5: view live walkable road back to Barrio
+  sleep 4
+  if ! adb logcat -d -v brief | grep -q "NIGHT2_QA_RETURN_TRAIL_VIEW"; then
+    echo "ERROR: Kapre return-to-Barrio trail is not in the running game"
+    exit 1
+  fi
+  adb exec-out screencap -p > build/android-night2-return-trail.png
+  python3 .github/scripts/assert_gameplay_visible.py build/android-night2-return-trail.png
   adb logcat -d -v brief | grep -Ei 'NIGHT2_QA|Godot|AndroidRuntime' | tail -n 160 > build/android-night2-log.txt || true
   echo "PASS: actual Kapre intro, witness area, shelter and mango tree run on Android"
 fi
