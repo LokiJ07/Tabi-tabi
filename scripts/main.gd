@@ -217,7 +217,9 @@ func _physics_process(delta: float) -> void:
 		camera.size = lerpf(camera.size, 14.7, smooth)
 	RiverBanca.animate(river_boat, elapsed, preferences.reduced_motion)
 	elapsed += delta
-	if is_night and santelmo != null:
+	if is_night and santelmo != null and not _is_reading_ui():
+		# Cinematic dialogue, notebook and pause are fair checkpoints: never
+		# drain courage or advance a moving threat while the player is reading.
 		light_alarm = santelmo.update_behavior(delta, player.global_position, lamp_heading, focus_held)
 		story.alarm = light_alarm
 		_advance_safe_guiding(delta)
