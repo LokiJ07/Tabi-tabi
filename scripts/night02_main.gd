@@ -702,11 +702,11 @@ func _build_ui() -> void:
 
 	dialogue = PanelContainer.new()
 	dialogue.name = "Night2Dialogue"
-	dialogue.anchor_left = .245
-	dialogue.anchor_right = .76
-	dialogue.anchor_top = .52
-	dialogue.anchor_bottom = .985
-	dialogue.add_theme_stylebox_override("panel", _panel_style())
+	dialogue.anchor_left = .08
+	dialogue.anchor_right = .92
+	dialogue.anchor_top = .44
+	dialogue.anchor_bottom = .955
+	SharedHUD.style_modal_panel(dialogue)
 	layout.add_child(dialogue)
 	var dialogue_box := VBoxContainer.new()
 	dialogue_box.name = "Conversation"
@@ -734,17 +734,17 @@ func _build_ui() -> void:
 
 	notebook = PanelContainer.new()
 	notebook.name = "Night2FieldNotes"
-	notebook.anchor_left = .17
-	notebook.anchor_right = .82
-	notebook.anchor_top = .095
-	notebook.anchor_bottom = .89
-	notebook.add_theme_stylebox_override("panel", _panel_style())
+	notebook.anchor_left = .10
+	notebook.anchor_right = .90
+	notebook.anchor_top = .055
+	notebook.anchor_bottom = .945
+	SharedHUD.style_modal_panel(notebook)
 	layout.add_child(notebook)
 	var notebook_stack := VBoxContainer.new()
 	notebook.add_child(notebook_stack)
 	var notebook_title := Label.new()
-	notebook_title.text = "BLUE FIELD NOTEBOOK  •  KAPRE"
-	notebook_title.add_theme_font_size_override("font_size", 27)
+	notebook_title.text = "FIELD NOTEBOOK  |  NIGHT 2"
+	notebook_title.add_theme_font_size_override("font_size", 25)
 	notebook_title.add_theme_color_override("font_color", Color("#f3d7a0"))
 	notebook_stack.add_child(notebook_title)
 	var scroller := ScrollContainer.new()
@@ -754,18 +754,18 @@ func _build_ui() -> void:
 	notebook_content.name = "NotebookEvidenceBody"
 	notebook_content.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	notebook_content.custom_minimum_size = Vector2(580,450)
-	notebook_content.add_theme_font_size_override("font_size", roundi(21.0*prefs.text_scale))
+	notebook_content.add_theme_font_size_override("font_size", roundi(27.0*prefs.text_scale))
 	scroller.add_child(notebook_content)
 	_action(notebook_stack, "CLOSE NOTEBOOK", func(): notebook.hide())
 	notebook.hide()
 
 	options_panel = PanelContainer.new()
 	options_panel.name = "Night2Options"
-	options_panel.anchor_left = .26
-	options_panel.anchor_right = .75
-	options_panel.anchor_top = .18
-	options_panel.anchor_bottom = .85
-	options_panel.add_theme_stylebox_override("panel", _panel_style())
+	options_panel.anchor_left = .10
+	options_panel.anchor_right = .90
+	options_panel.anchor_top = .055
+	options_panel.anchor_bottom = .945
+	SharedHUD.style_modal_panel(options_panel)
 	layout.add_child(options_panel)
 	var opts := VBoxContainer.new()
 	options_panel.add_child(opts)
@@ -785,7 +785,7 @@ func _build_ui() -> void:
 	ending_panel.anchor_right = .79
 	ending_panel.anchor_top = .15
 	ending_panel.anchor_bottom = .86
-	ending_panel.add_theme_stylebox_override("panel", _panel_style())
+	SharedHUD.style_modal_panel(ending_panel)
 	layout.add_child(ending_panel)
 	ending_panel.hide()
 
@@ -806,59 +806,9 @@ func _build_ui() -> void:
 	save_error.dialog_text = "Progress could not be written. You will remain in the game."
 	add_child(save_error)
 
-func _panel_style() -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color("#092a32")
-	style.border_color = Color("#d0a36b")
-	style.set_border_width_all(2)
-	style.set_corner_radius_all(11)
-	style.content_margin_left = 13
-	style.content_margin_right = 13
-	style.content_margin_top = 12
-	style.content_margin_bottom = 12
-	style.shadow_size = 4
-	style.shadow_color = Color(0,0,0,.27)
-	return style
-
 func _button_style(button: Button, font_size: int = 19) -> void:
-	SharedHUD.style_game_button(button, font_size, true, prefs.text_scale)
-
-func _gameplay_button(label: String, at: Vector2, dimensions: Vector2, callback: Callable) -> Button:
-	var b := SharedHUD.make_gameplay_button(gameplay_controls,label,at,dimensions,
-		func(): pass,func(): pass,prefs.text_scale)
-	b.name = label.replace(" ","").replace("/","")
-	b.pressed.connect(callback)
-	action_buttons[label] = b
-	return b
-
-func _open_safety_preparation() -> void:
-	if dialogue.visible or ending_panel.visible or notebook.visible or options_panel.visible:
-		return
-	var route_done := story.barriers.size()
-	_show_dialogue("SAFETY PREPARATION",
-		"Before confronting the resident of the old mango, study the unstable roots and falling branches.\n" +
-		"Evidence: %d/5   •   Closed routes: %d/3\n" % [story.clues.size(),route_done] +
-		"Approach the bamboo lookout only after securing the shortcuts. Keep Bantay nearby; never climb the old tree.",
-		[{"label":"UNDERSTOOD","action":"close"}])
-
-func _retry_night2() -> void:
-	if dialogue.visible or notebook.visible or options_panel.visible:
-		return
-	if story.outcome != "":
-		_show_ending()
-		return
-	if not story.safe_retry():
-		return
-	player_pos = OBSERVATION + Vector2(-95,40) if story.phase >= 2 else Vector2(-510,140)
-	dog_pos = player_pos + Vector2(-52,31)
-	observe_held = false
-	look_direction = Vector2.ZERO
-	motion = Vector2.ZERO
-	held_moves.clear()
-	_auto_save()
-	_show_dialogue("SAFE RETRY","Returned to a safe location without losing your recorded clues.",
-		[{"label":"CONTINUE","action":"close"}])
-	_rebuild_objective()
+	# Dialogue and in-world notebook choices use the exact Night 1 modal style.
+	SharedHUD.style_modal_button(button,false,false,prefs.text_scale)
 
 func _action(parent: Node, label: String, callback: Callable) -> Button:
 	var b := Button.new()
@@ -870,8 +820,6 @@ func _action(parent: Node, label: String, callback: Callable) -> Button:
 	_button_style(b)
 	b.pressed.connect(callback)
 	parent.add_child(b)
-	if parent is Control and parent.name == "Night2Actions":
-		SharedHUD.place_action_button(b, label)
 	action_buttons[label] = b
 	return b
 
