@@ -11,12 +11,12 @@ const OPEN_SCALE := Vector2(0.985, 0.985)
 static func _stop_previous(panel: Control) -> void:
 	if panel.has_meta("cinematic_tween"):
 		var running: Variant = panel.get_meta("cinematic_tween")
-		if running is Tween and running.is_running():
+		if is_instance_valid(running) and running is Tween and running.is_running():
 			running.kill()
 		panel.remove_meta("cinematic_tween")
 	if panel.has_meta("cinematic_exit_ghost"):
 		var old: Variant = panel.get_meta("cinematic_exit_ghost")
-		if old is Node and is_instance_valid(old):
+		if is_instance_valid(old) and old is Node:
 			old.queue_free()
 		panel.remove_meta("cinematic_exit_ghost")
 
@@ -97,7 +97,7 @@ static func finish_text(line: Label) -> bool:
 	if unfinished:
 		if line.has_meta("dialogue_text_tween"):
 			var running: Variant = line.get_meta("dialogue_text_tween")
-			if running is Tween and running.is_running():
+			if is_instance_valid(running) and running is Tween and running.is_running():
 				running.kill()
 			line.remove_meta("dialogue_text_tween")
 		line.visible_characters = -1
@@ -108,7 +108,7 @@ static func restore_gameplay(hud: Control, reduced_motion: bool) -> void:
 		return
 	if hud.has_meta("hud_restore_tween"):
 		var earlier: Variant = hud.get_meta("hud_restore_tween")
-		if earlier is Tween and earlier.is_running():
+		if is_instance_valid(earlier) and earlier is Tween and earlier.is_running():
 			earlier.kill()
 		hud.remove_meta("hud_restore_tween")
 	hud.modulate.a = 1.0
@@ -125,7 +125,7 @@ static func reset_gameplay(hud: Control) -> void:
 		return
 	if hud.has_meta("hud_restore_tween"):
 		var earlier: Variant = hud.get_meta("hud_restore_tween")
-		if earlier is Tween and earlier.is_running():
+		if is_instance_valid(earlier) and earlier is Tween and earlier.is_running():
 			earlier.kill()
 		hud.remove_meta("hud_restore_tween")
 	hud.modulate.a = 1.0
@@ -138,7 +138,7 @@ static func speaker_change(content: Array, reduced_motion: bool) -> void:
 			continue
 		if element.has_meta("speaker_tween"):
 			var older: Variant = element.get_meta("speaker_tween")
-			if older is Tween and older.is_running():
+			if is_instance_valid(older) and older is Tween and older.is_running():
 				older.kill()
 			element.remove_meta("speaker_tween")
 		element.modulate.a = 1.0
