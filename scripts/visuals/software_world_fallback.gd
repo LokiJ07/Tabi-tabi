@@ -87,6 +87,23 @@ func _ground() -> void:
 	_quad(WATER, [Vector3(-44, 0.06, -43), Vector3(-9.56, 0.06, -43),
 		Vector3(-9.56, 0.06, 35), Vector3(-44, 0.06, 35)],
 		Color("#8cbfc5") if game.is_night else Color.WHITE, 3.0)
+	# Brackish water needs more than one blue polygon on the emulator:
+	# perspective ripples are projected in the SAME 3D world coordinates as
+	# the river. No screen-sized image or expensive spatial shader is used.
+	for i in range(55):
+		var z := -39.0 + float(i) * 1.32
+		var x := -31.0 + float(i % 7) * 2.82 + sin(float(i) * 2.13) * .91
+		var swell := .32 + float(i % 5) * .08
+		var from: Vector2 = _screen(Vector3(x - swell, .087, z))
+		var to: Vector2 = _screen(Vector3(x + swell, .087, z + .12))
+		draw_line(from, to, Color(.77, .91, .90, .095 if game.is_night else .16),
+			1.2, true)
+	# A thin floodwater edge reinforces the coast's change of elevation.
+	var tide_line := PackedVector2Array()
+	for i in range(52):
+		var z := -38.0 + float(i) * 1.17
+		tide_line.append(_screen(Vector3(-10.38 + .34 * sin(z * .43), .12, z)))
+	draw_polyline(tide_line, Color(.82, .91, .81, .21), 2.0, true)
 	var pts := PackedVector2Array()
 	var uvs := PackedVector2Array()
 	for i in range(49):

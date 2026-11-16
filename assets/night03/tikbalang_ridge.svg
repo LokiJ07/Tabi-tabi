@@ -28,4 +28,53 @@
 <path d="M317 303Q412 333 430 430" stroke="#75664e" stroke-width="5" fill="none" opacity=".55"/>
 <path d="M168 363Q153 383 161 410M341 373Q354 392 348 417" stroke="#a68a60" stroke-width="4" opacity=".42"/>
 <path d="M212 455L186 577M308 450L337 582" stroke="#95816a" stroke-width="4" opacity=".25"/>
+<defs>
+<linearGradient id="horseFace" x1="0" y1="0" x2="1" y2="1">
+ <stop stop-color="#a68b71"/><stop offset=".37" stop-color="#705b51"/>
+ <stop offset=".73" stop-color="#4a4040"/><stop offset="1" stop-color="#20282e"/>
+</linearGradient>
+<linearGradient id="horseBridge" x1="0" y1="0" x2="1" y2=".5">
+ <stop stop-color="#c6ab87"/><stop offset=".42" stop-color="#91735d"/>
+ <stop offset="1" stop-color="#493a39"/>
+</linearGradient>
+</defs>
+<!-- A true horse's tapered cranium and elongated muzzle, not a human face
+     with horns. All facial planes share the base sprite's 2.5D shading. -->
+<g id="horse-muzzle-layer">
+ <path d="M191 176Q208 146 249 145Q303 147 321 180
+  L311 234Q312 263 291 287L282 322Q270 346 237 349
+  Q197 345 180 319Q166 292 186 261L197 222Z"
+  fill="url(#horseFace)" stroke="#172229" stroke-width="13" stroke-linejoin="round"/>
+ <path d="M194 191Q212 173 239 180L223 243L198 271L184 300Q178 244 194 191Z"
+  fill="#28292d" opacity=".52"/>
+ <path d="M300 179Q325 200 314 240L290 299L275 321Q294 260 281 209Z"
+  fill="#151c23" opacity=".55"/>
+ <!-- The triangular brow connects cleanly to a protruding nasal bridge. -->
+ <path d="M239 188Q254 178 269 192L284 250L285 291Q277 317 249 330
+  Q225 318 219 291L224 251Z" fill="url(#horseBridge)" stroke="#54443f" stroke-width="5"/>
+ <path d="M222 253Q239 260 254 253M258 255Q270 258 283 248"
+  fill="none" stroke="#c7a584" stroke-width="4" opacity=".60"/>
+ <path d="M194 208Q211 196 235 205L237 219Q217 231 200 220Z
+  M267 207Q290 193 308 207L303 222Q280 229 266 219Z"
+  fill="#222329" stroke="#16191d" stroke-width="4"/>
+ <path d="M204 212Q217 208 227 212M276 212Q290 207 301 212"
+  stroke="#edc77b" stroke-width="4.5" stroke-linecap="round"/>
+ <path d="M230 294Q212 285 194 294Q179 301 184 319Q194 337 223 341
+  L270 340Q292 334 292 311Q282 285 263 290Z"
+  fill="#9b7d68" stroke="#332c2c" stroke-width="8"/>
+ <path d="M192 306Q202 301 212 313Q212 326 199 325Z
+  M264 313Q278 300 285 306Q287 325 272 328Z"
+  fill="#242629" stroke="#463b37" stroke-width="3"/>
+ <path d="M221 331Q247 338 270 329" stroke="#4b3835" stroke-width="4"
+  fill="none" stroke-linecap="round"/>
+ <path d="M228 234L216 278M275 232L285 273" stroke="#d0b491"
+  stroke-width="3" opacity=".35"/>
+ <!-- Long swept mane, readable even when the image is small on a phone. -->
+ <path d="M195 163Q169 172 155 215Q148 245 125 255
+  M316 167Q343 199 341 234Q338 269 358 285
+  M196 185Q171 220 162 271" fill="none" stroke="#20252b"
+  stroke-width="19" stroke-linecap="round"/>
+ <path d="M169 200Q161 230 143 250M322 186Q337 220 329 246"
+  fill="none" stroke="#77675a" stroke-width="4" opacity=".53"/>
+</g>
 </svg>

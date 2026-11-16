@@ -31,6 +31,8 @@ func _run() -> void:
 	check(game.camera != null and game.camera.enabled, "real camera active in new ridge")
 	check(game.dialogue.visible, "Lola's canonical flood mystery introduction is visible")
 	check(game.TIKBALANG.get_width() >= 300, "full-body original illustrated Tikbalang sprite imported")
+	check(FileAccess.get_file_as_string("res://assets/night03/tikbalang_ridge.svg").contains("horse-muzzle-layer"),
+		"Tikbalang displays an actual elongated equine muzzle rather than a human face")
 	check(game.BAMBOO.get_width() >= 400 and game.WATCHPOST.get_width() >= 600,
 		"illustrated bamboo and 2.5D watchpost assets imported")
 	check(not game.debug_night_preview and game._stage() == 0, "night guardian never appears in daylight")
