@@ -89,7 +89,7 @@ var dog_repath_timer := 0.0
 var camera_director = CinematicCamera.new()
 var camera: Camera3D
 var software_world_fallback: Control
-var atmosphere_fx: Control
+var atmosphere_fx
 var lantern: SpotLight3D
 var status_panel: PanelContainer
 var status_stack: VBoxContainer
