@@ -247,6 +247,23 @@ func _draw_village() -> void:
 		else:
 			_art(entry["texture"], entry["at"], entry["width"], true, _tint())
 
+	# Actual North Trail crossing to the Old Mango Grove: same 3D marker
+	# positions as the native renderer, and visible in software Android.
+	var trail := Vector3(2.0, 0, -20.28)
+	for x in [0.32, 3.70]:
+		draw_line(_screen(Vector3(x, .04, -20.28)),
+			_screen(Vector3(x, 1.87, -20.28)), Color("#805e43"), 6.0, true)
+	_hut_face([Vector3(.18, 1.4, -20.28), Vector3(3.82, 1.4, -20.28),
+		Vector3(3.82, 1.98, -20.28), Vector3(.18, 1.98, -20.28)], Color("#bd9b6a"),
+		Color("#674a37"), 3.0)
+	var trail_text := _screen(trail + Vector3(-1.55, 1.72, -.03))
+	draw_string(ThemeDB.fallback_font, trail_text, "NORTH TRAIL • MANGO TREE",
+		HORIZONTAL_ALIGNMENT_LEFT, 250, 15, Color("#2d342e"))
+	for i in range(8):
+		var z := -15.1 - float(i) * .77
+		draw_line(_screen(Vector3(.8, .12, z)), _screen(Vector3(3.2, .12, z)),
+			Color("#c7a579"), 3.0, true)
+
 	if game.is_night:
 		# Real Night 1 low-light grade. Earlier software previews barely
 		# changed day colors, making Santelmo feel like a daylight orb.
