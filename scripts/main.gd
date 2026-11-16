@@ -390,6 +390,15 @@ func _build_mango_tree_trail() -> void:
 		Vector3(3.57, .52, .14), Color("#c6a474"), false)
 	_box("Mango Trail bamboo roof", Vector3(2.0, 2.04, -20.25),
 		Vector3(4.1, .17, .53), Color("#75563b"), false)
+	var sign := Label3D.new()
+	sign.name = "North Trail sign lettering"
+	sign.text = "OLD MANGO GROVE  •  NORTH"
+	sign.font_size = 42
+	sign.pixel_size = .0043
+	sign.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	sign.modulate = Color("#f8e5b5")
+	sign.position = Vector3(2.0, 1.68, -20.1)
+	add_child(sign)
 	# Actual target coordinates remain within the existing village boundary.
 
 
