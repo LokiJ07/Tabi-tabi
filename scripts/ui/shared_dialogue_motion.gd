@@ -70,7 +70,7 @@ static func conceal(panel: Control, reduced_motion: bool) -> void:
 	panel.modulate.a = 1.0
 	panel.scale = Vector2.ONE
 
-static func speaker_change(content: Array[Control], reduced_motion: bool) -> void:
+static func speaker_change(content: Array, reduced_motion: bool) -> void:
 	# Speaker name/portrait/text are updated immediately for gameplay tests and
 	# screen readers, with a brief presentation-only cross-dissolve.
 	for element in content:
