@@ -11,7 +11,7 @@ import sys
 import zlib
 from pathlib import Path
 
-def read_png_rgb(path: Path):
+def read_png_rgb(path: Path, x_range=(.28, .65), y_range=(.28, .80)):
     payload = path.read_bytes()
     assert payload.startswith(b"\x89PNG\r\n\x1a\n"), "Screenshot is not a PNG"
     pos = 8
@@ -65,8 +65,8 @@ def read_png_rgb(path: Path):
             raise ValueError(f"Unsupported PNG filter {kind}")
         # Deliberately inspect only the central playfield, excluding title/HUD
         # and button columns. World texture/characters/terrain must be visible.
-        if int(height * .28) <= y <= int(height * .80) and y % 16 == 0:
-            for x in range(int(width * .28), int(width * .65), 16):
+        if int(height * y_range[0]) <= y <= int(height * y_range[1]) and y % 16 == 0:
+            for x in range(int(width * x_range[0]), int(width * x_range[1]), 16):
                 i = x * channels
                 # Bucket near-identical colors to detect flat blank backdrops.
                 rgb = (row[i] // 16, row[i + 1] // 16, row[i + 2] // 16)
