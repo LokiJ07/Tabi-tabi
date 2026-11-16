@@ -13,6 +13,7 @@ const SharedHUD = preload("res://scripts/ui/shared_hud.gd")
 const SharedMotion = preload("res://scripts/ui/shared_dialogue_motion.gd")
 const SharedAtmosphere = preload("res://scripts/visuals/shared_immersive_atmosphere.gd")
 const DimensionalArt = preload("res://scripts/visuals/layered_25d.gd")
+const Landscape = preload("res://scripts/visuals/folklore_landscape_25d.gd")
 const Sound = preload("res://scripts/audio/night02_ambience.gd")
 const Portrait = preload("res://scripts/ui/speaker_portrait.gd")
 const AimPad = preload("res://scripts/ui/aim_pad.gd")
@@ -294,6 +295,7 @@ func _path(points: Array, edge: Color, fill: Color, width: float) -> void:
 func _draw() -> void:
 	# Ground: layered ridge contours, flooded terrace, textured forest floor.
 	draw_rect(Rect2(-1250,-1100,2600,2400),Color("#223e36"))
+	Landscape.parallax_ridges(self,Rect2(-1250,-1100,2600,2400),camera.position,3,_stage())
 	for i in range(34):
 		var yy := -925.0+float(i)*58.0
 		var tint := Color("#30483a").lerp(Color("#566448"),float(i)/33.0)
@@ -320,6 +322,10 @@ func _draw() -> void:
 		Vector2(380,-450),Vector2(640,-357)],Color("#53664b"),Color("#9d896c"),56.0)
 	_path([Vector2(-520,145),Vector2(-170,245),Vector2(126,260),
 		Vector2(220,50)],Color("#5c5a47"),Color("#9e8060"),59.0)
+	# Broken shoulder stones follow the rising ridge and do not replace the
+	# existing walkable trail, real ravine collision or clue interactions.
+	Landscape.trail_stones(self,Vector2(-910,405),Vector2(-305,-70),29,70,_stage()>=2)
+	Landscape.trail_stones(self,Vector2(105,-118),Vector2(640,-357),22,70,_stage()>=2)
 	# The physical ford is made of stones, NOT walk-through empty water.
 	for i in range(7):
 		var xx := -148.0+float(i)*38.0
@@ -328,6 +334,9 @@ func _draw() -> void:
 			Vector2(xx+15,yy-15),Vector2(xx+27,yy+3),
 			Vector2(xx+12,yy+15)],Color("#7a7667"))
 		draw_line(Vector2(xx-7,yy-7),Vector2(xx+13,yy-9),Color("#d1bd91"),2,true)
+	for cliff_rock in [Vector2(-215,362),Vector2(180,514),Vector2(-65,655),
+		Vector2(345,-565),Vector2(515,-510),Vector2(720,-270)]:
+		Landscape.rock(self,cliff_rock,64.0,_stage()<2)
 	for pos in [Vector2(-890,-430),Vector2(-755,-630),Vector2(-520,-650),
 		Vector2(-20,-610),Vector2(410,-640),Vector2(760,-570),
 		Vector2(870,35),Vector2(690,520),Vector2(-420,625),
@@ -410,6 +419,11 @@ func _draw() -> void:
 			draw_circle(player_pos+Vector2(0,-49),r,
 				Color(1.0,.70,.32,.010+float(5-ring)*.009))
 		draw_circle(SAFE_LOOKOUT+Vector2(-66,-74),160,Color(1.0,.64,.24,.075))
+	# The ravine has its own horizontal mist plane, projected behind all
+	# characters; it never hides a route-puzzle control or clue marker.
+	if _stage() >= 1:
+		Landscape.mist(self,Vector2(-65,430),560.0,particles,
+			not prefs.reduced_motion,_stage()>=2)
 	# Full creature appears ONLY after the verified route; no day spoiler.
 	if (story.phase == 4 and story.outcome == "") or debug_night_preview:
 		var shift := sin(particles*.75)*4.0 if not prefs.reduced_motion else 0.0

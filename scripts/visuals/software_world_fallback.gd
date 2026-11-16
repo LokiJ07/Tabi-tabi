@@ -5,6 +5,7 @@ extends Control
 ## same imported textures as the normal renderer, never a static screenshot.
 ## This layer is activated ONLY for known Android SwiftShader/Emulator adapters.
 const DimensionalArt = preload("res://scripts/visuals/layered_25d.gd")
+const Landscape = preload("res://scripts/visuals/folklore_landscape_25d.gd")
 const SOIL: Texture2D = preload("res://assets/world/soil_ground.svg")
 const PATH: Texture2D = preload("res://assets/world/earthen_path.svg")
 const WATER: Texture2D = preload("res://assets/world/tidal_water.svg")
@@ -133,6 +134,17 @@ func _ground() -> void:
 			var center := -10.07 + 0.34 * sin(z * 0.43) + 0.14 * sin(z * 1.16 + 0.7)
 			shore.append(_screen(Vector3(center - .24 + float(strip) * .42, .11, z)))
 		draw_colored_polygon(shore, [Color("#797760"), Color("#8c7c5c"), Color("#b1a17a")][strip])
+	# Shoreline reeds and small tidal stones are projected at the actual
+	# riverbank. They stay decor-only and never become false collision.
+	for i in range(17):
+		var z := -35.0 + float(i)*3.1
+		var shore_x := -10.4 + .34*sin(z*.43)
+		var foot := _screen(Vector3(shore_x, .10, z))
+		var reeds_size := _scale_units(.52+float(i%3)*.12)
+		Landscape.reeds(self,foot,reeds_size,game.elapsed*.21 if game.is_night else 0.0,game.is_night)
+		if i%3 == 0:
+			Landscape.rock(self,foot+Vector2(_scale_units(.45),9.0),
+				maxf(9.0,_scale_units(.22)),not game.is_night)
 	# The old dock stopped short of the water. Now its native and fallback
 	# versions both extend over the muddy bank into the brackish river.
 	_quad(PATH, [Vector3(-12.05, .28, 7.48), Vector3(-5.05, .28, 7.48),

@@ -16,6 +16,7 @@ const AimPad = preload("res://scripts/ui/aim_pad.gd")
 const SpeakerPortrait = preload("res://scripts/ui/speaker_portrait.gd")
 const SharedAtmosphere = preload("res://scripts/visuals/shared_immersive_atmosphere.gd")
 const DimensionalArt = preload("res://scripts/visuals/layered_25d.gd")
+const Landscape = preload("res://scripts/visuals/folklore_landscape_25d.gd")
 const MANGO: Texture2D = preload("res://assets/night02/old_mango_tree.svg")
 const KAPRE: Texture2D = preload("res://assets/night02/kapre_perched.svg")
 const BARRIER: Texture2D = preload("res://assets/night02/closed_path_barrier.svg")
@@ -319,6 +320,7 @@ func _draw() -> void:
 	# Scene is drawn as 2.5D world-space polygons and detailed imported SVG art.
 	# It renders on GLES compatibility and SwiftShader with no spatial shaders.
 	draw_rect(Rect2(-1500, -1200, 3000, 2600), Color("#22392f"))
+	Landscape.parallax_ridges(self,Rect2(-1500,-1200,3000,2600),camera.position,2,_light_stage())
 	for i in range(30):
 		var y := -820.0 + float(i) * 56.0
 		var color := Color("#304a3b").lerp(Color("#557052"), float(i) / 29.0)
@@ -361,6 +363,9 @@ func _draw() -> void:
 		Vector2(-420, 280)], Color("#5c624a"), 69)
 	_polyline([Vector2(-765, 485), Vector2(-685, 460), Vector2(-570, 520),
 		Vector2(-420, 280)], Color("#b6a47b"), 45)
+	# Dimensional stones follow both shoulders of the refuge trail, preserving
+	# the original traversable centerline and interaction radii.
+	Landscape.trail_stones(self,Vector2(-765,485),Vector2(-420,280),18,69,_light_stage()>=2)
 	# The former shelter line marks the re-routed safe path, turning away
 	# from the giant tree, rather than a flat danger-zone sticker.
 	_polyline([Vector2(-570,520),Vector2(-420,280),Vector2(-440,70),Vector2(-650,-280)], Color("#67785a"), 64)
@@ -404,6 +409,9 @@ func _draw() -> void:
 		var crack_at := TREE + Vector2(-115.0 + float(i)*41.0,86.0 + sin(float(i)*2.7)*15.0)
 		draw_line(crack_at,crack_at+Vector2(19,-8),Color("#503a2d",.64),2.4,true)
 		draw_line(crack_at+Vector2(19,-8),crack_at+Vector2(32,1),Color("#6f4931",.53),1.7,true)
+	# Separated foreground boulders anchor the mango roots to the earth.
+	for stone in [Vector2(7,-33),Vector2(455,-35),Vector2(414,107),Vector2(40,130)]:
+		Landscape.rock(self,stone,46.0,_light_stage()<2)
 	# The ancestral mango stays visible by day; its resident does NOT.
 	var canopy_sway := sin(particle_phase * .65) * (4.0 if not prefs.reduced_motion else 0.0)
 	DimensionalArt.paint_grounded(self, MANGO, TREE + Vector2(canopy_sway,40),
@@ -447,6 +455,11 @@ func _draw() -> void:
 			draw_circle(firefly,2.3,Color("#ffe6a1"))
 			draw_circle(firefly,8.0,Color(1.0,.79,.38,.075))
 		_draw_kapre_smoke()
+	# Low clearing fog moves behind the people and the guardian; Reduced
+	# Motion freezes it without affecting its visibility.
+	if _light_stage() >= 1:
+		Landscape.mist(self,TREE+Vector2(-65,82),560.0,particle_phase,
+			not prefs.reduced_motion,_light_stage()>=2)
 	# Actors and guardian are drawn AFTER the environmental darkness grade,
 	# so faces, limbs and quest silhouettes stay visible on real Android.
 	if _kapre_revealed():

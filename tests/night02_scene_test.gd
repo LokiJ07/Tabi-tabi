@@ -1,6 +1,7 @@
 extends SceneTree
 ## Exercises the REAL chapter scene and mobile UI, not only its state model.
 const Scene = preload("res://scenes/night02.tscn")
+const Landscape = preload("res://scripts/visuals/folklore_landscape_25d.gd")
 const Night1Scene = preload("res://scenes/main.tscn")
 const Night2Save = preload("res://scripts/core/night02_save.gd")
 var failures := 0
@@ -22,6 +23,10 @@ func _run() -> void:
 	check(game.camera != null and game.camera.enabled, "functional 2D camera on every renderer")
 	check(game.dialogue.visible, "Lola introductory dialogue appears")
 	check(game._light_stage() == 0, "daytime investigation starts with natural daylight")
+	check(Landscape.PASS_ID == "nights1-3-landscape-depth-v2",
+		"Night 2 live environment uses a shared parallax and dimensional terrain system")
+	check(Landscape.ridge_palette(2,0)[0] != Landscape.ridge_palette(2,3)[0],
+		"Kapre daytime and nighttime hills have different physically readable palettes")
 	check(game.get_meta("dimensional_art", "") == "shared-2.5d-layered-v1",
 		"Kapre scene renders solid-looking characters and props with shared 2.5D depth")
 	check(not game._kapre_revealed(), "Kapre body is NEVER visible in daylight")

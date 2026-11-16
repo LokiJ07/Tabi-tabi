@@ -2,6 +2,7 @@ extends SceneTree
 ## Actual instantiated Night 3 Godot scene: world art, HUD, dialogue and
 ## interactable evidence/route puzzle (not just a detached state unit test).
 const Scene = preload("res://scenes/night03.tscn")
+const Landscape = preload("res://scripts/visuals/folklore_landscape_25d.gd")
 const NightTwo = preload("res://scenes/night02.tscn")
 const Save = preload("res://scripts/core/night03_save.gd")
 var failures := 0
@@ -26,6 +27,10 @@ func _run() -> void:
 	current_scene = game
 	await process_frame
 	check(game.name == "TabiTabiNight3", "authored real Tikbalang scene instantiated")
+	check(Landscape.PASS_ID == "nights1-3-landscape-depth-v2",
+		"Ridge terrain and ravine use live parallax, rocks and fog painter")
+	check(Landscape.ridge_palette(3,0)[0] != Landscape.ridge_palette(3,3)[0],
+		"Ridge dusk and night backgrounds are different")
 	check(game.get_meta("dimensional_art", "") == "shared-2.5d-layered-v1",
 		"ridge actors, bamboo and watchpost all share same grounded 2.5D painter")
 	check(game.camera != null and game.camera.enabled, "real camera active in new ridge")
