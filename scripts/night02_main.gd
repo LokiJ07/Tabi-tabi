@@ -230,19 +230,24 @@ func _unhandled_input(event: InputEvent) -> void:
 			_open_options()
 	if OS.get_name() == "Android" and OS.has_feature("debug") and event is InputEventKey:
 		var key := event as InputEventKey
-		if key.pressed and not key.echo and [KEY_F5, KEY_F6, KEY_F7, KEY_F8, KEY_F9].has(key.keycode):
+		if key.pressed and not key.echo and [KEY_F3, KEY_F5, KEY_F6, KEY_F7, KEY_F8, KEY_F9].has(key.keycode):
 			# Each screenshot uses the real interactive running scene, NEVER
 			# a concept art canvas or a fake static title.
 			_close_dialogue()
 			notebook.hide()
 			options_panel.hide()
-			if key.keycode == KEY_F5:
-				debug_dusk_preview = false
+			# Reset every prior QA lighting preview: screenshots must be distinct.
+			debug_dusk_preview = false
+			debug_night_reveal = false
+			if key.keycode == KEY_F3:
+				player_pos = Vector2(90,-270)
+				print("NIGHT2_QA_MANGO_DAY_VIEW")
+			elif key.keycode == KEY_F5:
 				player_pos = Vector2(-645, 455)
 				print("NIGHT2_QA_RETURN_TRAIL_VIEW")
 			elif key.keycode == KEY_F6:
 				debug_dusk_preview = true
-				player_pos = Vector2(110,-140)
+				player_pos = Vector2(90,-270)
 				print("NIGHT2_QA_DUSK_VIEW")
 			elif key.keycode == KEY_F7:
 				player_pos = Vector2(-345,-315)
@@ -251,7 +256,8 @@ func _unhandled_input(event: InputEvent) -> void:
 				player_pos = Vector2(-320,220)
 				print("NIGHT2_QA_ROUTE_VIEW")
 			else:
-				player_pos = Vector2(90,-80)
+				debug_night_reveal = true
+				player_pos = Vector2(90,-270)
 				print("NIGHT2_QA_MANGO_VIEW")
 			dog_pos = player_pos+Vector2(-42,25)
 			camera.position = player_pos
@@ -331,11 +337,19 @@ func _draw() -> void:
 	draw_texture_rect(LANTERN,Rect2(OBSERVATION.x-145, OBSERVATION.y-139, 74, 152),false)
 	# Unstable ground ring illustrates actual hazard zone before approaching.
 	draw_arc(TREE, 128.0, 0, TAU, 65, Color("#d9a16b", .44), 3.0, true)
-	# Multi-layered original mango tree and resident Kapre at actual location.
+	# The ancestral mango stays visible by day; its resident does NOT.
 	var canopy_sway := sin(particle_phase * .65) * (4.0 if not prefs.reduced_motion else 0.0)
 	draw_texture_rect(MANGO, Rect2(TREE.x-350+canopy_sway,TREE.y-560,700,600), false)
-	var kapre_tint := Color("#b4bcb7") if story.phase < 2 else Color.WHITE
-	draw_texture_rect(KAPRE, Rect2(TREE.x+83, TREE.y-242, 161, 242),false,kapre_tint)
+	# Branch geometry anchors a perched giant ABOVE the villagers and ground.
+	var perch_root := TREE + Vector2(14,-177)
+	var perch_tip := TREE + Vector2(252,-190)
+	draw_line(perch_root,perch_tip,Color("#402f26"),31.0,true)
+	draw_line(perch_root+Vector2(0,-4),perch_tip+Vector2(0,-4),Color("#70513a"),8.0,true)
+	draw_line(TREE+Vector2(156,-190),TREE+Vector2(192,-240),Color("#503b2d"),10.0,true)
+	if _kapre_revealed():
+		# Only after night observation and respectful greeting; QA only override.
+		draw_texture_rect(KAPRE,
+			Rect2(TREE + Vector2(62,-438),Vector2(177,270)),false,Color("#d0c3ad"))
 	# Clue props each have a different silhouette; no generic quest circles.
 	_draw_evidence()
 	for id in Story.BARRIER_POSITIONS:
