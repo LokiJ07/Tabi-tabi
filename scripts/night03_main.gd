@@ -164,7 +164,16 @@ func _process(delta: float) -> void:
 	bantay_pos = bantay_pos.lerp(player_pos + Vector2(-49,29),clampf(delta*3.5,0.0,1.0))
 	var goal_blend := 1.0 if dialogue_focus and dialogue.visible else 0.0
 	camera_blend = lerpf(camera_blend,goal_blend,1.0 if prefs.reduced_motion else clampf(delta*3.8,0.0,1.0))
-	camera.position = player_pos + (focus_point-player_pos).limit_length(85.0)*camera_blend
+	# The Tikbalang is tall enough that tracking the player's feet alone
+	# crops off its face. Only after a legitimate reveal (or QA preview),
+	# draw the camera toward the witness as the player approaches the gate.
+	var witness_visible := (story.phase == 4 and story.outcome == "") or debug_night_preview
+	var witness_pull := Vector2.ZERO
+	if witness_visible:
+		var distance_to_witness := player_pos.distance_to(RIDGE_GATE)
+		var reveal_weight := 1.0-clampf((distance_to_witness-240.0)/260.0,0.0,1.0)
+		witness_pull = (RIDGE_GATE+Vector2(-12,-258)-player_pos).limit_length(278.0)*reveal_weight
+	camera.position = player_pos + (focus_point-player_pos).limit_length(85.0)*camera_blend + witness_pull
 	camera.offset = camera.offset.lerp(look_direction*61.0,clampf(delta*8.0,0.0,1.0))
 	# An intentional, gentle push-in when the ridge becomes threatening.
 	# Reduced Motion disables the animated interpolation entirely.
@@ -397,8 +406,8 @@ func _draw() -> void:
 		for ring in range(4,0,-1):
 			draw_circle(witness,75.0+float(ring)*36.0,
 				Color(.68,.34,.16,.009+float(5-ring)*.006))
-		draw_texture_rect(TIKBALANG,Rect2(RIDGE_GATE+Vector2(-174,-518+shift),
-			Vector2(348,522)),false,Color("#e0d6c6"))
+		draw_texture_rect(TIKBALANG,Rect2(RIDGE_GATE+Vector2(-170,-491+shift),
+			Vector2(340,492)),false,Color("#e0d6c6"))
 	# Keep original shared protagonists readable against darkness. Their
 	# draw order is world-depth based and HUD/cinematic layers stay untouched.
 	var actors := [
