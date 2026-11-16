@@ -41,8 +41,8 @@ static func _set_inert(node: Node) -> void:
 	if node is Control:
 		(node as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
 		(node as Control).focus_mode = Control.FOCUS_NONE
-	if node is BaseButton:
-		(node as BaseButton).disabled = true
+	# Mouse IGNORE and no keyboard focus keep duplicated choice buttons inert;
+	# do not disable them, which would flash their grey disabled palette.
 	for child in node.get_children():
 		_set_inert(child)
 
