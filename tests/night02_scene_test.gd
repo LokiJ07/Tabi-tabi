@@ -1,6 +1,7 @@
 extends SceneTree
 ## Exercises the REAL chapter scene and mobile UI, not only its state model.
 const Scene = preload("res://scenes/night02.tscn")
+const Night1Scene = preload("res://scenes/main.tscn")
 const Night2Save = preload("res://scripts/core/night02_save.gd")
 var failures := 0
 
@@ -30,7 +31,7 @@ func _run() -> void:
 		check(game.atmosphere_fx.mouse_filter == Control.MOUSE_FILTER_IGNORE, "fog and darkness cannot block touchscreen")
 		game.atmosphere_fx.configure(2,2,.75,true)
 		check(is_equal_approx(game.atmosphere_fx.tension,.75) and game.atmosphere_fx.reduced_motion, "shared sensory FX accepts Night 2 story pressure")
-	var n2_status := game.get_node_or_null("Night2HUD/Night2Screen/GameplayControls/ObjectiveCard") as PanelContainer
+	var n2_status := game.get_node_or_null("Night2HUD/Night2Screen/GameplayControls/QuestStatusCard") as PanelContainer
 	check(n2_status != null and is_equal_approx(n2_status.anchor_right,.37), "Night 2 uses same compact status card as Night 1")
 	check(game.KAPRE.get_width() >= 256 and game.KAPRE.resource_path.ends_with("kapre_perched.svg"), "nighttime encounter uses seated Kapre illustration")
 	check(game.action_buttons.has("INTERACT"), "interaction control")
@@ -48,6 +49,55 @@ func _run() -> void:
 	game._sync_gameplay_hud()
 	check(not game.gameplay_controls.visible, "modal dialogue hides movement and actions")
 	check(game.menu_confirm != null and game.quit_confirm != null, "explicit navigation confirmations")
+	# Compare rendered controls in both REAL chapter scenes, not only a list of
+	# shared constants. The same button factory must produce identical hitboxes,
+	# icon assets, colors and 1280x720 responsive anchor geometry.
+	var night1 = Night1Scene.instantiate()
+	root.add_child(night1)
+	await process_frame
+	check(game.status_panel.name == night1.status_panel.name, "Night 2 uses exact Night 1 status component")
+	check(is_equal_approx(game.status_panel.anchor_right,night1.status_panel.anchor_right), "identical objective width")
+	check(is_equal_approx(game.status_panel.offset_left,night1.status_panel.offset_left), "identical status left inset")
+	check(is_equal_approx(game.status_panel.offset_top,night1.status_panel.offset_top), "identical status top inset")
+	for labels in [["FIELD NOTES","FIELD NOTES"],["INTERACT","INTERACT"],
+		["PREPARE","PREPARE"],["SAVE","SAVE"],["RETRY","RETRY"],
+		["HOLD FOCUS","HOLD OBSERVE"],["DAY / NIGHT","SAFE RETREAT"],
+		["OPTIONS","OPTIONS"]]:
+		var n1_btn: Button = null
+		for control in night1.gameplay_hud.get_children():
+			if control is Button and control.text == labels[0]:
+				n1_btn = control as Button
+				break
+		var n2_btn := game.action_buttons.get(labels[1]) as Button
+		check(n1_btn != null and n2_btn != null, "same HUD slot present: " + str(labels[1]))
+		if n1_btn != null and n2_btn != null:
+			check(n1_btn.anchor_left == n2_btn.anchor_left and n1_btn.anchor_top == n2_btn.anchor_top,
+				"same anchored position: "+str(labels[1]))
+			check(n1_btn.offset_left == n2_btn.offset_left and n1_btn.offset_top == n2_btn.offset_top
+				and n1_btn.offset_right == n2_btn.offset_right and n1_btn.offset_bottom == n2_btn.offset_bottom,
+				"same pixel placement and touch dimensions: "+str(labels[1]))
+			check(n1_btn.custom_minimum_size == n2_btn.custom_minimum_size,
+				"same touch target min size: "+str(labels[1]))
+			var n1_style := n1_btn.get_theme_stylebox("normal") as StyleBoxFlat
+			var n2_style := n2_btn.get_theme_stylebox("normal") as StyleBoxFlat
+			check(n1_style != null and n2_style != null and n1_style.bg_color == n2_style.bg_color
+				and n1_style.border_color == n2_style.border_color,"same gold/navy color: "+str(labels[1]))
+			if n1_btn.icon != null and labels[1] not in ["SAFE RETREAT"]:
+				check(n2_btn.icon != null and n1_btn.icon.resource_path == n2_btn.icon.resource_path,
+					"same original Night 1 SVG icon: "+str(labels[1]))
+	var n2_look := game.get_node_or_null("Night2HUD/Night2Screen/GameplayControls/Night2LookPad") as Control
+	check(n2_look != null, "Night 2 has functional aim/look pad in exact Night 1 space")
+	if n2_look != null:
+		check(is_equal_approx(n2_look.offset_left,-435.0) and is_equal_approx(n2_look.offset_top,-205.0),
+			"look pad occupies same rectangle as Night 1 Lantern Aim")
+	check(game.dialogue.anchor_left == night1.dialogue.anchor_left and game.dialogue.anchor_right == night1.dialogue.anchor_right,
+		"Night 2 conversations reuse Night 1 modal width")
+	check(game.notebook.anchor_left == night1.notebook_panel.anchor_left and game.notebook.anchor_right == night1.notebook_panel.anchor_right,
+		"Night 2 field notes reuse Night 1 notebook placement")
+	check(game.dialogue.get_node_or_null("Conversation/DialogueScroll/PortraitAndText/SpeakerBustPortrait") != null,
+		"Night 2 speaker faces use Night 1 illustrated portrait component")
+	night1.queue_free()
+	await process_frame
 	game._choose("close")
 	game._sync_gameplay_hud()
 	check(game.gameplay_controls.visible, "closing dialogue restores shared HUD")
