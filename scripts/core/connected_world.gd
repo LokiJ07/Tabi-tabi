@@ -1,7 +1,7 @@
 extends RefCounted
 ## Tabi-tabi is ONE seven-night story with connected regions.
 ## Regions are streamed as Godot scenes for memory/performance, not separate games.
-## Only Nights 1 and 2 currently have playable scenes; future roads stay locked.
+## Nights 1–3 have actual playable scenes; roads to Nights 4–7 remain locked.
 const PATH := "user://tabi_connected_world.json"
 const REGIONS := [
 	"barrio_lawom", "old_mango", "night03", "night04",
@@ -9,7 +9,8 @@ const REGIONS := [
 ]
 const SCENES := {
 	"barrio_lawom": "res://scenes/main.tscn",
-	"old_mango": "res://scenes/night02.tscn"
+	"old_mango": "res://scenes/night02.tscn",
+	"night03": "res://scenes/night03.tscn"
 }
 const CONNECTIONS := {
 	"barrio_lawom": ["old_mango"],
@@ -24,6 +25,10 @@ const TRAIL_BARRIO := Vector3(1.0, 0.20, -32.0)
 const TRAIL_MANGO := Vector2(-765.0, 485.0)
 const ARRIVAL_BARRIO := Vector3(1.0, 0.75, -29.1)
 const ARRIVAL_MANGO := Vector2(-635.0, 385.0)
+const TRAIL_MANGO_RIDGE := Vector2(800.0, -570.0)
+const ARRIVAL_MANGO_RIDGE := Vector2(730.0, -505.0)
+const TRAIL_RIDGE := Vector2(-880.0, 410.0)
+const ARRIVAL_RIDGE := Vector2(-700.0, 290.0)
 const TRAVEL_RANGE_3D := 3.35
 const TRAVEL_RANGE_2D := 118.0
 
@@ -85,6 +90,13 @@ static func begin_travel(origin: String, destination: String, last_outcome: Stri
 	if origin == "barrio_lawom" and destination == "old_mango" and last_outcome == "":
 		return false
 	var data := read()
+	# Do not let a player enter Tikbalang's ridge using an arbitrary string
+	# or a preview-only scene. The completed Kapre outcome must already be
+	# in the canonical one-world ledger and match the independent Night 2 save.
+	if origin == "old_mango" and destination == "night03":
+		var ledger_outcomes: Dictionary = data.get("outcomes", {})
+		if last_outcome == "" or str(ledger_outcomes.get("night02","")) != last_outcome:
+			return false
 	data["current"] = destination
 	data["pending"] = {"from": origin, "to": destination}
 	var visited: Dictionary = data.get("visited", {})
