@@ -79,7 +79,11 @@ jobs:
           run_test res://tests/preferences_test.gd
           run_test res://tests/night01_courage_test.gd
           run_test res://tests/night01_aftermath_test.gd
-          run_test res://tests/night01_flow_test.gd
+          # Complete Night 1 scene-to-outcome flow is already gated by
+          # godot-validation.yml on this same commit; avoid running it twice
+          # under this job's dummy renderer, which can hang emitting mesh errors.
+          # Android emulator below verifies the actual launch and world.
+
           run_test res://tests/night01_prologue_test.gd
           run_test res://tests/night01_save_recovery_test.gd
           run_test res://tests/night01_hud_test.gd
