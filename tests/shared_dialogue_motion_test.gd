@@ -30,6 +30,12 @@ func _run() -> void:
 	check(panel.modulate.a < 1.0, "actual panel begins translucent on open")
 	Motion.speaker_change([actor],false)
 	check(actor.modulate.a < 1.0, "speaker cross-dissolve begins without changing text")
+	Motion.reveal_text(actor,false)
+	check(actor.visible_characters == 0, "text gradually appears instead of hard popping in")
+	check(Motion.finish_text(actor) and actor.visible_characters == -1,
+		"tap-to-finish reveals entire NPC line without changing the state")
+	Motion.reveal_text(actor,true)
+	check(actor.visible_characters == -1, "Reduced Motion shows complete dialogue immediately")
 	check(actor.text == "LOLA PASING", "animation never destroys a conversation line")
 	Motion.conceal(panel,false)
 	check(not panel.visible and panel.modulate.a == 1.0, "close is synchronous for story and input")
@@ -61,7 +67,12 @@ func _run() -> void:
 	night1._show_dialogue("APPRENTICE: Nakakita ka?\nLOLA: Hinay-hinay lang.")
 	check(night1.dialogue.visible and night1.dialogue.has_meta("cinematic_tween"),
 		"Night 1 uses shared cinematic open")
-	night1._advance_dialogue()
+	check(night1.dialogue_text.visible_characters == 0,
+		"Night 1 dialogue text begins revealing softly")
+	night1._on_dialogue_continue_pressed()
+	check(night1.dialogue_page == 0 and night1.dialogue_text.visible_characters == -1,
+		"first Night 1 tap completes text, not NPC story choice")
+	night1._on_dialogue_continue_pressed()
 	check(night1.dialogue_speaker.text.contains("LOLA") and
 		night1.dialogue_text.has_meta("speaker_tween"), "Night 1 speaker change cross-fades")
 	night1._close_dialogue()
@@ -82,6 +93,11 @@ func _run() -> void:
 	await process_frame
 	check(night2.dialogue.visible and night2.modal_backdrop.visible and
 		night2.dialogue.has_meta("cinematic_tween"), "Night 2 intro shares Night 1 dialogue fade and world dimming")
+	check(night2.dialogue_line.visible_characters == 0,
+		"Night 2 has the same cinematic NPC text reveal")
+	night2._on_dialogue_choice_pressed("close")
+	check(night2.dialogue.visible and night2.dialogue_line.visible_characters == -1,
+		"first Night 2 touch finishes text without prematurely exiting")
 	night2._choose("close")
 	check(not night2.dialogue.visible and night2.gameplay_controls.visible,
 		"Night 2 closes dialogue without holding movement or save state")
@@ -101,8 +117,9 @@ func _run() -> void:
 		"Night 2 camera returns gently to gameplay framing")
 	night2.prefs.reduced_motion = true
 	night2._show_dialogue("BANTAY","Quiet.",[{"label":"OK","action":"close"}])
-	check(is_equal_approx(night2.dialogue.modulate.a,1.0) and night2.dialogue.scale == Vector2.ONE,
-		"Night 2 reduced-motion dialogue is instant")
+	check(is_equal_approx(night2.dialogue.modulate.a,1.0) and night2.dialogue.scale == Vector2.ONE
+		and night2.dialogue_line.visible_characters == -1,
+		"Night 2 reduced-motion dialogue and full text are instant")
 	night2._choose("close")
 	night2.queue_free()
 	await process_frame
