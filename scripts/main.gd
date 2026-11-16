@@ -26,6 +26,7 @@ const UI_INTERACT: Texture2D = preload("res://assets/ui/interact.svg")
 const UI_DAYNIGHT: Texture2D = preload("res://assets/ui/daynight.svg")
 const Mangrove = preload("res://scripts/world/mangrove.gd")
 const CinematicCamera = preload("res://scripts/visuals/cinematic_camera.gd")
+const SharedHUD = preload("res://scripts/ui/shared_hud.gd")
 const BarrioLighting = preload("res://scripts/visuals/barrio_lighting.gd")
 const RiverBanca = preload("res://scripts/world/river_banca.gd")
 const BantayRoute = preload("res://scripts/ai/bantay_route.gd")
@@ -721,35 +722,7 @@ func _menu_style(fill: Color, outline: Color) -> StyleBoxFlat:
 
 
 func _style_game_button(button: Button, title: String, touch: bool = false) -> void:
-	# Shared Night 1 visual language from the approved art guide.
-	var base := StyleBoxFlat.new()
-	base.bg_color = Color("#082b37")
-	base.border_color = Color("#c69b55")
-	base.set_border_width_all(2)
-	base.set_corner_radius_all(13 if touch else 8)
-	base.content_margin_left = 11
-	base.content_margin_right = 11
-	var over := base.duplicate() as StyleBoxFlat
-	over.bg_color = Color("#154758")
-	over.border_color = Color("#f5ce7a")
-	var held := base.duplicate() as StyleBoxFlat
-	held.bg_color = Color("#365442")
-	held.border_color = Color("#ffd47a")
-	held.set_border_width_all(3)
-	button.add_theme_stylebox_override("normal", base)
-	button.add_theme_stylebox_override("hover", over)
-	button.add_theme_stylebox_override("pressed", held)
-	button.add_theme_stylebox_override("hover_pressed", held)
-	button.add_theme_color_override("font_color", Color("#f8e8c7"))
-	button.add_theme_color_override("font_hover_color", Color.WHITE)
-	button.add_theme_color_override("font_pressed_color", Color("#fff4d1"))
-	# SAVE / RETRY are narrow split actions: shrink their type rather than
-	# silently clipping the last character on a real Android screenshot.
-	button.add_theme_font_size_override("font_size", 18 if touch and title.length() > 2 else 23)
-	button.alignment = HORIZONTAL_ALIGNMENT_CENTER
-	button.set_meta("art_theme", "night1-gold-navy")
-	button.clip_text = true
-
+	SharedHUD.style_game_button(button, 18 if touch and title.length() > 2 else 23, touch)
 
 func _style_modal_button(button: Button, selected: bool = false, footer: bool = false) -> void:
 	# The default Godot Button font and disabled palette were nearly invisible
@@ -825,16 +798,7 @@ func _create_ui() -> void:
 	status_panel.offset_top = 10.0
 	status_panel.offset_bottom = 250.0  # updated from live text minimum size
 	status_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var status_style := StyleBoxFlat.new()
-	status_style.bg_color = Color(0.035, 0.075, 0.09, 0.83)
-	status_style.border_color = Color("#c29a55")
-	status_style.set_border_width_all(2)
-	status_style.set_corner_radius_all(9)
-	status_style.content_margin_left = 13
-	status_style.content_margin_right = 13
-	status_style.content_margin_top = 8
-	status_style.content_margin_bottom = 8
-	status_panel.add_theme_stylebox_override("panel", status_style)
+	SharedHUD.style_status_panel(status_panel)
 	gameplay_hud.add_child(status_panel)
 	status_stack = VBoxContainer.new()
 	status_stack.name = "StatusRows"
@@ -1160,6 +1124,8 @@ func _create_ui() -> void:
 	options_button.offset_right = -20
 	options_button.offset_top = 14
 	options_button.offset_bottom = 60
+	SharedHUD.place_action_button(options_button, "OPTIONS")
+	_style_game_button(options_button, "OPTIONS")
 	options_button.pressed.connect(_open_settings)
 	gameplay_hud.add_child(options_button)
 	settings_panel = PanelContainer.new()
