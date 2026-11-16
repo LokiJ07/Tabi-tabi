@@ -36,12 +36,17 @@ func _run() -> void:
 	check(game.camera.zoom.x >= 1.079, "ridge camera gives actors readable on-screen size")
 	# Verify that the NIGHT-specific framing and fog actually respond to the
 	# dangerous stage, not only that a still image was added to the project.
+	var opening_position: Vector2 = game.player_pos
 	game.debug_night_preview = true
+	game.player_pos = game.RIDGE_GATE+Vector2(-125,80)
 	game._process(.5)
 	check(game.camera.zoom.x > 1.10, "night reveals a closer, more threatening ridge framing")
+	check(game.camera.position.y < game.player_pos.y-235.0,
+		"approaching the ridge raises the view to reveal Tikbalang's whole face")
 	check(game.atmosphere.chapter_id == 3 and game.atmosphere.light_stage == 3,
 		"ridge-only fog stage is active without swapping shared HUD styles")
 	game.debug_night_preview = false
+	game.player_pos = opening_position
 	game.prefs.reduced_motion = true
 	game._process(.016)
 	check(absf(game.camera.zoom.x - 1.115) < .003,
