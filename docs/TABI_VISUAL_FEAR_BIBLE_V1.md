@@ -33,3 +33,18 @@
 ## Known gap
 
 The new perched Kapre SVG is a hand-authored QA sprite, not fully rigged animation. Night 1 native 3D and Night 2 perspective-drawn 2D remain different renderer architectures, though they now share HUD, typography and atmospheric controls. This is not a claim of production-quality photorealism or a complete studio-grade animation pass.
+
+## NPC conversation motion — mandatory Night 1–7 contract
+
+Use `scripts/ui/shared_dialogue_motion.gd` for every dialogue in every chapter. Do **not** add separate chapter-specific panel tweens. Verified code-level choreography to reproduce:
+
+- **Opening:** 0.22 s soft opacity/scale ease with the Night 1 dialogue panel styling; the character's feet and nearby world remain visible above the translucent backdrop.
+- **Speaker change:** 0.15 s portrait, speaker heading and dialogue cross-dissolve; the underlying speaker identity/role is committed immediately for accessibility.
+- **Text:** reveal over 0.24–0.90 s, never force the player to wait; pressing the actual continue/choice button first finishes the whole line, and the next tap advances/commits the choice.
+- **Closing:** the real panel hides and releases gameplay immediately, while a touch-inert illustrated afterimage fades over 0.18 s. Do not delay saves, choices, travel or prevent touch to achieve a transition.
+- **HUD return:** the original shared Night 1 HUD fades back in over 0.16 s; its hitboxes remain at the same anchors and are usable immediately.
+- **Camera:** Night 1 uses `cinematic_camera.gd` smooth NPC 3D close-ups; Night 2 interpolates its Camera2D focus no farther than 95 world units toward a *nearby* speaker. Never teleport the camera to distant narration.
+- **Reduced Motion:** animations, text reveal and camera travel are bypassed when the saved `reduced_motion` preference is enabled. Panels, labels and story state remain immediately fully visible.
+- **Input safety:** dialogues suspend movement/observe controls and their NPC threat penalties, then restore them safely when closed. Always validate direct NPC interactions and real Android landscape touches.
+
+Enforce cross-chapter consistency with `tests/shared_dialogue_motion_test.gd`, existing cinematic scene tests, and Android emulator live capture. Passing headless tests does not independently prove smooth real-device frame pacing.
