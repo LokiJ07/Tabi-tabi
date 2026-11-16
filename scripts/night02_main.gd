@@ -177,7 +177,19 @@ func _process(delta: float) -> void:
 		progress.visible = story.phase == 2
 		progress.value = story.observation * 100.0
 	danger.text = "COURAGE %d  •  TENSION %d%%" % [roundi(story.courage), roundi(story.alarm * 100.0)]
+	_sync_gameplay_hud()
 	queue_redraw()
+
+func _sync_gameplay_hud() -> void:
+	if gameplay_controls == null:
+		return
+	var modal := dialogue.visible or notebook.visible or options_panel.visible or ending_panel.visible or menu_confirm.visible or quit_confirm.visible
+	gameplay_controls.visible = not modal
+	if modal:
+		# Hidden touch buttons must never keep moving the player.
+		held_moves.clear()
+		motion = Vector2.ZERO
+		observe_held = false
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_accept") and not dialogue.visible:
@@ -509,27 +521,37 @@ func _build_ui() -> void:
 	var layout := Control.new()
 	layout.name = "Night2Screen"
 	layout.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	layout.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hud.add_child(layout)
+	gameplay_controls = Control.new()
+	gameplay_controls.name = "GameplayControls"
+	gameplay_controls.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	gameplay_controls.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	layout.add_child(gameplay_controls)
 	var status := PanelContainer.new()
 	status.name = "ObjectiveCard"
-	status.anchor_left = .018
-	status.anchor_right = .465
-	status.anchor_top = .017
-	status.anchor_bottom = .207
-	status.add_theme_stylebox_override("panel", _panel_style())
-	layout.add_child(status)
+	status.anchor_left = 0.0
+	status.anchor_right = 0.44
+	status.anchor_top = 0.0
+	status.anchor_bottom = 0.0
+	status.offset_left = 16.0
+	status.offset_right = -8.0
+	status.offset_top = 10.0
+	status.offset_bottom = 250.0
+	SharedHUD.style_status_panel(status)
+	gameplay_controls.add_child(status)
 	var stack := VBoxContainer.new()
 	stack.add_theme_constant_override("separation", 3)
 	status.add_child(stack)
 	var heading := Label.new()
 	heading.text = "TABI-TABI  •  NIGHT 2  /  KAPRE"
-	heading.add_theme_font_size_override("font_size", 21)
+	heading.add_theme_font_size_override("font_size", 24)
 	heading.add_theme_color_override("font_color", Color("#f0d19c"))
 	stack.add_child(heading)
 	objective = Label.new()
 	objective.name = "ObjectiveText"
 	objective.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	objective.add_theme_font_size_override("font_size", roundi(18.0*prefs.text_scale))
+	objective.add_theme_font_size_override("font_size", roundi(22.0*prefs.text_scale))
 	stack.add_child(objective)
 	subtitle = Label.new()
 	subtitle.add_theme_font_size_override("font_size", 17)
@@ -537,13 +559,9 @@ func _build_ui() -> void:
 	stack.add_child(subtitle)
 	danger = Label.new()
 	danger.name = "CourageAndTension"
-	danger.anchor_left = .017
-	danger.anchor_right = .43
-	danger.anchor_top = .215
-	danger.anchor_bottom = .260
 	danger.add_theme_color_override("font_color", Color("#f4c99b"))
-	danger.add_theme_font_size_override("font_size", 19)
-	layout.add_child(danger)
+	danger.add_theme_font_size_override("font_size", roundi(19.0*prefs.text_scale))
+	stack.add_child(danger)
 	waypoint_label = Label.new()
 	waypoint_label.name = "NextLocationCompass"
 	waypoint_label.anchor_left = .475
@@ -554,7 +572,7 @@ func _build_ui() -> void:
 	waypoint_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	waypoint_label.add_theme_font_size_override("font_size", roundi(18.0*prefs.text_scale))
 	waypoint_label.add_theme_color_override("font_color", Color("#f1d6a4"))
-	layout.add_child(waypoint_label)
+	gameplay_controls.add_child(waypoint_label)
 	progress = ProgressBar.new()
 	progress.name = "ObserveProgress"
 	progress.anchor_left = .29
@@ -564,50 +582,41 @@ func _build_ui() -> void:
 	progress.max_value = 100
 	progress.show_percentage = false
 	progress.visible = false
-	layout.add_child(progress)
+	gameplay_controls.add_child(progress)
 	interaction_hint = Label.new()
 	interaction_hint.name = "InteractionHint"
-	interaction_hint.anchor_left = .23
-	interaction_hint.anchor_right = .73
-	interaction_hint.anchor_top = .79
-	interaction_hint.anchor_bottom = .865
+	interaction_hint.anchor_left = .60
+	interaction_hint.anchor_right = .86
+	interaction_hint.anchor_top = 0.0
+	interaction_hint.anchor_bottom = 0.0
+	interaction_hint.offset_top = 9.0
+	interaction_hint.offset_bottom = 89.0
 	interaction_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	interaction_hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	interaction_hint.add_theme_font_size_override("font_size", roundi(19.0*prefs.text_scale))
 	interaction_hint.add_theme_color_override("font_color", Color("#ffedc4"))
-	layout.add_child(interaction_hint)
+	gameplay_controls.add_child(interaction_hint)
 	# Compact directional cluster on bottom LEFT. Action stack on right,
 	# never over the center character or target.
+	# Same thumb positions as Night 1; no per-chapter control drift.
 	var moves := [
-		["up", "^", .085, .672],
-		["left", "<", .036, .755],
-		["right", ">", .134, .755],
-		["down", "v", .085, .838]]
+		["up", "▲"], ["left", "◀"], ["right", "▶"], ["down", "▼"]]
 	for entry in moves:
 		var dir_name: String = entry[0]
 		var direction := Button.new()
 		direction.name = "Move_" + dir_name
 		direction.text = entry[1]
-		direction.anchor_left = entry[2]
-		direction.anchor_right = entry[2]
-		direction.anchor_top = entry[3]
-		direction.anchor_bottom = entry[3]
-		direction.offset_right = 68
-		direction.offset_bottom = 58
-		direction.custom_minimum_size = Vector2(68,58)
-		_button_style(direction, 25)
+		SharedHUD.place_move_button(direction, dir_name)
+		_button_style(direction, 23)
 		direction.button_down.connect(func(): _press_move(dir_name, true))
 		direction.button_up.connect(func(): _press_move(dir_name, false))
 		direction.mouse_exited.connect(func(): _press_move(dir_name, false))
-		layout.add_child(direction)
-	var actions := VBoxContainer.new()
+		gameplay_controls.add_child(direction)
+	var actions := Control.new()
 	actions.name = "Night2Actions"
-	actions.anchor_left = .817
-	actions.anchor_right = .988
-	actions.anchor_top = .235
-	actions.anchor_bottom = .925
-	actions.add_theme_constant_override("separation", 7)
-	layout.add_child(actions)
+	actions.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	actions.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	gameplay_controls.add_child(actions)
 	_action(actions, "INTERACT", _interact)
 	var hold := _action(actions, "HOLD OBSERVE", func(): pass)
 	hold.button_down.connect(func(): observe_held = true)
@@ -738,16 +747,7 @@ func _panel_style() -> StyleBoxFlat:
 	return style
 
 func _button_style(button: Button, font_size: int = 19) -> void:
-	button.add_theme_font_size_override("font_size", roundi(float(font_size)*prefs.text_scale))
-	button.add_theme_color_override("font_color", Color("#fff0cf"))
-	button.add_theme_color_override("font_hover_color", Color.WHITE)
-	var style := _panel_style()
-	style.content_margin_left = 7
-	style.content_margin_right = 7
-	button.add_theme_stylebox_override("normal", style)
-	var pressed := style.duplicate() as StyleBoxFlat
-	pressed.bg_color = Color("#385149")
-	button.add_theme_stylebox_override("pressed", pressed)
+	SharedHUD.style_game_button(button, font_size, true, prefs.text_scale)
 
 func _action(parent: Node, label: String, callback: Callable) -> Button:
 	var b := Button.new()
@@ -759,6 +759,8 @@ func _action(parent: Node, label: String, callback: Callable) -> Button:
 	_button_style(b)
 	b.pressed.connect(callback)
 	parent.add_child(b)
+	if parent is Control and parent.name == "Night2Actions":
+		SharedHUD.place_action_button(b, label)
 	action_buttons[label] = b
 	return b
 
