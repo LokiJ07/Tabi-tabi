@@ -71,6 +71,38 @@ static func conceal(panel: Control, reduced_motion: bool) -> void:
 	panel.modulate.a = 1.0
 	panel.scale = Vector2.ONE
 
+static func reveal_text(line: Label, reduced_motion: bool) -> void:
+	if line == null:
+		return
+	if line.has_meta("dialogue_text_tween"):
+		var old: Variant = line.get_meta("dialogue_text_tween")
+		if old is Tween and old.is_running():
+			old.kill()
+		line.remove_meta("dialogue_text_tween")
+	line.visible_characters = -1
+	if reduced_motion or not line.is_inside_tree() or line.text.is_empty():
+		return
+	# A quick cinematic reveal, not a slow mandatory reading timer.
+	var count := line.text.length()
+	var duration := clampf(float(count) / 135.0, 0.24, 0.90)
+	line.visible_characters = 0
+	var tween := line.create_tween()
+	tween.tween_property(line,"visible_characters",count,duration).set_trans(Tween.TRANS_LINEAR)
+	line.set_meta("dialogue_text_tween",tween)
+
+static func finish_text(line: Label) -> bool:
+	if line == null:
+		return false
+	var unfinished := line.visible_characters >= 0 and line.visible_characters < line.text.length()
+	if unfinished:
+		if line.has_meta("dialogue_text_tween"):
+			var running: Variant = line.get_meta("dialogue_text_tween")
+			if running is Tween and running.is_running():
+				running.kill()
+			line.remove_meta("dialogue_text_tween")
+		line.visible_characters = -1
+	return unfinished
+
 static func restore_gameplay(hud: Control, reduced_motion: bool) -> void:
 	if hud == null:
 		return
