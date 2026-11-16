@@ -83,6 +83,17 @@ static func make_gameplay_button(parent: Control, title: String, pos: Vector2, d
 	parent.add_child(button)
 	return button
 
+static func make_options_button(parent: Control, callback: Callable, text_scale: float = 1.0) -> Button:
+	var button := Button.new()
+	button.name = "Options"
+	button.text = "OPTIONS"
+	place_action_button(button, "OPTIONS")
+	style_game_button(button, 23, false, text_scale)
+	button.pressed.connect(callback)
+	button.set_meta("hud_component", "night1-shared")
+	parent.add_child(button)
+	return button
+
 static func make_nearby_prompt(parent: Control, text_scale: float = 1.0) -> Label:
 	var prompt := Label.new()
 	prompt.name = "NearbyPrompt"
