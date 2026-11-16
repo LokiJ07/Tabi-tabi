@@ -25,6 +25,14 @@ func _run() -> void:
 	check(game.debug_dusk_preview == false and game.debug_night_reveal == false,
 		"QA lighting previews are never set by ordinary gameplay")
 	check(game.get_node_or_null("Night2HUD/Night2Screen") != null, "real mobile HUD")
+	check(game.atmosphere_fx != null, "Night 2 shares the identical sensory effects renderer")
+	if game.atmosphere_fx != null:
+		check(game.atmosphere_fx.mouse_filter == Control.MOUSE_FILTER_IGNORE, "fog and darkness cannot block touchscreen")
+		game.atmosphere_fx.configure(2,2,.75,true)
+		check(is_equal_approx(game.atmosphere_fx.tension,.75) and game.atmosphere_fx.reduced_motion, "shared sensory FX accepts Night 2 story pressure")
+	var n2_status := game.get_node_or_null("Night2HUD/Night2Screen/GameplayControls/ObjectiveCard") as PanelContainer
+	check(n2_status != null and is_equal_approx(n2_status.anchor_right,.37), "Night 2 uses same compact status card as Night 1")
+	check(game.KAPRE.get_width() >= 256 and game.KAPRE.resource_path.ends_with("kapre_perched.svg"), "nighttime encounter uses seated Kapre illustration")
 	check(game.action_buttons.has("INTERACT"), "interaction control")
 	check(game.action_buttons.has("HOLD OBSERVE"), "continuous observation control")
 	check(game.action_buttons.has("FIELD NOTES"), "source-aware journal")
