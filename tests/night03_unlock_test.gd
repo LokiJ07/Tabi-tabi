@@ -29,6 +29,12 @@ func _run() -> void:
 	root.add_child(title)
 	await process_frame
 	check(not title._night3_unlocked(), "Night 3 production gate locked on clean install")
+	var menu := title.get_node_or_null("MainMenu") as VBoxContainer
+	check(menu != null and menu.get_combined_minimum_size().y <= menu.size.y + 2.0,
+		"seven title actions fit fully inside mobile landscape menu without clipping")
+	check(title.night3_button.custom_minimum_size.y >= 48.0 and
+		title.night3_button.get_theme_font_size("font_size") < 29,
+		"Night 3 entry keeps accessible touch height with readable compact typography")
 	if OS.has_feature("debug"):
 		check(title.night3_button.text.contains("(QA)"), "debug preview clearly labelled QA, not canonical unlock")
 		check(not title.night3_button.disabled, "direct scene preview available ONLY in debug")
