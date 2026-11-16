@@ -25,8 +25,20 @@ func _run() -> void:
 	check(game.action_buttons.has("HOLD OBSERVE"), "continuous observation control")
 	check(game.action_buttons.has("FIELD NOTES"), "source-aware journal")
 	check(game.action_buttons.has("OPTIONS"), "pause, save and quit controls")
+	var move_up := game.get_node_or_null("Night2HUD/Night2Screen/GameplayControls/Move_up") as Button
+	check(move_up != null, "shared bottom-left movement UI")
+	if move_up != null:
+		check(is_equal_approx(move_up.anchor_left, 0.0) and is_equal_approx(move_up.offset_left, 95.0), "Night 2 arrow exactly matches Night 1 thumb position")
+	var act := game.action_buttons.get("INTERACT") as Button
+	check(act != null and act.get_meta("shared_hud_version", 0) == 1, "interact uses common chapter HUD theme")
+	if act != null:
+		check(is_equal_approx(act.offset_left, -230.0) and is_equal_approx(act.offset_top, -155.0), "Night 2 interact matches Night 1 lower-right anchor")
+	game._sync_gameplay_hud()
+	check(not game.gameplay_controls.visible, "modal dialogue hides movement and actions")
 	check(game.menu_confirm != null and game.quit_confirm != null, "explicit navigation confirmations")
 	game._choose("close")
+	game._sync_gameplay_hud()
+	check(game.gameplay_controls.visible, "closing dialogue restores shared HUD")
 	# Dialogue never damages courage while user reads at an unsafe location.
 	game.player_pos = game.TREE+Vector2(-75,0)
 	game._show_dialogue("NARRATOR","Reading must pause environmental tension.",[{"label":"OK","action":"close"}])
