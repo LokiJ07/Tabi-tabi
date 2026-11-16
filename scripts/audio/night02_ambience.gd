@@ -10,6 +10,7 @@ var phase := 0.0
 var wind := 0.0
 var seed := 742019
 var level := 2
+var night_stage := 0
 
 func _ready() -> void:
 	player = AudioStreamPlayer.new()
@@ -29,6 +30,9 @@ func set_audio_level(value: int) -> void:
 	if player != null:
 		player.volume_db = -80.0 if level == 0 else -32.0 if level == 1 else -24.0
 
+func set_night_stage(value: int) -> void:
+	night_stage = clampi(value, 0, 3)
+
 func _process(_delta: float) -> void:
 	if playback == null or level == 0:
 		return
@@ -41,10 +45,12 @@ func _process(_delta: float) -> void:
 		wind += (white - wind) * .011
 		var breeze := .025 * wind * (1.0 + .4 * sin(phase * .33))
 		var chirp_gate := pow(maxf(0.0, sin(phase * 2.9)), 4.0)
-		var insect := .008 * chirp_gate * sin(phase * TAU * 1610.0)
+		# Forest insects intensify after sunset, while daylight stays quieter.
+		var night_mix := clampf((float(night_stage)-.6)/1.4, 0.0, 1.0)
+		var insect := (.0025 + .0075 * night_mix) * chirp_gate * sin(phase * TAU * 1610.0)
 		var low := .004 * sin(phase * TAU * (68.0 + 3.0 * sin(phase * .27)))
 		# Soft bending-trunk creak once per slow breeze; not a harsh jump scare.
 		var creak_gate := pow(maxf(0.0, sin(phase * .42)), 12.0)
-		var creak := .007 * creak_gate * sin(phase * TAU * 92.0)
+		var creak := (.003 + .005 * night_mix) * creak_gate * sin(phase * TAU * 92.0)
 		var mix := clampf(breeze + insect + low + creak, -.075, .075)
 		playback.push_frame(Vector2(mix, mix))
