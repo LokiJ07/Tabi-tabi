@@ -123,6 +123,8 @@ jobs:
           timeout --signal=TERM --kill-after=8s 75s \
             godot --headless --audio-driver Dummy --path . \
             --script res://tests/night03_connected_playthrough_test.gd
+      - name: Nights 1–4 lit windows and reduced street residents
+        run: godot --headless --path . --script res://tests/nighttime_windows_test.gd
       - name: Night 4 lamay witness, defense, retry and outcome state
         run: godot --headless --path . --script res://tests/night04_state_test.gd
       - name: Night 4 actual shared HUD, social investigation and wake siege scene

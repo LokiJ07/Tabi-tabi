@@ -5,6 +5,7 @@ extends Control
 ## same imported textures as the normal renderer, never a static screenshot.
 ## This layer is activated ONLY for known Android SwiftShader/Emulator adapters.
 const DimensionalArt = preload("res://scripts/visuals/layered_25d.gd")
+const NightWindows = preload("res://scripts/visuals/nighttime_windows.gd")
 const Landscape = preload("res://scripts/visuals/folklore_landscape_25d.gd")
 const SOIL: Texture2D = preload("res://assets/world/soil_ground.svg")
 const PATH: Texture2D = preload("res://assets/world/earthen_path.svg")
@@ -305,6 +306,8 @@ func _draw_village() -> void:
 	props.append({"at": Vector3(-2,0,-12), "type": "house", "texture": SCHOOL, "roof": Color("#4d6b65")})
 
 	for key in ["LOLA", "DADO", "MARA", "SABEL"]:
+		if not NightWindows.outdoor_actor_visible(1,2 if game.is_night else 0,key):
+			continue # everyone is indoors; do not fake outdoor actors at night
 		var actor = game.interaction_nodes.get(key)
 		if actor == null:
 			continue
@@ -351,6 +354,15 @@ func _draw_village() -> void:
 			var band_height := size.y * float(i) / 24.0
 			draw_rect(Rect2(0, band_height, size.x, size.y / 30.0),
 				Color(0.23, 0.40, 0.52, 0.021))
+		# Recreate the original 3D window positions in the software renderer,
+		# above darkness but below the HUD: houses feel occupied after nightfall.
+		for i in range(3):
+			var house: Vector3 = [Vector3(6,0,5),Vector3(7,0,-8),
+				Vector3(-2,0,-12)][i]
+			var glass_at := _screen(house+Vector3(1.10,1.53,2.19))
+			NightWindows.paint_window(self,glass_at,
+				Vector2(_scale_units(.66),_scale_units(.58)),i,true,
+				game.elapsed,game.preferences.reduced_motion)
 		# Warm pools of light: exactly the two authored lantern locations.
 		for lamp_at in [Vector3(-4.0, 2.05, 9.0), Vector3(2.8, 2.05, -2.0)]:
 			var p := _screen(lamp_at)
