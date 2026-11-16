@@ -69,6 +69,9 @@ func _run() -> void:
 			check(back.player_pos.distance_to(World.ARRIVAL_MANGO_RIDGE)<2.0,
 				"return arrives beside real mango-to-ridge signpost")
 			check(back.story.outcome == "partial","existing Kapre ending untouched by Tikbalang visit")
+			# Release SceneTree ownership BEFORE queue_free: keeping a stale
+			# current_scene pointer after two scene swaps can hang teardown.
+			current_scene = null
 			back.queue_free()
 	else:
 		if ridge != null:
@@ -84,4 +87,6 @@ func _run() -> void:
 			output.close()
 	print("Real Old Mango → Tikbalang Ridge → Old Mango connected travel: ",
 		"PASS" if failures == 0 else str(failures)+" failures")
+	current_scene = null
+	print("NIGHT3_CROSSING_TEARDOWN_READY")
 	quit(0 if failures == 0 else 1)
