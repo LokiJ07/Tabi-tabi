@@ -848,7 +848,7 @@ func _gameplay_button(label: String, at: Vector2, dimensions: Vector2, callback:
 func _open_safety_preparation() -> void:
 	if dialogue.visible or ending_panel.visible or notebook.visible or options_panel.visible:
 		return
-	var route_done := story.barriers.size()
+	var route_done: int = story.barriers.size()
 	_show_dialogue("SAFETY PREPARATION",
 		"Check the fallen limbs, roots and approach routes before confronting the mango-tree resident.\n" +
 		"Evidence: %d/5   •   Closed routes: %d/3\n" % [story.clues.size(),route_done] +
