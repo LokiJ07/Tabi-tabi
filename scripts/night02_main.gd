@@ -11,6 +11,7 @@ const Preferences = preload("res://scripts/core/preferences.gd")
 const Night02Ambience = preload("res://scripts/audio/night02_ambience.gd")
 const ConnectedWorld = preload("res://scripts/core/connected_world.gd")
 const SharedHUD = preload("res://scripts/ui/shared_hud.gd")
+const SharedDialogueMotion = preload("res://scripts/ui/shared_dialogue_motion.gd")
 const AimPad = preload("res://scripts/ui/aim_pad.gd")
 const SpeakerPortrait = preload("res://scripts/ui/speaker_portrait.gd")
 const SharedAtmosphere = preload("res://scripts/visuals/shared_immersive_atmosphere.gd")
@@ -83,6 +84,10 @@ var interaction_hint: Label
 var waypoint_label: Label
 var action_buttons: Dictionary = {}
 var dialogue: PanelContainer
+var modal_backdrop: ColorRect
+var dialogue_focus_point := Vector2.ZERO
+var dialogue_focus_enabled := false
+var dialogue_focus_blend := 0.0
 var dialogue_name: Label
 var dialogue_portrait: Control
 var kapre_dialogue_portrait: TextureRect
@@ -184,7 +189,13 @@ func _process(delta: float) -> void:
 		if tree_offset.length() < 70:
 			player_pos = TREE + tree_offset.normalized() * 70 if tree_offset.length() > .01 else TREE + Vector2(-70, 0)
 		dog_pos = dog_pos.lerp(player_pos + Vector2(-48, 27), clampf(delta * 2.9, 0.0, 1.0))
-	camera.position = player_pos
+	# The camera eases toward a nearby speaker without moving the player
+	# or rushing across the grove to an off-screen witness.
+	var desired_blend := 1.0 if dialogue_focus_enabled and dialogue.visible else 0.0
+	dialogue_focus_blend = lerpf(dialogue_focus_blend, desired_blend,
+		1.0 if prefs.reduced_motion else clampf(delta * 3.8,0.0,1.0))
+	var focus_shift := (dialogue_focus_point-player_pos).limit_length(95.0)
+	camera.position = player_pos + focus_shift * dialogue_focus_blend
 	camera.offset = camera.offset.lerp(look_direction * 65.0, clampf(delta*9.0, 0.0, 1.0))
 	if not travel_in_progress and player_pos.distance_to(ConnectedWorld.TRAIL_MANGO) < 53.0:
 		_return_to_barrio()
@@ -224,6 +235,9 @@ func _sync_gameplay_hud() -> void:
 		return
 	var modal := dialogue.visible or notebook.visible or options_panel.visible or ending_panel.visible or menu_confirm.visible or quit_confirm.visible
 	gameplay_controls.visible = not modal
+	if modal_backdrop != null:
+		modal_backdrop.visible = modal
+		modal_backdrop.color = Color(.015,.035,.05,.30 if dialogue.visible else .76)
 	if modal:
 		# Hidden touch buttons must never keep moving the player.
 		held_moves.clear()
@@ -702,6 +716,15 @@ func _build_ui() -> void:
 	_gameplay_button("SAVE",Vector2(1050,345),Vector2(85,52),_save_and_notify)
 	_gameplay_button("RETRY",Vector2(1142,345),Vector2(88,52),_retry_night2)
 	action_buttons["OPTIONS"] = SharedHUD.make_options_button(gameplay_controls,_open_options,prefs.text_scale)
+	# Exact Night 1 modal backdrop: atmospheric world remains visible during
+	# dialogue, and full note/options screens stay comfortably legible.
+	modal_backdrop = ColorRect.new()
+	modal_backdrop.name = "ModalDimmer"
+	modal_backdrop.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	modal_backdrop.color = Color(.015,.035,.05,.30)
+	modal_backdrop.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	layout.add_child(modal_backdrop)
+	modal_backdrop.hide()
 
 	dialogue = PanelContainer.new()
 	dialogue.name = "Night2Dialogue"
@@ -1125,10 +1148,30 @@ func _show_dialogue(who: String, message: String, options: Array) -> void:
 		var action_name := str(option["action"])
 		choice.pressed.connect(func(): _choose(action_name))
 		dialogue_choices.add_child(choice)
-	dialogue.show()
+	dialogue_focus_point = _cinematic_subject(who)
+	dialogue_focus_enabled = true
+	SharedDialogueMotion.reveal(dialogue,prefs.reduced_motion)
+	_sync_gameplay_hud()
+
+func _cinematic_subject(who: String) -> Vector2:
+	var role := who.to_upper()
+	var subject_at := player_pos
+	if role.contains("KAPRE"):
+		subject_at = TREE
+	elif role.contains("DADO") or role.contains("MARA") or role.contains("LOLA"):
+		subject_at = TARGETS["witness_accounts"]
+	elif role.contains("BANTAY") or role.contains("APPRENTICE"):
+		subject_at = dog_pos if role.contains("BANTAY") else player_pos
+	# A distant witness or off-scene narration must never jerk the camera
+	# across the whole map; ambient storytelling stays anchored at the player.
+	if subject_at.distance_to(player_pos) > 370.0:
+		return player_pos
+	return subject_at
 
 func _close_dialogue() -> void:
-	dialogue.hide()
+	dialogue_focus_enabled = false
+	SharedDialogueMotion.conceal(dialogue,prefs.reduced_motion)
+	_sync_gameplay_hud()
 	motion = Vector2.ZERO
 	held_moves.clear()
 	observe_held = false
