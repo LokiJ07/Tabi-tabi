@@ -251,8 +251,13 @@ func _sync_gameplay_hud() -> void:
 		look_direction = Vector2.ZERO
 
 func _unhandled_input(event: InputEvent) -> void:
-	if event.is_action_pressed("ui_accept") and not dialogue.visible:
-		_interact()
+	if event.is_action_pressed("ui_accept"):
+		if dialogue.visible:
+			# Keyboard/controller confirm reveals text without choosing an
+			# arbitrary narrative option or skipping a safety decision.
+			SharedDialogueMotion.finish_text(dialogue_line)
+		else:
+			_interact()
 	if event.is_action_pressed("ui_cancel"):
 		if dialogue.visible:
 			_close_dialogue()
