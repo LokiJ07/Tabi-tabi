@@ -238,10 +238,12 @@ func _physics_process(delta: float) -> void:
 	if dog_warning_label != null:
 		dog_warning_label.visible = dog_warning_label.text != ""
 	_update_focus_ui()
-	# Peripheral environmental cues grow with Santelmo pressure but never
-	# displace the camera or mask touch controls and dialogue.
+	# Peripheral cues and a low-frequency sound pulse respond to actual
+	# encounter danger. No scripted jumpscares, no forced camera shakes.
+	var fear := maxf(light_alarm, (100.0-story.courage)/100.0*.70)
+	if living_sound != null:
+		living_sound.set_pressure(fear if is_night and not in_lola_hut else 0.0)
 	if atmosphere_fx != null:
-		var fear := maxf(light_alarm, (100.0-story.courage)/100.0*.70)
 		atmosphere_fx.configure(1, 2 if is_night and not in_lola_hut else 0, fear, preferences.reduced_motion)
 	for i in range(ambient_walkers.size()):
 		var villager := ambient_walkers[i]
