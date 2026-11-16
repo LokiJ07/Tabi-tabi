@@ -70,6 +70,33 @@ static func conceal(panel: Control, reduced_motion: bool) -> void:
 	panel.modulate.a = 1.0
 	panel.scale = Vector2.ONE
 
+static func restore_gameplay(hud: Control, reduced_motion: bool) -> void:
+	if hud == null:
+		return
+	if hud.has_meta("hud_restore_tween"):
+		var earlier: Variant = hud.get_meta("hud_restore_tween")
+		if earlier is Tween and earlier.is_running():
+			earlier.kill()
+		hud.remove_meta("hud_restore_tween")
+	hud.modulate.a = 1.0
+	if reduced_motion or not hud.is_inside_tree():
+		return
+	# Only the chrome eases back in; buttons become usable immediately.
+	hud.modulate.a = 0.42
+	var fade := hud.create_tween()
+	fade.tween_property(hud,"modulate:a",1.0,0.16).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	hud.set_meta("hud_restore_tween",fade)
+
+static func reset_gameplay(hud: Control) -> void:
+	if hud == null:
+		return
+	if hud.has_meta("hud_restore_tween"):
+		var earlier: Variant = hud.get_meta("hud_restore_tween")
+		if earlier is Tween and earlier.is_running():
+			earlier.kill()
+		hud.remove_meta("hud_restore_tween")
+	hud.modulate.a = 1.0
+
 static func speaker_change(content: Array, reduced_motion: bool) -> void:
 	# Speaker name/portrait/text are updated immediately for gameplay tests and
 	# screen readers, with a brief presentation-only cross-dissolve.
