@@ -102,6 +102,10 @@ jobs:
           run_test res://tests/night02_state_test.gd
           run_test res://tests/night02_scene_test.gd
           run_test res://tests/night02_unlock_test.gd
+          run_test res://tests/night03_state_test.gd
+          run_test res://tests/night03_scene_test.gd
+          run_test res://tests/night03_unlock_test.gd
+          run_test res://tests/night03_connected_playthrough_test.gd
           run_test res://tests/connected_world_test.gd
           run_test res://tests/north_grove_art_test.gd
           run_test res://tests/connected_world_playthrough_test.gd
