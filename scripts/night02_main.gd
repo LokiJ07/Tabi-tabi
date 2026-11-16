@@ -189,13 +189,17 @@ func _unhandled_input(event: InputEvent) -> void:
 			_open_options()
 	if OS.get_name() == "Android" and OS.has_feature("debug") and event is InputEventKey:
 		var key := event as InputEventKey
-		if key.pressed and not key.echo and [KEY_F6, KEY_F7, KEY_F8, KEY_F9].has(key.keycode):
+		if key.pressed and not key.echo and [KEY_F5, KEY_F6, KEY_F7, KEY_F8, KEY_F9].has(key.keycode):
 			# Each screenshot uses the real interactive running scene, NEVER
 			# a concept art canvas or a fake static title.
 			_close_dialogue()
 			notebook.hide()
 			options_panel.hide()
-			if key.keycode == KEY_F6:
+			if key.keycode == KEY_F5:
+				debug_dusk_preview = false
+				player_pos = Vector2(-645, 455)
+				print("NIGHT2_QA_RETURN_TRAIL_VIEW")
+			elif key.keycode == KEY_F6:
 				debug_dusk_preview = true
 				player_pos = Vector2(110,-140)
 				print("NIGHT2_QA_DUSK_VIEW")
