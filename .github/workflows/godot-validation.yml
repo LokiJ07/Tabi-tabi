@@ -2,7 +2,10 @@ name: Godot project validation
 on:
   push:
     branches: [main, 'feature/**']
+  # Push CI already verifies feature branches. PR validation is reserved
+  # for main-bound integrations, preventing duplicate runs on draft feature PRs.
   pull_request:
+    branches: [main]
   workflow_dispatch:
 # Only the newest validation for a given push or PR matters. Prevent earlier
 # hung dummy-renderer jobs from accumulating throughout chapter development.
@@ -53,8 +56,20 @@ jobs:
         run: godot --headless --path . --script res://tests/night01_courage_test.gd
       - name: Morning outcome world consistency regression
         run: godot --headless --path . --script res://tests/night01_aftermath_test.gd
-      - name: Full Night 1 scene-to-outcome integration loop
-        run: godot --headless --path . --script res://tests/night01_flow_test.gd
+      - name: Full Night 1 scene-to-outcome integration (three isolated outcomes)
+        timeout-minutes: 12
+        run: |
+          set -euo pipefail
+          # The dummy headless renderer emitted repeated null-mesh errors on
+          # repeated 3D scene construction; use Mesa/OpenGL inside Xvfb instead.
+          command -v xvfb-run
+          for result in resolve drive_away partial; do
+            echo "::group::Full Night 1 story outcome: $result"
+            timeout --signal=TERM --kill-after=10s 180s xvfb-run -a \
+              godot --rendering-method gl_compatibility --rendering-driver opengl3 \
+              --path . --script res://tests/night01_flow_test.gd -- "$result"
+            echo "::endgroup::"
+          done
       - name: Lola hut prologue, interactive props and migration
         run: godot --headless --path . --script res://tests/night01_prologue_test.gd
       - name: Offline save corruption and backup recovery
