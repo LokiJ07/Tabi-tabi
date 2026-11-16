@@ -406,8 +406,10 @@ func _draw() -> void:
 		for ring in range(4,0,-1):
 			draw_circle(witness,75.0+float(ring)*36.0,
 				Color(.68,.34,.16,.009+float(5-ring)*.006))
-		draw_texture_rect(TIKBALANG,Rect2(RIDGE_GATE+Vector2(-170,-491+shift),
-			Vector2(340,492)),false,Color("#e0d6c6"))
+		# Maintain the original horse-human proportions while keeping both
+		# horn tips in the landscape viewport at the closest QA camera pose.
+		draw_texture_rect(TIKBALANG,Rect2(RIDGE_GATE+Vector2(-159,-449+shift),
+			Vector2(318,450)),false,Color("#e0d6c6"))
 	# Keep original shared protagonists readable against darkness. Their
 	# draw order is world-depth based and HUD/cinematic layers stay untouched.
 	var actors := [
@@ -428,8 +430,6 @@ func _draw() -> void:
 		"FLOOD WATCHPOST",HORIZONTAL_ALIGNMENT_LEFT,320,19,Color("#f1d89e"))
 	draw_string(font,FALSE_FORK+Vector2(-108,107),
 		"CHANGED WAYMARKS",HORIZONTAL_ALIGNMENT_LEFT,320,18,Color("#e3c592"))
-	draw_string(font,RIDGE_GATE+Vector2(-205,91),
-		"THE NORTH RIDGE  /  OLD PASS",HORIZONTAL_ALIGNMENT_LEFT,390,19,Color("#dec89c"))
 	# Next chapter's gate remains closed until its real playable scene exists.
 	draw_line(Vector2(890,-525),Vector2(890,-390),Color("#674e35"),12,true)
 	draw_line(Vector2(848,-490),Vector2(946,-476),Color("#baa078"),14,true)
