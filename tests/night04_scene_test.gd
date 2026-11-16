@@ -39,6 +39,17 @@ func _run() -> void:
 		"original vector art for caretaker and winged entity actually imported")
 	check(not game.story.target_verified and game.story.phase == 0,
 		"start with dignity and physical evidence, not identifying a random mourner")
+	# Regression from the Android capture: a roof-level creature was clipped
+	# above the phone viewport when the apprentice stood in the safe courtyard.
+	game.player_pos = game.SAFE_COURT
+	game.camera.position = game.player_pos
+	game.debug_wake_preview = true
+	game._process(.7)
+	check(game.camera.position.y < game.player_pos.y-145.0,
+		"cinematic reveal shifts the actual camera to frame wings and hero together")
+	game.debug_wake_preview = false
+	game.player_pos = Story.START
+	game.camera.position = game.player_pos
 	if game.dialogue.visible:
 		game._choose("close")
 	check(game._nearby() != "deduce","cannot bypass clues on arrival")

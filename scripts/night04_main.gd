@@ -157,7 +157,18 @@ func _process(delta: float) -> void:
 		if player_pos.x > -165 and player_pos.x < 355 and player_pos.y > -475 and player_pos.y < -205:
 			player_pos.y = -194 if player_pos.y > -330 else -485
 	bantay_pos = bantay_pos.lerp(player_pos+Vector2(-49,29),clampf(delta*3.2,0,1))
-	camera.position = camera.position.lerp(player_pos+aim*64,
+	# A tall, airborne Manananggal must be framed together with the
+	# apprentice during a real attack, not cropped at the top of the phone.
+	# This is the world camera only; Night 1 shared touch HUD never moves.
+	var framing_target := player_pos + aim*64
+	if story.phase == 3 or debug_wake_preview:
+		var approach := Vector2(260,-155)
+		match story.current_warning():
+			"roofline": approach = Vector2(270,-540)
+			"rear_window": approach = Vector2(550,-310)
+			"courtyard": approach = Vector2(260,-155)
+		framing_target += (approach-player_pos).limit_length(270.0)*.90
+	camera.position = camera.position.lerp(framing_target,
 		1.0 if prefs.reduced_motion else clampf(delta*4.5,0,1))
 	if not _modal() and not travel_in_progress and player_pos.distance_to(RETURN_RIDGE)<56:
 		_return_to_ridge()
@@ -223,6 +234,10 @@ func _unhandled_input(event: InputEvent) -> void:
 					print("NIGHT4_QA_MANANANGGAL_NIGHT")
 			bantay_pos = player_pos+Vector2(-49,29)
 			camera.position = player_pos
+			if debug_wake_preview and subtitle != null:
+				subtitle.text = "QA NIGHT REVEAL • NORMAL STORY REQUIRES INVESTIGATION + DEFENSE"
+			else:
+				_refresh()
 			get_viewport().set_input_as_handled()
 
 func _house() -> void:
