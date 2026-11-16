@@ -11,6 +11,7 @@ var wind := 0.0
 var seed := 742019
 var level := 2
 var night_stage := 0
+var pressure := 0.0
 
 func _ready() -> void:
 	player = AudioStreamPlayer.new()
@@ -33,6 +34,9 @@ func set_audio_level(value: int) -> void:
 func set_night_stage(value: int) -> void:
 	night_stage = clampi(value, 0, 3)
 
+func set_tension(value: float) -> void:
+	pressure = clampf(value,0.0,1.0)
+
 func _process(_delta: float) -> void:
 	if playback == null or level == 0:
 		return
@@ -52,5 +56,7 @@ func _process(_delta: float) -> void:
 		# Soft bending-trunk creak once per slow breeze; not a harsh jump scare.
 		var creak_gate := pow(maxf(0.0, sin(phase * .42)), 12.0)
 		var creak := (.003 + .005 * night_mix) * creak_gate * sin(phase * TAU * 92.0)
-		var mix := clampf(breeze + insect + low + creak, -.075, .075)
+		# Sub-bass pressure comes from genuine unsafe proximity, not random scares.
+		var heartbeat := .012 * pressure * pow(maxf(0.0,sin(phase * TAU * 1.15)),15.0)
+		var mix := clampf(breeze + insect + low + creak + heartbeat, -.075, .075)
 		playback.push_frame(Vector2(mix, mix))
