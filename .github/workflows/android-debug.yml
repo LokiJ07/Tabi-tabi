@@ -200,6 +200,11 @@ jobs:
             build/android-night2-dusk.png
             build/android-night2-return-trail.png
             build/android-night2-log.txt
+            build/android-night3-intro.png
+            build/android-night3-ridge-day.png
+            build/android-night3-watchpost.png
+            build/android-night3-tikbalang-night.png
+            build/android-night3-back-trail.png
             build/android-night1-notebook.png
             build/android-night1-notebook-scrolled.png
             build/android-night1-preparation.png
