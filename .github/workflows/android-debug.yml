@@ -66,37 +66,43 @@ jobs:
           PY
       - name: Import project
         run: godot --headless --editor --path . --import --quit
-      - name: Gate the preview on essential story and equipment tests
+      - name: Gate preview with same essential story and HUD regressions (bounded)
         run: |
-          godot --headless --path . --script res://tests/night01_state_test.gd
-          godot --headless --path . --script res://tests/night01_inventory_test.gd
-          godot --headless --path . --script res://tests/preferences_test.gd
-          godot --headless --path . --script res://tests/night01_courage_test.gd
-          godot --headless --path . --script res://tests/night01_aftermath_test.gd
-          godot --headless --path . --script res://tests/night01_flow_test.gd
-          godot --headless --path . --script res://tests/night01_prologue_test.gd
-          godot --headless --path . --script res://tests/night01_save_recovery_test.gd
-          godot --headless --path . --script res://tests/night01_hud_test.gd
-          godot --headless --path . --script res://tests/night01_stage3_hud_test.gd
-          godot --headless --path . --script res://tests/folk_actors_test.gd
-          godot --headless --path . --script res://tests/night01_cinematic_test.gd
-          godot --headless --path . --script res://tests/night01_camera_test.gd
-          godot --headless --path . --script res://tests/barrio_lighting_test.gd
-          godot --headless --path . --script res://tests/river_banca_test.gd
-          godot --headless --path . --script res://tests/barrio_details_test.gd
-          godot --headless --path . --script res://tests/night01_mangrove_art_test.gd
-          godot --headless --path . --script res://tests/night01_title_and_art_test.gd
-          godot --headless --path . --script res://tests/night01_navigation_test.gd
-          godot --headless --path . --script res://tests/night01_illustrated_art_test.gd
-          godot --headless --path . --script res://tests/night02_state_test.gd
-          godot --headless --path . --script res://tests/night02_scene_test.gd
-          godot --headless --path . --script res://tests/night02_unlock_test.gd
-          godot --headless --path . --script res://tests/connected_world_test.gd
-          godot --headless --path . --script res://tests/north_grove_art_test.gd
-          godot --headless --path . --script res://tests/connected_world_playthrough_test.gd
-          godot --headless --path . --script res://tests/night01_world_cohesion_test.gd
-          godot --headless --path . --script res://tests/living_ambience_test.gd
-          godot --headless --path . --script res://tests/night01_journal_test.gd
+          set -euo pipefail
+          run_test() {
+            echo "::group::Headless QA $1"
+            timeout --signal=TERM --kill-after=8s 90s godot --headless --path . --script "$1"
+            echo "::endgroup::"
+          }
+          run_test res://tests/night01_state_test.gd
+          run_test res://tests/night01_inventory_test.gd
+          run_test res://tests/preferences_test.gd
+          run_test res://tests/night01_courage_test.gd
+          run_test res://tests/night01_aftermath_test.gd
+          run_test res://tests/night01_flow_test.gd
+          run_test res://tests/night01_prologue_test.gd
+          run_test res://tests/night01_save_recovery_test.gd
+          run_test res://tests/night01_hud_test.gd
+          run_test res://tests/night01_stage3_hud_test.gd
+          run_test res://tests/folk_actors_test.gd
+          run_test res://tests/night01_cinematic_test.gd
+          run_test res://tests/night01_camera_test.gd
+          run_test res://tests/barrio_lighting_test.gd
+          run_test res://tests/river_banca_test.gd
+          run_test res://tests/barrio_details_test.gd
+          run_test res://tests/night01_mangrove_art_test.gd
+          run_test res://tests/night01_title_and_art_test.gd
+          run_test res://tests/night01_navigation_test.gd
+          run_test res://tests/night01_illustrated_art_test.gd
+          run_test res://tests/night02_state_test.gd
+          run_test res://tests/night02_scene_test.gd
+          run_test res://tests/night02_unlock_test.gd
+          run_test res://tests/connected_world_test.gd
+          run_test res://tests/north_grove_art_test.gd
+          run_test res://tests/connected_world_playthrough_test.gd
+          run_test res://tests/night01_world_cohesion_test.gd
+          run_test res://tests/living_ambience_test.gd
+          run_test res://tests/night01_journal_test.gd
       - name: Export debug APK
         env:
           GODOT_ANDROID_KEYSTORE_DEBUG_PATH: ${{ runner.temp }}/debug.keystore
