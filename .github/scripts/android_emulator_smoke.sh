@@ -209,6 +209,14 @@ if [ "${GITHUB_REF:-}" = "refs/heads/feature/night2-kapre" ]; then
 fi
 
 adb logcat -d -s AndroidRuntime:E Godot:E GodotEngine:E > build/android-night1-launch-log.txt || true
+# An emulator "launch PASS" must never conceal a GDScript exception. Godot
+# software renderers can log shader link errors on SwiftShader (handled by the
+# live 2.5D fallback); only genuine script/runtime failures are fatal here.
+adb logcat -d -v brief > build/android-entire-run-log.txt || true
+if grep -E "USER SCRIPT ERROR:|SCRIPT ERROR:|Invalid call\. Nonexistent function" build/android-entire-run-log.txt; then
+  echo "ERROR: Android gameplay contains Godot script exceptions"
+  exit 1
+fi
 if grep -q "FATAL EXCEPTION" build/android-night1-launch-log.txt; then
   cat build/android-night1-launch-log.txt
   exit 1
