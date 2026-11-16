@@ -4,9 +4,15 @@ on:
     branches: [main, 'feature/**']
   pull_request:
   workflow_dispatch:
+# Only the newest validation for a given push or PR matters. Prevent earlier
+# hung dummy-renderer jobs from accumulating throughout chapter development.
+concurrency:
+  group: tabitabi-godot-validation-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   validate:
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
       - name: Install Godot 4.3 headless
