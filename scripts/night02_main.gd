@@ -21,6 +21,8 @@ const DADO: Texture2D = preload("res://assets/characters/dado.svg")
 const MARA: Texture2D = preload("res://assets/characters/mara.svg")
 const HOUSE: Texture2D = preload("res://assets/world/nipa_facade.svg")
 const SCHOOL: Texture2D = preload("res://assets/world/school_facade.svg")
+const WOVEN_WALL: Texture2D = preload("res://assets/world/lola_sawali_wall.svg")
+const NIPA_THATCH: Texture2D = preload("res://assets/world/nipa_thatch_roof.svg")
 const HIBISCUS: Texture2D = preload("res://assets/world/hibiscus_bush.svg")
 const LANTERN: Texture2D = preload("res://assets/world/lantern_post.svg")
 const SOIL: Texture2D = preload("res://assets/world/soil_ground.svg")
@@ -373,6 +375,16 @@ func _polyline(points: Array[Vector2], color: Color, width: float) -> void:
 func _polygon(points: Array[Vector2], color: Color) -> void:
 	draw_colored_polygon(PackedVector2Array(points), color)
 
+func _textured_quad(corners: Array[Vector2], texture: Texture2D, tint: Color) -> void:
+	# UVs are tied to each isometric wall or roof face, never to a screen-aligned
+	# sticker. This keeps woven bamboo and thatch attached to real geometry.
+	var tex_size := texture.get_size()
+	var uv := PackedVector2Array([
+		Vector2(0, tex_size.y), Vector2(tex_size.x,tex_size.y),
+		Vector2(tex_size.x,0), Vector2(0,0)])
+	draw_polygon(PackedVector2Array(corners),
+		PackedColorArray([tint, tint, tint, tint]),uv,texture)
+
 func _building_at(at: Vector2, texture: Texture2D, name_text: String) -> void:
 	# Hand-built 2.5D isometric architecture, NOT a stretched 2D facade.
 	# A footprint, four real corners, two roof planes and raised porch share
@@ -401,8 +413,8 @@ func _building_at(at: Vector2, texture: Texture2D, name_text: String) -> void:
 		draw_line(foot + Vector2(0, -11), foot + Vector2(0, 29), Color("#6f5239"), 12, true)
 		draw_line(foot + Vector2(0, -11), foot + Vector2(0, 29), Color("#ae8b61"), 3, true)
 	# Rear-facing side darkens naturally; front wall remains visually distinct.
-	_polygon([front_r,back_r,back_r+rise,front_r+rise], wall_side)
-	_polygon([front_l,front_r,front_r+rise,front_l+rise],wall_front)
+	_textured_quad([front_r,back_r,back_r+rise,front_r+rise], WOVEN_WALL,wall_side.lightened(.35))
+	_textured_quad([front_l,front_r,front_r+rise,front_l+rise],WOVEN_WALL,wall_front.lightened(.25))
 	# Individual bamboo battens follow the front wall's perspective exactly.
 	for i in range(11):
 		var p := front_l.lerp(front_r, float(i)/10.0)
@@ -429,8 +441,8 @@ func _building_at(at: Vector2, texture: Texture2D, name_text: String) -> void:
 	draw_line(window_l+Vector2(0,-17),window_r+Vector2(0,-17),Color("#d4ae78"),3)
 	# A gable and TWO separate roof surfaces with visible eave thickness.
 	_polygon([roof_front_l,ridge_front,roof_front_r],roof_shadow)
-	_polygon([roof_front_l,ridge_front,ridge_back,roof_back_l],roof_lit)
-	_polygon([ridge_front,roof_front_r,roof_back_r,ridge_back],roof_shadow)
+	_textured_quad([roof_front_l,ridge_front,ridge_back,roof_back_l],NIPA_THATCH,roof_lit.lightened(.35))
+	_textured_quad([ridge_front,roof_front_r,roof_back_r,ridge_back],NIPA_THATCH,roof_shadow.lightened(.25))
 	draw_line(ridge_front,ridge_back,Color("#ead3a2"),5,true)
 	for i in range(1,7):
 		var t := float(i)/7.0
