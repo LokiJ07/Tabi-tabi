@@ -13,6 +13,7 @@ const MARKET: Texture2D = preload("res://assets/world/market_facade.svg")
 const SCHOOL: Texture2D = preload("res://assets/world/school_facade.svg")
 const BANANA: Texture2D = preload("res://assets/world/banana_plant.svg")
 const NORTH_FOREST: Texture2D = preload("res://assets/world/north_forest_tree.svg")
+const NORTH_GROVE = preload("res://scripts/world/north_grove_layout.gd")
 const HIBISCUS: Texture2D = preload("res://assets/world/hibiscus_bush.svg")
 const LAMP: Texture2D = preload("res://assets/world/lantern_post.svg")
 const HERO: Texture2D = preload("res://assets/characters/apprentice.svg")
@@ -71,6 +72,17 @@ func _ground() -> void:
 	draw_rect(Rect2(Vector2.ZERO, size), Color("#274e4a") if game.is_night else Color("#6e998e"))
 	_quad(SOIL, [Vector3(-44, -0.06, -55), Vector3(44, -0.06, -55),
 		Vector3(44, -0.06, 35), Vector3(-44, -0.06, 35)], _tint(), 9.0)
+	# Exactly the same hand-painted moss/fern forest floor as native Godot.
+	# It is drawn BEFORE props and has transparent edges, never a green box.
+	for patch in NORTH_GROVE.FLOOR_PATCHES:
+		var center: Vector3 = patch["center"]
+		var half: Vector2 = patch["size"] * 0.5
+		_quad(NORTH_GROVE.FLOOR_TEXTURE, [
+			center + Vector3(-half.x, 0, -half.y),
+			center + Vector3(half.x, 0, -half.y),
+			center + Vector3(half.x, 0, half.y),
+			center + Vector3(-half.x, 0, half.y)
+		], Color.WHITE)
 	_quad(WATER, [Vector3(-44, 0.06, -43), Vector3(-9.56, 0.06, -43),
 		Vector3(-9.56, 0.06, 35), Vector3(-44, 0.06, 35)],
 		Color("#8cbfc5") if game.is_night else Color.WHITE, 3.0)
