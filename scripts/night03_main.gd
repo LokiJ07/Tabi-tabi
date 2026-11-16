@@ -67,6 +67,7 @@ var travel_in_progress := false
 var elapsed := 0.0
 var particles := 0.0
 var walk_phase := 0.0
+var walk_weight := 0.0
 var debug_night_preview := false
 var hud: CanvasLayer
 var gameplay_controls: Control
@@ -155,6 +156,8 @@ func _process(delta: float) -> void:
 	if blocked:
 		axis = Vector2.ZERO
 	axis = axis.limit_length()
+	walk_weight = lerpf(walk_weight, 1.0 if axis.length() > .02 else 0.0,
+		1.0 if prefs.reduced_motion else clampf(delta * 9.0,0.0,1.0))
 	if axis.length() > .02:
 		if not prefs.reduced_motion:
 			walk_phase += delta * 8.5
@@ -434,7 +437,7 @@ func _draw() -> void:
 		var is_dog: bool = actor["tex"] == BANTAY
 		var lift := 0.0
 		if not prefs.reduced_motion and (is_player or is_dog):
-			lift = absf(sin(walk_phase * (1.12 if is_dog else 1.0))) * (3.0 if is_player else 2.1)
+			lift = absf(sin(walk_phase * (1.12 if is_dog else 1.0))) * (3.0 if is_player else 2.1) * walk_weight
 		DimensionalArt.paint_grounded(self, actor["tex"], where, dimensions,
 			Color.WHITE, .43, lift)
 	# In-world wayfinding signs are small, correctly oriented and non-obstructive.

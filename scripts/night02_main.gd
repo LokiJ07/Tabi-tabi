@@ -109,6 +109,7 @@ var debug_night_reveal := false # QA only, never saved
 var elapsed := 0.0
 var particle_phase := 0.0
 var walk_phase := 0.0
+var walk_weight := 0.0
 var last_target := ""
 var movement_enabled := true
 var travel_in_progress := false
@@ -184,6 +185,10 @@ func _process(delta: float) -> void:
 		axis = Vector2.ZERO
 	if axis.length() > 1.0:
 		axis = axis.normalized()
+	# A stopped character must return both feet to the ground instead of
+	# freezing halfway through a simulated walking stride.
+	walk_weight = lerpf(walk_weight, 1.0 if axis.length() > .02 else 0.0,
+		1.0 if prefs.reduced_motion else clampf(delta * 9.0,0.0,1.0))
 	# Isometric movement matches the visible diagonally laid roads.
 	var walk := Vector2(axis.x + axis.y * .42, axis.y * .75 - axis.x * .15).normalized()
 	if axis.length() > .02:
@@ -466,7 +471,7 @@ func _draw() -> void:
 		var is_dog: bool = actor["texture"] == BANTAY
 		var lift := 0.0
 		if not prefs.reduced_motion and (is_player or is_dog):
-			lift = absf(sin(walk_phase * (1.12 if is_dog else 1.0))) * (3.0 if is_player else 2.1)
+			lift = absf(sin(walk_phase * (1.12 if is_dog else 1.0))) * (3.0 if is_player else 2.1) * walk_weight
 		DimensionalArt.paint_grounded(self, actor["texture"], foot,
 			Vector2(width,height), Color.WHITE, .43, lift)
 	_draw_world_labels()
