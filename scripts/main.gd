@@ -255,7 +255,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		if key.pressed and not key.echo:
 			match key.keycode:
 				KEY_F5:
-					_qa_show_world_view(Vector3(2.0, 0.75, -19.65), false, "NORTH_TRAIL")
+					_qa_show_world_view(Vector3(1.0, 0.75, -31.1), false, "NORTH_TRAIL")
 					get_viewport().set_input_as_handled()
 					return
 				KEY_F6:
@@ -306,21 +306,25 @@ func _qa_show_world_view(destination: Vector3, night_view: bool, label: String) 
 
 
 func _create_world() -> void:
-	_box("Ground", Vector3(0, -0.35, 0), Vector3(46, 0.65, 46), COLORS.earth, true)
+	# The backdrop must extend past the walkable north trail. Earlier the soil
+	# stopped at z=-23 so the route ended in a cyan void on Android.
+	_box("Ground", Vector3(0, -0.35, -10), Vector3(88, 0.65, 90), COLORS.earth, true)
 	var blockout_road := _box("Main footpath", Vector3(0, 0.015, 0), Vector3(5, 0.08, 38), COLORS.path, false)
 	blockout_road.visible = false  # the winding illustrated footpath now replaces this rectangle
-	river_surface = _box("River", Vector3(-16, 0.02, 0), Vector3(12, 0.08, 46), COLORS.river, false) as MeshInstance3D
+	river_surface = _box("River", Vector3(-16, 0.02, -9), Vector3(12, 0.08, 66), COLORS.river, false) as MeshInstance3D
 	for z in [4.0, 11.0, 18.0]:
 		_box("Reed", Vector3(-9.1, 0.4, z), Vector3(0.13, 0.7, 0.11), Color(0.43, 0.53, 0.26), false)
 	for z in [-16.0, -10.0, 0.0, 7.0, 15.0]:
 		_box("River shimmer", Vector3(-15.0, 0.08, z), Vector3(4.3, 0.025, 0.12), Color(0.22, 0.59, 0.61), false)
-	var old_barrier := _box("River bank safety fence", Vector3(-9.7, 0.5, 0), Vector3(0.25, 1.0, 46), COLORS.wood, true)
+	var old_barrier := _box("River bank safety fence", Vector3(-9.7, 0.5, -7), Vector3(0.25, 1.0, 66), COLORS.wood, true)
 	old_barrier.visible = false  # invisible solid boundary; visible art uses woven ropes and posts
 	# Collision-only boundaries prevent accidental falls beyond the playable blockout.
-	_boundary(Vector3(-23.0, 1.0, 0.0), Vector3(0.3, 3.0, 46.0))
-	_boundary(Vector3(23.0, 1.0, 0.0), Vector3(0.3, 3.0, 46.0))
-	_boundary(Vector3(0.0, 1.0, -23.0), Vector3(46.0, 3.0, 0.3))
-	_boundary(Vector3(0.0, 1.0, 23.0), Vector3(46.0, 3.0, 0.3))
+	_boundary(Vector3(-23.0, 1.0, -7.0), Vector3(0.3, 3.0, 65.0))
+	_boundary(Vector3(23.0, 1.0, -7.0), Vector3(0.3, 3.0, 65.0))
+	# The only travel portal is the marked forest trail near z=-32;
+	# the invisible perimeter remains beyond it for safe Android physics.
+	_boundary(Vector3(0.0, 1.0, -39.0), Vector3(46.0, 3.0, 0.3))
+	_boundary(Vector3(0.0, 1.0, 25.0), Vector3(46.0, 3.0, 0.3))
 	_house(Vector3(6, 0, 5), "Lola's hut")
 	_house(Vector3(7, 0, -8), "Sabel's store")
 	_house(Vector3(-2, 0, -12), "School")
@@ -382,17 +386,17 @@ func _build_mango_tree_trail() -> void:
 	interaction_nodes["MANGO_TRAIL"] = gate
 	# Clear bamboo trail guide: worn timber sleepers lead right to the map
 	# boundary, not a disconnected level-select button.
-	for i in range(8):
-		var z := -15.1 - float(i) * .77
+	for i in range(23):
+		var z := -15.15 - float(i) * .74
 		_box("Old Mango Trail sleeper %02d" % i,
-			Vector3(2.0, 0.085, z), Vector3(2.42, .11, .20),
+			Vector3(1.0, 0.085, z), Vector3(2.80, .10, .17),
 			Color("#aa855c") if i % 2 == 0 else Color("#836345"), false)
-	for x in [0.32, 3.70]:
-		_box("Mango Trail bamboo marker", Vector3(x, .88, -20.28),
+	for x in [-0.65, 2.65]:
+		_box("Mango Trail bamboo marker", Vector3(x, .88, -32.28),
 			Vector3(.13, 1.76, .14), Color("#886a46"), false)
-	_box("Mango Trail signboard", Vector3(2.0, 1.73, -20.28),
+	_box("Mango Trail signboard", Vector3(1.0, 1.73, -32.28),
 		Vector3(3.57, .52, .14), Color("#c6a474"), false)
-	_box("Mango Trail bamboo roof", Vector3(2.0, 2.04, -20.25),
+	_box("Mango Trail bamboo roof", Vector3(1.0, 2.04, -32.25),
 		Vector3(4.1, .17, .53), Color("#75563b"), false)
 	var sign := Label3D.new()
 	sign.name = "North Trail sign lettering"
@@ -401,7 +405,7 @@ func _build_mango_tree_trail() -> void:
 	sign.pixel_size = .0043
 	sign.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	sign.modulate = Color("#f8e5b5")
-	sign.position = Vector3(2.0, 1.68, -20.1)
+	sign.position = Vector3(1.0, 1.68, -32.1)
 	add_child(sign)
 	# Actual target coordinates remain within the existing village boundary.
 
