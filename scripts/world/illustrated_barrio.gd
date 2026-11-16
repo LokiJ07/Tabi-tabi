@@ -5,6 +5,7 @@ const ROOT_NAME := "Night1IllustratedWorld"
 const ROOTS: Texture2D = preload("res://assets/world/mangrove_illustrated.svg")
 const FLOWERS: Texture2D = preload("res://assets/world/hibiscus_bush.svg")
 const BANANA: Texture2D = preload("res://assets/world/banana_plant.svg")
+const NORTH_FOREST: Texture2D = preload("res://assets/world/north_forest_tree.svg")
 const LANTERN: Texture2D = preload("res://assets/world/lantern_post.svg")
 const NIPA: Texture2D = preload("res://assets/world/nipa_facade.svg")
 const SCHOOL: Texture2D = preload("res://assets/world/school_facade.svg")
@@ -71,6 +72,19 @@ static func decorate(world: Node3D) -> Node3D:
 		_sprite(root, "Old Mango route wildflowers %02d" % i, FLOWERS,
 			Vector3(4.7 + float(i % 3) * .5, .87, north_z),
 			0.0051, true, i % 2 == 0)
+	# The north-bound route opens into a real wooded upland, not empty
+	# green terrain. These illustrated Visayan broadleaf silhouettes sit
+	# BEYOND the safe trail, so they add depth without blocking collision.
+	var upland: Array[Vector3] = [
+		Vector3(13, 3.72, -34), Vector3(18, 3.85, -40),
+		Vector3(23, 3.80, -35), Vector3(28, 4.10, -42),
+		Vector3(33, 3.70, -34), Vector3(37, 4.20, -47),
+		Vector3(16, 3.95, -48), Vector3(25, 4.00, -51),
+		Vector3(9, 3.58, -45), Vector3(33, 4.00, -53)
+	]
+	for i in range(upland.size()):
+		_sprite(root, "Northern wild broadleaf %02d" % i, NORTH_FOREST,
+			upland[i], 0.0061 + float(i % 3) * .0008, true, i % 2 == 0)
 	# Lush village silhouettes around the outside of the play path.
 	# Still allows player interaction with Lola, Dado, Mara and Sabel.
 	var banana_positions := [
