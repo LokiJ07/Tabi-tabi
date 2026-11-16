@@ -267,11 +267,11 @@ func _unhandled_input(event: InputEvent) -> void:
 			_open_options()
 	if OS.get_name() == "Android" and OS.has_feature("debug") and event is InputEventKey:
 		var key := event as InputEventKey
-		if key.pressed and not key.echo and key.keycode in [KEY_F3,KEY_F5,KEY_F6,KEY_F9]:
+		if key.pressed and not key.echo and key.keycode in [KEY_F3,KEY_F5,KEY_F6,KEY_F7,KEY_F9]:
 			_close_dialogue()
 			notebook.hide()
 			options_panel.hide()
-			debug_night_preview = key.keycode == KEY_F9
+			debug_night_preview = key.keycode in [KEY_F7,KEY_F9]
 			match key.keycode:
 				KEY_F3:
 					player_pos = Vector2(-260,-320)
@@ -282,6 +282,9 @@ func _unhandled_input(event: InputEvent) -> void:
 				KEY_F6:
 					player_pos = SAFE_LOOKOUT
 					print("NIGHT3_QA_WATCHPOST")
+				KEY_F7:
+					player_pos = SAFE_LOOKOUT + Vector2(90,100)
+					print("NIGHT3_QA_LOOKOUT_NIGHT")
 				KEY_F9:
 					player_pos = RIDGE_GATE + Vector2(-125,80)
 					print("NIGHT3_QA_TIKBALANG_NIGHT")

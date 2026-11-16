@@ -284,7 +284,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			_open_options()
 	if OS.get_name() == "Android" and OS.has_feature("debug") and event is InputEventKey:
 		var key := event as InputEventKey
-		if key.pressed and not key.echo and [KEY_F3, KEY_F5, KEY_F6, KEY_F7, KEY_F8, KEY_F9].has(key.keycode):
+		if key.pressed and not key.echo and [KEY_F3, KEY_F4, KEY_F5, KEY_F6, KEY_F7, KEY_F8, KEY_F9].has(key.keycode):
 			# Each screenshot uses the real interactive running scene, NEVER
 			# a concept art canvas or a fake static title.
 			_close_dialogue()
@@ -296,6 +296,10 @@ func _unhandled_input(event: InputEvent) -> void:
 			if key.keycode == KEY_F3:
 				player_pos = Vector2(90,-270)
 				print("NIGHT2_QA_MANGO_DAY_VIEW")
+			elif key.keycode == KEY_F4:
+				debug_night_reveal = true
+				player_pos = Vector2(-595,405)
+				print("NIGHT2_QA_SHELTER_NIGHT_VIEW")
 			elif key.keycode == KEY_F5:
 				player_pos = Vector2(-645, 455)
 				print("NIGHT2_QA_RETURN_TRAIL_VIEW")

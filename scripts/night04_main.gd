@@ -284,7 +284,7 @@ func _house() -> void:
 		draw_rect(Rect2(door+shift,Vector2(80,77)),Color("#503d31"),false,5)
 		draw_line(door+shift+Vector2(40,0),door+shift+Vector2(40,77),Color("#705a45"),3)
 		draw_line(door+shift+Vector2(0,38),door+shift+Vector2(80,38),Color("#705a45"),3)
-	var side := fr.lerp(br,.50)+Vector2(-2,-135)
+	var side := fr.lerp(br,.50)+Vector2(-2,-45) # below eave on the real wall, not on the roof
 	draw_colored_polygon(PackedVector2Array([side+Vector2(-34,-44),side+Vector2(43,-33),
 		side+Vector2(43,38),side+Vector2(-34,28)]),Color("#192a2a"))
 	draw_line(side+Vector2(-34,-44),side+Vector2(43,-33),Color("#e3b879"),6.0)
@@ -386,7 +386,7 @@ func _draw() -> void:
 			NightWindows.paint_window(self,door+shift+Vector2(40,38),
 				Vector2(80,77),1 if i == 0 else 0,true,elapsed,prefs.reduced_motion)
 		# Rear entrance remains a danger cue: mostly dark, not a safe exit.
-		NightWindows.paint_window(self,Vector2(365,-303),Vector2(53,51),
+		NightWindows.paint_window(self,Vector2(365,-225),Vector2(53,51),
 			2,true,elapsed,prefs.reduced_motion,false)
 	# Human cast is rendered above the warmth. Story dialogue and evidence
 	# still work when residents have moved inside, not been deleted.

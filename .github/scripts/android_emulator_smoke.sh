@@ -229,6 +229,16 @@ if [ "${GITHUB_REF:-}" = "refs/heads/feature/night2-kapre" ] || [ "${GITHUB_REF:
   fi
   adb exec-out screencap -p > build/android-night2-dusk.png
   python3 .github/scripts/assert_gameplay_visible.py build/android-night2-dusk.png
+  # A second REAL night camera at the refuge verifies warm windows AND
+  # absence of abandoned daytime villagers; mango tree view cannot prove it.
+  adb shell input keyevent 134 # F4: actual shelter window at deep night
+  sleep 4
+  if ! adb logcat -d -v brief | grep -q "NIGHT2_QA_SHELTER_NIGHT_VIEW"; then
+    echo "ERROR: Night 2 occupied refuge window nighttime capture not reached"
+    exit 1
+  fi
+  adb exec-out screencap -p > build/android-night2-shelter-night.png
+  python3 .github/scripts/assert_gameplay_visible.py build/android-night2-shelter-night.png
   # These are two distinct *live* render states with the same camera. A
   # screenshot with the giant visible in daylight invalidates this milestone.
   test -s build/android-night2-mango-day.png
@@ -275,6 +285,16 @@ if [ "${GITHUB_REF:-}" = "refs/heads/feature/night03-tikbalang-connected" ] || [
     adb exec-out screencap -p > "build/android-night3-$3.png"
     python3 .github/scripts/assert_gameplay_visible.py "build/android-night3-$3.png"
   done
+  # Night 3's remote ridge creature reveal does not show the watchpost;
+  # independently verify the living night light at the real watchpost.
+  adb shell input keyevent 137 # F7: real night camera at lookout
+  sleep 4
+  if ! adb logcat -d -v brief | grep -q "NIGHT3_QA_LOOKOUT_NIGHT"; then
+    echo "ERROR: Night 3 night watchpost window view was not reached"
+    exit 1
+  fi
+  adb exec-out screencap -p > build/android-night3-watchpost-night.png
+  python3 .github/scripts/assert_gameplay_visible.py build/android-night3-watchpost-night.png
   if cmp -s build/android-night3-ridge-day.png build/android-night3-tikbalang-night.png; then
     echo "ERROR: Night 3 daytime and nocturnal Tikbalang are identical"
     exit 1
