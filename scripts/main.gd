@@ -33,6 +33,7 @@ const BantayAwareness = preload("res://scripts/ai/bantay_awareness.gd")
 const AimPad = preload("res://scripts/ui/aim_pad.gd")
 const SaveService = preload("res://scripts/core/save_service.gd")
 const Night02Scene = preload("res://scenes/night02.tscn")
+const ConnectedWorld = preload("res://scripts/core/connected_world.gd")
 const Preferences = preload("res://scripts/core/preferences.gd")
 const LivingSound = preload("res://scripts/audio/living_ambience.gd")
 const PLAYER_SPEED := 4.2
@@ -143,6 +144,7 @@ func _ready() -> void:
 	_create_ui()
 	_apply_preferences()
 	_restore_story()
+	_apply_connected_world_arrival()
 	if story.outcome == "" and not story.prologue_ready():
 		_enter_lola_hut(true)
 	_update_objective()
@@ -362,6 +364,45 @@ func _create_world() -> void:
 	BarrioDetails.decorate(self)
 	EnvironmentPolish.decorate(self)
 	IllustratedBarrio.decorate(self)
+	_build_mango_tree_trail()
+
+
+func _build_mango_tree_trail() -> void:
+	# One walkable in-world north trail exits Barrio Lawom toward the old
+	# mango tree. Separate Godot scenes are streamed regions of ONE map.
+	var at: Vector3 = ConnectedWorld.TRAIL_BARRIO
+	var gate := Node3D.new()
+	gate.name = "MANGO_TRAIL"
+	gate.position = at
+	add_child(gate)
+	interaction_nodes["MANGO_TRAIL"] = gate
+	# Clear bamboo trail guide: worn timber sleepers lead right to the map
+	# boundary, not a disconnected level-select button.
+	for i in range(8):
+		var z := -15.1 - float(i) * .77
+		_box("Old Mango Trail sleeper %02d" % i,
+			Vector3(2.0, 0.085, z), Vector3(2.42, .11, .20),
+			Color("#aa855c") if i % 2 == 0 else Color("#836345"), false)
+	for x in [0.32, 3.70]:
+		_box("Mango Trail bamboo marker", Vector3(x, .88, -20.28),
+			Vector3(.13, 1.76, .14), Color("#886a46"), false)
+	_box("Mango Trail signboard", Vector3(2.0, 1.73, -20.28),
+		Vector3(3.57, .52, .14), Color("#c6a474"), false)
+	_box("Mango Trail bamboo roof", Vector3(2.0, 2.04, -20.25),
+		Vector3(4.1, .17, .53), Color("#75563b"), false)
+	# Actual target coordinates remain within the existing village boundary.
+
+
+func _apply_connected_world_arrival() -> void:
+	var arrival: Dictionary = ConnectedWorld.consume_arrival("barrio_lawom")
+	if arrival.is_empty():
+		return
+	if str(arrival.get("from", "")) != "old_mango":
+		return
+	player.global_position = ConnectedWorld.ARRIVAL_BARRIO
+	bantay.global_position = ConnectedWorld.ARRIVAL_BARRIO + Vector3(1.1, -.27, .4)
+	_clear_touch_input()
+	print("TABI_WORLD_ARRIVAL_BARRIO_FROM_MANGO")
 
 
 func _box(name: String, pos: Vector3, size: Vector3, color: Color, solid: bool) -> Node3D:
@@ -1327,6 +1368,9 @@ func _interact() -> void:
 		_advance_dialogue()
 		return
 	var closest: String = _nearby_target()
+	if closest == "MANGO_TRAIL":
+		_enter_mango_trail()
+		return
 	if ["LOLA_HOME", "BLUE_NOTEBOOK", "WARM_CUP", "RIVER_PHOTO", "HUT_EXIT", "HUT_ENTRY"].has(closest):
 		_interact_lola_hut(closest)
 		return
@@ -1757,11 +1801,29 @@ func _save_before_navigation() -> bool:
 	return true
 
 
+func _enter_mango_trail() -> void:
+	if story.outcome == "":
+		_show_dialogue("The old mango trail is visible, but the Santelmo investigation is not complete. Finish Night 1 before heading north with Bantay.")
+		return
+	if not _save_before_navigation():
+		return
+	if not ConnectedWorld.begin_travel("barrio_lawom", "old_mango", story.outcome):
+		navigation_error_dialog.dialog_text = "Could not record the journey. You remain in Barrio Lawom."
+		navigation_error_dialog.popup_centered(Vector2i(620, 210))
+		return
+	_clear_touch_input()
+	print("TABI_WORLD_TRAVEL_BARRIO_TO_MANGO")
+	get_tree().change_scene_to_packed(Night02Scene)
+
+
 func _begin_night2() -> void:
 	if story.outcome == "":
 		_show_dialogue("Complete Night 1 before entering the old mango tree.")
 		return
 	if not _save_before_navigation():
+		return
+	if not ConnectedWorld.begin_travel("barrio_lawom", "old_mango", story.outcome):
+		navigation_error_dialog.popup_centered(Vector2i(620, 210))
 		return
 	get_tree().change_scene_to_packed(Night02Scene)
 
