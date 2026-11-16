@@ -76,6 +76,8 @@ static func decorate(world: Node3D) -> Node3D:
 	# green terrain. These illustrated Visayan broadleaf silhouettes sit
 	# BEYOND the safe trail, so they add depth without blocking collision.
 	var upland: Array[Vector3] = [
+		Vector3(9.5, 3.85, -30), Vector3(12.5, 3.72, -27),
+		Vector3(15.5, 3.92, -25), Vector3(9.0, 3.68, -26),
 		Vector3(13, 3.72, -34), Vector3(18, 3.85, -40),
 		Vector3(23, 3.80, -35), Vector3(28, 4.10, -42),
 		Vector3(33, 3.70, -34), Vector3(37, 4.20, -47),
