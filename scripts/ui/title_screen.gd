@@ -3,6 +3,9 @@ extends Control
 ## The hand-authored background scales with the landscape viewport.
 const GameScene = preload("res://scenes/main.tscn")
 const Night02Scene = preload("res://scenes/night02.tscn")
+const Night03Scene = preload("res://scenes/night03.tscn")
+const Night02State = preload("res://scripts/narrative/night02_state.gd")
+const Night03Save = preload("res://scripts/core/night03_save.gd")
 const Night01State = preload("res://scripts/narrative/night01_state.gd")
 const Night02Save = preload("res://scripts/core/night02_save.gd")
 const Save = preload("res://scripts/core/save_service.gd")
@@ -19,6 +22,7 @@ const ART_BANTAY: Texture2D = preload("res://assets/characters/bantay.svg")
 var prefs = Preferences.new()
 var continue_button: Button
 var night2_button: Button
+var night3_button: Button
 var settings_panel: PanelContainer
 var settings_backdrop: ColorRect
 var font_button: Button
@@ -48,6 +52,11 @@ func _input(event: InputEvent) -> void:
 	# without fabricating an unlocked Night 1 save. Production has no shortcut.
 	if OS.get_name() == "Android" and OS.has_feature("debug") and event is InputEventKey:
 		var key := event as InputEventKey
+		if key.pressed and key.keycode == KEY_F11:
+			get_viewport().set_input_as_handled()
+			print("NIGHT3_QA_DEBUG_ENTRY")
+			get_tree().change_scene_to_packed(Night03Scene)
+			return
 		if key.pressed and key.keycode == KEY_F10:
 			var viewport := get_viewport()
 			if viewport != null:
@@ -250,11 +259,18 @@ func _build_menu() -> void:
 		night2_button.text = "CONTINUE NIGHT 2  •  KAPRE" if night2_ready else "TEST NIGHT 2 (QA)"
 	elif not night2_ready and OS.has_feature("debug"):
 		night2_button.text = "TEST NIGHT 2 (QA)"
+	night3_button = _button("NIGHT 3  •  TIKBALANG",menu,_enter_night3)
+	var night3_ready := _night3_unlocked()
+	night3_button.disabled = not night3_ready and not OS.has_feature("debug")
+	if Night03Save.exists() and night3_ready:
+		night3_button.text = "CONTINUE NIGHT 3  •  TIKBALANG"
+	elif not night3_ready and OS.has_feature("debug"):
+		night3_button.text = "TEST NIGHT 3 (QA)"
 	_button("SETTINGS", menu, _open_settings)
 	_button("CREDITS", menu, _credits)
 	_button("EXIT", menu, func(): get_tree().quit())
 	var chapter := Label.new()
-	chapter.text = "NIGHT 1 • SANTELMO    /    NIGHT 2 • THE OLD MANGO TREE"
+	chapter.text = "NIGHT 1 • SANTELMO    /    NIGHT 2 • KAPRE    /    NIGHT 3 • TIKBALANG"
 	chapter.anchor_left = 0.075
 	chapter.anchor_right = 0.55
 	chapter.anchor_top = 0.958
@@ -268,6 +284,24 @@ func _night2_unlocked() -> bool:
 	# never overwrites the existing Santelmo save, even after SAFE RETREAT.
 	var previous := Night01State.new()
 	return not Save.read(previous).is_empty() and previous.outcome != ""
+
+
+func _night3_unlocked() -> bool:
+	if not _night2_unlocked():
+		return false
+	var kapre := Night02State.new()
+	return Night02Save.read(kapre) and kapre.outcome != ""
+
+
+func _enter_night3() -> void:
+	if not _night3_unlocked() and not OS.has_feature("debug"):
+		return
+	loading_cover.show()
+	var loading_label := loading_cover.get_node_or_null("LoadingStatus") as Label
+	if loading_label != null:
+		loading_label.text = "Opening Night 3: Tikbalang — The False Trail..."
+	await get_tree().process_frame
+	get_tree().change_scene_to_packed(Night03Scene)
 
 
 func _enter_night2() -> void:
