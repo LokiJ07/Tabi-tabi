@@ -1133,6 +1133,7 @@ func _show_dialogue(who: String, message: String, options: Array) -> void:
 	options_panel.hide()
 	dialogue_name.text = who
 	dialogue_line.text = message
+	SharedDialogueMotion.reveal_text(dialogue_line,prefs.reduced_motion)
 	var role := who.to_upper()
 	var creature_speaking := role.contains("KAPRE")
 	var person_speaking := role.contains("LOLA") or role.contains("DADO") or role.contains("MARA") or role.contains("SABEL") or role.contains("APPRENTICE") or role.contains("BANTAY")
@@ -1151,7 +1152,7 @@ func _show_dialogue(who: String, message: String, options: Array) -> void:
 		choice.custom_minimum_size = Vector2(350, 47)
 		_button_style(choice,18)
 		var action_name := str(option["action"])
-		choice.pressed.connect(func(): _choose(action_name))
+		choice.pressed.connect(func(): _on_dialogue_choice_pressed(action_name))
 		dialogue_choices.add_child(choice)
 	dialogue_focus_point = _cinematic_subject(who)
 	dialogue_focus_enabled = true
@@ -1172,6 +1173,12 @@ func _cinematic_subject(who: String) -> Vector2:
 	if subject_at.distance_to(player_pos) > 370.0:
 		return player_pos
 	return subject_at
+
+func _on_dialogue_choice_pressed(action: String) -> void:
+	# Respect readability without changing canonical state-machine calls.
+	if SharedDialogueMotion.finish_text(dialogue_line):
+		return
+	_choose(action)
 
 func _close_dialogue() -> void:
 	dialogue_focus_enabled = false
