@@ -172,6 +172,7 @@ jobs:
             build/android-night1-title.png
             build/android-night1-launch.png
             build/android-night1-village.png
+            build/android-night1-connected-trail.png
             build/android-night1-shore-dock.png
             build/android-night1-night-river.png
             build/android-night2-intro.png
@@ -179,6 +180,7 @@ jobs:
             build/android-night2-shelter-route.png
             build/android-night2-kapre-tree.png
             build/android-night2-dusk.png
+            build/android-night2-return-trail.png
             build/android-night2-log.txt
             build/android-night1-notebook.png
             build/android-night1-notebook-scrolled.png
