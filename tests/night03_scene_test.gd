@@ -32,7 +32,21 @@ func _run() -> void:
 	check(game.BAMBOO.get_width() >= 400 and game.WATCHPOST.get_width() >= 600,
 		"illustrated bamboo and 2.5D watchpost assets imported")
 	check(not game.debug_night_preview and game._stage() == 0, "night guardian never appears in daylight")
-	check(game.atmosphere != null, "Night 3 uses same Chapter 1/2 shared mobile fog and suspense renderer")
+	check(game.atmosphere != null, "Night 3 uses the shared mobile suspense renderer")
+	check(game.camera.zoom.x >= 1.079, "ridge camera gives actors readable on-screen size")
+	# Verify that the NIGHT-specific framing and fog actually respond to the
+	# dangerous stage, not only that a still image was added to the project.
+	game.debug_night_preview = true
+	game._process(.5)
+	check(game.camera.zoom.x > 1.10, "night reveals a closer, more threatening ridge framing")
+	check(game.atmosphere.chapter_id == 3 and game.atmosphere.light_stage == 3,
+		"ridge-only fog stage is active without swapping shared HUD styles")
+	game.debug_night_preview = false
+	game.prefs.reduced_motion = true
+	game._process(.016)
+	check(absf(game.camera.zoom.x - 1.115) < .003,
+		"reduced motion snaps cinematic zoom instead of animating")
+	game.prefs.reduced_motion = false
 	check(game.gameplay_controls.get_node_or_null("QuestStatusCard") != null, "Night 3 uses true shared quest component")
 	check(game.buttons.has("INTERACT") and game.buttons.has("HOLD OBSERVE") and game.buttons.has("SAFE RETREAT"),
 		"Night 3 has functioning original HUD actions")
