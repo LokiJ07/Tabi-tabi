@@ -12,6 +12,7 @@ const Night02Ambience = preload("res://scripts/audio/night02_ambience.gd")
 const ConnectedWorld = preload("res://scripts/core/connected_world.gd")
 const SharedHUD = preload("res://scripts/ui/shared_hud.gd")
 const AimPad = preload("res://scripts/ui/aim_pad.gd")
+const SpeakerPortrait = preload("res://scripts/ui/speaker_portrait.gd")
 const SharedAtmosphere = preload("res://scripts/visuals/shared_immersive_atmosphere.gd")
 const MANGO: Texture2D = preload("res://assets/night02/old_mango_tree.svg")
 const KAPRE: Texture2D = preload("res://assets/night02/kapre_perched.svg")
@@ -83,6 +84,8 @@ var waypoint_label: Label
 var action_buttons: Dictionary = {}
 var dialogue: PanelContainer
 var dialogue_name: Label
+var dialogue_portrait: Control
+var kapre_dialogue_portrait: TextureRect
 var dialogue_line: Label
 var dialogue_choices: VBoxContainer
 var dialogue_continue: Button
@@ -718,14 +721,38 @@ func _build_ui() -> void:
 	dialogue_box.add_child(dialogue_name)
 	var words := ScrollContainer.new()
 	words.name = "DialogueScroll"
+	words.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	words.follow_focus = true
 	words.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	words.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	dialogue_box.add_child(words)
+	var portrait_row := HBoxContainer.new()
+	portrait_row.name = "PortraitAndText"
+	portrait_row.add_theme_constant_override("separation",22)
+	portrait_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	words.add_child(portrait_row)
+	dialogue_portrait = SpeakerPortrait.new()
+	dialogue_portrait.name = "SpeakerBustPortrait"
+	dialogue_portrait.custom_minimum_size = Vector2(225,215)
+	portrait_row.add_child(dialogue_portrait)
+	kapre_dialogue_portrait = TextureRect.new()
+	kapre_dialogue_portrait.name = "KapreSpeakerBust"
+	var bust_atlas := AtlasTexture.new()
+	bust_atlas.atlas = KAPRE
+	bust_atlas.region = Rect2(160,65,280,310)
+	kapre_dialogue_portrait.texture = bust_atlas
+	kapre_dialogue_portrait.custom_minimum_size = Vector2(225,215)
+	kapre_dialogue_portrait.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	kapre_dialogue_portrait.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	portrait_row.add_child(kapre_dialogue_portrait)
+	kapre_dialogue_portrait.hide()
 	dialogue_line = Label.new()
 	dialogue_line.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	dialogue_line.custom_minimum_size = Vector2(370, 85)
+	dialogue_line.custom_minimum_size = Vector2(260,150)
 	dialogue_line.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	dialogue_line.add_theme_font_size_override("font_size", roundi(22.0*prefs.text_scale))
-	words.add_child(dialogue_line)
+	dialogue_line.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	dialogue_line.add_theme_font_size_override("font_size",roundi(25.0*prefs.text_scale))
+	portrait_row.add_child(dialogue_line)
 	dialogue_choices = VBoxContainer.new()
 	dialogue_choices.name = "ChoiceButtons"
 	dialogue_choices.add_theme_constant_override("separation", 4)
@@ -1041,6 +1068,13 @@ func _show_dialogue(who: String, message: String, options: Array) -> void:
 	options_panel.hide()
 	dialogue_name.text = who
 	dialogue_line.text = message
+	var role := who.to_upper()
+	var creature_speaking := role.contains("KAPRE")
+	var person_speaking := role.contains("LOLA") or role.contains("DADO") or role.contains("MARA") or role.contains("SABEL") or role.contains("APPRENTICE") or role.contains("BANTAY")
+	kapre_dialogue_portrait.visible = creature_speaking
+	dialogue_portrait.visible = person_speaking and not creature_speaking
+	if dialogue_portrait.visible:
+		dialogue_portrait.call("set_speaker",who)
 	for child in dialogue_choices.get_children():
 		dialogue_choices.remove_child(child)
 		child.queue_free()
