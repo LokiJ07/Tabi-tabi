@@ -109,21 +109,11 @@ static func decorate(world: Node3D) -> Node3D:
 	_sprite(root, "Painted river lamp", LANTERN, Vector3(-4.0, 1.63, 9.0), 0.0068, true)
 	_sprite(root, "Painted marketplace lamp", LANTERN, Vector3(2.8, 1.63, -2.0), 0.0068, true)
 
-	# Local facade overlays remain flush with each existing collidable house.
-	# The established building nodes/porches are preserved, so story triggers
-	# and player blocking don't change when the art replaces flat geometry.
-	var village := world.get_node_or_null("BarrioEnvironmentDetails") as Node3D
-	if village != null:
-		_facade(village, "Lola woven home", NIPA, "Lola authored bamboo facade")
-		_facade(village, "Sabel riverside store", MARKET, "Sabel illustrated market facade")
-		_facade(village, "Mara schoolhouse", SCHOOL, "Mara illustrated school facade")
+	# No sprite facade is placed on the houses: each one already owns four
+	# textured 3D walls, a real roof, door, windows, and physical porch.
+	# Adding another full-size facade in front hid the true volume and made
+	# these buildings look like 2D posters glued on top of geometry.
 	return root
-
-static func _facade(village: Node3D, house_name: String, texture: Texture2D, title: String) -> void:
-	var house := village.get_node_or_null(house_name) as Node3D
-	if house == null or house.get_node_or_null(title) != null:
-		return
-	_sprite(house, title, texture, Vector3(0, 1.49, 2.24), 0.00635, false)
 
 static func _path_center(z: float) -> float:
 	return 0.54 * sin(z * 0.20) + 0.23 * sin(z * 0.54)
