@@ -20,6 +20,10 @@ func _run() -> void:
 	check(game.name == "TabiTabiNight2", "Night 2 live scene root")
 	check(game.camera != null and game.camera.enabled, "functional 2D camera on every renderer")
 	check(game.dialogue.visible, "Lola introductory dialogue appears")
+	check(game._light_stage() == 0, "daytime investigation starts with natural daylight")
+	check(not game._kapre_revealed(), "Kapre body is NEVER visible in daylight")
+	check(game.debug_dusk_preview == false and game.debug_night_reveal == false,
+		"QA lighting previews are never set by ordinary gameplay")
 	check(game.get_node_or_null("Night2HUD/Night2Screen") != null, "real mobile HUD")
 	check(game.action_buttons.has("INTERACT"), "interaction control")
 	check(game.action_buttons.has("HOLD OBSERVE"), "continuous observation control")
@@ -53,24 +57,32 @@ func _run() -> void:
 		check(game.story.clues.has(id), "art-world target interacts: " + id)
 		game._choose("close")
 	check(game.story.phase == 1, "actual evidence interactions unlock safety stage")
+	check(game._light_stage() == 1 and not game._kapre_revealed(),
+		"dusk safety stage preserves hidden resident")
 	for id in game.Story.BARRIER_POSITIONS:
 		game.player_pos = game.TARGETS[id]
 		game._interact()
 		check(game.story.barriers.has(id), "actual barrier object closes route: " + id)
 		game._choose("close")
 	check(game.story.phase == 2, "all safety markers unlock sheltered observation")
+	check(game._light_stage() == 2 and not game._kapre_revealed(),
+		"nighttime ember and smoke precede full Kapre body reveal")
 	game.player_pos = game.OBSERVATION
 	game.observe_held = true
 	game._process(4.2)
 	check(game.story.observation >= .999, "HOLD OBSERVE progresses in actual scene")
 	game._choose("greet")
 	check(game.story.phase == 3, "real greeting reaches negotiation")
+	check(game._light_stage() == 3 and game._kapre_revealed(),
+		"Kapre appears ONLY at night after observation and respectful greeting")
 	game._choose("coffee")
 	check(game.story.offered == "coffee", "respectful offering is recorded")
 	game._choose("plan")
 	check(game.story.commitment, "qualified expert and detour plan required")
 	game._choose("resolve")
 	check(game.story.outcome == "resolve", "actual scene resolves Kapre")
+	check(game._light_stage() == 0 and not game._kapre_revealed(),
+		"morning aftermath hides Kapre again without rewriting story save")
 	check(game.ending_panel.visible, "after-morning outcome scene is visibly present")
 	game.ending_panel.hide()
 	game._open_notebook()
