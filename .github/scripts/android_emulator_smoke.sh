@@ -178,7 +178,7 @@ python3 .github/scripts/assert_night_atmosphere.py build/android-night1-shore-do
 # On the Night 2 development branch, launch the REAL new chapter through
 # its debug-only title shortcut. Never silently treat Night 1 screenshots as
 # Kapre evidence; verify the new scene's exact engine log marker first.
-if [ "${GITHUB_REF:-}" = "refs/heads/feature/night2-kapre" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/hud-house-depth-fix" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night03-tikbalang-connected" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/nights1-3-dimensional-art-pass" ]; then
+if [ "${GITHUB_REF:-}" = "refs/heads/feature/night2-kapre" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/hud-house-depth-fix" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night03-tikbalang-connected" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/nights1-3-dimensional-art-pass"  || [ "$GITHUB_REF" = "refs/heads/feature/night04-manananggal-the-wake" ]; then
   adb shell am force-stop "$PKG" || true
   adb shell monkey -p "$PKG" -c android.intent.category.LAUNCHER 1
   sleep 7
@@ -242,7 +242,7 @@ fi
 
 # Night 3 uses the SAME running Godot APK, original ridge artwork, and
 # actual scene title debug shortcut. These captures are never concept art.
-if [ "${GITHUB_REF:-}" = "refs/heads/feature/night03-tikbalang-connected" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/nights1-3-dimensional-art-pass" ]; then
+if [ "${GITHUB_REF:-}" = "refs/heads/feature/night03-tikbalang-connected" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/nights1-3-dimensional-art-pass"  || [ "$GITHUB_REF" = "refs/heads/feature/night04-manananggal-the-wake" ]; then
   adb shell am force-stop "$PKG" || true
   adb shell monkey -p "$PKG" -c android.intent.category.LAUNCHER 1
   sleep 7
@@ -270,6 +270,38 @@ if [ "${GITHUB_REF:-}" = "refs/heads/feature/night03-tikbalang-connected" ] || [
     exit 1
   fi
   echo "PASS: actual Tikbalang Night 3 intro, bamboo ridge, safe lookout, night reveal and connected trail"
+fi
+
+# Wake is a REAL Godot scene entered by a debug-only title key.
+if [ "$GITHUB_REF" = "refs/heads/feature/night04-manananggal-the-wake" ]; then
+  adb shell am force-stop "$PKG" || true
+  adb shell monkey -p "$PKG" -c android.intent.category.LAUNCHER 1
+  sleep 7
+  adb shell input keyevent 142 # F12 QA-only authentic Night 4 entry
+  sleep 8
+  if ! adb logcat -d -v brief | grep -q "NIGHT4_QA_SCENE_READY"; then
+    echo "ERROR: authentic Night 4 scene not entered"
+    adb logcat -d | grep -E 'NIGHT4_QA|Godot|AndroidRuntime' | tail -n 120 || true
+    exit 1
+  fi
+  adb exec-out screencap -p > build/android-night4-intro.png
+  for item in "133 WAKE_DAY wake-day" "136 COURTYARD courtyard" "139 MANANANGGAL_NIGHT manananggal-night" "135 RIDGE_RETURN ridge-return"; do
+    set -- $item
+    adb shell input keyevent "$1"
+    sleep 4
+    if ! adb logcat -d -v brief | grep -q "NIGHT4_QA_$2"; then
+      echo "ERROR: Night 4 $2 live gameplay camera did not render"
+      exit 1
+    fi
+    adb exec-out screencap -p > "build/android-night4-$3.png"
+    python3 .github/scripts/assert_gameplay_visible.py "build/android-night4-$3.png"
+  done
+  if cmp -s build/android-night4-wake-day.png build/android-night4-manananggal-night.png; then
+    echo "ERROR: Night 4 daytime and Manananggal night are identical"
+    exit 1
+  fi
+  adb logcat -d -v brief | grep -Ei 'NIGHT4_QA|Godot|AndroidRuntime' | tail -n 180 > build/android-night4-log.txt || true
+  echo "PASS: actual Night 4 wake, roof predator, courtyard and trail"
 fi
 
 adb logcat -d -s AndroidRuntime:E Godot:E GodotEngine:E > build/android-night1-launch-log.txt || true

@@ -58,6 +58,7 @@ jobs:
           lines = path.read_text().splitlines()
           run = int(os.environ["GITHUB_RUN_NUMBER"])
           lines = [f"version/code={run}" if line.startswith("version/code=") else
+                   f'version/name="0.13.0-night4-wake-qa.{run}"' if os.environ.get("GITHUB_REF", "").endswith("night04-manananggal-the-wake") and line.startswith("version/name=") else
                    f'version/name="0.12.0-nights123-25d.{run}"' if os.environ.get("GITHUB_REF", "").endswith("nights1-3-dimensional-art-pass") and line.startswith("version/name=") else
                    f'version/name="0.11.0-night3-qa.{run}"' if os.environ.get("GITHUB_REF", "").endswith("night03-tikbalang-connected") and line.startswith("version/name=") else
                    f'version/name="0.10.0-night2-qa.{run}"' if os.environ.get("GITHUB_REF", "").endswith("night2-kapre") and line.startswith("version/name=") else
@@ -108,6 +109,8 @@ jobs:
           run_test res://tests/night03_scene_test.gd
           run_test res://tests/night03_unlock_test.gd
           run_test res://tests/night03_connected_playthrough_test.gd
+          run_test res://tests/night04_state_test.gd
+          run_test res://tests/night04_scene_test.gd
           run_test res://tests/connected_world_test.gd
           run_test res://tests/north_grove_art_test.gd
           run_test res://tests/connected_world_playthrough_test.gd
@@ -206,6 +209,12 @@ jobs:
             build/android-night3-watchpost.png
             build/android-night3-tikbalang-night.png
             build/android-night3-back-trail.png
+            build/android-night4-intro.png
+            build/android-night4-wake-day.png
+            build/android-night4-courtyard.png
+            build/android-night4-manananggal-night.png
+            build/android-night4-ridge-return.png
+            build/android-night4-log.txt
             build/android-night1-notebook.png
             build/android-night1-notebook-scrolled.png
             build/android-night1-preparation.png
