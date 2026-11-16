@@ -14,6 +14,13 @@ var night_stage := 0
 var pressure := 0.0
 
 func _ready() -> void:
+	# CI's headless integration runner has no audio device. Creating a real
+	# generator/playback while rapidly switching three streamed scenes can
+	# leave ALSA teardown hanging AFTER the tests already print PASS. Runtime
+	# Android/desktop keeps the full original procedural soundtrack.
+	if DisplayServer.get_name() == "headless":
+		set_process(false)
+		return
 	player = AudioStreamPlayer.new()
 	player.name = "KapreForestAndFloodAmbience"
 	var stream := AudioStreamGenerator.new()
