@@ -76,8 +76,11 @@ static func make_gameplay_button(parent: Control, title: String, pos: Vector2, d
 		"SAFE RETREAT": button.icon = ICON_RETREAT
 	if button.icon != null:
 		button.icon_alignment = HORIZONTAL_ALIGNMENT_LEFT
-		button.add_theme_font_size_override("font_size", roundi(19.0*text_scale))
-		button.add_theme_constant_override("h_separation", 4)
+		# Night 2 shares Night 1's exact touch rect. Use a compact font for
+		# longer translated/action labels so text is never clipped on Android.
+		var action_font_size := 16.0 if title.length() >= 12 else 19.0
+		button.add_theme_font_size_override("font_size", roundi(action_font_size * text_scale))
+		button.add_theme_constant_override("h_separation", 3 if title.length() >= 12 else 4)
 	button.set_meta("hud_component", "night1-shared")
 	button.set_meta("hud_reference_pos", pos)
 	parent.add_child(button)
