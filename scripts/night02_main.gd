@@ -234,7 +234,12 @@ func _sync_gameplay_hud() -> void:
 	if gameplay_controls == null:
 		return
 	var modal := dialogue.visible or notebook.visible or options_panel.visible or ending_panel.visible or menu_confirm.visible or quit_confirm.visible
+	var was_visible := gameplay_controls.visible
 	gameplay_controls.visible = not modal
+	if modal and was_visible:
+		SharedDialogueMotion.reset_gameplay(gameplay_controls)
+	elif not modal and not was_visible:
+		SharedDialogueMotion.restore_gameplay(gameplay_controls,prefs.reduced_motion)
 	if modal_backdrop != null:
 		modal_backdrop.visible = modal
 		modal_backdrop.color = Color(.015,.035,.05,.30 if dialogue.visible else .76)
