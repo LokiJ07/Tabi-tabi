@@ -47,6 +47,7 @@ func _run() -> void:
 				if roof != null:
 					var mat := roof.material_override as StandardMaterial3D
 					check(mat != null and mat.albedo_texture != null, name + ": roof actually uses authored thatch texture")
+					check(is_equal_approx(roof.rotation.z, -0.19 * float(side)), name + ": ridge rises correctly above the eaves")
 	var boat := game.river_boat as Node3D
 	check(boat != null, "native banca exists")
 	if boat != null:
