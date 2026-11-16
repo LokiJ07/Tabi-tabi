@@ -53,7 +53,8 @@ static func conceal(panel: Control, reduced_motion: bool) -> void:
 	# Never postpone a story choice or the HUD's return while waiting on art.
 	var make_ghost := panel.visible and not reduced_motion and panel.is_inside_tree() and panel.get_parent() != null
 	if make_ghost:
-		var ghost := panel.duplicate(0) as Control
+		# Copy procedural portrait drawing too, but not old signal handlers.
+		var ghost := panel.duplicate(Node.DUPLICATE_SCRIPTS) as Control
 		ghost.name = "DialogueExitAfterimage"
 		_set_inert(ghost)
 		panel.get_parent().add_child(ghost)
