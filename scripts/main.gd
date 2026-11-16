@@ -286,7 +286,10 @@ func _unhandled_input(event: InputEvent) -> void:
 					get_viewport().set_input_as_handled()
 					return
 	if event.is_action_pressed("ui_accept"):
-		_interact()
+		if dialogue != null and dialogue.visible:
+			_on_dialogue_continue_pressed()
+		else:
+			_interact()
 	if event.is_action_pressed("ui_focus_next"):
 		_set_focus(true)
 	if event.is_action_released("ui_focus_next"):
