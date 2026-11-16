@@ -70,6 +70,8 @@ var observe_held := false
 var camera: Camera2D
 var hud: CanvasLayer
 var gameplay_controls: Control
+var status_panel: PanelContainer
+var status_stack: VBoxContainer
 var objective: Label
 var subtitle: Label
 var danger: Label
@@ -593,6 +595,14 @@ func _draw_world_labels() -> void:
 		draw_string(font,Vector2(-440,378),"SHELTER DETOUR",HORIZONTAL_ALIGNMENT_LEFT,240,20,Color("#e5d2a4"))
 
 
+func _fit_status_card() -> void:
+	if status_panel == null or status_stack == null or not is_inside_tree():
+		return
+	var needed: float = status_stack.get_combined_minimum_size().y + 30.0
+	var available: float = get_viewport().get_visible_rect().size.y * .67
+	status_panel.offset_bottom = clampf(needed,145.0,available)
+
+
 func _build_ui() -> void:
 	var fx_layer := CanvasLayer.new()
 	fx_layer.name = "SharedNightAtmosphere"
@@ -614,51 +624,30 @@ func _build_ui() -> void:
 	gameplay_controls.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	gameplay_controls.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	layout.add_child(gameplay_controls)
-	var status := PanelContainer.new()
-	status.name = "ObjectiveCard"
-	status.anchor_left = 0.0
-	status.anchor_right = 0.37
-	status.anchor_top = 0.0
-	status.anchor_bottom = 0.0
-	status.offset_left = 16.0
-	status.offset_right = -8.0
-	status.offset_top = 10.0
-	status.offset_bottom = 218.0
-	SharedHUD.style_status_panel(status)
-	gameplay_controls.add_child(status)
-	var stack := VBoxContainer.new()
-	stack.add_theme_constant_override("separation", 3)
-	status.add_child(stack)
-	var heading := Label.new()
-	heading.text = "TABI-TABI  •  NIGHT 2  /  KAPRE"
-	heading.add_theme_font_size_override("font_size", 22)
-	heading.add_theme_color_override("font_color", Color("#f0d19c"))
-	stack.add_child(heading)
-	objective = Label.new()
-	objective.name = "ObjectiveText"
-	objective.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	objective.add_theme_font_size_override("font_size", roundi(20.0*prefs.text_scale))
-	stack.add_child(objective)
+	# Night 1 factory: identical card width, padding, typography and order.
+	var status_parts := SharedHUD.create_status_card(gameplay_controls, "TABI-TABI  •  NIGHT 2 / KAPRE", prefs.text_scale)
+	status_panel = status_parts["panel"]
+	status_stack = status_parts["stack"]
+	objective = status_parts["objective"]
+	status_stack.minimum_size_changed.connect(func(): call_deferred("_fit_status_card"))
 	subtitle = Label.new()
-	subtitle.add_theme_font_size_override("font_size", 17)
-	subtitle.add_theme_color_override("font_color", Color("#b7cabc"))
-	stack.add_child(subtitle)
+	subtitle.name = "ClueAndGuideProgress"
+	subtitle.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	subtitle.add_theme_font_size_override("font_size", roundi(20.0*prefs.text_scale))
+	subtitle.add_theme_color_override("font_color", Color("#e8d3a4"))
+	status_stack.add_child(subtitle)
 	danger = Label.new()
-	danger.name = "CourageAndTension"
+	danger.name = "CourageStatus"
+	danger.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	danger.add_theme_font_size_override("font_size", roundi(20.0*prefs.text_scale))
 	danger.add_theme_color_override("font_color", Color("#f4c99b"))
-	danger.add_theme_font_size_override("font_size", roundi(19.0*prefs.text_scale))
-	stack.add_child(danger)
+	status_stack.add_child(danger)
 	waypoint_label = Label.new()
 	waypoint_label.name = "NextLocationCompass"
-	waypoint_label.anchor_left = .445
-	waypoint_label.anchor_right = .65
-	waypoint_label.anchor_top = .035
-	waypoint_label.anchor_bottom = .135
-	waypoint_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	waypoint_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	waypoint_label.add_theme_font_size_override("font_size", roundi(18.0*prefs.text_scale))
 	waypoint_label.add_theme_color_override("font_color", Color("#f1d6a4"))
-	gameplay_controls.add_child(waypoint_label)
+	status_stack.add_child(waypoint_label)
 	progress = ProgressBar.new()
 	progress.name = "ObserveProgress"
 	progress.anchor_left = .29
@@ -669,19 +658,7 @@ func _build_ui() -> void:
 	progress.show_percentage = false
 	progress.visible = false
 	gameplay_controls.add_child(progress)
-	interaction_hint = Label.new()
-	interaction_hint.name = "InteractionHint"
-	interaction_hint.anchor_left = .67
-	interaction_hint.anchor_right = .86
-	interaction_hint.anchor_top = 0.0
-	interaction_hint.anchor_bottom = 0.0
-	interaction_hint.offset_top = 9.0
-	interaction_hint.offset_bottom = 89.0
-	interaction_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	interaction_hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	interaction_hint.add_theme_font_size_override("font_size", roundi(19.0*prefs.text_scale))
-	interaction_hint.add_theme_color_override("font_color", Color("#ffedc4"))
-	gameplay_controls.add_child(interaction_hint)
+	interaction_hint = SharedHUD.make_nearby_prompt(gameplay_controls, prefs.text_scale)
 	# Compact directional cluster on bottom LEFT. Action stack on right,
 	# never over the center character or target.
 	# Same thumb positions as Night 1; no per-chapter control drift.
