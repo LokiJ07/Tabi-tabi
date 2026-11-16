@@ -1263,7 +1263,7 @@ func _make_button(parent: Control, title: String, pos: Vector2, size: Vector2, d
 	# Android devices. Smaller text fits beside them inside the touch targets.
 	match title:
 		"PREPARE": button.icon = UI_PREPARE
-		"NOTEBOOK": button.icon = UI_NOTEBOOK
+		"FIELD NOTES": button.icon = UI_NOTEBOOK
 		"HOLD FOCUS": button.icon = UI_FOCUS
 		"INTERACT": button.icon = UI_INTERACT
 		"DAY / NIGHT": button.icon = UI_DAYNIGHT
