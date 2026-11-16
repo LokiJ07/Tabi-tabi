@@ -61,6 +61,8 @@ jobs:
         run: godot --headless --path . --script res://tests/night01_journal_test.gd
       - name: Night 1 speaker portraits and cinematic dialogue progression
         run: godot --headless --path . --script res://tests/night01_cinematic_test.gd
+      - name: Shared Night 1-2 dialogue easing, portraits and camera transition regression
+        run: godot --headless --path . --script res://tests/shared_dialogue_motion_test.gd
       - name: Cinematic camera actor focus, reversibility and facial acting
         run: godot --headless --path . --script res://tests/night01_camera_test.gd
       - name: Lightweight day and night ambience lighting
