@@ -144,6 +144,6 @@ static func speaker_change(content: Array, reduced_motion: bool) -> void:
 		element.modulate.a = 1.0
 		if not reduced_motion and element.is_inside_tree():
 			element.modulate.a = 0.34
-			var tween := element.create_tween()
+			var tween: Tween = (element as Control).create_tween()
 			tween.tween_property(element,"modulate:a",1.0,SPEAKER_SECONDS).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 			element.set_meta("speaker_tween",tween)
