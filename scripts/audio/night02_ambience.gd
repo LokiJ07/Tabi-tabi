@@ -37,6 +37,16 @@ func set_night_stage(value: int) -> void:
 func set_tension(value: float) -> void:
 	pressure = clampf(value,0.0,1.0)
 
+func _exit_tree() -> void:
+	# This procedural generator is shared by the Kapre and Tikbalang scenes.
+	# Streamed region changes may free two emitters in one frame. Stop audio
+	# before their C++ playback resources disappear, avoiding shutdown stalls.
+	set_process(false)
+	if player != null and is_instance_valid(player):
+		player.stop()
+	playback = null
+
+
 func _process(_delta: float) -> void:
 	if playback == null or level == 0:
 		return
