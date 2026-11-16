@@ -42,6 +42,15 @@ func _run() -> void:
 	check(ui.get_node_or_null("DialogueExitAfterimage") != null, "non-interactive exit image persists during fade")
 	Motion.reveal(panel,false)
 	check(panel.visible, "rapid new conversation cancels outgoing fade safely")
+	# Regression from real Android logcat: reopening after the exit ghost and
+	# completed Tween were already FREED used to raise a GDScript exception.
+	Motion.conceal(panel,false)
+	await create_timer(0.30).timeout
+	check(ui.get_node_or_null("DialogueExitAfterimage") == null,
+		"completed afterimage has been freed normally")
+	Motion.reveal(panel,false)
+	check(panel.visible and panel.has_meta("cinematic_tween"),
+		"reopening after an old freed afterimage is safe")
 	await process_frame
 	Motion.conceal(panel,true)
 	check(not panel.visible and panel.modulate.a == 1.0, "reduced motion closes immediately")
