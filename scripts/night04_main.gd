@@ -11,9 +11,10 @@ const Preferences = preload("res://scripts/core/preferences.gd")
 const SharedHUD = preload("res://scripts/ui/shared_hud.gd")
 const DimensionalArt = preload("res://scripts/visuals/layered_25d.gd")
 const NightWindows = preload("res://scripts/visuals/nighttime_windows.gd")
+const WakeVigil = preload("res://scripts/visuals/night04_vigil_art.gd")
 const Landscape = preload("res://scripts/visuals/folklore_landscape_25d.gd")
 const Atmosphere = preload("res://scripts/visuals/shared_immersive_atmosphere.gd")
-const Ambient = preload("res://scripts/audio/night02_ambience.gd")
+const Ambient = preload("res://scripts/audio/night04_ambience.gd")
 const AimPad = preload("res://scripts/ui/aim_pad.gd")
 const HERO: Texture2D = preload("res://assets/characters/apprentice.svg")
 const BANTAY: Texture2D = preload("res://assets/characters/bantay.svg")
@@ -313,6 +314,7 @@ func _draw() -> void:
 	for rock_at in [Vector2(-670,90),Vector2(515,360),Vector2(760,290),Vector2(-395,380)]:
 		Landscape.rock(self,rock_at,36,_stage()<2)
 	_house()
+	WakeVigil.paint_wake_furniture(self)
 	# Quiet vigil: raised candle table and coffee beside the gathering.
 	draw_colored_polygon(PackedVector2Array([Vector2(-350,80),Vector2(-130,101),
 		Vector2(-99,135),Vector2(-335,114)]),Color("#896447"))
@@ -376,6 +378,13 @@ func _draw() -> void:
 		Landscape.mist(self,Vector2(120,285),700.0,elapsed,not prefs.reduced_motion,true)
 		for point in [Vector2(-290,20),Vector2(260,5),Vector2(455,-95)]:
 			draw_circle(point,132,Color(1,.65,.30,.05))
+	# Physical world-space tells help players identify which approach to watch
+	# before the correct group-defense dialogue becomes available.
+	var warning_route: String = story.current_warning()
+	if warning_route == "" and debug_wake_preview:
+		warning_route = "roofline" # QA render only; never changes narrative state
+	WakeVigil.paint_warning_tell(self,warning_route,_stage(),elapsed,
+		story.tension,prefs.reduced_motion)
 	# The wake is brightly attended INSIDE at night, not a crowd of idle
 	# daytime NPC sprites frozen outside. Windows and curtains convey their
 	# safe presence behind the walls during the defensive encounter.
@@ -388,6 +397,7 @@ func _draw() -> void:
 		# Rear entrance remains a danger cue: mostly dark, not a safe exit.
 		NightWindows.paint_window(self,Vector2(365,-225),Vector2(53,51),
 			2,true,elapsed,prefs.reduced_motion,false)
+	WakeVigil.paint_inner_lights(self,_stage(),elapsed,prefs.reduced_motion)
 	# Human cast is rendered above the warmth. Story dialogue and evidence
 	# still work when residents have moved inside, not been deleted.
 	var people: Array[Dictionary] = []

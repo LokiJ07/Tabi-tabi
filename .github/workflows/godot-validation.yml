@@ -127,6 +127,8 @@ jobs:
         run: godot --headless --path . --script res://tests/nighttime_windows_test.gd
       - name: Night 4 lamay witness, defense, retry and outcome state
         run: godot --headless --path . --script res://tests/night04_state_test.gd
+      - name: Night 4 original wake decor, audio and three physical threat tells
+        run: godot --headless --path . --script res://tests/night04_vigil_immersive_test.gd
       - name: Night 4 actual shared HUD, social investigation and wake siege scene
         timeout-minutes: 3
         run: |
