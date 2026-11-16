@@ -113,6 +113,9 @@ func _ready() -> void:
 	if str(arrival.get("from","")) == "old_mango":
 		player_pos = ConnectedWorld.ARRIVAL_RIDGE
 		print("TABI_WORLD_ARRIVAL_RIDGE_FROM_MANGO")
+	elif str(arrival.get("from","")) == "night04":
+		player_pos = ConnectedWorld.ARRIVAL_RIDGE_WAKE
+		print("TABI_WORLD_ARRIVAL_RIDGE_FROM_WAKE")
 	bantay_pos = player_pos + Vector2(-46,29)
 	camera = Camera2D.new()
 	camera.name = "Night03RidgeCamera"
@@ -462,10 +465,13 @@ func _draw() -> void:
 		"FLOOD WATCHPOST",HORIZONTAL_ALIGNMENT_LEFT,320,19,Color("#f1d89e"))
 	draw_string(font,FALSE_FORK+Vector2(-108,107),
 		"CHANGED WAYMARKS",HORIZONTAL_ALIGNMENT_LEFT,320,18,Color("#e3c592"))
-	# Next chapter's gate remains closed until its real playable scene exists.
+	# Actual east-ridge footpath connects to the wake when Night 3 ends.
+	# It remains physically gated during the first three story phases.
 	draw_line(Vector2(890,-525),Vector2(890,-390),Color("#674e35"),12,true)
 	draw_line(Vector2(848,-490),Vector2(946,-476),Color("#baa078"),14,true)
-	draw_string(font,Vector2(745,-342),"FURTHER RIDGE — CLOSED",HORIZONTAL_ALIGNMENT_LEFT,390,18,Color("#e1bd86"))
+	draw_string(font,Vector2(745,-342),
+		"THE WAKE • EAST TRAIL" if story.outcome != "" else "WAKE TRAIL • FINISH RIDGE FIRST",
+		HORIZONTAL_ALIGNMENT_LEFT,445,17,Color("#e1bd86"))
 
 func _build_ui() -> void:
 	var atmosphere_layer := CanvasLayer.new()
@@ -775,6 +781,8 @@ func _refresh_hint() -> void:
 func _nearby() -> String:
 	if player_pos.distance_to(ConnectedWorld.TRAIL_RIDGE) < 110.0:
 		return "return_mango"
+	if player_pos.distance_to(ConnectedWorld.TRAIL_RIDGE_WAKE) < 115.0:
+		return "wake_gate" if story.outcome != "" else "wake_gate_locked"
 	if story.phase == 0:
 		for id in Story.CLUES:
 			if not story.clues.has(id) and player_pos.distance_to(CLUES_AT[id]) < 122.0:
@@ -800,6 +808,13 @@ func _interact() -> void:
 	var target := _nearby()
 	if target == "return_mango":
 		_return_to_mango()
+		return
+	if target == "wake_gate":
+		_to_wake()
+		return
+	if target == "wake_gate_locked":
+		_show_dialogue("BANTAY","The east trail leads to the wake. We must finish the ridge account before leaving its rescue signs unresolved.",
+			[{"label":"RETURN TO THE RIDGE","action":"close"}])
 		return
 	if target == "":
 		_show_dialogue("BANTAY","The trail is wide. Follow the compass toward the next tangible clue, safety marker or shelter.",
@@ -1012,6 +1027,18 @@ func _save_menu() -> void:
 		return
 	get_tree().change_scene_to_file("res://scenes/title.tscn")
 
+func _to_wake() -> void:
+	if travel_in_progress or story.outcome == "":
+		return
+	if not _auto_save() or not ConnectedWorld.begin_travel("night03","night04",story.outcome):
+		save_error.popup_centered(Vector2i(610,190))
+		return
+	travel_in_progress = true
+	motion = Vector2.ZERO
+	observe_held = false
+	print("TABI_WORLD_TRAVEL_RIDGE_TO_WAKE")
+	get_tree().change_scene_to_file(ConnectedWorld.scene_for("night04"))
+
 func _return_to_mango() -> void:
 	if travel_in_progress:
 		return
@@ -1050,6 +1077,12 @@ func _show_ending() -> void:
 	_modal_button(area,"REVIEW FIELD NOTES",func():
 		ending_panel.hide()
 		_open_notebook()
+	)
+	_modal_button(area,"WALK THE EAST TRAIL TO NIGHT 4",func():
+		ending_panel.hide()
+		player_pos = ConnectedWorld.TRAIL_RIDGE_WAKE+Vector2(-195,30)
+		camera.position = player_pos
+		_sync_hud()
 	)
 	_modal_button(area,"RETURN TO OLD MANGO (SAVE)",_return_to_mango)
 	_modal_button(area,"SAVE & MAIN MENU",_save_menu)

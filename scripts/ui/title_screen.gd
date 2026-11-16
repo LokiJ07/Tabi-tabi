@@ -4,6 +4,9 @@ extends Control
 const GameScene = preload("res://scenes/main.tscn")
 const Night02Scene = preload("res://scenes/night02.tscn")
 const Night03Scene = preload("res://scenes/night03.tscn")
+const Night04Scene = preload("res://scenes/night04.tscn")
+const Night03State = preload("res://scripts/narrative/night03_state.gd")
+const Night04Save = preload("res://scripts/core/night04_save.gd")
 const Night02State = preload("res://scripts/narrative/night02_state.gd")
 const Night03Save = preload("res://scripts/core/night03_save.gd")
 const Night01State = preload("res://scripts/narrative/night01_state.gd")
@@ -23,6 +26,7 @@ var prefs = Preferences.new()
 var continue_button: Button
 var night2_button: Button
 var night3_button: Button
+var night4_button: Button
 var settings_panel: PanelContainer
 var settings_backdrop: ColorRect
 var font_button: Button
@@ -52,6 +56,11 @@ func _input(event: InputEvent) -> void:
 	# without fabricating an unlocked Night 1 save. Production has no shortcut.
 	if OS.get_name() == "Android" and OS.has_feature("debug") and event is InputEventKey:
 		var key := event as InputEventKey
+		if key.pressed and key.keycode == KEY_F12:
+			get_viewport().set_input_as_handled()
+			print("NIGHT4_QA_DEBUG_ENTRY")
+			get_tree().change_scene_to_packed(Night04Scene)
+			return
 		if key.pressed and key.keycode == KEY_F11:
 			get_viewport().set_input_as_handled()
 			print("NIGHT3_QA_DEBUG_ENTRY")
@@ -266,15 +275,29 @@ func _build_menu() -> void:
 		night3_button.text = "CONTINUE NIGHT 3  •  TIKBALANG"
 	elif not night3_ready and OS.has_feature("debug"):
 		night3_button.text = "TEST NIGHT 3 (QA)"
+	night4_button = _button("NIGHT 4  •  MANANANGGAL",menu,_enter_night4)
+	var night4_ready := _night4_unlocked()
+	night4_button.disabled = not night4_ready and not OS.has_feature("debug")
+	if Night04Save.exists() and night4_ready:
+		night4_button.text = "CONTINUE NIGHT 4  •  THE WAKE"
+	elif not night4_ready and OS.has_feature("debug"):
+		night4_button.text = "TEST NIGHT 4 (QA)"
+	# Eight title actions now fit the existing mobile landscape column
+	# without tiny buttons or a scroll overlay in front of the title art.
+	menu.add_theme_constant_override("separation",5)
+	for item in menu.get_children():
+		if item is Button:
+			(item as Button).custom_minimum_size.y = 51.0
 	# Chapter labels can become much longer than the original six-button
 	# title layout. Keep EVERY visible label inside its unchanged left column.
 	night2_button.add_theme_font_size_override("font_size", roundi(23.0*prefs.text_scale))
 	night3_button.add_theme_font_size_override("font_size", roundi(22.0*prefs.text_scale))
+	night4_button.add_theme_font_size_override("font_size", roundi(21.0*prefs.text_scale))
 	_button("SETTINGS", menu, _open_settings)
 	_button("CREDITS", menu, _credits)
 	_button("EXIT", menu, func(): get_tree().quit())
 	var chapter := Label.new()
-	chapter.text = "SANTELMO  /  KAPRE  /  TIKBALANG"
+	chapter.text = "SANTELMO  /  KAPRE  /  TIKBALANG  /  MANANANGGAL"
 	chapter.anchor_left = 0.075
 	chapter.anchor_right = 0.55
 	chapter.anchor_top = 0.958
@@ -296,6 +319,22 @@ func _night3_unlocked() -> bool:
 	var kapre := Night02State.new()
 	return Night02Save.read(kapre) and kapre.outcome != ""
 
+
+func _night4_unlocked() -> bool:
+	if not _night3_unlocked():
+		return false
+	var ridge := Night03State.new()
+	return Night03Save.read(ridge) and ridge.outcome != ""
+
+func _enter_night4() -> void:
+	if not _night4_unlocked() and not OS.has_feature("debug"):
+		return
+	loading_cover.show()
+	var lbl := loading_cover.get_node_or_null("LoadingStatus") as Label
+	if lbl != null:
+		lbl.text = "Opening Night 4: The Manananggal at the Wake..."
+	await get_tree().process_frame
+	get_tree().change_scene_to_packed(Night04Scene)
 
 func _enter_night3() -> void:
 	if not _night3_unlocked() and not OS.has_feature("debug"):

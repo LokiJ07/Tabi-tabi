@@ -29,6 +29,7 @@ func _run() -> void:
 	root.add_child(title)
 	await process_frame
 	check(not title._night3_unlocked(), "Night 3 production gate locked on clean install")
+	check(not title._night4_unlocked(), "Night 4 is also locked on clean install")
 	var menu := title.get_node_or_null("MainMenu") as VBoxContainer
 	check(menu != null and menu.get_combined_minimum_size().y <= menu.size.y + 2.0,
 		"seven title actions fit fully inside mobile landscape menu without clipping")

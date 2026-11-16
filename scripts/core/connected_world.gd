@@ -10,7 +10,8 @@ const REGIONS := [
 const SCENES := {
 	"barrio_lawom": "res://scenes/main.tscn",
 	"old_mango": "res://scenes/night02.tscn",
-	"night03": "res://scenes/night03.tscn"
+	"night03": "res://scenes/night03.tscn",
+	"night04": "res://scenes/night04.tscn"
 }
 const CONNECTIONS := {
 	"barrio_lawom": ["old_mango"],
@@ -29,6 +30,10 @@ const TRAIL_MANGO_RIDGE := Vector2(800.0, -570.0)
 const ARRIVAL_MANGO_RIDGE := Vector2(730.0, -505.0)
 const TRAIL_RIDGE := Vector2(-880.0, 410.0)
 const ARRIVAL_RIDGE := Vector2(-700.0, 290.0)
+const TRAIL_RIDGE_WAKE := Vector2(890.0,-445.0)
+const ARRIVAL_RIDGE_WAKE := Vector2(710.0,-485.0)
+const TRAIL_WAKE_RIDGE := Vector2(-880.0,420.0)
+const ARRIVAL_WAKE := Vector2(-715.0,280.0)
 const TRAVEL_RANGE_3D := 3.35
 const TRAVEL_RANGE_2D := 118.0
 
@@ -96,6 +101,12 @@ static func begin_travel(origin: String, destination: String, last_outcome: Stri
 	if origin == "old_mango" and destination == "night03":
 		var ledger_outcomes: Dictionary = data.get("outcomes", {})
 		if last_outcome == "" or str(ledger_outcomes.get("night02","")) != last_outcome:
+			return false
+	# The wake cannot be entered on a preview-only or forged Night 3 result.
+	# Compare the current outcome with the shared connected-world case ledger.
+	if origin == "night03" and destination == "night04":
+		var outcomes: Dictionary = data.get("outcomes", {})
+		if last_outcome == "" or str(outcomes.get("night03","")) != last_outcome:
 			return false
 	data["current"] = destination
 	data["pending"] = {"from": origin, "to": destination}
