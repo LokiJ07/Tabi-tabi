@@ -1,50 +1,43 @@
-# TABI-TABI
+# TABI-TABI — Barrio Lawom (Android)
 
-An offline Android isometric 3D folklore mystery-adventure set in the fictional Northern Mindanao-inspired **Barrio Lawom**.
+Offline-first, connected Philippine folklore investigation built with **Godot 4.3** for Android landscape. This README describes the **experimental Nights 1–3 2.5D art branch**, not the repository's still-minimal `main` branch.
 
-## Current Night 1 QA milestone
+## Current playable chapters
 
-**Night 1 — The Light on the River (Santelmo)** is an *installable QA build*, NOT a finished cinematic or production-ready vertical slice. There are seven nights in the approved master script, but the quality-first gate requires a validated Night 1 before creating Night 2 content.
+| Chapter | Region / encounter | Actual gameplay |
+| --- | --- | --- |
+| Night 1 — Santelmo | Barrio Lawom riverside | 3D isometric neighborhood with Android software-rendered 2.5D fallback, Apprentice/Bantay, lantern/Focus, clues, conversations, notebook, meaningful outcomes and save |
+| Night 2 — Kapre | Old mango grove | Connected traversable trail, original Kapre and mango art, five evidence clues, safety barriers, protected observation, negotiations, endings and independent save |
+| Night 3 — Tikbalang | Flood ridge | Connected ridge gate, watchpost, bamboo and equine-headed ridge guardian, four clues, ordered safety markers, route-verification puzzle, witness account, endings and independent save |
 
-**Direct Night 1 development APK:** [Download the latest GitHub prerelease APK](https://github.com/LokiJ07/Tabi-tabi/releases/download/night1-dev/tabi-tabi-night1-debug.apk)
+**One story, not three unrelated games:** Night 1 → Night 2 → Night 3 are connected through the original Great Flood mystery, persistent outcome ledger and physical world transitions. Night 4–7 are **planned, locked and not playable**.
 
-[Workflow builds and logs](https://github.com/LokiJ07/Tabi-tabi/actions) · [Development PR](https://github.com/LokiJ07/Tabi-tabi/pull/1)
+## Shared visual identity
 
-> **Installation warning:** The current CI uses an *ephemeral debug signing key* on every run. New builds might fail to install over a previous APK; uninstalling can erase test saves. Production updates require a stable, privately stored signing key. Use the preview APK for testing only.
+Nights 1–3 use the same navy/gold gameplay HUD grammar, button positions, dialogue transition controller and original Apprentice/Bantay identities. The shared layered renderer is at `scripts/visuals/layered_25d.gd`.
 
-## Present in the feature branch
+- Native Night 1: additional 3D silhouette plane, actual horizontal contact shadow meshes and existing volume-built homes; emulator fallback paints live actors, objects and reflections from the same world coordinates.
+- Nights 2–3: depth-backed imported SVG sprites, contact shadows, weather-aware lanterns and environment darkness drawn *behind* readable characters.
+- Walking bob returns to zero when stopped; Reduced Motion disables animation.
+- Night 3 horse muzzle and shore water-reflection pass added after review of **actual emulator screenshots**. Static AI concept images are **not** gameplay screenshots or runtime sprite layers.
 
-- Procedural Barrio Lawom environment with distinct building details, explorable Lola-hut morning prologue, safe riverbank collision, fishing/market props and an original low-poly banca with shaped hull, bamboo outriggers, seats and paddle (rather than a single placeholder boat cube).
-- Isometric camera with actor-targeted cinematic conversation framing; touch movement, confirmed HOLD/RELEASE Focus state and independent lantern aim; distinct 3D NPC silhouettes/outfits for Lola, Dado, Mara and Sabel; fixed hand-authored vector busts with unique NPC face shapes and costumes, speaker-aware cinematic dialogue, blink/speech gestures and reversible reduced-motion transitions.
-- Evidence notebook, contextual witness interviews, two clue links and a private revisable theory.
-- Four-slot supply preparation; cloth-wrap lantern calming, signal-bell defensive choice, single-use water recovery.
-- Reactive Santelmo, reflection puzzle with proximity check, **in-world lantern guiding to the safe shore for Resolve**, Courage pressure, no-fail story assist, safe checkpoint retry.
-- Resolve, Drive Away, Partial outcomes; conditional next-morning dialogue, persistent outcome markers.
-- Local story saving with backup and independent offline accessibility settings (text scale, contrast, reduced motion, hint detail).
-- Godot headless parser/smoke/regression tests, scene-level Night 1 flow tests for all three outcomes and Android APK export.
+This pass makes the current illustrated game art more dimensional. It does **not** imply that fully rigged models, painterly concept-quality environments, cinematic lighting or all performance optimizations are complete.
 
-### Still missing or unverified
+## Validation and Android QA
 
-- Final cinematic painterly **3D** artwork, fully rigged actor/facial animations, cinematic camera direction, creature VFX and finished voice/sound design. Dialogue portraits now use consistent hand-authored vector illustrations matching the NPCs' colors and roles; they do not replace finished 3D art.
-- Finished Lola-hut art/cinematics and complete village interactions. Additional visual props and speaker-attributed dialogue overlays exist, but the chapter still needs user-approved production art and pacing.
-- Complete Cebuano/Filipino/English localization, sound preferences, HUD remapping, story cinematics, comprehensive performance presets.
-- Actual phone gameplay validation of the **latest** build, end-to-end uncoached tests, safe-area and FPS/thermal profiling.
-- Night 2–7 gameplay implementation, historical reconstruction, Keeper trial, all endings and full epilogue.
+- **Godot validation:** import/parser, state/endings, scene integration, connected trails, touch HUD, save/restore and chapter consistency checks.
+- **Android CI:** debug APK build and emulator smoke that launches actual Night 1–3 Godot scenes on this art branch. Artifacts include original 2340×1080 screenshots and crash logs.
+- CI run page: https://github.com/LokiJ07/Tabi-tabi/actions
+- Work-in-progress art pull request: https://github.com/LokiJ07/Tabi-tabi/pull/5
 
-**Do not interpret green CI or the installable APK as a complete Night 1 sign-off.**
+**Not a public release.** A green CI job proves automated coverage, not physically verified controls, smooth FPS on all phones, or the quality of every sprite. Production merging requires screenshot review plus real-device playthrough of the latest signed build, saved-progress recovery, full encounter pacing and image-quality approval.
 
-## Development process
+### Installing test APKs
 
-1. Implement on `feature/night1-foundation`, not directly on `main`.
-2. Run GDScript import, scene smoke, story state and UI/encounter regression tests.
-3. Run scene-level automated Night 1 flow through Resolve/Drive Away/Partial and verify save/reload.
-4. Export Android debug APK; upload artifact and update rolling development prerelease if checks pass.
-5. After the planned production art/features, request uncoached real-device feedback and resolve blockers **before** advancing to Night 2.
+CI signs debug APKs with a temporary key; different runs can reject install-over. **Back up or preserve important saves before uninstalling** because local data may be erased. A stable release signing key must be configured for future updates.
 
-See [development gates](docs/QUALITY_GATES.md) and the [Night 1 go/no-go checklist](docs/NIGHT01_RELEASE_CANDIDATE_CHECKLIST.md) for the master-script test requirements. Android CI additionally attempts a real emulator install-and-launch smoke, which never replaces physical phone tests.
+## Development boundaries
 
-## Canon
+Use separate feature branches and PRs. Preserve the seven-night narrative canon and character identities. Keep screen-space UI anchored consistently, avoid oversized labels and ensure keyboard/touch movement and dialogue input remain valid when editing scenes. No production merge without current green tests and real-device approval.
 
-Based on **TABI-TABI Final Master Script & Development Plan v1.0**, 24 pages, 14 November 2026. The fixed history separates Mang Celso (the Santelmo boatman) from Sabel's late husband; do not merge these identities or claim Mara witnessed the flood as an adult.
-
-Godot 4.3 · GDScript · Android landscape · offline-first.
+Canon: *TABI-TABI Final Master Script & Development Plan v1.0* (14 November 2026). Mang Celso and Sabel's late husband remain different people; Mara's Great Flood knowledge is not a fabricated adult eyewitness account.
