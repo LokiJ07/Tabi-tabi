@@ -217,9 +217,9 @@ func _physics_process(delta: float) -> void:
 		camera.size = lerpf(camera.size, 14.7, smooth)
 	RiverBanca.animate(river_boat, elapsed, preferences.reduced_motion)
 	elapsed += delta
-	if is_night and santelmo != null and not _is_reading_ui():
-		# Cinematic dialogue, notebook and pause are fair checkpoints: never
-		# drain courage or advance a moving threat while the player is reading.
+	if is_night and santelmo != null:
+		# Keep world and encounter animations progressing in the background,
+		# but never drain courage while the player is reading a modal.
 		light_alarm = santelmo.update_behavior(delta, player.global_position, lamp_heading, focus_held)
 		story.alarm = light_alarm
 		_advance_safe_guiding(delta)
@@ -227,7 +227,7 @@ func _physics_process(delta: float) -> void:
 		if encounter_autosave_clock >= 10.0 and story.outcome == "" and story.phase >= 1:
 			encounter_autosave_clock = 0.0
 			_save_story_silent()
-		if story.tick_courage(delta, preferences.story_assist):
+		if not _is_reading_ui() and story.tick_courage(delta, preferences.story_assist):
 			_show_dialogue("Bantay leads you back from the frightening light. You can RETRY the safe checkpoint or ACCEPT PARTIAL.")
 			_refresh_choices()
 			_update_objective()
