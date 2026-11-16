@@ -34,6 +34,37 @@ static func finish_illustrated_actor(actor: Node3D, texture: Texture2D, dog_acto
 	art.alpha_cut = SpriteBase3D.ALPHA_CUT_DISCARD
 	art.position = Vector3(0, 0.9 if dog_actor else 1.1, 0)
 	actor.add_child(art)
+	# A second shallow painted plane establishes silhouette thickness when
+	# the orthographic camera moves. Original rig/physics stay unchanged.
+	var depth := Sprite3D.new()
+	depth.name = "DimensionalBackPlane"
+	depth.texture = texture
+	depth.pixel_size = art.pixel_size
+	depth.billboard = BaseMaterial3D.BILLBOARD_FIXED_Y
+	depth.shaded = false
+	depth.alpha_cut = SpriteBase3D.ALPHA_CUT_DISCARD
+	depth.modulate = Color(.09, .16, .18, .72)
+	depth.position = art.position + Vector3(.063, -.016, .063)
+	actor.add_child(depth)
+	# This is actual horizontal 3D contact geometry, not a UI oval. It moves
+	# with Apprentice, villagers and Bantay, remaining on their floor plane.
+	var contact := MeshInstance3D.new()
+	contact.name = "GroundContactShadow"
+	var disk := CylinderMesh.new()
+	disk.top_radius = .40 if dog_actor else .47
+	disk.bottom_radius = disk.top_radius
+	disk.height = .012
+	contact.mesh = disk
+	contact.position = Vector3(.04, .015, .06)
+	var pigment := StandardMaterial3D.new()
+	pigment.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	pigment.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	pigment.albedo_color = Color(.018, .029, .034, .33)
+	pigment.cull_mode = BaseMaterial3D.CULL_DISABLED
+	contact.material_override = pigment
+	contact.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	actor.add_child(contact)
+	actor.set_meta("dimensional_art", "shared-2.5d-layered-v1")
 	actor.set_meta("visual_asset", texture.resource_path)
 
 ## Night 1 authored character identities. Procedural mobile-friendly meshes are

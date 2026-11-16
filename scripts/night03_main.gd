@@ -12,6 +12,7 @@ const Preferences = preload("res://scripts/core/preferences.gd")
 const SharedHUD = preload("res://scripts/ui/shared_hud.gd")
 const SharedMotion = preload("res://scripts/ui/shared_dialogue_motion.gd")
 const SharedAtmosphere = preload("res://scripts/visuals/shared_immersive_atmosphere.gd")
+const DimensionalArt = preload("res://scripts/visuals/layered_25d.gd")
 const Sound = preload("res://scripts/audio/night02_ambience.gd")
 const Portrait = preload("res://scripts/ui/speaker_portrait.gd")
 const AimPad = preload("res://scripts/ui/aim_pad.gd")
@@ -65,6 +66,7 @@ var observe_held := false
 var travel_in_progress := false
 var elapsed := 0.0
 var particles := 0.0
+var walk_phase := 0.0
 var debug_night_preview := false
 var hud: CanvasLayer
 var gameplay_controls: Control
@@ -97,6 +99,7 @@ var ambient
 
 func _ready() -> void:
 	name = "TabiTabiNight3"
+	set_meta("dimensional_art", DimensionalArt.STYLE_ID)
 	prefs.load_from()
 	var previous := Night02State.new()
 	if Night02Save.read(previous):
@@ -153,6 +156,8 @@ func _process(delta: float) -> void:
 		axis = Vector2.ZERO
 	axis = axis.limit_length()
 	if axis.length() > .02:
+		if not prefs.reduced_motion:
+			walk_phase += delta * 8.5
 		var heading := Vector2(axis.x + axis.y*.43, axis.y*.79 - axis.x*.16).normalized()
 		var moved := player_pos + heading*PLAYER_SPEED*delta
 		moved.x = clampf(moved.x,MAP_BOUNDS.position.x+45.0,MAP_BOUNDS.end.x-45.0)
@@ -334,11 +339,14 @@ func _draw() -> void:
 	]:
 		var p: Vector2 = data[0]
 		var scale_bamboo: float = data[1]
-		draw_texture_rect(BAMBOO,Rect2(p-Vector2(142*scale_bamboo,344*scale_bamboo),
-			Vector2(284*scale_bamboo,380*scale_bamboo)),false)
+		DimensionalArt.paint_grounded(self, BAMBOO,
+			p + Vector2(0,36*scale_bamboo),
+			Vector2(284*scale_bamboo,380*scale_bamboo), Color.WHITE, .26)
 	# Old flood watchpost is a roofed, three-dimensional landmark.
-	draw_texture_rect(WATCHPOST,Rect2(-350,-560,410,330),false)
-	draw_texture_rect(LANTERN,Rect2(-252,-448,56,127),false)
+	DimensionalArt.paint_grounded(self, WATCHPOST,
+		Vector2(-145,-230), Vector2(410,330), Color.WHITE, .38)
+	DimensionalArt.lantern(self, LANTERN,
+		Vector2(-224,-321), Vector2(56,127), _stage() >= 1)
 	# Meaningful clue props, four unique physical silhouettes.
 	for id in Story.CLUES:
 		var clue: Vector2 = CLUES_AT[id]
@@ -408,8 +416,9 @@ func _draw() -> void:
 				Color(.68,.34,.16,.009+float(5-ring)*.006))
 		# Maintain the original horse-human proportions while keeping both
 		# horn tips in the landscape viewport at the closest QA camera pose.
-		draw_texture_rect(TIKBALANG,Rect2(RIDGE_GATE+Vector2(-159,-449+shift),
-			Vector2(318,450)),false,Color("#e0d6c6"))
+		DimensionalArt.paint_grounded(self, TIKBALANG,
+			RIDGE_GATE+Vector2(0,1+shift), Vector2(318,450),
+			Color("#e0d6c6"), .50)
 	# Keep original shared protagonists readable against darkness. Their
 	# draw order is world-depth based and HUD/cinematic layers stay untouched.
 	var actors := [
@@ -421,7 +430,13 @@ func _draw() -> void:
 	for actor in actors:
 		var where: Vector2 = actor["at"]
 		var dimensions: Vector2 = actor["size"]
-		draw_texture_rect(actor["tex"],Rect2(where-Vector2(dimensions.x*.5,dimensions.y),dimensions),false)
+		var is_player: bool = actor["tex"] == HERO
+		var is_dog: bool = actor["tex"] == BANTAY
+		var lift := 0.0
+		if not prefs.reduced_motion and (is_player or is_dog):
+			lift = absf(sin(walk_phase * (1.12 if is_dog else 1.0))) * (3.0 if is_player else 2.1)
+		DimensionalArt.paint_grounded(self, actor["tex"], where, dimensions,
+			Color.WHITE, .43, lift)
 	# In-world wayfinding signs are small, correctly oriented and non-obstructive.
 	var font := ThemeDB.fallback_font
 	draw_string(font,ConnectedWorld.TRAIL_RIDGE+Vector2(-125,90),

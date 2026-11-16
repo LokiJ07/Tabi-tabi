@@ -14,6 +14,10 @@ func _run() -> void:
 	var human: Node3D = Actors.person("Apprentice", Color(0.8, 0.5, 0.2), Color(0.2, 0.3, 0.4))
 	root.add_child(human)
 	_expect(human.get_node_or_null("SalakotBrim") != null, "player salakot silhouette")
+	_expect(human.get_node_or_null("DimensionalBackPlane") is Sprite3D,
+		"Apprentice has a real second 3D silhouette plane")
+	_expect(human.get_node_or_null("GroundContactShadow") is MeshInstance3D,
+		"Apprentice's contact shadow has genuine horizontal 3D geometry")
 	_expect(human.get_node_or_null("LegLeft") != null, "articulated left leg")
 	_expect(human.get_node_or_null("LegRight") != null, "articulated right leg")
 	Actors.animate_person(human, 0.25, true)
@@ -45,6 +49,8 @@ func _run() -> void:
 	var bantay: Node3D = Actors.dog()
 	root.add_child(bantay)
 	_expect(bantay.get_node_or_null("Tail") != null, "tail present")
+	_expect(bantay.get_node_or_null("GroundContactShadow") is MeshInstance3D,
+		"Bantay has grounded 3D contact shadow")
 	_expect(bantay.get_node_or_null("Nose") != null, "face features present")
 	Actors.animate_dog(bantay, 0.4, true, true)
 	_expect(absf(bantay.get_node("Tail").rotation.y) > 0.01, "tail animation")

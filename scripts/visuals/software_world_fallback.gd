@@ -4,6 +4,7 @@ extends Control
 ## the 3D world. This 2.5D CanvasItem draws their live positions using the
 ## same imported textures as the normal renderer, never a static screenshot.
 ## This layer is activated ONLY for known Android SwiftShader/Emulator adapters.
+const DimensionalArt = preload("res://scripts/visuals/layered_25d.gd")
 const SOIL: Texture2D = preload("res://assets/world/soil_ground.svg")
 const PATH: Texture2D = preload("res://assets/world/earthen_path.svg")
 const WATER: Texture2D = preload("res://assets/world/tidal_water.svg")
@@ -174,7 +175,8 @@ func _art(texture: Texture2D, at: Vector3, width_units: float, bottom_aligned: b
 	# Skip art far outside view: this fallback must still run on old CPUs.
 	if not rect.intersects(Rect2(-200, -200, size.x + 400, size.y + 400)):
 		return
-	draw_texture_rect(texture, rect, false, color)
+	DimensionalArt.paint_grounded(self, texture,
+		Vector2(rect.position.x + rect.size.x * .5, rect.end.y), rect.size, color, .25)
 
 func _paint_building(at: Vector3, texture: Texture2D, roof: Color) -> void:
 	# Volume-first 2.5D: a REAL gabled nipa house with four spatial wall

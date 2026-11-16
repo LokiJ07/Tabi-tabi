@@ -26,6 +26,8 @@ func _run() -> void:
 	current_scene = game
 	await process_frame
 	check(game.name == "TabiTabiNight3", "authored real Tikbalang scene instantiated")
+	check(game.get_meta("dimensional_art", "") == "shared-2.5d-layered-v1",
+		"ridge actors, bamboo and watchpost all share same grounded 2.5D painter")
 	check(game.camera != null and game.camera.enabled, "real camera active in new ridge")
 	check(game.dialogue.visible, "Lola's canonical flood mystery introduction is visible")
 	check(game.TIKBALANG.get_width() >= 300, "full-body original illustrated Tikbalang sprite imported")

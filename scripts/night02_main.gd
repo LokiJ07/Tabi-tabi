@@ -15,6 +15,7 @@ const SharedDialogueMotion = preload("res://scripts/ui/shared_dialogue_motion.gd
 const AimPad = preload("res://scripts/ui/aim_pad.gd")
 const SpeakerPortrait = preload("res://scripts/ui/speaker_portrait.gd")
 const SharedAtmosphere = preload("res://scripts/visuals/shared_immersive_atmosphere.gd")
+const DimensionalArt = preload("res://scripts/visuals/layered_25d.gd")
 const MANGO: Texture2D = preload("res://assets/night02/old_mango_tree.svg")
 const KAPRE: Texture2D = preload("res://assets/night02/kapre_perched.svg")
 const BARRIER: Texture2D = preload("res://assets/night02/closed_path_barrier.svg")
@@ -107,6 +108,7 @@ var debug_dusk_preview := false
 var debug_night_reveal := false # QA only, never saved
 var elapsed := 0.0
 var particle_phase := 0.0
+var walk_phase := 0.0
 var last_target := ""
 var movement_enabled := true
 var travel_in_progress := false
@@ -133,6 +135,7 @@ func _kapre_revealed() -> bool:
 
 func _ready() -> void:
 	name = "TabiTabiNight2"
+	set_meta("dimensional_art", DimensionalArt.STYLE_ID)
 	prefs.load_from()
 	var previous := Night1State.new()
 	if not Night1Save.read(previous).is_empty():
@@ -184,6 +187,8 @@ func _process(delta: float) -> void:
 	# Isometric movement matches the visible diagonally laid roads.
 	var walk := Vector2(axis.x + axis.y * .42, axis.y * .75 - axis.x * .15).normalized()
 	if axis.length() > .02:
+		if not prefs.reduced_motion:
+			walk_phase += delta * 8.5
 		player_pos += walk * PLAYER_SPEED * delta
 		player_pos.x = clampf(player_pos.x, MAP_LIMIT.position.x + 55, MAP_LIMIT.end.x - 55)
 		player_pos.y = clampf(player_pos.y, MAP_LIMIT.position.y + 65, MAP_LIMIT.end.y - 65)
@@ -335,8 +340,8 @@ func _draw() -> void:
 		var scale_factor: float = tree_data["scale"]
 		var width := 225.0 * scale_factor
 		var height := 300.0 * scale_factor
-		draw_texture_rect(NORTH_FOREST, Rect2(foot - Vector2(width*.5, height),
-			Vector2(width, height)), false, Color.WHITE)
+		DimensionalArt.paint_grounded(self, NORTH_FOREST, foot,
+			Vector2(width, height), Color.WHITE, .27)
 	# Great Flood washout — a continuous diagonal corridor with shallow
 	# eroded banks and dried floodwater scars.
 	_polygon([Vector2(-910,330),Vector2(810,-590),Vector2(950,-535),Vector2(-760,430)], Color("#5f5a45"))
@@ -386,7 +391,8 @@ func _draw() -> void:
 	for i in range(9):
 		var wx := OBSERVATION.x-91 + float(i)*23
 		draw_line(Vector2(wx,OBSERVATION.y+23),Vector2(wx,OBSERVATION.y+69),Color("#c5ab74"),3)
-	draw_texture_rect(LANTERN,Rect2(OBSERVATION.x-145, OBSERVATION.y-139, 74, 152),false)
+	DimensionalArt.lantern(self, LANTERN, OBSERVATION + Vector2(-108,13),
+		Vector2(74,152), _light_stage() >= 1)
 	# Unstable ground ring illustrates actual hazard zone before approaching.
 	# Ground cracks telegraph unstable roots without an arcade-sized ring.
 	for i in range(7):
@@ -395,21 +401,14 @@ func _draw() -> void:
 		draw_line(crack_at+Vector2(19,-8),crack_at+Vector2(32,1),Color("#6f4931",.53),1.7,true)
 	# The ancestral mango stays visible by day; its resident does NOT.
 	var canopy_sway := sin(particle_phase * .65) * (4.0 if not prefs.reduced_motion else 0.0)
-	draw_texture_rect(MANGO, Rect2(TREE.x-350+canopy_sway,TREE.y-560,700,600), false)
+	DimensionalArt.paint_grounded(self, MANGO, TREE + Vector2(canopy_sway,40),
+		Vector2(700,600), Color.WHITE, .47)
 	# Branch geometry anchors a perched giant ABOVE the villagers and ground.
 	var perch_root := TREE + Vector2(14,-177)
 	var perch_tip := TREE + Vector2(252,-190)
 	draw_line(perch_root,perch_tip,Color("#402f26"),31.0,true)
 	draw_line(perch_root+Vector2(0,-4),perch_tip+Vector2(0,-4),Color("#70513a"),8.0,true)
 	draw_line(TREE+Vector2(156,-190),TREE+Vector2(192,-240),Color("#503b2d"),10.0,true)
-	if _kapre_revealed():
-		# Only after night observation and respectful greeting; QA only override.
-		draw_texture_rect(KAPRE,
-			Rect2(TREE + Vector2(40,-460),Vector2(215,330)),false,Color("#d0c3ad"))
-		# Foreground branch crosses his folded knee, visibly supporting the
-		# seated guardian instead of making him float before the tree.
-		draw_line(TREE+Vector2(78,-185),TREE+Vector2(243,-195),Color("#33261f",.82),11,true)
-		draw_line(TREE+Vector2(87,-191),TREE+Vector2(241,-201),Color("#98714c",.44),3.5,true)
 	# Clue props each have a different silhouette; no generic quest circles.
 	_draw_evidence()
 	for id in Story.BARRIER_POSITIONS:
@@ -424,22 +423,6 @@ func _draw() -> void:
 			draw_colored_polygon(PackedVector2Array([
 				point + Vector2(3,-34),point+Vector2(48,-20),point+Vector2(3,-5)]),Color("#b16a47"))
 			draw_line(point+Vector2(11,-26),point+Vector2(11,-13),Color("#f3d9a7"),2.4)
-	# Paths stay grounded; actors and ambient lights are last.
-	# Dynamic painter sorting: villagers, Apprentice and Bantay can walk
-	# around each other without always floating above every NPC's face.
-	var actors: Array[Dictionary] = [
-		{"at": Vector2(-661,-263), "texture": DADO, "width": 80.0, "height": 128.0},
-		{"at": Vector2(-461,-261), "texture": MARA, "width": 80.0, "height": 128.0},
-		{"at": dog_pos + Vector2(0,29), "texture": BANTAY, "width": 90.0, "height": 96.0},
-		{"at": player_pos + Vector2(0,8), "texture": HERO, "width": 92.0, "height": 124.0}
-	]
-	actors.sort_custom(func(a: Dictionary,b: Dictionary)->bool:
-		return (a["at"] as Vector2).y < (b["at"] as Vector2).y)
-	for actor in actors:
-		var foot: Vector2 = actor["at"]
-		var width: float = actor["width"]
-		var height: float = actor["height"]
-		draw_texture_rect(actor["texture"],Rect2(foot-Vector2(width*.5,height),Vector2(width,height)),false)
 	# Time-of-day follows story stage, never an arbitrary realtime clock.
 	# Keep paths and clue shapes readable for accessibility during darkness.
 	var light_stage := _light_stage()
@@ -459,6 +442,33 @@ func _draw() -> void:
 			draw_circle(firefly,2.3,Color("#ffe6a1"))
 			draw_circle(firefly,8.0,Color(1.0,.79,.38,.075))
 		_draw_kapre_smoke()
+	# Actors and guardian are drawn AFTER the environmental darkness grade,
+	# so faces, limbs and quest silhouettes stay visible on real Android.
+	if _kapre_revealed():
+		DimensionalArt.paint_grounded(self, KAPRE, TREE + Vector2(147.5,-130),
+			Vector2(215,330), Color("#d3c5b6"), .18)
+		# Occluding branch remains in front of the knee, not behind the giant.
+		draw_line(TREE+Vector2(78,-185),TREE+Vector2(243,-195),Color("#33261f",.82),11,true)
+		draw_line(TREE+Vector2(87,-191),TREE+Vector2(241,-201),Color("#98714c",.44),3.5,true)
+	var actors: Array[Dictionary] = [
+		{"at": Vector2(-661,-263), "texture": DADO, "width": 80.0, "height": 128.0},
+		{"at": Vector2(-461,-261), "texture": MARA, "width": 80.0, "height": 128.0},
+		{"at": dog_pos + Vector2(0,29), "texture": BANTAY, "width": 90.0, "height": 96.0},
+		{"at": player_pos + Vector2(0,8), "texture": HERO, "width": 92.0, "height": 124.0}
+	]
+	actors.sort_custom(func(a: Dictionary,b: Dictionary)->bool:
+		return (a["at"] as Vector2).y < (b["at"] as Vector2).y)
+	for actor in actors:
+		var foot: Vector2 = actor["at"]
+		var width: float = actor["width"]
+		var height: float = actor["height"]
+		var is_player: bool = actor["texture"] == HERO
+		var is_dog: bool = actor["texture"] == BANTAY
+		var lift := 0.0
+		if not prefs.reduced_motion and (is_player or is_dog):
+			lift = absf(sin(walk_phase * (1.12 if is_dog else 1.0))) * (3.0 if is_player else 2.1)
+		DimensionalArt.paint_grounded(self, actor["texture"], foot,
+			Vector2(width,height), Color.WHITE, .43, lift)
 	_draw_world_labels()
 	if story.outcome == "resolve":
 		draw_arc(TREE, 157, 0, TAU, 80, Color("#bcd79d",.58), 3.0)

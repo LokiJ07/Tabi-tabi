@@ -22,6 +22,8 @@ func _run() -> void:
 	check(game.camera != null and game.camera.enabled, "functional 2D camera on every renderer")
 	check(game.dialogue.visible, "Lola introductory dialogue appears")
 	check(game._light_stage() == 0, "daytime investigation starts with natural daylight")
+	check(game.get_meta("dimensional_art", "") == "shared-2.5d-layered-v1",
+		"Kapre scene renders solid-looking characters and props with shared 2.5D depth")
 	check(not game._kapre_revealed(), "Kapre body is NEVER visible in daylight")
 	check(game.debug_dusk_preview == false and game.debug_night_reveal == false,
 		"QA lighting previews are never set by ordinary gameplay")
