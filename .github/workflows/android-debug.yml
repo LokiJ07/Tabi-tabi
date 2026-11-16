@@ -58,6 +58,7 @@ jobs:
           lines = path.read_text().splitlines()
           run = int(os.environ["GITHUB_RUN_NUMBER"])
           lines = [f"version/code={run}" if line.startswith("version/code=") else
+                   f'version/name="0.14.0-lived-in-night-qa.{run}"' if os.environ.get("GITHUB_REF", "").endswith("nighttime-lived-in-village-nights1-4") and line.startswith("version/name=") else
                    f'version/name="0.13.0-night4-wake-qa.{run}"' if os.environ.get("GITHUB_REF", "").endswith("night04-manananggal-the-wake") and line.startswith("version/name=") else
                    f'version/name="0.12.0-nights123-25d.{run}"' if os.environ.get("GITHUB_REF", "").endswith("nights1-3-dimensional-art-pass") and line.startswith("version/name=") else
                    f'version/name="0.11.0-night3-qa.{run}"' if os.environ.get("GITHUB_REF", "").endswith("night03-tikbalang-connected") and line.startswith("version/name=") else
@@ -109,6 +110,7 @@ jobs:
           run_test res://tests/night03_scene_test.gd
           run_test res://tests/night03_unlock_test.gd
           run_test res://tests/night03_connected_playthrough_test.gd
+          run_test res://tests/nighttime_windows_test.gd
           run_test res://tests/night04_state_test.gd
           run_test res://tests/night04_scene_test.gd
           run_test res://tests/connected_world_test.gd
