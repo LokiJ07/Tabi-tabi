@@ -12,6 +12,7 @@ const NIPA: Texture2D = preload("res://assets/world/nipa_facade.svg")
 const MARKET: Texture2D = preload("res://assets/world/market_facade.svg")
 const SCHOOL: Texture2D = preload("res://assets/world/school_facade.svg")
 const BANANA: Texture2D = preload("res://assets/world/banana_plant.svg")
+const NORTH_FOREST: Texture2D = preload("res://assets/world/north_forest_tree.svg")
 const HIBISCUS: Texture2D = preload("res://assets/world/hibiscus_bush.svg")
 const LAMP: Texture2D = preload("res://assets/world/lantern_post.svg")
 const HERO: Texture2D = preload("res://assets/characters/apprentice.svg")
@@ -226,6 +227,18 @@ func _draw_village() -> void:
 		var far_z := -23.5 - float(i) * 1.99
 		props.append({"at": Vector3(4.7 + float(i % 3) * .5, 0, far_z),
 			"type": "sprite", "texture": HIBISCUS, "width": 1.9})
+	# Far background keeps the actual north region textured and recognizable
+	# on Android SwiftShader, even outside the physically walkable boundary.
+	var upland: Array[Vector3] = [
+		Vector3(13, 0, -34), Vector3(18, 0, -40),
+		Vector3(23, 0, -35), Vector3(28, 0, -42),
+		Vector3(33, 0, -34), Vector3(37, 0, -47),
+		Vector3(16, 0, -48), Vector3(25, 0, -51),
+		Vector3(9, 0, -45), Vector3(33, 0, -53)
+	]
+	for i in range(upland.size()):
+		props.append({"at": upland[i], "type": "sprite",
+			"texture": NORTH_FOREST, "width": 4.4 + float(i % 3) * .44})
 	for at in [Vector3(14.5, 0, -19.3), Vector3(16.7, 0, -8.5),
 		Vector3(14.8, 0, 3.8), Vector3(18.3, 0, 15), Vector3(11.2, 0, 17.9)]:
 		props.append({"at": at, "type": "sprite", "texture": BANANA, "width": 4.0})
