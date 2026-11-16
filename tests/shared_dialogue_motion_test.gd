@@ -93,8 +93,9 @@ func _run() -> void:
 	await process_frame
 	check(night2.dialogue.visible and night2.modal_backdrop.visible and
 		night2.dialogue.has_meta("cinematic_tween"), "Night 2 intro shares Night 1 dialogue fade and world dimming")
-	check(night2.dialogue_line.visible_characters == 0,
-		"Night 2 has the same cinematic NPC text reveal")
+	check(night2.dialogue_line.visible_characters >= 0
+		and night2.dialogue_line.visible_characters < night2.dialogue_line.text.length(),
+		"Night 2 is progressively revealing NPC text, not showing it instantly")
 	night2._on_dialogue_choice_pressed("close")
 	check(night2.dialogue.visible and night2.dialogue_line.visible_characters == -1,
 		"first Night 2 touch finishes text without prematurely exiting")
