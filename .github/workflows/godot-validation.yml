@@ -87,6 +87,8 @@ jobs:
         run: godot --headless --path . --script res://tests/night02_unlock_test.gd
       - name: Seven-night one-world graph and shared narrative integrity
         run: godot --headless --path . --script res://tests/connected_world_test.gd
+      - name: Verify Northern Grove art, shared materials and non-blocking scenery
+        run: godot --headless --path . --script res://tests/north_grove_art_test.gd
       - name: Walk from Barrio Lawom to Kapre and back with intact saves
         run: godot --headless --path . --script res://tests/connected_world_playthrough_test.gd
       - name: Architectural cohesion of shore, boat, landing and authentic houses
