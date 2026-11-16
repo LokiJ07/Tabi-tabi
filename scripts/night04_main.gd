@@ -328,7 +328,7 @@ func _draw() -> void:
 			draw_line(p+Vector2(-35,0),p+Vector2(32,-9),Color("#dfbd85"),8)
 	for id in Story.DEFENSES:
 		var pos: Vector2 = DEFENSE_POS[id]
-		var active := story.defenses.has(id)
+		var active: bool = story.defenses.has(id)
 		var hue := Color("#c9ab68") if active else Color("#715844")
 		draw_line(pos+Vector2(0,26),pos+Vector2(0,-70),hue,8)
 		if id == "rear_bell":
@@ -415,7 +415,7 @@ func _build_ui() -> void:
 	interaction_hint = SharedHUD.make_nearby_prompt(controls,prefs.text_scale)
 	for dir in SharedHUD.MOVE_POSITIONS:
 		var at: Vector2 = SharedHUD.MOVE_POSITIONS[dir]
-		var short := {"up":"▲","left":"◀","right":"▶","down":"▼"}[dir]
+		var short: String = str({"up":"▲","left":"◀","right":"▶","down":"▼"}.get(dir,"▲"))
 		SharedHUD.make_gameplay_button(controls,short,at,Vector2(70,65),
 			func(): _hold_move(dir,true),func(): _hold_move(dir,false),prefs.text_scale)
 	for title in SharedHUD.ACTION_POSITIONS:
