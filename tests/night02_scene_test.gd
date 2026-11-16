@@ -85,6 +85,11 @@ func _run() -> void:
 			if n1_btn.icon != null and labels[1] not in ["SAFE RETREAT"]:
 				check(n2_btn.icon != null and n1_btn.icon.resource_path == n2_btn.icon.resource_path,
 					"same original Night 1 SVG icon: "+str(labels[1]))
+			if labels[1] in ["HOLD OBSERVE", "SAFE RETREAT"]:
+				check(n2_btn.get_theme_font_size("font_size") < n1_btn.get_theme_font_size("font_size"),
+					"long chapter action text shrinks inside original Night 1 button bounds: "+str(labels[1]))
+				check(not n2_btn.disabled and n2_btn.clip_text,
+					"long label remains fully functional in unchanged touch target: "+str(labels[1]))
 	var n2_look := game.get_node_or_null("Night2HUD/Night2Screen/GameplayControls/Night2LookPad") as Control
 	check(n2_look != null, "Night 2 has functional aim/look pad in exact Night 1 space")
 	if n2_look != null:
