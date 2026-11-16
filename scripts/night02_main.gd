@@ -53,7 +53,7 @@ const CLUE_TITLES := {
 const STORY_TEXT := {
 	"fallen_limb": "The old mango tree dropped a heavy branch across the route. It could seriously hurt a child. This is an observable hazard, not a curse.",
 	"exposed_roots": "Erosion after the Great Flood has loosened the roots. The ground is soft and unsafe; a qualified tree assessment matters.",
-	"cigar_ash": "A faint cigar ember glows high in the branches. Someone may be watching. You cannot assume what it proves.",
+	"cigar_ash": "Dry cigar ash and tobacco fragments lie near the roots. They suggest someone smoked here, but cannot prove who—or when.",
 	"shelter_route": "During the Great Flood, this shortcut led families toward shelter. It is now too close to the unstable tree.",
 	"witness_accounts": "Mara remembers the Great Flood; Dado remembers a rescue promise that was never kept. The Kapitan wants to cut the tree immediately."
 }
@@ -90,11 +90,32 @@ var save_error: AcceptDialog
 var ending_panel: PanelContainer
 var ambient_sound: Node
 var debug_dusk_preview := false
+var debug_night_reveal := false # QA only, never saved
 var elapsed := 0.0
 var particle_phase := 0.0
 var last_target := ""
 var movement_enabled := true
 var travel_in_progress := false
+
+# Folklore-aware stages: investigation by day, safety at dusk,
+# ember-and-smoke observation at night, then a full nocturnal reveal.
+func _light_stage() -> int:
+	if debug_night_reveal:
+		return 3
+	if debug_dusk_preview:
+		return 1
+	if story.outcome != "" or story.phase == 4:
+		return 0 # Morning aftermath.
+	if story.phase == 0:
+		return 0
+	if story.phase == 1:
+		return 1
+	if story.phase == 2:
+		return 2
+	return 3
+
+func _kapre_revealed() -> bool:
+	return (story.phase == 3 and story.outcome == "") or debug_night_reveal
 
 func _ready() -> void:
 	name = "TabiTabiNight2"
@@ -167,7 +188,7 @@ func _process(delta: float) -> void:
 		if story.observe_from_safety(delta, true, true):
 			observe_held = false
 			_show_dialogue("BANTAY",
-				"Bantay does not bark. Through the shifting leaves you see the Kapre shielding his home, not chasing the villagers. Observe the smoke and swaying branches before speaking.",
+				"Bantay does not bark. At night, a red cigar ember pulses high in the old mango tree. Smoke curls among the leaves and a heavy branch creaks. You cannot see the giant clearly yet. Greet the unseen resident respectfully.",
 				[{"label": "TABİ-TABI PO — ASK PERMISSION", "action": "greet"}])
 			_auto_save()
 	if story.encounter_failed and not dialogue.visible and story.outcome == "":
@@ -179,6 +200,8 @@ func _process(delta: float) -> void:
 		progress.visible = story.phase == 2
 		progress.value = story.observation * 100.0
 	danger.text = "COURAGE %d  •  TENSION %d%%" % [roundi(story.courage), roundi(story.alarm * 100.0)]
+	if ambient_sound != null:
+		ambient_sound.set_night_stage(_light_stage())
 	_sync_gameplay_hud()
 	queue_redraw()
 
@@ -915,9 +938,9 @@ func _rebuild_objective() -> void:
 	subtitle.text = "%s  •  EVIDENCE %d/5  •  BARRIERS %d/3" % [phase_name,story.clues.size(),story.barriers.size()]
 	match story.phase:
 		0: objective.text = "Inspect FIVE clues around the mango tree, school and old shelter route."
-		1: objective.text = "Close all THREE approaches before the Kapre conversation."
-		2: objective.text = "Reach the bamboo lookout. Hold OBSERVE (4 seconds) from shelter."
-		3: objective.text = "Speak respectfully; negotiate a safe expert-assessed solution."
+		1: objective.text = "Dusk: secure THREE unsafe approaches before nightfall."
+		2: objective.text = "Night: watch the cigar ember and smoke from the safe lookout (HOLD OBSERVE)."
+		3: objective.text = "Night: greet the Kapre in the mango branches; discuss a safe solution."
 		4: objective.text = "NIGHT 2 RESOLVED: %s. Your record and community safety plan are saved." % story.outcome.to_upper()
 	queue_redraw()
 
