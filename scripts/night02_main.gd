@@ -13,7 +13,7 @@ const ConnectedWorld = preload("res://scripts/core/connected_world.gd")
 const SharedHUD = preload("res://scripts/ui/shared_hud.gd")
 const SharedAtmosphere = preload("res://scripts/visuals/shared_immersive_atmosphere.gd")
 const MANGO: Texture2D = preload("res://assets/night02/old_mango_tree.svg")
-const KAPRE: Texture2D = preload("res://assets/night02/kapre.svg")
+const KAPRE: Texture2D = preload("res://assets/night02/kapre_perched.svg")
 const BARRIER: Texture2D = preload("res://assets/night02/closed_path_barrier.svg")
 const HERO: Texture2D = preload("res://assets/characters/apprentice.svg")
 const BANTAY: Texture2D = preload("res://assets/characters/bantay.svg")
@@ -342,7 +342,11 @@ func _draw() -> void:
 		draw_line(Vector2(wx,OBSERVATION.y+23),Vector2(wx,OBSERVATION.y+69),Color("#c5ab74"),3)
 	draw_texture_rect(LANTERN,Rect2(OBSERVATION.x-145, OBSERVATION.y-139, 74, 152),false)
 	# Unstable ground ring illustrates actual hazard zone before approaching.
-	draw_arc(TREE, 128.0, 0, TAU, 65, Color("#d9a16b", .44), 3.0, true)
+	# Ground cracks telegraph unstable roots without an arcade-sized ring.
+	for i in range(7):
+		var crack_at := TREE + Vector2(-115.0 + float(i)*41.0,86.0 + sin(float(i)*2.7)*15.0)
+		draw_line(crack_at,crack_at+Vector2(19,-8),Color("#503a2d",.64),2.4,true)
+		draw_line(crack_at+Vector2(19,-8),crack_at+Vector2(32,1),Color("#6f4931",.53),1.7,true)
 	# The ancestral mango stays visible by day; its resident does NOT.
 	var canopy_sway := sin(particle_phase * .65) * (4.0 if not prefs.reduced_motion else 0.0)
 	draw_texture_rect(MANGO, Rect2(TREE.x-350+canopy_sway,TREE.y-560,700,600), false)
@@ -355,7 +359,11 @@ func _draw() -> void:
 	if _kapre_revealed():
 		# Only after night observation and respectful greeting; QA only override.
 		draw_texture_rect(KAPRE,
-			Rect2(TREE + Vector2(62,-438),Vector2(177,270)),false,Color("#d0c3ad"))
+			Rect2(TREE + Vector2(40,-460),Vector2(215,330)),false,Color("#d0c3ad"))
+		# Foreground branch crosses his folded knee, visibly supporting the
+		# seated guardian instead of making him float before the tree.
+		draw_line(TREE+Vector2(78,-185),TREE+Vector2(243,-195),Color("#33261f",.82),11,true)
+		draw_line(TREE+Vector2(87,-191),TREE+Vector2(241,-201),Color("#98714c",.44),3.5,true)
 	# Clue props each have a different silhouette; no generic quest circles.
 	_draw_evidence()
 	for id in Story.BARRIER_POSITIONS:
@@ -414,7 +422,7 @@ func _draw() -> void:
 func _draw_kapre_smoke() -> void:
 	# First nighttime manifestation: a cigar ember and drifting smoke.
 	# The body remains hidden until the player's respectful greeting.
-	var cigar_tip := TREE + Vector2(216,-365)
+	var cigar_tip := TREE + Vector2(235,-340)
 	var pulse := .86 + .14 * sin(particle_phase * 4.2)
 	draw_circle(cigar_tip,26.0 * pulse,Color(1.0,.35,.08,.065))
 	draw_circle(cigar_tip,11.0 * pulse,Color(1.0,.45,.13,.16))
@@ -567,7 +575,7 @@ func _draw_evidence() -> void:
 			for i in range(5):
 				draw_line(pos+Vector2(-23,-28+i*12),pos+Vector2(21,-28+i*12),Color("#6f685e"),2)
 		if not done and story.phase == 0:
-			draw_arc(pos,64+sin(particle_phase*2)*3,0,TAU,40,Color("#ffd790",.7),2.8)
+			draw_arc(pos,39+sin(particle_phase*2)*2,0,TAU,36,Color("#cba96d",.43),1.8)
 		elif done:
 			draw_circle(pos+Vector2(45,-48),12,Color("#7ba787"))
 			draw_line(pos+Vector2(39,-48),pos+Vector2(43,-43),Color.WHITE,3)
