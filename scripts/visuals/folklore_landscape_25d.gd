@@ -5,12 +5,19 @@ extends RefCounted
 const PASS_ID := "nights1-3-landscape-depth-v2"
 
 static func ridge_palette(chapter: int, stage: int) -> Array[Color]:
-	var dark := stage >= 2
+	# Godot 4.3 does not implicitly convert the ternary's untyped Array to a
+	# typed Array[Color]. Every branch must produce a typed palette.
+	var result: Array[Color] = []
 	if chapter == 2:
-		return [Color("#1b3434"),Color("#29443e"),Color("#3c5546")] if dark else [
-			Color("#385a51"),Color("#50745e"),Color("#698263")]
-	return [Color("#172d38"),Color("#294650"),Color("#38585a")] if dark else [
-		Color("#34535d"),Color("#4b6e66"),Color("#678276")]
+		if stage >= 2:
+			result = [Color("#1b3434"),Color("#29443e"),Color("#3c5546")]
+		else:
+			result = [Color("#385a51"),Color("#50745e"),Color("#698263")]
+	elif stage >= 2:
+		result = [Color("#172d38"),Color("#294650"),Color("#38585a")]
+	else:
+		result = [Color("#34535d"),Color("#4b6e66"),Color("#678276")]
+	return result
 
 static func parallax_ridges(target: CanvasItem, world: Rect2,
 		camera_point: Vector2, chapter: int, stage: int) -> void:
