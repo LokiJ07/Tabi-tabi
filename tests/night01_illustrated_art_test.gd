@@ -60,7 +60,7 @@ func _run() -> void:
 	check(game.get_node_or_null("Ground collision") != null, "ground collision preserved after visual pass")
 	check(game.apprentice_visual.get_node_or_null("IllustratedSprite") != null, "player itself uses visible new character art")
 	check(game.bantay_visual.get_node_or_null("IllustratedSprite") != null, "following Bantay uses new dog art")
-	for action in ["PREPARE", "NOTEBOOK", "HOLD FOCUS", "INTERACT", "DAY / NIGHT"]:
+	for action in ["PREPARE", "FIELD NOTES", "HOLD FOCUS", "INTERACT", "DAY / NIGHT"]:
 		var found := false
 		for node in game.gameplay_hud.get_children():
 			if node is Button and (node as Button).text == action:
