@@ -837,6 +837,43 @@ func _button_style(button: Button, font_size: int = 19) -> void:
 	# Dialogue and in-world notebook choices use the exact Night 1 modal style.
 	SharedHUD.style_modal_button(button,false,false,prefs.text_scale)
 
+func _gameplay_button(label: String, at: Vector2, dimensions: Vector2, callback: Callable) -> Button:
+	var b := SharedHUD.make_gameplay_button(gameplay_controls,label,at,dimensions,
+		func(): pass,func(): pass,prefs.text_scale)
+	b.name = label.replace(" ","").replace("/","")
+	b.pressed.connect(callback)
+	action_buttons[label] = b
+	return b
+
+func _open_safety_preparation() -> void:
+	if dialogue.visible or ending_panel.visible or notebook.visible or options_panel.visible:
+		return
+	var route_done := story.barriers.size()
+	_show_dialogue("SAFETY PREPARATION",
+		"Check the fallen limbs, roots and approach routes before confronting the mango-tree resident.\n" +
+		"Evidence: %d/5   •   Closed routes: %d/3\n" % [story.clues.size(),route_done] +
+		"Only observe at night from the sheltered lookout. Bantay stays close.",
+		[{"label":"UNDERSTOOD","action":"close"}])
+
+func _retry_night2() -> void:
+	if dialogue.visible or notebook.visible or options_panel.visible:
+		return
+	if story.outcome != "":
+		_show_ending()
+		return
+	if not story.safe_retry():
+		return
+	player_pos = OBSERVATION + Vector2(-95,40) if story.phase >= 2 else Vector2(-510,140)
+	dog_pos = player_pos + Vector2(-52,31)
+	observe_held = false
+	look_direction = Vector2.ZERO
+	motion = Vector2.ZERO
+	held_moves.clear()
+	_auto_save()
+	_show_dialogue("SAFE RETRY","Back at a safe position. Recorded clues remain available.",
+		[{"label":"CONTINUE","action":"close"}])
+	_rebuild_objective()
+
 func _action(parent: Node, label: String, callback: Callable) -> Button:
 	var b := Button.new()
 	b.text = label
