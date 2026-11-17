@@ -14,6 +14,14 @@ func check(ok: bool,reason: String) -> void:
 		errors += 1
 		printerr("Night 5 playable farm: "+reason)
 
+func _road_clears_fence(point: Vector2, rail_bounds: Rect2, road_radius: float) -> bool:
+	# Euclidean distance to the *drawn posts/rails*, not Rect2.grow():
+	# grow(150) adds a misleading square footprint at the distant corner.
+	var nearest := Vector2(
+		clampf(point.x,rail_bounds.position.x,rail_bounds.end.x),
+		clampf(point.y,rail_bounds.position.y,rail_bounds.end.y))
+	return point.distance_to(nearest)>road_radius
+
 func _initialize() -> void:
 	call_deferred("_run")
 
@@ -67,15 +75,20 @@ func _run() -> void:
 		and main_road[10].y < game.FUTURE_TRAIL.y
 		and World.TRAIL_FARM_NIGHT06 == game.FUTURE_TRAIL,
 		"Night 4 farm path MUST continue to canonical Night 6 gateway and beyond, never terminate at animal junction")
+	# Painted posts reach 95px above the ground enclosure and 14px below.
+	# Sample all the way along the road, keeping its 58px radius away from
+	# the actual visual fence rectangle (including diagonal corner clearance).
+	var pen_rails := Rect2(FarmArt.PEN.position+Vector2(-7.0,-95.0),
+		FarmArt.PEN.size+Vector2(14.0,109.0))
+	var holding_rails := Rect2(FarmArt.HOLDING.position+Vector2(-7.0,-95.0),
+		FarmArt.HOLDING.size+Vector2(14.0,109.0))
 	for segment in range(main_road.size()-1):
 		for step in range(21):
 			var walk_point: Vector2 = main_road[segment].lerp(
 				main_road[segment+1],float(step)/20.0)
-			# Fence posts project beyond the soil rectangle. Guard BOTH the
-			# road's full 58px half-width and the raised post silhouettes.
-			check(not FarmArt.PEN.grow(76.0).has_point(walk_point)
-				and not FarmArt.HOLDING.grow(150.0).has_point(walk_point),
-				"uncut Night 4-to-6 road clears BOTH farm fences and raised posts at "+
+			check(_road_clears_fence(walk_point,pen_rails,58.0)
+				and _road_clears_fence(walk_point,holding_rails,58.0),
+				"uncut Night 4-to-6 road clears actual raised rails/posts at "+
 				str(segment)+"/"+str(step))
 	for waypoint in main_road:
 		check(game.MAP.has_point(waypoint),
