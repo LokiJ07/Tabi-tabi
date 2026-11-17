@@ -100,8 +100,8 @@ func _run() -> void:
 		and FarmArt.HOLDING_SIGN_AT.y > FarmArt.MAIN_ROAD_END.y+80.0
 		and not FarmArt.PEN.grow(48.0).has_point(FarmArt.HOLDING_SIGN_AT),
 		"receiving paddock sign sits safely below main road and left of the fence, away from LOOK controls")
-	var before_night06 := game.FUTURE_TRAIL+Vector2(0,95)
-	var beyond_night06 := game.FUTURE_TRAIL+Vector2(0,-32)
+	var before_night06: Vector2 = game.FUTURE_TRAIL+Vector2(0,95)
+	var beyond_night06: Vector2 = game.FUTURE_TRAIL+Vector2(0,-32)
 	check(FarmArt.keep_player_before_locked_trail(before_night06,beyond_night06,
 			game.FUTURE_TRAIL,true).y >= game.FUTURE_TRAIL.y+50.0
 		and FarmArt.keep_player_before_locked_trail(before_night06,beyond_night06,
