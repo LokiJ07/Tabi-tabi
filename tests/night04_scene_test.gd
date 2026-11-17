@@ -45,8 +45,14 @@ func _run() -> void:
 	game.camera.position = game.player_pos
 	game.debug_wake_preview = true
 	game._process(.7)
-	check(game.camera.position.y < game.player_pos.y-145.0,
-		"cinematic reveal shifts the actual camera to frame wings and hero together")
+	check(game.camera.position.y < game.player_pos.y-300.0,
+		"full-size rooftop silhouette fits in the vertical Android frame")
+	check(game.camera.zoom.x <= .90 and game.camera.zoom.y <= .90,
+		"encounter zooms out without moving the shared HUD")
+	var roof_top := Vector2(270,-465)+Vector2(-5,110)-Vector2(150,247)
+	var vertical_room := get_viewport().get_visible_rect().size.y*.5/game.camera.zoom.y
+	check(roof_top.y > game.camera.position.y-vertical_room,
+		"animated Manananggal's head and wings stay within screen height")
 	game.debug_wake_preview = false
 	game.player_pos = Story.START
 	game.camera.position = game.player_pos
