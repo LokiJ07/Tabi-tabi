@@ -142,3 +142,33 @@ static func paint_caretaker_jar(target: CanvasItem, at: Vector2,
 		Color("#987457"))
 	target.draw_line(at+Vector2(-17,-15),at+Vector2(17,-15),
 		Color("#e0c292",.34),3.0,true)
+
+# Stable world-space soil detailing; deterministic positions, no new colliders.
+static func paint_ground_texture(target: CanvasItem, night: bool) -> void:
+	for i in range(74):
+		var px := -1060.0+fposmod(float(i*227),2080.0)
+		var py := -710.0+fposmod(float(i*169),1320.0)
+		var at := Vector2(px,py)
+		var soil_ink := Color(.21,.27,.20,.27) if night else Color(.34,.39,.27,.26)
+		target.draw_circle(at,3.0+float(i%4)*2.0,soil_ink)
+		if i%3 == 0:
+			var stem := Color(.29,.40,.29,.50) if night else Color(.35,.49,.29,.60)
+			target.draw_line(at+Vector2(0,3),at+Vector2(-5,-9),stem,2.0,true)
+			target.draw_line(at+Vector2(0,3),at+Vector2(5,-12),stem,2.0,true)
+		if i%7 == 0:
+			target.draw_line(at+Vector2(-11,3),at+Vector2(13,5),
+				Color(.53,.48,.35,.34),2.0,true)
+
+static func paint_barn_ground_shadow(target: CanvasItem,
+		origin: Vector2, night: bool) -> void:
+	# Broad cast shadow from the raised barn into open soil, never a giant
+	# vignette obscuring touch UI or the safe gate.
+	var stretch := 280.0 if night else 175.0
+	target.draw_colored_polygon(PackedVector2Array([
+		origin+Vector2(-250,19),origin+Vector2(204,19),
+		origin+Vector2(270+stretch,125),
+		origin+Vector2(-90+stretch,167)]),
+		Color(.035,.075,.075,.20 if night else .13))
+	target.draw_line(origin+Vector2(-250,19),
+		origin+Vector2(270+stretch,125),
+		Color(.11,.15,.15,.12),3.0,true)
