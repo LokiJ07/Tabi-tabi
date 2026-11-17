@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="150" height="240" viewBox="0 0 150 240">
+<title>Sigbin near ear, independently articulated</title>
+<defs><linearGradient id="fur" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#7b8377"/><stop offset=".55" stop-color="#465652"/><stop offset="1" stop-color="#1c3035"/></linearGradient></defs>
+<path d="M82 233Q28 170 24 62Q24 19 54 10Q89 37 121 101Q132 155 82 233Z" fill="url(#fur)" stroke="#182b30" stroke-width="12"/>
+<path d="M79 210Q50 151 47 68Q49 43 58 33Q100 95 106 145Q105 181 79 210Z" fill="#b68f80" opacity=".70"/>
+<path d="M74 209Q57 141 60 78" fill="none" stroke="#d8b2a0" stroke-width="6" opacity=".43"/>
+</svg>
