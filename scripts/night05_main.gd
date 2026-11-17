@@ -379,8 +379,15 @@ func _draw() -> void:
 			story.shadow_identified,debug_farm_preview,elapsed)
 		SigbinPresence.paint_reverse_tracks(self,foot,opacity)
 		if opacity > .01:
-			DimensionalArt.paint_grounded(self,SIGBIN,foot,
+			# Jointed near/far hooves actually step in the Godot world.
+			# Paint far limbs, body, then near limbs for physical depth.
+			SigbinPresence.paint_limb_pair(self,foot,
+				elapsed,prefs.reduced_motion,opacity,true)
+			DimensionalArt.paint_grounded(self,SIGBIN,
+				foot+Vector2(0,-1.6*SigbinPresence.stride(elapsed,0.0,prefs.reduced_motion)),
 				Vector2(258,206),Color(.70,.76,.69,opacity),.20*opacity)
+			SigbinPresence.paint_limb_pair(self,foot,
+				elapsed,prefs.reduced_motion,opacity,false)
 			SigbinPresence.paint_clapping_ears(self,SIGBIN_EAR_NEAR,
 				SIGBIN_EAR_FAR,foot,elapsed,prefs.reduced_motion,opacity)
 	# Livestock groups are physical sprites. Rescued ones are moved to the
