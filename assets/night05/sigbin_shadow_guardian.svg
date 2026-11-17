@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="540" viewBox="0 0 720 540">
+<title>Sigbin — an original shadow guardian of the abandoned farm, low-crouching nocturnal silhouette</title>
+<defs>
+<linearGradient id="fur" x1="0" y1="0" x2="0.9" y2="1"><stop stop-color="#737c74"/><stop offset=".22" stop-color="#485650"/><stop offset=".62" stop-color="#253b3b"/><stop offset="1" stop-color="#121f2a"/></linearGradient>
+<linearGradient id="chest" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#c7b49b"/><stop offset=".55" stop-color="#818b7c"/><stop offset="1" stop-color="#344b4b"/></linearGradient>
+<radialGradient id="eye"><stop stop-color="#f7e4ae"/><stop offset=".36" stop-color="#e9b46b"/><stop offset="1" stop-color="#916743"/></radialGradient>
+<linearGradient id="shade" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#394d4b" stop-opacity=".8"/><stop offset="1" stop-color="#081a28" stop-opacity=".04"/></linearGradient>
+</defs>
+<!-- Dense cloud of soft-edged shadows remains below the animal and does not resemble an enemy HP effect. -->
+
+<!-- Hornless, low goatlike torso and oversized spring-loaded hind haunches. -->
+<path d="M148 357Q181 262 314 258Q411 239 495 275Q545 326 534 383L484 430L433 418L358 405Q287 431 216 419Z" fill="url(#fur)" stroke="#172a30" stroke-width="13"/>
+<path d="M155 350Q100 318 103 247Q111 198 132 214Q127 281 197 304" fill="none" stroke="#26393b" stroke-width="37" stroke-linecap="round"/>
+
+
+<!-- Small contracted forelegs are much shorter than the strong rear legs. -->
+
+
+
+<!-- The two ears now live in separately pivoted SVG textures so they can clap. -->
+<!-- Head lowered between its shoulders: cautious gaze, goatlike nose. -->
+<path d="M438 322Q514 278 588 315Q625 328 629 377Q619 410 579 429L488 403Q449 385 438 322Z" fill="url(#fur)" stroke="#1e3334" stroke-width="11"/>
+<path d="M548 368Q608 350 655 380Q644 415 580 416Q552 404 548 368Z" fill="url(#chest)" stroke="#324345" stroke-width="8"/>
+<path d="M632 373Q660 365 672 381Q660 396 635 390Z" fill="#243638"/>
+<ellipse cx="546" cy="347" rx="18" ry="12" fill="#1f2a2b"/>
+<ellipse cx="548" cy="347" rx="12" ry="8" fill="url(#eye)"/><circle cx="551" cy="345" r="4" fill="#16272a"/>
+<path d="M563 404Q583 419 604 407" fill="none" stroke="#304549" stroke-width="5" stroke-linecap="round"/>
+<!-- Coarse ragged coat and asymmetric moonlit hide, kept distinct from the jointed limbs. -->
+<path d="M168 341Q197 288 254 283Q214 317 223 349Z" fill="#14292c" opacity=".37"/>
+<path d="M254 288Q287 272 321 273L301 305Q284 296 254 288Z" fill="#859180" opacity=".14"/>
+<path d="M356 276Q390 259 435 275L417 305Q386 288 356 276Z" fill="#94a395" opacity=".16"/>
+<path d="M481 326Q511 304 544 325Q511 317 496 348Z" fill="#93a397" opacity=".18"/>
+<path d="M190 378L205 391L207 411L222 402L234 424M350 387L369 414L385 398L396 421M476 369L491 397L503 390L509 415" stroke="#122c2f" stroke-width="10" stroke-linecap="round" fill="none" opacity=".65"/>
+<!-- Wind-stirred fur and protective dim moon highlights. -->
+<path d="M233 301Q288 273 336 291M313 305L353 286M367 289L395 305M283 368L357 342M398 375L429 364" stroke="#a2a89b" stroke-width="6" opacity=".23" fill="none" stroke-linecap="round"/>
+<path d="M194 333Q228 340 249 359M387 340Q417 338 442 352" stroke="#d5c3a6" stroke-width="4" opacity=".30" fill="none"/>
+<path d="M141 366Q164 372 185 388M468 408Q500 421 515 436" fill="none" stroke="#6f8279" stroke-width="7" opacity=".28"/>
+</svg>

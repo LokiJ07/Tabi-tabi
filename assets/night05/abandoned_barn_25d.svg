@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="950" height="690" viewBox="0 0 950 690">
+<title>Isometric abandoned Philippine raised wooden farm barn — real depth, collapsing plank sections, distinctive nipa roof</title>
+<defs>
+<linearGradient id="front" x1="0" y1="0" x2=".7" y2="1"><stop stop-color="#b4a17c"/><stop offset=".54" stop-color="#7b745d"/><stop offset="1" stop-color="#5c574e"/></linearGradient>
+<linearGradient id="side" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#7d7763"/><stop offset="1" stop-color="#353e3d"/></linearGradient>
+<linearGradient id="roof" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#9d8159"/><stop offset=".55" stop-color="#6b614d"/><stop offset="1" stop-color="#3f413d"/></linearGradient>
+<linearGradient id="door" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#091e29"/><stop offset="1" stop-color="#2b3433"/></linearGradient>
+</defs>
+<!-- Broad grounded cast shadow; barn is built above the soil -->
+<path d="M70 566L506 642L863 498L498 412L102 455Z" fill="#10242b" opacity=".40"/>
+<!-- Four visible support piles and damaged raised floor -->
+<path d="M167 488L210 494L210 593L169 588ZM691 521L729 504L732 611L690 626ZM448 554L495 564L497 653L452 639Z" fill="#594a39" stroke="#282e2d" stroke-width="9"/>
+<path d="M116 490L469 583L798 442L446 362Z" fill="#695b49" stroke="#342f2d" stroke-width="9"/>
+<!-- Isometric main body front + side are clearly distinct planes -->
+<path d="M148 254L469 332L469 571L148 489Z" fill="url(#front)" stroke="#403e37" stroke-width="13"/>
+<path d="M469 332L781 215L780 452L469 571Z" fill="url(#side)" stroke="#343b39" stroke-width="13"/>
+<!-- Individually oriented bamboo planks and joints -->
+<g stroke="#494a3f" stroke-width="6" opacity=".50">
+<path d="M183 269L184 493M229 281L229 504M277 289L277 519M324 301L325 533M370 313L370 544M414 320L413 558"/>
+<path d="M507 323L512 547M550 308L559 526M604 288L612 508M665 266L665 481M721 244L723 464"/>
+</g>
+<g stroke="#c8b38d" stroke-width="3" opacity=".33"><path d="M152 365L467 446M158 432L466 511M470 432L781 307M470 500L783 380"/></g>
+<!-- Rotted wall panel: hollow, visibly unsafe, no legal crossing entrance -->
+<path d="M624 329L740 292L740 401L623 449Z" fill="url(#door)" stroke="#887762" stroke-width="8"/>
+<path d="M632 328L632 445M665 314L676 417M716 301L721 400" stroke="#4e514b" stroke-width="11" opacity=".65"/>
+<path d="M730 382L752 361" stroke="#c4b48d" stroke-width="5" opacity=".47"/>
+<!-- Front safe door, planks and narrow window -->
+<path d="M300 361L410 388L411 543L300 514Z" fill="url(#door)" stroke="#735f48" stroke-width="11"/>
+<path d="M313 370L320 500M339 378L341 515" stroke="#a39168" stroke-width="7" opacity=".42"/>
+<path d="M198 340L274 358L274 414L198 395Z" fill="#28383a" stroke="#4e4235" stroke-width="8"/>
+<path d="M232 349L232 407M201 370L271 388" stroke="#aa9062" stroke-width="6"/>
+<!-- Raised, two-plane nipa roof with depth in the ridge -->
+<path d="M90 249L390 74L550 150L474 351L128 275Z" fill="url(#roof)" stroke="#343b39" stroke-width="13"/>
+<path d="M390 74L726 115L834 222L474 351L550 150Z" fill="#4f5047" stroke="#333a39" stroke-width="13"/>
+<path d="M390 74L550 150L474 351" fill="none" stroke="#cfb48d" stroke-width="9"/>
+<g stroke="#d7bb86" opacity=".42" stroke-width="5">
+<path d="M132 248L418 105M164 267L438 125M228 278L459 153M297 291L484 182M352 303L506 219"/>
+<path d="M548 169L813 228M539 212L752 256M525 251L692 283M506 293L635 319"/>
+</g>
+<!-- Subtle torn thatch at roof overhang, not uniform flat stripe -->
+<path d="M104 258L125 283L141 270L157 289L178 279L194 301L213 287L236 309L263 298L282 321L299 312L330 329" fill="none" stroke="#b39d73" stroke-width="8" stroke-linejoin="round"/>
+<!-- Remnants of a promise: old marker on door frame -->
+<rect x="374" y="441" width="21" height="15" rx="5" fill="#d1aa69" opacity=".55"/>
+</svg>

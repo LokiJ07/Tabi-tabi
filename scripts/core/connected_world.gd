@@ -1,7 +1,7 @@
 extends RefCounted
 ## Tabi-tabi is ONE seven-night story with connected regions.
 ## Regions are streamed as Godot scenes for memory/performance, not separate games.
-## Nights 1–4 have playable scenes; Nights 5–7 remain locked until implemented.
+## Nights 1–5 are connected playable scenes; Nights 6–7 remain locked.
 const PATH := "user://tabi_connected_world.json"
 const REGIONS := [
 	"barrio_lawom", "old_mango", "night03", "night04",
@@ -11,7 +11,8 @@ const SCENES := {
 	"barrio_lawom": "res://scenes/main.tscn",
 	"old_mango": "res://scenes/night02.tscn",
 	"night03": "res://scenes/night03.tscn",
-	"night04": "res://scenes/night04.tscn"
+	"night04": "res://scenes/night04.tscn",
+	"night05": "res://scenes/night05.tscn"
 }
 const CONNECTIONS := {
 	"barrio_lawom": ["old_mango"],
@@ -34,6 +35,10 @@ const TRAIL_RIDGE_WAKE := Vector2(890.0,-445.0)
 const ARRIVAL_RIDGE_WAKE := Vector2(710.0,-485.0)
 const TRAIL_WAKE_RIDGE := Vector2(-880.0,420.0)
 const ARRIVAL_WAKE := Vector2(-715.0,280.0)
+const TRAIL_WAKE_FARM := Vector2(815.0,-185.0)
+const ARRIVAL_FARM := Vector2(-810.0,340.0)
+const TRAIL_FARM_WAKE := Vector2(-990.0,410.0)
+const ARRIVAL_WAKE_FROM_FARM := Vector2(735.0,-95.0)
 const TRAVEL_RANGE_3D := 3.35
 const TRAVEL_RANGE_2D := 118.0
 
@@ -107,6 +112,12 @@ static func begin_travel(origin: String, destination: String, last_outcome: Stri
 	if origin == "night03" and destination == "night04":
 		var outcomes: Dictionary = data.get("outcomes", {})
 		if last_outcome == "" or str(outcomes.get("night03","")) != last_outcome:
+			return false
+	# The Sigbin farm opens only from a canonically completed wake.
+	# A QA-only scene launch cannot forge a Night 4 outcome in the ledger.
+	if origin == "night04" and destination == "night05":
+		var outcomes: Dictionary = data.get("outcomes", {})
+		if last_outcome == "" or str(outcomes.get("night04","")) != last_outcome:
 			return false
 	data["current"] = destination
 	data["pending"] = {"from": origin, "to": destination}

@@ -169,10 +169,24 @@ adb exec-out screencap -p > build/android-night1-options.png || true
 # debug-only F6/F7/F8 location keys (not generated illustrations).
 capture_live_view() {
   local key="$1" label="$2" filename="$3"
-  adb shell input keyevent "$key"
-  sleep 4
-  if ! adb logcat -d -v brief | grep -q "NIGHT1_QA_VIEW_$label"; then
-    echo "ERROR: Night 1 QA view $label was not activated in actual gameplay"
+  # On SwiftShader/Android 35, a hardware F-key can be dropped while the
+  # Godot viewport releases an earlier focused menu or camera movement.
+  # Retry the REAL key and require its in-engine log marker; do not weaken
+  # the gameplay evidence condition or accept a static fallback picture.
+  local activated=0
+  for attempt in 1 2 3; do
+    adb shell input keyevent "$key"
+    sleep 4
+    if adb logcat -d -v brief | grep -q "NIGHT1_QA_VIEW_$label"; then
+      activated=1
+      break
+    fi
+    echo "QA camera key $key for $label not acknowledged (attempt $attempt)"
+  done
+  if [ "$activated" -ne 1 ]; then
+    echo "ERROR: Night 1 QA view $label was not activated after 3 real key attempts"
+    adb exec-out screencap -p > "build/android-night1-qa-failed-$label.png" || true
+    adb logcat -d -v brief | grep -E 'NIGHT1_QA|Godot|AndroidRuntime' | tail -n 100 || true
     exit 1
   fi
   adb exec-out screencap -p > "build/$filename"
@@ -188,7 +202,7 @@ python3 .github/scripts/assert_night_atmosphere.py build/android-night1-shore-do
 # On the Night 2 development branch, launch the REAL new chapter through
 # its debug-only title shortcut. Never silently treat Night 1 screenshots as
 # Kapre evidence; verify the new scene's exact engine log marker first.
-if [ "${GITHUB_REF:-}" = "refs/heads/feature/night2-kapre" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/hud-house-depth-fix" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night03-tikbalang-connected" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/nights1-3-dimensional-art-pass" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night04-manananggal-the-wake" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/nighttime-lived-in-village-nights1-4" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night04-wake-immersive-vigil" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night04-final-character-animation" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night04-cinematic-creature-presence" ]; then
+if [ "${GITHUB_REF:-}" = "refs/heads/feature/night2-kapre" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/hud-house-depth-fix" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night03-tikbalang-connected" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/nights1-3-dimensional-art-pass" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night04-manananggal-the-wake" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/nighttime-lived-in-village-nights1-4" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night04-wake-immersive-vigil" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night04-final-character-animation" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night04-cinematic-creature-presence" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night05-sigbin-abandoned-farm" ]; then
   adb shell am force-stop "$PKG" || true
   adb shell monkey -p "$PKG" -c android.intent.category.LAUNCHER 1
   sleep 7
@@ -277,7 +291,7 @@ fi
 
 # Night 3 uses the SAME running Godot APK, original ridge artwork, and
 # actual scene title debug shortcut. These captures are never concept art.
-if [ "${GITHUB_REF:-}" = "refs/heads/feature/night03-tikbalang-connected" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/nights1-3-dimensional-art-pass" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night04-manananggal-the-wake" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/nighttime-lived-in-village-nights1-4" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night04-wake-immersive-vigil" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night04-final-character-animation" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night04-cinematic-creature-presence" ]; then
+if [ "${GITHUB_REF:-}" = "refs/heads/feature/night03-tikbalang-connected" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/nights1-3-dimensional-art-pass" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night04-manananggal-the-wake" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/nighttime-lived-in-village-nights1-4" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night04-wake-immersive-vigil" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night04-final-character-animation" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night04-cinematic-creature-presence" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night05-sigbin-abandoned-farm" ]; then
   adb shell am force-stop "$PKG" || true
   adb shell monkey -p "$PKG" -c android.intent.category.LAUNCHER 1
   sleep 7
@@ -318,7 +332,7 @@ if [ "${GITHUB_REF:-}" = "refs/heads/feature/night03-tikbalang-connected" ] || [
 fi
 
 # Wake is a REAL Godot scene entered by a debug-only title key.
-if [ "${GITHUB_REF:-}" = "refs/heads/feature/night04-manananggal-the-wake" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/nighttime-lived-in-village-nights1-4" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night04-wake-immersive-vigil" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night04-final-character-animation" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night04-cinematic-creature-presence" ]; then
+if [ "${GITHUB_REF:-}" = "refs/heads/feature/night04-manananggal-the-wake" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/nighttime-lived-in-village-nights1-4" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night04-wake-immersive-vigil" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night04-final-character-animation" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night04-cinematic-creature-presence" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night05-sigbin-abandoned-farm" ]; then
   adb shell am force-stop "$PKG" || true
   adb shell monkey -p "$PKG" -c android.intent.category.LAUNCHER 1
   sleep 7
@@ -358,6 +372,82 @@ if [ "${GITHUB_REF:-}" = "refs/heads/feature/night04-manananggal-the-wake" ] || 
   fi
   adb logcat -d -v brief | grep -Ei 'NIGHT4_QA|Godot|AndroidRuntime' | tail -n 180 > build/android-night4-log.txt || true
   echo "PASS: actual Night 4 wake, roof predator, courtyard and trail"
+fi
+
+# Night 5 authentic Old Farm is unlocked through the actual connected Night 4
+# route in production; F8 enters this specific scene ONLY on Android DEBUG CI.
+if [ "${GITHUB_REF:-}" = "refs/heads/feature/night05-sigbin-abandoned-farm" ]; then
+  adb shell am force-stop "$PKG" || true
+  adb shell monkey -p "$PKG" -c android.intent.category.LAUNCHER 1
+  sleep 8
+  adb shell input keyevent 138 # F8, debug-only Sigbin farm entry
+  sleep 8
+  if ! adb logcat -d -v brief | grep -q "NIGHT5_QA_SCENE_READY"; then
+    echo "ERROR: Night 5 original Sigbin farm never entered from real title"
+    adb logcat -d | grep -E 'NIGHT5_QA|Godot|AndroidRuntime' | tail -n 100 || true
+    exit 1
+  fi
+  adb exec-out screencap -p > build/android-night5-intro.png
+  # The opening story dialogue is intentionally opaque and fills most of the
+  # central sampling region. The gameplay-pixel test must run AFTER its
+  # dismissal (F3 closes it and moves to the real farm), or it falsely reports
+  # a flat renderer even when the world renders correctly behind the panel.
+  # Keep the unaltered intro screenshot for actual visual review.
+  echo "Night 5 intro captured; world visibility is gated on subsequent LIVE farm frames."
+  for item in "133 TRACKS_DAY tracks-day" "135 SAFE_GATE safe-gate" "136 BARN_COURTYARD courtyard" "139 SIGBIN_NIGHT sigbin-night"; do
+    set -- $item
+    adb shell input keyevent "$1"
+    sleep 4
+    if ! adb logcat -d -v brief | grep -q "NIGHT5_QA_$2"; then
+      echo "ERROR: Night 5 $2 actual in-game shot not reachable"
+      adb logcat -d | grep -E 'NIGHT5_QA|Godot|AndroidRuntime' | tail -n 80 || true
+      exit 1
+    fi
+    adb exec-out screencap -p > "build/android-night5-$3.png"
+    python3 .github/scripts/assert_gameplay_visible.py "build/android-night5-$3.png"
+  done
+  # Separate REAL live frame demonstrates the backward movement / hinged
+  # ears. Do not pass off an unchanged character cutout as an animation.
+  sleep 2
+  adb exec-out screencap -p > build/android-night5-sigbin-motion.png
+  python3 .github/scripts/assert_gameplay_visible.py build/android-night5-sigbin-motion.png
+  if cmp -s build/android-night5-sigbin-night.png build/android-night5-sigbin-motion.png; then
+    echo "ERROR: Night 5 Sigbin midnight frame stopped updating"
+    exit 1
+  fi
+  if cmp -s build/android-night5-tracks-day.png build/android-night5-sigbin-night.png; then
+    echo "ERROR: farm daylight and shadow-linked Sigbin night are identical"
+    exit 1
+  fi
+  # F10 drives the REAL state-machine inspection -> deduction -> safety prep
+  # -> observe -> first correct lamp; only the Android DEBUG binary exposes it.
+  # This captures an actual goat in motion and its settled destination.
+  rescue_ready=0
+  for attempt in 1 2 3; do
+    adb shell input keyevent 140 # F10, first canonical successful rescue
+    sleep 2
+    if adb logcat -d -v brief | grep -q "NIGHT5_QA_FIRST_RESCUE_ACTIVE"; then
+      rescue_ready=1
+      break
+    fi
+    echo "Sigbin first-rescue QA key not acknowledged (attempt $attempt)"
+  done
+  if [ "$rescue_ready" -ne 1 ]; then
+    echo "ERROR: first Sigbin lantern rescue did not reach actual gameplay state"
+    adb logcat -d -v brief | grep -E 'NIGHT5_QA|Godot|SCRIPT ERROR' | tail -n 90 || true
+    exit 1
+  fi
+  adb exec-out screencap -p > build/android-night5-first-rescue-crossing.png
+  python3 .github/scripts/assert_gameplay_visible.py build/android-night5-first-rescue-crossing.png
+  sleep 4
+  adb exec-out screencap -p > build/android-night5-first-rescue-settled.png
+  python3 .github/scripts/assert_gameplay_visible.py build/android-night5-first-rescue-settled.png
+  if cmp -s build/android-night5-first-rescue-crossing.png build/android-night5-first-rescue-settled.png; then
+    echo "ERROR: saved livestock crossing did not produce two distinct gameplay frames"
+    exit 1
+  fi
+  adb logcat -d -v brief | grep -Ei 'NIGHT5_QA|Godot|AndroidRuntime' | tail -n 180 > build/android-night5-log.txt || true
+  echo "PASS: actual Night 5 abandoned barn, safe livestock gate, Sigbin shadow reveal"
 fi
 
 adb logcat -d -s AndroidRuntime:E Godot:E GodotEngine:E > build/android-night1-launch-log.txt || true

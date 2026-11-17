@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="220" height="130" viewBox="0 0 220 130">
+<title>Visayan Sigbin wide folding near ear, original game art</title>
+<defs><linearGradient id="hide" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#65776b"/><stop offset=".5" stop-color="#3b514d"/><stop offset="1" stop-color="#1b3031"/></linearGradient></defs>
+<path d="M13 100Q21 61 71 35Q113 7 174 16L208 28Q188 56 148 84Q90 117 13 100Z" fill="url(#hide)" stroke="#1a2d31" stroke-width="11" stroke-linejoin="round"/>
+<path d="M36 90Q70 59 117 41Q157 30 185 32Q147 65 103 84Q65 98 36 90Z" fill="#987c72" opacity=".48"/>
+<path d="M46 87Q100 55 180 34M66 73L100 84M107 54L131 66" fill="none" stroke="#ceb0a0" stroke-width="5" opacity=".38"/>
+<path d="M174 16L193 12L190 33" fill="none" stroke="#53645b" stroke-width="5"/>
+</svg>
