@@ -5,6 +5,98 @@ const STYLE_ID := "night05-dimensional-sigbin-farm-v1"
 const SOIL := Color("#5c614c")
 const RAIL := Color("#9a8566")
 const SHADOW := Color("#13242a")
+# Actual contiguous enclosure and one animal-sized gap at the prepared gate.
+# Animals start INSIDE; the party stays OUTSIDE for safe observation.
+const PEN := Rect2(286.0,128.0,375.0,180.0)
+const GATE_LEFT := 500.0
+const GATE_RIGHT := 610.0
+
+static func inside_livestock_pen(point: Vector2) -> bool:
+	return PEN.has_point(point)
+
+static func keep_player_outside_pen(previous: Vector2, desired: Vector2) -> Vector2:
+	# Kural is a genuine movement boundary, not painted lines the hero walks
+	# through. Prefer sliding along a fence rather than sticking on diagonals.
+	if not inside_livestock_pen(desired):
+		return desired
+	if inside_livestock_pen(previous):
+		return Vector2(previous.x,PEN.end.y+27.0)
+	var along_x := Vector2(desired.x,previous.y)
+	if not inside_livestock_pen(along_x):
+		return along_x
+	var along_y := Vector2(previous.x,desired.y)
+	if not inside_livestock_pen(along_y):
+		return along_y
+	return previous
+
+static func _side_fence(target: CanvasItem, x: float,
+		top: float, bottom: float, night: bool) -> void:
+	var dark_wood := Color("#594a39") if night else Color("#80654a")
+	target.draw_line(Vector2(x-2,top-52),Vector2(x-2,bottom-52),
+		dark_wood,7.0,true)
+	target.draw_line(Vector2(x-2,top-19),Vector2(x-2,bottom-19),
+		dark_wood.darkened(.13),6.0,true)
+	for step in range(5):
+		var y := lerpf(top,bottom,float(step)/4.0)
+		target.draw_line(Vector2(x,y+7),Vector2(x,y-79),
+			Color("#524735") if night else Color("#756045"),9.0,true)
+		target.draw_circle(Vector2(x,y-76),4.2,Color("#ccb386",.70))
+
+static func paint_livestock_enclosure(target: CanvasItem,
+		gate: Vector2, prepared: bool, night: bool) -> void:
+	# A real closed rectangle of rails, except the only gap at x=500..610.
+	# Light floor shading makes the pen unmistakable on both day and night.
+	target.draw_colored_polygon(PackedVector2Array([
+		Vector2(PEN.position.x,PEN.position.y),
+		Vector2(PEN.end.x,PEN.position.y),
+		Vector2(PEN.end.x,PEN.end.y),
+		Vector2(PEN.position.x,PEN.end.y)]),
+		Color(.38,.30,.18,.13 if night else .16))
+	paint_fence(target,Vector2(286,128),Vector2(661,128),9,night)
+	_side_fence(target,286.0,128.0,308.0,night)
+	_side_fence(target,661.0,128.0,308.0,night)
+	paint_fence(target,Vector2(286,308),Vector2(GATE_LEFT,308),5,night)
+	paint_fence(target,Vector2(GATE_RIGHT,308),Vector2(661,308),2,night)
+	paint_safe_gate(target,gate,prepared)
+
+static func paint_safe_holding_area(target: CanvasItem,
+		rescued_count: int, night: bool) -> void:
+	# Separate receiving paddock BELOW the gate. West edge stays open to
+	# the party's stable road, while the south/east sides contain the animals.
+	target.draw_colored_polygon(PackedVector2Array([
+		Vector2(336,344),Vector2(701,344),
+		Vector2(715,459),Vector2(317,459)]),
+		Color(.18,.38,.27,.23 if night else .18))
+	paint_fence(target,Vector2(320,463),Vector2(703,463),8,night)
+	_side_fence(target,703.0,342.0,463.0,night)
+	# Subtle amber stakes distinguish sanctuary from the unsafe barn.
+	for i in range(3):
+		var pos := Vector2(361.0+float(i)*155.0,466.0)
+		target.draw_circle(pos,6.0,
+			Color(.96,.72,.35,.67 if rescued_count>0 else .24))
+
+static func paint_observation_marker(target: CanvasItem,
+		at: Vector2, night: bool) -> void:
+	# A recognisable fixed standing point, not a fake UI waypoint.
+	var glow := Color(.45,.85,.72,.64) if night else Color(.21,.50,.43,.70)
+	for i in range(8):
+		var t := TAU*float(i)/8.0
+		var p := at+Vector2(cos(t)*60.0,sin(t)*25.0)
+		var q := at+Vector2(cos(t+.28)*60.0,sin(t+.28)*25.0)
+		target.draw_line(p,q,glow,3.0,true)
+	target.draw_circle(at,6.0,glow)
+
+static func paint_farm_sign(target: CanvasItem, text: String,
+		at: Vector2, width: float, night: bool) -> void:
+	# Drawn in the shared world, so signs never block touch buttons.
+	target.draw_rect(Rect2(at,Vector2(width,34)),
+		Color("#112b2a",.91) if night else Color("#324036",.91))
+	target.draw_rect(Rect2(at,Vector2(width,34)),
+		Color("#d0ab6d",.83),false,2.0)
+	target.draw_string(ThemeDB.fallback_font,at+Vector2(12,24),
+		text,HORIZONTAL_ALIGNMENT_LEFT,width-18,16,
+		Color("#f0d6a6"))
+
 
 static func paint_crop_rows(target: CanvasItem, night: bool) -> void:
 	for row in range(5):
@@ -113,12 +205,18 @@ static func animal_crossing_position(index: int, safe_gate: Vector2,
 	if not rescued:
 		return start
 	var finish := animal_gate_position(index,safe_gate)
-	if progress >= 1.0:
+	var t := clampf(progress,0.0,1.0)
+	if t >= 1.0:
 		return finish
-	# Hand-authored arcing walkway above open soil, NOT through the raised
-	# barn. Smooth landing, visible travel instead of teleporting goats.
-	var t := smoothstep(0.0,1.0,clampf(progress,0.0,1.0))
-	return start.lerp(finish,t)+Vector2(0,-29.0*sin(PI*t))
+	# The old diagonal animation cut straight THROUGH the pen's bottom rail.
+	# All animals now follow one continuous opening at the actual gate:
+	# pen -> centre of prepared opening -> individual safe holding spot.
+	var threshold := safe_gate+Vector2(0,23)
+	if t <= .62:
+		var into_gate := smoothstep(0.0,.62,t)
+		return start.lerp(threshold,into_gate)+Vector2(0,-12.0*sin(PI*into_gate))
+	var out_to_yard := smoothstep(.62,1.0,t)
+	return threshold.lerp(finish,out_to_yard)+Vector2(0,9.0*sin(PI*out_to_yard))
 
 static func paint_shadow_links(target: CanvasItem, nodes: Array,
 		idx: int, clock: float, reduced_motion: bool,
