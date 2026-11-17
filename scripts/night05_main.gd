@@ -139,6 +139,9 @@ func _ready() -> void:
 	var arrival := World.consume_arrival("night05")
 	if str(arrival.get("from","")) == "night04":
 		player_pos = Story.START
+	elif str(arrival.get("from","")) == "night06":
+		player_pos = FUTURE_TRAIL+Vector2(-100,87)
+		print("TABI_WORLD_ARRIVAL_FARM_FROM_RIVER")
 		print("TABI_WORLD_ARRIVAL_FARM_FROM_WAKE")
 	bantay_pos = player_pos+Vector2(-45,31)
 	camera = Camera2D.new()
@@ -207,7 +210,7 @@ func _process(delta: float) -> void:
 		# The future chapter's marked checkpoint is locked while its
 		# scene is absent; the road itself remains continuously visible.
 		player_pos = FarmArt.keep_player_before_locked_trail(
-			previous_foot,player_pos,FUTURE_TRAIL,not World.implemented("night06"))
+			previous_foot,player_pos,FUTURE_TRAIL,not World.implemented("night06") or story.outcome == "")
 	bantay_pos = bantay_pos.lerp(player_pos+Vector2(-49,28),clampf(delta*3.2,0,1))
 	var framing_target := player_pos+aim*64.0
 	if story.phase == 3 or debug_farm_preview:
@@ -220,6 +223,9 @@ func _process(delta: float) -> void:
 		1.0 if prefs.reduced_motion else clampf(delta*4.5,0,1))
 	camera.position = camera.position.lerp(framing_target,
 		1.0 if prefs.reduced_motion else clampf(delta*4.5,0,1))
+	if not _modal() and not travel_in_progress and story.outcome != "" and player_pos.distance_to(FUTURE_TRAIL)<78:
+		_travel_to_river()
+		return
 	if not _modal() and not travel_in_progress and player_pos.distance_to(RETURN_WAKE)<58:
 		_return_to_wake()
 		return
@@ -457,7 +463,7 @@ func _draw() -> void:
 	# The main road visibly continues beyond this chapter's actual exit.
 	# A locked rope makes the missing next scene explicit, not a cut road.
 	FarmArt.paint_night06_trail_checkpoint(self,FUTURE_TRAIL,
-		not World.implemented("night06"),_stage()>=2)
+		not World.implemented("night06") or story.outcome == "",_stage()>=2)
 	# Documented regional signs appear as an IN-WORLD animal rather than
 	# a static enemy: backward steps, two hinged ears, and cautious concealment.
 	if _stage() >= 2 or debug_farm_preview:
@@ -518,7 +524,9 @@ func _draw() -> void:
 	var font := ThemeDB.fallback_font
 	draw_string(font,RETURN_WAKE+Vector2(26,-90),"WAKE TRAIL • RETURN",HORIZONTAL_ALIGNMENT_LEFT,335,18,Color("#f3d8a6"))
 	draw_string(font,BARN_FOOT+Vector2(-141,62),"OLD BARN • UNSAFE TO ENTER",HORIZONTAL_ALIGNMENT_LEFT,430,18,Color("#efd8a3"))
-	draw_string(font,FUTURE_TRAIL+Vector2(-200,-45),"HILL TRAIL • STILL CLOSED",HORIZONTAL_ALIGNMENT_LEFT,350,17,Color("#e0c58f"))
+	draw_string(font,FUTURE_TRAIL+Vector2(-200,-45),
+		"HILL TRAIL • NIGHT 6 RIVER" if World.implemented("night06") and story.outcome != "" else "HILL TRAIL • FINISH FARM FIRST",
+		HORIZONTAL_ALIGNMENT_LEFT,410,17,Color("#e0c58f"))
 
 func _fit_status_card() -> void:
 	# Same dynamic status height as Night 1–3: objectives must never overflow.
@@ -733,8 +741,12 @@ func _interact() -> void:
 	if id == "return_wake":
 		_return_to_wake()
 	elif id == "trail_locked":
-		_talk("FIELD NOTES","Follow the continuous uphill road past the animal pens to this marked Night 6 entrance. The trail continues beyond the rope, but the next chapter is not playable yet. Keep the farm record and return with Bantay.",
-			[{"label":"BACK TO THE FARM","action":"close"}])
+		if story.outcome != "" and World.implemented("night06"):
+			_travel_to_river()
+		else:
+			_talk("BANTAY • COMPLETE THE FARM FIRST",
+				"This public road leads uphill to Night 6, but the farm case is not recorded yet. Save the goats and finish the Sigbin evidence before travelling.",
+				[{"label":"RETURN TO THE FARM","action":"close"}])
 	elif id == "unsafe_barn":
 		story.enter_unstable_barn()
 		_talk("FARMER • THE OLD POSTS",
@@ -902,7 +914,7 @@ func _refresh() -> void:
 		2: objective.text = "Prepare OBSERVE HERE, the animal GATE and THREE lanterns."
 		3: objective.text = "%d/3 animal groups safe. Stand at OBSERVE HERE, HOLD OBSERVE, then shift one lantern." % story.rescued_groups
 		4: objective.text = "All THREE groups are inside the safe holding area. Record the outcome."
-		5: objective.text = "NIGHT 5 RECORDED • %s  •  NIGHT 6 TRAIL CONNECTED (LOCKED)" % story.outcome.to_upper()
+		5: objective.text = "NIGHT 5 RECORDED • %s  •  FOLLOW ROAD TO NIGHT 6" % story.outcome.to_upper()
 	_refresh_hint()
 
 func _refresh_hint() -> void:
@@ -1015,6 +1027,18 @@ func _save_menu() -> void:
 		return
 	get_tree().change_scene_to_file("res://scenes/title.tscn")
 
+func _travel_to_river() -> void:
+	if travel_in_progress or story.outcome == "":
+		return
+	if not _auto_save() or not World.begin_travel("night05","night06",story.outcome):
+		save_error.popup_centered(Vector2i(600,180))
+		return
+	travel_in_progress = true
+	motion = Vector2.ZERO
+	observe_held = false
+	print("TABI_WORLD_TRAVEL_FARM_TO_RIVER")
+	get_tree().change_scene_to_file(World.scene_for("night06"))
+
 func _return_to_wake() -> void:
 	if travel_in_progress:
 		return
@@ -1054,6 +1078,8 @@ func _show_ending() -> void:
 	_button(stack,"REVIEW FIELD NOTES",func():
 		ending.hide()
 		_open_notes())
+	if World.implemented("night06"):
+		_button(stack,"CONTINUE NIGHT 6 • THE RIVER (SAVE)",_travel_to_river)
 	_button(stack,"RETURN TO THE WAKE (SAVE)",_return_to_wake)
 	_button(stack,"SAVE & MAIN MENU",_save_menu)
 	_sync_ui()

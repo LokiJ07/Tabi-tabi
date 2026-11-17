@@ -156,8 +156,8 @@ func _run() -> void:
 			game.FUTURE_TRAIL,true).y >= game.FUTURE_TRAIL.y+50.0
 		and FarmArt.keep_player_before_locked_trail(before_night06,beyond_night06,
 			game.FUTURE_TRAIL,false) == beyond_night06
-		and not World.implemented("night06"),
-		"road visibly continues but current player cannot cross unbuilt Night 6 threshold")
+		and World.implemented("night06"),
+		"road connects to real Night 6, but unfinished farm case still blocks checkpoint")
 	var road_entry := Vector2(555,205)
 	check(FarmArt.keep_player_outside_pen(road_entry,Vector2(555,85)) == road_entry,
 		"player cannot phase through uphill pen from its gate approach")
@@ -220,7 +220,7 @@ func _run() -> void:
 		"real walkable Night 6 gateway produces an explicit story interaction")
 	game._interact()
 	check(game.dialogue.visible,
-		"unbuilt Night 6 exit explains the connected but locked story trail")
+		"unfinished farm case explains locked gate; completed case opens real Night 6")
 	game._choose("close")
 	# Regression: the original midnight screenshot showed DAY / TRACKS and no
 	# Sigbin because the distant eave was outside the vertical camera frame.

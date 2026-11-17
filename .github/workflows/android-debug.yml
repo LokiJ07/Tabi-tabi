@@ -121,6 +121,8 @@ jobs:
           run_test res://tests/night04_vigil_immersive_test.gd
           run_test res://tests/night05_state_test.gd
           run_test res://tests/night05_scene_test.gd
+          run_test res://tests/night06_state_test.gd
+          run_test res://tests/night06_scene_test.gd
           run_test res://tests/connected_world_test.gd
           run_test res://tests/north_grove_art_test.gd
           run_test res://tests/connected_world_playthrough_test.gd
@@ -239,6 +241,12 @@ jobs:
             build/android-night5-first-rescue-crossing.png
             build/android-night5-first-rescue-settled.png
             build/android-night5-log.txt
+            build/android-night6-intro.png
+            build/android-night6-archive-day.png
+            build/android-night6-reconstruction-board.png
+            build/android-night6-river-memory-night.png
+            build/android-night6-farm-return-trail.png
+            build/android-night6-log.txt
             build/android-night1-notebook.png
             build/android-night1-notebook-scrolled.png
             build/android-night1-preparation.png

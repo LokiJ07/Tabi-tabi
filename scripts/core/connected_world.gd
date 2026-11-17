@@ -1,7 +1,7 @@
 extends RefCounted
 ## Tabi-tabi is ONE seven-night story with connected regions.
 ## Regions are streamed as Godot scenes for memory/performance, not separate games.
-## Nights 1–5 are connected playable scenes; Nights 6–7 remain locked.
+## Nights 1–6 are connected playable scenes. Night 7 remains locked.
 const PATH := "user://tabi_connected_world.json"
 const REGIONS := [
 	"barrio_lawom", "old_mango", "night03", "night04",
@@ -12,7 +12,8 @@ const SCENES := {
 	"old_mango": "res://scenes/night02.tscn",
 	"night03": "res://scenes/night03.tscn",
 	"night04": "res://scenes/night04.tscn",
-	"night05": "res://scenes/night05.tscn"
+	"night05": "res://scenes/night05.tscn",
+	"night06": "res://scenes/night06.tscn"
 }
 const CONNECTIONS := {
 	"barrio_lawom": ["old_mango"],
@@ -39,8 +40,8 @@ const TRAIL_WAKE_FARM := Vector2(815.0,-185.0)
 const ARRIVAL_FARM := Vector2(-810.0,340.0)
 const TRAIL_FARM_WAKE := Vector2(-990.0,410.0)
 # Canonical physical continuation from the Sigbin farm to the next chapter.
-# Its visible checkpoint exists now; streaming stays disabled until Night 6
-# has a real scene and canonical Night 5 completion.
+# Canonical Night 5 completion opens the real Night 6 chapter scene.
+# Only the yet-unbuilt Night 7 remains locked.
 const TRAIL_FARM_NIGHT06 := Vector2(955.0,-470.0)
 const ARRIVAL_WAKE_FROM_FARM := Vector2(735.0,-95.0)
 const TRAVEL_RANGE_3D := 3.35
@@ -122,6 +123,12 @@ static func begin_travel(origin: String, destination: String, last_outcome: Stri
 	if origin == "night04" and destination == "night05":
 		var outcomes: Dictionary = data.get("outcomes", {})
 		if last_outcome == "" or str(outcomes.get("night04","")) != last_outcome:
+			return false
+	# The player cannot enter Night 6 by visiting the road early or forging
+	# a result string. It must match the completed Night 5 world ledger.
+	if origin == "night05" and destination == "night06":
+		var finished: Dictionary = data.get("outcomes",{})
+		if last_outcome == "" or str(finished.get("night05","")) != last_outcome:
 			return false
 	data["current"] = destination
 	data["pending"] = {"from": origin, "to": destination}
