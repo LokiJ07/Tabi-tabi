@@ -128,6 +128,10 @@ func _ready() -> void:
 		story.night04_outcome = previous.outcome
 	Save.read(story)
 	player_pos = story.player_position
+	# Older offline saves may place the player inside the formerly decorative
+	# fence. Restore them to the safe road outside the now-physical pen.
+	if FarmArt.inside_livestock_pen(player_pos):
+		player_pos = Vector2(player_pos.x,FarmArt.PEN.end.y+27.0)
 	previous_stage = _stage()
 	farmer_retreat_seconds = 3.3 if previous_stage >= 2 else 0.0
 	var arrival := World.consume_arrival("night05")
@@ -188,12 +192,16 @@ func _process(delta: float) -> void:
 		if not prefs.reduced_motion:
 			walk_phase += delta*9.0
 		var walk := Vector2(axis.x+axis.y*.42,axis.y*.78-axis.x*.15).normalized()
+		var previous_foot := player_pos
 		player_pos += walk*PLAYER_SPEED*delta
 		player_pos.x = clampf(player_pos.x,MAP.position.x+65,MAP.end.x-65)
 		player_pos.y = clampf(player_pos.y,MAP.position.y+75,MAP.end.y-75)
 		# Never allow the player to walk into the decaying raised barn.
 		if player_pos.x > -232 and player_pos.x < 552 and player_pos.y > -612 and player_pos.y < -80:
 			player_pos.y = -64 if player_pos.y > -350 else -634
+		# Player stays outside the actual kural. The gate is for livestock
+		# rescue; preparing the gate never opens an unsafe player shortcut.
+		player_pos = FarmArt.keep_player_outside_pen(previous_foot,player_pos)
 	bantay_pos = bantay_pos.lerp(player_pos+Vector2(-49,28),clampf(delta*3.2,0,1))
 	var framing_target := player_pos+aim*64.0
 	if story.phase == 3 or debug_farm_preview:
@@ -279,7 +287,7 @@ func _unhandled_input(event: InputEvent) -> void:
 					player_pos = Vector2(-320,100)
 					print("NIGHT5_QA_TRACKS_DAY")
 				KEY_F5:
-					player_pos = Vector2(530,282)
+					player_pos = SAFE_GATE+Vector2(0,38)
 					print("NIGHT5_QA_SAFE_GATE")
 				KEY_F6:
 					player_pos = SAFE_PERIMETER
@@ -368,9 +376,14 @@ func _draw() -> void:
 	FarmArt.paint_barn_ground_shadow(self,BARN_FOOT,_stage()>=2)
 	DimensionalArt.paint_grounded(self,BARN,BARN_FOOT,Vector2(780,574),
 		Color("#d0c6aa"),.28)
+	# The pen and the separate receiving paddock are complete enclosures,
+	# not two disjoint rails that falsely implied goats were loose on the road.
+	FarmArt.paint_safe_holding_area(self,story.rescued_groups,_stage()>=2)
+	FarmArt.paint_livestock_enclosure(self,SAFE_GATE,
+		story.preparations.has("safe_gate"),_stage()>=2)
+	FarmArt.paint_observation_marker(self,SAFE_PERIMETER,_stage()>=2)
+	# West evidence fence is unrelated to the fenced animal holding area.
 	FarmArt.paint_fence(self,Vector2(-620,220),Vector2(-185,230),7,_stage()>=2)
-	FarmArt.paint_fence(self,Vector2(390,335),Vector2(770,300),6,_stage()>=2)
-	FarmArt.paint_safe_gate(self,SAFE_GATE,story.preparations.has("safe_gate"))
 	FarmArt.paint_tracks(self,CLUE_POS["backward_tracks"])
 	# An old caretaker keepsake recovered at the SAFE outer wall, not
 	# somewhere requiring a walk through the collapsing barn.
@@ -413,6 +426,18 @@ func _draw() -> void:
 		for i in range(2):
 			NightWindows.paint_window(self,FARMHOUSE+Vector2(-69+float(i)*120,5),
 				Vector2(49,47),i,true,elapsed,prefs.reduced_motion)
+	# Safe-world wayfinding stays readable after the night grade. Signs
+	# distinguish the livestock-only gate from the player observation point.
+	FarmArt.paint_farm_sign(self,"LIVESTOCK PEN • NO ENTRY",
+		Vector2(308,53),272.0,_stage()>=2)
+	FarmArt.paint_farm_sign(self,
+		"GATE • READY" if story.preparations.has("safe_gate") else "GATE • PREPARE",
+		Vector2(620,287),196.0,_stage()>=2)
+	FarmArt.paint_farm_sign(self,"SAFE HOLDING • %d/3" % story.rescued_groups,
+		Vector2(360,479),227.0,_stage()>=2)
+	if story.phase in [1,2,3]:
+		FarmArt.paint_farm_sign(self,"OBSERVE HERE",
+			SAFE_PERIMETER+Vector2(-119,-91),174.0,_stage()>=2)
 	# Documented regional signs appear as an IN-WORLD animal rather than
 	# a static enemy: backward steps, two hinged ears, and cautious concealment.
 	if _stage() >= 2 or debug_farm_preview:
@@ -447,9 +472,13 @@ func _draw() -> void:
 		var safe: bool = story.rescued_groups > i
 		var at := FarmArt.animal_crossing_position(i,SAFE_GATE,safe,
 			float(animal_rescue_motion.get(i,1.0)))
+		var moving := safe and animal_rescue_motion.has(i)
+			and float(animal_rescue_motion[i]) < 1.0
+		var hoof_bob := 0.0 if prefs.reduced_motion or not moving else absf(
+			sin(float(animal_rescue_motion[i])*TAU*3.0))*2.8
 		DimensionalArt.paint_grounded(self,CHICKEN if i == 2 else GOAT,
 			at,Vector2(70,71) if i == 2 else Vector2(102,95),
-			Color.WHITE,.28)
+			Color.WHITE,.28,hoof_bob)
 	# Story-only daytime Farmer walks home rather than popping out of scene.
 	if _stage() < 2 or farmer_retreat_seconds < 3.3:
 		var t := smoothstep(0.0,1.0,clampf(farmer_retreat_seconds/3.3,0,1))
@@ -694,7 +723,7 @@ func _interact() -> void:
 		if story.begin_rescue():
 			_auto_save()
 			_talk("FARMER • GROUP RESCUE",
-				"All three lamps, the gate and the stable perimeter are ready. Listen for real breathing and follow dust and tracks, not the false silhouettes.",
+				"All three lamps, livestock-only gate and the marked stable perimeter are ready. Stay at OBSERVE HERE; animals will pass through the prepared gate into the fenced safe holding area.",
 				[{"label":"KEEP EVERYONE OUTSIDE","action":"close"}])
 		else:
 			_talk("BANTAY",
@@ -819,11 +848,11 @@ func _refresh() -> void:
 		_refresh_hint()
 		return
 	match story.phase:
-		0: objective.text = "Talk to the farmer; inspect FOUR clues outside the unsafe barn."
-		1: objective.text = "Compare tracks and the keeper photo. Is the Sigbin guarding or hunting?"
-		2: objective.text = "Prepare the stable perimeter, safe gate and THREE separate lanterns."
-		3: objective.text = "HOLD OBSERVE from safety, break shadow connections and rescue THREE groups."
-		4: objective.text = "Record all rescues and help the Sigbin keep a safer promise."
+		0: objective.text = "Talk to the farmer; inspect FOUR clues. Stay outside the kural and unsafe barn."
+		1: objective.text = "At OBSERVE HERE, compare the tracks. Guardian or predator?"
+		2: objective.text = "Prepare OBSERVE HERE, the animal GATE and THREE lanterns."
+		3: objective.text = "%d/3 animals safe. Stand at OBSERVE HERE, HOLD OBSERVE, then shift one lantern." % story.rescued_groups
+		4: objective.text = "All THREE groups are inside the safe holding area. Record the outcome."
 		5: objective.text = "NIGHT 5 RECORDED • %s" % story.outcome.to_upper()
 	_refresh_hint()
 
@@ -860,7 +889,7 @@ func _refresh_hint() -> void:
 				break
 	elif story.phase == 3:
 		goal = SAFE_PERIMETER
-		title = "OBSERVE TRUE SHADOWS"
+		title = "OBSERVE HERE • SAFE ZONE"
 	var diff := goal-player_pos
 	waypoint.text = "%s  •  %d STEPS" % [title,roundi(diff.length()/12.0)]
 
