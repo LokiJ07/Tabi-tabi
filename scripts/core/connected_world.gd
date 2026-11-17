@@ -1,7 +1,7 @@
 extends RefCounted
 ## Tabi-tabi is ONE seven-night story with connected regions.
 ## Regions are streamed as Godot scenes for memory/performance, not separate games.
-## Nights 1–3 have actual playable scenes; roads to Nights 4–7 remain locked.
+## Nights 1–4 have playable scenes; Nights 5–7 remain locked until implemented.
 const PATH := "user://tabi_connected_world.json"
 const REGIONS := [
 	"barrio_lawom", "old_mango", "night03", "night04",
