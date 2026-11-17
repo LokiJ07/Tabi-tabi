@@ -200,12 +200,27 @@ if [ "${GITHUB_REF:-}" = "refs/heads/feature/night2-kapre" ] || [ "${GITHUB_REF:
     exit 1
   fi
   adb exec-out screencap -p > build/android-night2-intro.png
-  # Same exact camera for folklore correctness: daytime tree must be empty,
-  # the full Kapre appears only in the dedicated night capture.
-  adb shell input keyevent 133  # F3: daylight mango, real world camera
-  sleep 4
-  if ! adb logcat -d -v brief | grep -q "NIGHT2_QA_MANGO_DAY_VIEW"; then
-    echo "ERROR: Night 2 daytime reference did not render"
+  # Night 2 correctly opens with Lola's modal dialogue. Android may send
+  # F3 to the focused dialogue button rather than the world. Dismiss it
+  # through the real visible user-facing CTA before doing camera QA.
+  adb shell input tap 1160 956 || true
+  sleep 2
+  # Same exact camera for folklore correctness: daylight tree must be empty.
+  night2_mango_ready=0
+  for attempt in 1 2 3; do
+    adb shell input keyevent 133  # F3, daytime mango on the LIVE Godot scene
+    sleep 3
+    if adb logcat -d -v brief | grep -q "NIGHT2_QA_MANGO_DAY_VIEW"; then
+      night2_mango_ready=1
+      break
+    fi
+    # Retry the dialogue footer, not a reboot or fake rendered screenshot.
+    adb shell input tap 1160 956 || true
+    sleep 2
+  done
+  if [ "$night2_mango_ready" -ne 1 ]; then
+    echo "ERROR: Night 2 daytime reference did not render after dismissing Lola dialogue"
+    adb logcat -d | grep -E 'NIGHT2_QA|Godot|AndroidRuntime' | tail -n 100 || true
     exit 1
   fi
   adb exec-out screencap -p > build/android-night2-mango-day.png
