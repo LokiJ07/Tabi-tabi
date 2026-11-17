@@ -434,7 +434,7 @@ func _draw() -> void:
 		else "MISSING HERD • FOLLOW TRACKS",
 		Vector2(385,83),286.0,_stage()>=2)
 	FarmArt.paint_farm_sign(self,
-		"GATE • READY" if story.preparations.has("safe_gate") else "GATE • PREPARE",
+		FarmArt.gate_label(story.phase,story.preparations.has("safe_gate")),
 		Vector2(620,228),196.0,_stage()>=2)
 	FarmArt.paint_farm_sign(self,"SAFE HOLDING • %d/3" % story.rescued_groups,
 		Vector2(360,442),227.0,_stage()>=2)
