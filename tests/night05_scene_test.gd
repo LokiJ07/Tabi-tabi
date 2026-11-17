@@ -5,6 +5,7 @@ const Scene = preload("res://scenes/night05.tscn")
 const State = preload("res://scripts/narrative/night05_state.gd")
 const Save = preload("res://scripts/core/night05_save.gd")
 const World = preload("res://scripts/core/connected_world.gd")
+const SigbinPresence = preload("res://scripts/visuals/night05_sigbin_presence.gd")
 var errors := 0
 
 func check(ok: bool,reason: String) -> void:
@@ -38,6 +39,18 @@ func _run() -> void:
 	check(game.GOAT.get_width()>300 and game.CHICKEN.get_width()>200,
 		"animals are real in-game sprites, not text-only rewards")
 	check(game.story.phase == 0,"real investigation begins before creature reveal")
+	check(game.SIGBIN_EAR_NEAR.get_width() >= 100 and game.SIGBIN_EAR_FAR.get_height() >= 200,
+		"two independent original Sigbin ear sprites actually imported")
+	check(SigbinPresence.visibility(0,false,false,0.0) == 0.0
+		and SigbinPresence.visibility(3,true,false,1.0) == 1.0,
+		"no unearned daylight creature and full identification at midnight")
+	check(SigbinPresence.backward_foot(Vector2.ZERO,1.0,0,false).x < 0.0
+		and SigbinPresence.backward_foot(Vector2.ZERO,2.0,0,true) == Vector2.ZERO,
+		"backward retreat uses real world coordinates and reduced-motion option")
+	check(SigbinPresence.detect_warning(3,250.0,0.0,false).contains("ODOR")
+		and SigbinPresence.detect_warning(3,250.0,4.5,false).contains("EAR-CLAPS")
+		and SigbinPresence.detect_warning(3,250.0,8.5,false).contains("BACKWARD"),
+		"three distinct proximity-based folklore signals visible in live HUD")
 	if game.dialogue.visible:
 		game._choose("close")
 	# Regression: the original midnight screenshot showed DAY / TRACKS and no
