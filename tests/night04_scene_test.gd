@@ -50,7 +50,7 @@ func _run() -> void:
 	check(game.camera.zoom.x <= .90 and game.camera.zoom.y <= .90,
 		"encounter zooms out without moving the shared HUD")
 	var roof_top := Vector2(270,-465)+Vector2(-5,110)-Vector2(150,247)
-	var vertical_room := root.get_visible_rect().size.y*.5/game.camera.zoom.y
+	var vertical_room: float = root.get_visible_rect().size.y * .5 / game.camera.zoom.y
 	check(roof_top.y > game.camera.position.y-vertical_room,
 		"animated Manananggal's head and wings stay within screen height")
 	game.debug_wake_preview = false
