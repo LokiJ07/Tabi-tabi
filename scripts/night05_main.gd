@@ -432,15 +432,15 @@ func _draw() -> void:
 		"LIVESTOCK PEN • NO ENTRY"
 		if FarmArt.animals_revealed(story.phase,debug_farm_preview)
 		else "MISSING HERD • FOLLOW TRACKS",
-		Vector2(308,53),286.0,_stage()>=2)
+		Vector2(385,83),286.0,_stage()>=2)
 	FarmArt.paint_farm_sign(self,
 		"GATE • READY" if story.preparations.has("safe_gate") else "GATE • PREPARE",
-		Vector2(620,287),196.0,_stage()>=2)
+		Vector2(620,228),196.0,_stage()>=2)
 	FarmArt.paint_farm_sign(self,"SAFE HOLDING • %d/3" % story.rescued_groups,
-		Vector2(360,479),227.0,_stage()>=2)
+		Vector2(360,442),227.0,_stage()>=2)
 	if story.phase in [1,2,3]:
 		FarmArt.paint_farm_sign(self,"OBSERVE HERE",
-			SAFE_PERIMETER+Vector2(-119,-91),174.0,_stage()>=2)
+			SAFE_PERIMETER+Vector2(-250,-120),174.0,_stage()>=2)
 	# Documented regional signs appear as an IN-WORLD animal rather than
 	# a static enemy: backward steps, two hinged ears, and cautious concealment.
 	if _stage() >= 2 or debug_farm_preview:
@@ -858,7 +858,7 @@ func _refresh() -> void:
 		0: objective.text = "Talk to the farmer; inspect FOUR clues. Stay outside the kural and unsafe barn."
 		1: objective.text = "At OBSERVE HERE, compare the tracks. Guardian or predator?"
 		2: objective.text = "Prepare OBSERVE HERE, the animal GATE and THREE lanterns."
-		3: objective.text = "%d/3 animals safe. Stand at OBSERVE HERE, HOLD OBSERVE, then shift one lantern." % story.rescued_groups
+		3: objective.text = "%d/3 animal groups safe. Stand at OBSERVE HERE, HOLD OBSERVE, then shift one lantern." % story.rescued_groups
 		4: objective.text = "All THREE groups are inside the safe holding area. Record the outcome."
 		5: objective.text = "NIGHT 5 RECORDED • %s" % story.outcome.to_upper()
 	_refresh_hint()
