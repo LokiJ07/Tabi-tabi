@@ -169,10 +169,24 @@ adb exec-out screencap -p > build/android-night1-options.png || true
 # debug-only F6/F7/F8 location keys (not generated illustrations).
 capture_live_view() {
   local key="$1" label="$2" filename="$3"
-  adb shell input keyevent "$key"
-  sleep 4
-  if ! adb logcat -d -v brief | grep -q "NIGHT1_QA_VIEW_$label"; then
-    echo "ERROR: Night 1 QA view $label was not activated in actual gameplay"
+  # On SwiftShader/Android 35, a hardware F-key can be dropped while the
+  # Godot viewport releases an earlier focused menu or camera movement.
+  # Retry the REAL key and require its in-engine log marker; do not weaken
+  # the gameplay evidence condition or accept a static fallback picture.
+  local activated=0
+  for attempt in 1 2 3; do
+    adb shell input keyevent "$key"
+    sleep 4
+    if adb logcat -d -v brief | grep -q "NIGHT1_QA_VIEW_$label"; then
+      activated=1
+      break
+    fi
+    echo "QA camera key $key for $label not acknowledged (attempt $attempt)"
+  done
+  if [ "$activated" -ne 1 ]; then
+    echo "ERROR: Night 1 QA view $label was not activated after 3 real key attempts"
+    adb exec-out screencap -p > "build/android-night1-qa-failed-$label.png" || true
+    adb logcat -d -v brief | grep -E 'NIGHT1_QA|Godot|AndroidRuntime' | tail -n 100 || true
     exit 1
   fi
   adb exec-out screencap -p > "build/$filename"
