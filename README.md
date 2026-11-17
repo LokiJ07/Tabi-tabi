@@ -1,43 +1,35 @@
 # TABI-TABI — Barrio Lawom (Android)
 
-Offline-first, connected Philippine folklore investigation built with **Godot 4.3** for Android landscape. This README describes the **experimental Nights 1–3 2.5D art branch**, not the repository's still-minimal `main` branch.
+**One continuous seven-night Philippine folklore mystery.** Godot 4.3, offline-first, landscape Android, illustrated/isometric 2.5D, tactile touch HUD, named companions and witnesses, investigations, meaningful non-lethal outcomes, and local saves.
 
 ## Current playable chapters
 
-| Chapter | Region / encounter | Actual gameplay |
+| Chapter | Location and folklore | Implemented play |
 | --- | --- | --- |
-| Night 1 — Santelmo | Barrio Lawom riverside | 3D isometric neighborhood with Android software-rendered 2.5D fallback, Apprentice/Bantay, lantern/Focus, clues, conversations, notebook, meaningful outcomes and save |
-| Night 2 — Kapre | Old mango grove | Connected traversable trail, original Kapre and mango art, five evidence clues, safety barriers, protected observation, negotiations, endings and independent save |
-| Night 3 — Tikbalang | Flood ridge | Connected ridge gate, watchpost, bamboo and equine-headed ridge guardian, four clues, ordered safety markers, route-verification puzzle, witness account, endings and independent save |
+| **Night 1 — Santelmo** | Barrio Lawom riverside and mangrove shore | Lola's morning prologue, Apprentice/Bantay, interactive witnesses, weather/light, clues, Focus/lantern, safety choices and independent outcomes/save |
+| **Night 2 — Kapre** | Ancient mango grove | Connected trail, original Kapre/tree assets, observation, five clues, environmental hazards, negotiation and local save |
+| **Night 3 — Tikbalang** | Bamboo flood ridge and watchpost | Connected hillside route, true-versus-false trail evidence, ordered safety markers, guardian, witness, fair outcomes and separate save |
+| **Night 4 — Manananggal: The Wake** | Wake-house compound | Investigation and caretaker protection; Aling Nena is the vulnerable target, NOT the creature. Four preparations, three group defenses, fair retries, original animated winged creature, and independent outcome/save |
 
-**One story, not three unrelated games:** Night 1 → Night 2 → Night 3 are connected through the original Great Flood mystery, persistent outcome ledger and physical world transitions. Night 4–7 are **planned, locked and not playable**.
+All four are chapters of **one story** with the same Apprentice and Bantay and a connected-world ledger. **Night 5 — Sigbin: The Abandoned Farm** is the next chapter. Nights 5–7 are not on this main baseline yet.
 
-## Shared visual identity
+## Shared experience
 
-Nights 1–3 use the same navy/gold gameplay HUD grammar, button positions, dialogue transition controller and original Apprentice/Bantay identities. The shared layered renderer is at `scripts/visuals/layered_25d.gd`.
+- Shared navy / antique-gold / cream gameplay HUD, fixed left D-pad and right action anchors, status panel and field notebook — see scripts/ui/shared_hud.gd.
+- Grounded illustrated 2.5D perspective, sprites with contact shadows, depth and raised architecture; native Night 1 uses physical 3D village meshes with a fallback renderer — see scripts/visuals/layered_25d.gd.
+- Consistent speaker transitions and readable dialogue — see scripts/ui/shared_dialogue_motion.gd.
+- After dark, fewer villagers outside and warm window glow, curtains and low intensity light spill — see scripts/visuals/nighttime_windows.gd.
+- Threat-led subtle atmospheric pressure; Reduced Motion and offline original sound — see scripts/visuals/shared_immersive_atmosphere.gd.
+- Night 4 original wake props, 3-layer hinged Manananggal wings, encounter camera bounds and safe indoor mourner transitions.
 
-- Native Night 1: additional 3D silhouette plane, actual horizontal contact shadow meshes and existing volume-built homes; emulator fallback paints live actors, objects and reflections from the same world coordinates.
-- Nights 2–3: depth-backed imported SVG sprites, contact shadows, weather-aware lanterns and environment darkness drawn *behind* readable characters.
-- Walking bob returns to zero when stopped; Reduced Motion disables animation.
-- Night 3 horse muzzle and shore water-reflection pass added after review of **actual emulator screenshots**. Static AI concept images are **not** gameplay screenshots or runtime sprite layers.
+## Test and release status
 
-This pass makes the current illustrated game art more dimensional. It does **not** imply that fully rigged models, painterly concept-quality environments, cinematic lighting or all performance optimizations are complete.
+Nights 1–4 are an **engineering-ready playable Android QA baseline**, not a public seven-night release. Last integrated Night 4 commit 9504380 passed Godot validation and debug APK/emulator on GitHub (runs 44019758812, 44019765437, 44019758762). Actual Android screenshots include the four night scenes and two wingbeat frames.
 
-## Validation and Android QA
+Still needed for production: actual phone comfort/performance/heat, all outcomes played by humans, detailed art approval, and a stable signing key. CI-generated QA APKs use temporary signing, and uninstalling old builds can erase saves.
 
-- **Godot validation:** import/parser, state/endings, scene integration, connected trails, touch HUD, save/restore and chapter consistency checks.
-- **Android CI:** debug APK build and emulator smoke that launches actual Night 1–3 Godot scenes on this art branch. Artifacts include original 2340×1080 screenshots and crash logs.
-- CI run page: https://github.com/LokiJ07/Tabi-tabi/actions
-- Work-in-progress art pull request: https://github.com/LokiJ07/Tabi-tabi/pull/5
+## Development direction
 
-**Not a public release.** A green CI job proves automated coverage, not physically verified controls, smooth FPS on all phones, or the quality of every sprite. Production merging requires screenshot review plus real-device playthrough of the latest signed build, saved-progress recovery, full encounter pacing and image-quality approval.
+Build each night on a separate PR, following Final Master Script & Development Plan v1.0 (14 November 2026). Do not change canon, previous outcomes, shared touch controls, or the established art/HUD system. Night 5 uses Sigbin's shadow logic, missing goats and a rescue of farm animals without turning the folklore witness into a generic enemy.
 
-### Installing test APKs
-
-CI signs debug APKs with a temporary key; different runs can reject install-over. **Back up or preserve important saves before uninstalling** because local data may be erased. A stable release signing key must be configured for future updates.
-
-## Development boundaries
-
-Use separate feature branches and PRs. Preserve the seven-night narrative canon and character identities. Keep screen-space UI anchored consistently, avoid oversized labels and ensure keyboard/touch movement and dialogue input remain valid when editing scenes. No production merge without current green tests and real-device approval.
-
-Canon: *TABI-TABI Final Master Script & Development Plan v1.0* (14 November 2026). Mang Celso and Sabel's late husband remain different people; Mara's Great Flood knowledge is not a fabricated adult eyewitness account.
+CI: https://github.com/LokiJ07/Tabi-tabi/actions

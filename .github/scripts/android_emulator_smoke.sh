@@ -48,12 +48,22 @@ dismiss_system_anr() {
   adb shell am force-stop com.google.android.apps.nexuslauncher >/dev/null 2>&1 || true
 }
 dismiss_system_anr
-sleep 2
+# Godot may still be importing its first-run SVG cache on SwiftShader even
+# after Android has switched into landscape. The prior CI snapshot captured
+# the genuine Godot splash screen, then prematurely failed after two seconds.
+# Wait for the exact in-engine title log, not an arbitrary time or screenshot.
+title_ready=0
+for attempt in $(seq 1 20); do
+  if adb logcat -d -v brief | grep -q "NIGHT1_QA_TITLE_SCENE_READY"; then
+    title_ready=1
+    break
+  fi
+  sleep 3
+done
 adb exec-out screencap -p > build/android-night1-title.png
 
-# Explicitly verify the title scene booted; a dark Android system popup
-# or an Android Home screen must never count as a game launch.
-if ! adb logcat -d -v brief | grep -q "NIGHT1_QA_TITLE_SCENE_READY"; then
+# Never count Godot's splash logo or system launcher as the real title.
+if [ "$title_ready" -ne 1 ]; then
   echo "ERROR: Godot title screen did not start"
   adb logcat -d | grep -E 'Godot|AndroidRuntime|NIGHT1_QA' | tail -n 70 || true
   exit 1
@@ -178,7 +188,7 @@ python3 .github/scripts/assert_night_atmosphere.py build/android-night1-shore-do
 # On the Night 2 development branch, launch the REAL new chapter through
 # its debug-only title shortcut. Never silently treat Night 1 screenshots as
 # Kapre evidence; verify the new scene's exact engine log marker first.
-if [ "${GITHUB_REF:-}" = "refs/heads/feature/night2-kapre" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/hud-house-depth-fix" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night03-tikbalang-connected" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/nights1-3-dimensional-art-pass" ]; then
+if [ "${GITHUB_REF:-}" = "refs/heads/feature/night2-kapre" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/hud-house-depth-fix" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night03-tikbalang-connected" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/nights1-3-dimensional-art-pass" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night04-manananggal-the-wake" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/nighttime-lived-in-village-nights1-4" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night04-wake-immersive-vigil" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night04-final-character-animation" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night04-cinematic-creature-presence" ]; then
   adb shell am force-stop "$PKG" || true
   adb shell monkey -p "$PKG" -c android.intent.category.LAUNCHER 1
   sleep 7
@@ -190,12 +200,27 @@ if [ "${GITHUB_REF:-}" = "refs/heads/feature/night2-kapre" ] || [ "${GITHUB_REF:
     exit 1
   fi
   adb exec-out screencap -p > build/android-night2-intro.png
-  # Same exact camera for folklore correctness: daytime tree must be empty,
-  # the full Kapre appears only in the dedicated night capture.
-  adb shell input keyevent 133  # F3: daylight mango, real world camera
-  sleep 4
-  if ! adb logcat -d -v brief | grep -q "NIGHT2_QA_MANGO_DAY_VIEW"; then
-    echo "ERROR: Night 2 daytime reference did not render"
+  # Night 2 correctly opens with Lola's modal dialogue. Android may send
+  # F3 to the focused dialogue button rather than the world. Dismiss it
+  # through the real visible user-facing CTA before doing camera QA.
+  adb shell input tap 1160 956 || true
+  sleep 2
+  # Same exact camera for folklore correctness: daylight tree must be empty.
+  night2_mango_ready=0
+  for attempt in 1 2 3; do
+    adb shell input keyevent 133  # F3, daytime mango on the LIVE Godot scene
+    sleep 3
+    if adb logcat -d -v brief | grep -q "NIGHT2_QA_MANGO_DAY_VIEW"; then
+      night2_mango_ready=1
+      break
+    fi
+    # Retry the dialogue footer, not a reboot or fake rendered screenshot.
+    adb shell input tap 1160 956 || true
+    sleep 2
+  done
+  if [ "$night2_mango_ready" -ne 1 ]; then
+    echo "ERROR: Night 2 daytime reference did not render after dismissing Lola dialogue"
+    adb logcat -d | grep -E 'NIGHT2_QA|Godot|AndroidRuntime' | tail -n 100 || true
     exit 1
   fi
   adb exec-out screencap -p > build/android-night2-mango-day.png
@@ -219,6 +244,16 @@ if [ "${GITHUB_REF:-}" = "refs/heads/feature/night2-kapre" ] || [ "${GITHUB_REF:
   fi
   adb exec-out screencap -p > build/android-night2-dusk.png
   python3 .github/scripts/assert_gameplay_visible.py build/android-night2-dusk.png
+  # A second REAL night camera at the refuge verifies warm windows AND
+  # absence of abandoned daytime villagers; mango tree view cannot prove it.
+  adb shell input keyevent 134 # F4: actual shelter window at deep night
+  sleep 4
+  if ! adb logcat -d -v brief | grep -q "NIGHT2_QA_SHELTER_NIGHT_VIEW"; then
+    echo "ERROR: Night 2 occupied refuge window nighttime capture not reached"
+    exit 1
+  fi
+  adb exec-out screencap -p > build/android-night2-shelter-night.png
+  python3 .github/scripts/assert_gameplay_visible.py build/android-night2-shelter-night.png
   # These are two distinct *live* render states with the same camera. A
   # screenshot with the giant visible in daylight invalidates this milestone.
   test -s build/android-night2-mango-day.png
@@ -242,7 +277,7 @@ fi
 
 # Night 3 uses the SAME running Godot APK, original ridge artwork, and
 # actual scene title debug shortcut. These captures are never concept art.
-if [ "${GITHUB_REF:-}" = "refs/heads/feature/night03-tikbalang-connected" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/nights1-3-dimensional-art-pass" ]; then
+if [ "${GITHUB_REF:-}" = "refs/heads/feature/night03-tikbalang-connected" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/nights1-3-dimensional-art-pass" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night04-manananggal-the-wake" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/nighttime-lived-in-village-nights1-4" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night04-wake-immersive-vigil" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night04-final-character-animation" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night04-cinematic-creature-presence" ]; then
   adb shell am force-stop "$PKG" || true
   adb shell monkey -p "$PKG" -c android.intent.category.LAUNCHER 1
   sleep 7
@@ -265,11 +300,64 @@ if [ "${GITHUB_REF:-}" = "refs/heads/feature/night03-tikbalang-connected" ] || [
     adb exec-out screencap -p > "build/android-night3-$3.png"
     python3 .github/scripts/assert_gameplay_visible.py "build/android-night3-$3.png"
   done
+  # Night 3's remote ridge creature reveal does not show the watchpost;
+  # independently verify the living night light at the real watchpost.
+  adb shell input keyevent 137 # F7: real night camera at lookout
+  sleep 4
+  if ! adb logcat -d -v brief | grep -q "NIGHT3_QA_LOOKOUT_NIGHT"; then
+    echo "ERROR: Night 3 night watchpost window view was not reached"
+    exit 1
+  fi
+  adb exec-out screencap -p > build/android-night3-watchpost-night.png
+  python3 .github/scripts/assert_gameplay_visible.py build/android-night3-watchpost-night.png
   if cmp -s build/android-night3-ridge-day.png build/android-night3-tikbalang-night.png; then
     echo "ERROR: Night 3 daytime and nocturnal Tikbalang are identical"
     exit 1
   fi
   echo "PASS: actual Tikbalang Night 3 intro, bamboo ridge, safe lookout, night reveal and connected trail"
+fi
+
+# Wake is a REAL Godot scene entered by a debug-only title key.
+if [ "${GITHUB_REF:-}" = "refs/heads/feature/night04-manananggal-the-wake" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/nighttime-lived-in-village-nights1-4" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night04-wake-immersive-vigil" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night04-final-character-animation" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night04-cinematic-creature-presence" ]; then
+  adb shell am force-stop "$PKG" || true
+  adb shell monkey -p "$PKG" -c android.intent.category.LAUNCHER 1
+  sleep 7
+  adb shell input keyevent 142 # F12 QA-only authentic Night 4 entry
+  sleep 8
+  if ! adb logcat -d -v brief | grep -q "NIGHT4_QA_SCENE_READY"; then
+    echo "ERROR: authentic Night 4 scene not entered"
+    adb logcat -d | grep -E 'NIGHT4_QA|Godot|AndroidRuntime' | tail -n 120 || true
+    exit 1
+  fi
+  adb exec-out screencap -p > build/android-night4-intro.png
+  for item in "133 WAKE_DAY wake-day" "136 COURTYARD courtyard" "139 MANANANGGAL_NIGHT manananggal-night" "135 RIDGE_RETURN ridge-return"; do
+    set -- $item
+    adb shell input keyevent "$1"
+    sleep 4
+    if ! adb logcat -d -v brief | grep -q "NIGHT4_QA_$2"; then
+      echo "ERROR: Night 4 $2 live gameplay camera did not render"
+      exit 1
+    fi
+    adb exec-out screencap -p > "build/android-night4-$3.png"
+    python3 .github/scripts/assert_gameplay_visible.py "build/android-night4-$3.png"
+    if [ "$2" = "MANANANGGAL_NIGHT" ]; then
+      # Capture a SECOND actual in-game frame after one full wing stroke:
+      # this is not a mock illustration or a duplicated still image.
+      sleep 2
+      adb exec-out screencap -p > build/android-night4-wingbeat-followup.png
+      python3 .github/scripts/assert_gameplay_visible.py build/android-night4-wingbeat-followup.png
+      if cmp -s build/android-night4-manananggal-night.png build/android-night4-wingbeat-followup.png; then
+        echo "ERROR: live night scene stopped advancing after Manananggal reveal"
+        exit 1
+      fi
+    fi
+  done
+  if cmp -s build/android-night4-wake-day.png build/android-night4-manananggal-night.png; then
+    echo "ERROR: Night 4 daytime and Manananggal night are identical"
+    exit 1
+  fi
+  adb logcat -d -v brief | grep -Ei 'NIGHT4_QA|Godot|AndroidRuntime' | tail -n 180 > build/android-night4-log.txt || true
+  echo "PASS: actual Night 4 wake, roof predator, courtyard and trail"
 fi
 
 adb logcat -d -s AndroidRuntime:E Godot:E GodotEngine:E > build/android-night1-launch-log.txt || true

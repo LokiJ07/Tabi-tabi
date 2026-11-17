@@ -30,6 +30,7 @@ const SharedHUD = preload("res://scripts/ui/shared_hud.gd")
 const SharedDialogueMotion = preload("res://scripts/ui/shared_dialogue_motion.gd")
 const SharedAtmosphere = preload("res://scripts/visuals/shared_immersive_atmosphere.gd")
 const BarrioLighting = preload("res://scripts/visuals/barrio_lighting.gd")
+const NightWindows = preload("res://scripts/visuals/nighttime_windows.gd")
 const RiverBanca = preload("res://scripts/world/river_banca.gd")
 const BantayRoute = preload("res://scripts/ai/bantay_route.gd")
 const BantayAwareness = preload("res://scripts/ai/bantay_awareness.gd")
@@ -133,6 +134,7 @@ var in_lola_hut := false
 var santelmo
 var ambient_walkers: Array[Node3D] = []
 var elapsed := 0.0
+var window_light_refresh := 0.0
 var encounter_autosave_clock := 0.0
 
 
@@ -150,6 +152,7 @@ func _ready() -> void:
 	_create_ui()
 	_apply_preferences()
 	_restore_story()
+	NightWindows.sync_barrio_3d(self,is_night,elapsed,preferences.reduced_motion)
 	_apply_connected_world_arrival()
 	if story.outcome == "" and not story.prologue_ready():
 		_enter_lola_hut(true)
@@ -202,6 +205,9 @@ func _physics_process(delta: float) -> void:
 			if witness != null:
 				FolkActors.animate_person(witness, elapsed * 0.48 + float(i) * 2.3, false)
 				FolkActors.animate_expression(witness, elapsed, role == speaking_role, preferences.reduced_motion)
+				# Visuals go indoors after dark. The original named interaction
+				# markers and story dialogue remain intact for progression.
+				witness.visible = NightWindows.outdoor_actor_visible(1,2 if is_night else 0,role)
 	if in_lola_hut:
 		var elder := get_node_or_null(LolaHut.NODE_NAME + "/Lola seated") as Node3D
 		FolkActors.animate_expression(elder, elapsed, speaking_role == "LOLA", preferences.reduced_motion)
@@ -218,6 +224,10 @@ func _physics_process(delta: float) -> void:
 		camera.size = lerpf(camera.size, 14.7, smooth)
 	RiverBanca.animate(river_boat, elapsed, preferences.reduced_motion)
 	elapsed += delta
+	window_light_refresh += delta
+	if window_light_refresh >= .38:
+		window_light_refresh = 0.0
+		NightWindows.sync_barrio_3d(self,is_night,elapsed,preferences.reduced_motion)
 	if is_night and santelmo != null:
 		# Keep world and encounter animations progressing in the background,
 		# but never drain courage while the player is reading a modal.
@@ -312,6 +322,7 @@ func _qa_show_world_view(destination: Vector3, night_view: bool, label: String) 
 	is_night = night_view
 	living_sound.set_night(night_view)
 	BarrioLighting.apply(sun, get_node_or_null("Environment") as WorldEnvironment, lantern, night_view)
+	NightWindows.sync_barrio_3d(self,is_night,elapsed,preferences.reduced_motion)
 	if night_view and santelmo == null:
 		santelmo = SantelmoActor.new()
 		add_child(santelmo)
@@ -1459,6 +1470,7 @@ func _toggle_night() -> void:
 	is_night = not is_night
 	living_sound.set_night(is_night)
 	BarrioLighting.apply(sun, get_node_or_null("Environment") as WorldEnvironment, lantern, is_night)
+	NightWindows.sync_barrio_3d(self,is_night,elapsed,preferences.reduced_motion)
 	dog_awareness.reset()
 	dog_warning_label.text = ""
 	dog_warning_seconds = 0.0
@@ -1628,6 +1640,7 @@ func _commit_night(result: String) -> void:
 	is_night = false
 	living_sound.set_night(false)
 	BarrioLighting.apply(sun, get_node_or_null("Environment") as WorldEnvironment, lantern, false)
+	NightWindows.sync_barrio_3d(self,false,elapsed,preferences.reduced_motion)
 	MorningAftermath.ensure(self, story.outcome)
 	if santelmo != null:
 		santelmo.visible = false

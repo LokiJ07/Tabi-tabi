@@ -16,6 +16,7 @@ const AimPad = preload("res://scripts/ui/aim_pad.gd")
 const SpeakerPortrait = preload("res://scripts/ui/speaker_portrait.gd")
 const SharedAtmosphere = preload("res://scripts/visuals/shared_immersive_atmosphere.gd")
 const DimensionalArt = preload("res://scripts/visuals/layered_25d.gd")
+const NightWindows = preload("res://scripts/visuals/nighttime_windows.gd")
 const Landscape = preload("res://scripts/visuals/folklore_landscape_25d.gd")
 const MANGO: Texture2D = preload("res://assets/night02/old_mango_tree.svg")
 const KAPRE: Texture2D = preload("res://assets/night02/kapre_perched.svg")
@@ -283,7 +284,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			_open_options()
 	if OS.get_name() == "Android" and OS.has_feature("debug") and event is InputEventKey:
 		var key := event as InputEventKey
-		if key.pressed and not key.echo and [KEY_F3, KEY_F5, KEY_F6, KEY_F7, KEY_F8, KEY_F9].has(key.keycode):
+		if key.pressed and not key.echo and [KEY_F3, KEY_F4, KEY_F5, KEY_F6, KEY_F7, KEY_F8, KEY_F9].has(key.keycode):
 			# Each screenshot uses the real interactive running scene, NEVER
 			# a concept art canvas or a fake static title.
 			_close_dialogue()
@@ -295,6 +296,10 @@ func _unhandled_input(event: InputEvent) -> void:
 			if key.keycode == KEY_F3:
 				player_pos = Vector2(90,-270)
 				print("NIGHT2_QA_MANGO_DAY_VIEW")
+			elif key.keycode == KEY_F4:
+				debug_night_reveal = true
+				player_pos = Vector2(-595,405)
+				print("NIGHT2_QA_SHELTER_NIGHT_VIEW")
 			elif key.keycode == KEY_F5:
 				player_pos = Vector2(-645, 455)
 				print("NIGHT2_QA_RETURN_TRAIL_VIEW")
@@ -455,6 +460,16 @@ func _draw() -> void:
 			draw_circle(firefly,2.3,Color("#ffe6a1"))
 			draw_circle(firefly,8.0,Color(1.0,.79,.38,.075))
 		_draw_kapre_smoke()
+	# The school is nearly shut while a home/refuge still has amber lanterns
+	# behind curtains. Window positions follow the actual isometric side walls.
+	if light_stage >= 2:
+		for i in range(2):
+			var house: Vector2 = Vector2(-600,-445) if i == 0 else Vector2(-610,410)
+			var side_left := (house+Vector2(76,37)).lerp(house+Vector2(158,-21),.30)
+			var side_right := (house+Vector2(76,37)).lerp(house+Vector2(158,-21),.72)
+			var pane_center := side_left.lerp(side_right,.5)+Vector2(0,-86)
+			NightWindows.paint_window(self,pane_center,Vector2(42,37),
+				2 if i == 0 else 0,true,particle_phase,prefs.reduced_motion)
 	# Low clearing fog moves behind the people and the guardian; Reduced
 	# Motion freezes it without affecting its visibility.
 	if _light_stage() >= 1:
@@ -468,12 +483,13 @@ func _draw() -> void:
 		# Occluding branch remains in front of the knee, not behind the giant.
 		draw_line(TREE+Vector2(78,-185),TREE+Vector2(243,-195),Color("#33261f",.82),11,true)
 		draw_line(TREE+Vector2(87,-191),TREE+Vector2(241,-201),Color("#98714c",.44),3.5,true)
-	var actors: Array[Dictionary] = [
-		{"at": Vector2(-661,-263), "texture": DADO, "width": 80.0, "height": 128.0},
-		{"at": Vector2(-461,-261), "texture": MARA, "width": 80.0, "height": 128.0},
-		{"at": dog_pos + Vector2(0,29), "texture": BANTAY, "width": 90.0, "height": 96.0},
-		{"at": player_pos + Vector2(0,8), "texture": HERO, "width": 92.0, "height": 124.0}
-	]
+	var actors: Array[Dictionary] = []
+	if NightWindows.outdoor_actor_visible(2,light_stage,"DADO"):
+		actors.append({"at": Vector2(-661,-263), "texture": DADO, "width": 80.0, "height": 128.0})
+	if NightWindows.outdoor_actor_visible(2,light_stage,"MARA"):
+		actors.append({"at": Vector2(-461,-261), "texture": MARA, "width": 80.0, "height": 128.0})
+	actors.append({"at": dog_pos+Vector2(0,29), "texture": BANTAY, "width": 90.0, "height": 96.0})
+	actors.append({"at": player_pos+Vector2(0,8), "texture": HERO, "width": 92.0, "height": 124.0})
 	actors.sort_custom(func(a: Dictionary,b: Dictionary)->bool:
 		return (a["at"] as Vector2).y < (b["at"] as Vector2).y)
 	for actor in actors:
