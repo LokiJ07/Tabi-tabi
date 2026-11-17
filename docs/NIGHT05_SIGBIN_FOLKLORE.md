@@ -17,3 +17,17 @@
 - Never punish actual households, never accuse a resident of being aswang, never add child-harm imagery.
 
 Godot checks and Android emulator actual screenshots are mandatory before approval. Physical-phone gameplay and visual sign-off remain required before Night 5 main merge.
+
+## Visual iteration 2 — anatomical gait and ground contact
+
+- Replaced upright rabbitlike ears with wide sideways creased ear folds and
+  independent skull hinges. These are original game textures.
+- The Sigbin torso SVG now excludes its former baked-in legs. Two near and two
+  far limbs have animated knees, alternating hooves, subtle body movement and
+  accurate depth layering in the Godot world.
+- Backward walking follows a bounded, eased retreat, with a deliberate, slower
+  forward scouting return. Reduced Motion freezes walking and clapping.
+- Deterministic grass, soil flecks and the barn's cast shadow enrich the existing
+  live farm without changing collision, evidence, saves, or HUD.
+- Green CI verifies compilation and gameplay logic; actual Android screenshots
+  plus physical-device visual feedback are required for quality sign-off.
