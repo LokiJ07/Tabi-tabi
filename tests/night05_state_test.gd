@@ -37,7 +37,7 @@ func _run() -> void:
 		check(model.current_shadow() == State.SHADOW_ROUTES[i],
 			"genuine connected shadow route "+str(i))
 		check(model.observe_tick(1.25,true,true),"focused safe observation identifies real shadow")
-		var rescue_index := model.rescued_groups
+		var rescue_index: int = model.rescued_groups
 		var wrong: String = State.CORRECT_LIGHTS[(i+1)%3]
 		check(not model.respond(wrong) and model.rescued_groups == rescue_index,
 			"wrong lamp never rescues an animal automatically")
