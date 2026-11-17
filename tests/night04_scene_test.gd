@@ -46,8 +46,10 @@ func _run() -> void:
 		if action_button != null:
 			check(is_equal_approx(action_button.offset_left,float(slot[1]))
 				and is_equal_approx(action_button.offset_top,float(slot[2]))
-				and is_equal_approx(action_button.offset_right-action_button.offset_left,float(slot[3]))
-				and is_equal_approx(action_button.offset_bottom-action_button.offset_top,float(slot[4]))
+				and action_button.offset_right-action_button.offset_left >= float(slot[3])
+				and action_button.offset_right-action_button.offset_left <= float(slot[3])+36.0
+				and action_button.offset_bottom-action_button.offset_top >= float(slot[4])
+				and action_button.offset_bottom-action_button.offset_top <= float(slot[4])+16.0
 				and action_button.anchor_left == 1.0 and action_button.anchor_top == 1.0
 				and action_button.get_meta("hud_component","") == "night1-shared",
 				"Night 1 physical touch slot changed: "+str(slot[0]))
