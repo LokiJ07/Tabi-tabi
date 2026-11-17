@@ -99,12 +99,23 @@ func observe_tick(delta: float,safe_position: bool,focused: bool,assist: bool = 
 		fear = maxf(.0,fear-maxf(delta,0.0)*.020)
 	else:
 		fear = minf(.99,fear+maxf(delta,0.0)*(.021 if assist else .038))
-	if observation_progress >= .999:
+	# The same 1.2-second safe observation now confirms three distinct
+	# folktale-inspired clues. It does not require grinding or extra buttons.
+	if observation_progress >= .24:
+		seen["sigbin_odor"] = true
+	if observation_progress >= .53:
+		seen["sigbin_ear_clap"] = true
+	if observation_progress >= .80:
+		seen["sigbin_reverse_steps"] = true
+	if observation_progress >= .999 and sigbin_signs_confirmed():
 		shadow_identified = true
 		return true
 	if fear >= .98:
 		encounter_failed = true # Nonfatal, recoverable from perimeter.
 	return false
+
+func sigbin_signs_confirmed() -> bool:
+	return seen.has("sigbin_odor") and seen.has("sigbin_ear_clap") and seen.has("sigbin_reverse_steps")
 
 func respond(light_id: String) -> bool:
 	if phase != 3 or encounter_failed or not shadow_identified:
@@ -160,7 +171,9 @@ func commit(result: String) -> bool:
 		"rescue_groups":rescued_groups,
 		"shadows":SHADOW_ROUTES.duplicate(),
 		"safe_perimeter":true,
-		"old_bond":"The absent caretaker left a promise without a safe place to keep it."
+		"old_bond":"The absent caretaker left a promise without a safe place to keep it.",
+		"observed_signs":["odor","ear_clap","backward_tracks"],
+		"folklore_note":"Visayan and Mindanao tellings vary by locality."
 	}
 	return true
 
