@@ -269,8 +269,8 @@ func _build_menu() -> void:
 	menu.name = "MainMenu"
 	menu.anchor_left = 0.065
 	menu.anchor_right = 0.415
-	menu.anchor_top = 0.272
-	menu.anchor_bottom = 0.950
+	menu.anchor_top = 0.273
+	menu.anchor_bottom = 0.995
 	menu.add_theme_constant_override("separation", 8)
 	add_child(menu)
 	_button("START GAME", menu, _start_game)
@@ -328,11 +328,11 @@ func _build_menu() -> void:
 	_button("EXIT", menu, func(): get_tree().quit())
 	for item in menu.get_children():
 		if item is Button:
-			(item as Button).custom_minimum_size.y = 43.0
+			(item as Button).custom_minimum_size.y = 48.0
 	var chapter := Label.new()
-	chapter.text = "SANTELMO  /  KAPRE  /  TIKBALANG  /  MANANANGGAL  /  SIGBIN  /  THE RIVER"
-	chapter.anchor_left = 0.075
-	chapter.anchor_right = 0.55
+	chapter.text = "SIX NIGHTS • ONE STORY • BALETE GROUNDS NEXT"
+	chapter.anchor_left = 0.54
+	chapter.anchor_right = 0.99
 	chapter.anchor_top = 0.958
 	chapter.anchor_bottom = 0.996
 	chapter.add_theme_font_size_override("font_size", 19)
