@@ -11,6 +11,13 @@ const PEN := Rect2(286.0,128.0,375.0,180.0)
 const GATE_LEFT := 500.0
 const GATE_RIGHT := 610.0
 
+static func gate_label(phase: int, prepared: bool) -> String:
+	if prepared:
+		return "GATE • READY"
+	if phase < 2:
+		return "GATE • CLOSED"
+	return "GATE • PREPARE"
+
 static func animals_revealed(phase: int, debug_preview: bool) -> bool:
 	# The herds were reported missing at dawn: showing them in full view
 	# before following the clues makes the investigation feel nonsensical.
