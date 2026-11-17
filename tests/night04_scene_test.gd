@@ -35,6 +35,43 @@ func _run() -> void:
 	check(game.get_node_or_null("Night04WakeCamera") is Camera2D,"same camera follows moving Apprentice")
 	check(game.controls.get_node_or_null("QuestStatusCard") is PanelContainer,
 		"Night 4 uses the shared Night 1–3 status-card grammar")
+	# Visual parity gate: Night 4/5 must retain Night 1 slots, not just a shared color scheme.
+	for slot in [
+		["PrepareButton",-230.0,-444.0,180.0,56.0],
+		["SaveButton",-230.0,-375.0,85.0,52.0],
+		["RetryButton",-138.0,-375.0,88.0,52.0]
+	]:
+		var action_button := game.controls.get_node_or_null(str(slot[0])) as Button
+		check(action_button != null,"shared HUD missing top action "+str(slot[0]))
+		if action_button != null:
+			check(is_equal_approx(action_button.offset_left,float(slot[1]))
+				and is_equal_approx(action_button.offset_top,float(slot[2]))
+				and action_button.offset_right-action_button.offset_left >= float(slot[3])
+				and action_button.offset_right-action_button.offset_left <= float(slot[3])+36.0
+				and action_button.offset_bottom-action_button.offset_top >= float(slot[4])
+				and action_button.offset_bottom-action_button.offset_top <= float(slot[4])+16.0
+				and action_button.anchor_left == 1.0 and action_button.anchor_top == 1.0
+				and action_button.get_meta("hud_component","") == "night1-shared",
+				"Night 1 physical touch slot changed: "+str(slot[0]))
+	var look_pad := game.controls.get_node_or_null("SharedLookPad") as Control
+	check(look_pad != null and is_equal_approx(look_pad.offset_left,-435.0)
+		and is_equal_approx(look_pad.offset_right,-260.0)
+		and is_equal_approx(look_pad.offset_top,-205.0)
+		and is_equal_approx(look_pad.offset_bottom,-40.0),
+		"LOOK touch region must match Nights 1–3")
+	check(game.status_panel != null and game.status_stack != null,
+		"shared status card must auto-resize to its content")
+	if game.dialogue.visible:
+		game._choose("close")
+	game._open_preparation_briefing()
+	check(game.dialogue.visible and game.dialogue_speaker.text.contains("PREPARATION"),
+		"PREPARE button opens real chapter safety guidance")
+	game._choose("close")
+	game._retry_from_saved_checkpoint()
+	check(game.dialogue.visible and game.dialogue_body.text.contains("last offline checkpoint"),
+		"RETRY button asks for explicit confirmation before losing unsaved actions")
+	game._choose("close")
+
 	check(game.NENA.get_width() > 200 and game.MANANANGGAL.get_width() > 500,
 		"original vector art for caretaker and winged entity actually imported")
 	check(not game.story.target_verified and game.story.phase == 0,
