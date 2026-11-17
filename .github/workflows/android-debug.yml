@@ -58,6 +58,7 @@ jobs:
           lines = path.read_text().splitlines()
           run = int(os.environ["GITHUB_RUN_NUMBER"])
           lines = [f"version/code={run}" if line.startswith("version/code=") else
+                   f'version/name="0.18.2-connected-night06-road.{run}"' if os.environ.get("GITHUB_REF", "").endswith("night05-visible-night06-road-connection") and line.startswith("version/name=") else
                    f'version/name="0.18.0-sigbin-farm-qa.{run}"' if os.environ.get("GITHUB_REF", "").endswith("night05-sigbin-abandoned-farm") and line.startswith("version/name=") else
                    f'version/name="0.17.0-cinematic-creature.{run}"' if os.environ.get("GITHUB_REF", "").endswith("night04-cinematic-creature-presence") and line.startswith("version/name=") else
                    f'version/name="0.16.0-night4-animated-qa.{run}"' if os.environ.get("GITHUB_REF", "").endswith("night04-final-character-animation") and line.startswith("version/name=") else
@@ -234,6 +235,7 @@ jobs:
             build/android-night5-courtyard.png
             build/android-night5-sigbin-night.png
             build/android-night5-sigbin-motion.png
+            build/android-night5-night06-road-connected.png
             build/android-night5-first-rescue-crossing.png
             build/android-night5-first-rescue-settled.png
             build/android-night5-log.txt

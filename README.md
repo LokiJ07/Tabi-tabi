@@ -35,6 +35,12 @@ All five are chapters of **one story** with the same Apprentice and Bantay and a
 
 The player may approach and prepare the gate from outside; they **cannot enter** the penned animals' enclosure or unstable barn. The gate is an exit **for the rescued animals**, not a hidden player entrance.
 
+### One uninterrupted world road into Night 6
+
+The MAIN footpath **does not end at the animal gate or the far side of the farm**. It continues from the Night 4 wake, through the Night 5 observation area, branches off a narrow gate spur, winds north-east uphill between (but never through) the two farm enclosures, and reaches the visibly signed **NIGHT 6 TRAIL**. The road itself carries on beyond the sign into the hillside so it never resembles a cut-off texture. The receiving paddock has been placed far enough downhill to leave clearance for the road and raised wooden posts. Animal rescue uses a separate west-side receiving opening, not the public path.
+
+Night 6's visible trail checkpoint is **deliberately locked** until the genuine connected chapter scene and transition are implemented. It does not fake a playable level, silently teleport the player, or overwrite Night 1–5 progress. The canonical trail coordinate lives in `scripts/core/connected_world.gd` (`TRAIL_FARM_NIGHT06`). This should become Night 6's entry point/arrival transition once that chapter is built.
+
 ## Test and release status
 
 Nights 1–5 form an **engineering-ready Android QA baseline**, not a finished public seven-night release. Night 5 has real Godot scene/state tests plus Android emulator chapter and rescued-animal crossing captures. Check the latest relevant Godot validation and Android emulator runs in GitHub Actions before calling a change release-ready.

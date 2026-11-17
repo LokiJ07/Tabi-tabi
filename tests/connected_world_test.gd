@@ -31,6 +31,11 @@ func _run() -> void:
 	check(World.scene_for("night05") == "res://scenes/night05.tscn", "Sigbin abandoned farm has a real playable scene")
 	check(not World.begin_travel("night04","night05","resolve"), "farm is locked without completed Night 4 ledger")
 	check(not World.implemented("night06"),"Night 6 remains genuinely locked")
+	check(World.TRAIL_FARM_NIGHT06 == Vector2(955.0,-470.0)
+		and World.adjacent("night05","night06")
+		and World.adjacent("night06","night05")
+		and World.scene_for("night06") == "",
+		"Night 6 entrance exists at the farm hill road, but no fake playable scene or travel yet")
 	check(not World.begin_travel("night03","night04","resolve"), "wake remains locked without a saved ridge outcome")
 	check(not World.begin_travel("barrio_lawom","old_mango",""), "no shortcut past Night 1")
 	check(not World.begin_travel("old_mango","night03","resolve"), "Night 3 remains locked before an actual saved Kapre outcome")
