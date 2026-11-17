@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="360" height="300" viewBox="0 0 360 300">
+<title>Original small farm goat with safe woven collar, no gore</title>
+<defs><linearGradient id="wool" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#e4d9bb"/><stop offset=".6" stop-color="#baa787"/><stop offset="1" stop-color="#847861"/></linearGradient></defs>
+<ellipse cx="182" cy="264" rx="126" ry="18" fill="#123039" opacity=".20"/>
+<path d="M100 129Q158 90 238 124L248 205Q197 231 114 211Q79 181 100 129Z" fill="url(#wool)" stroke="#685e4c" stroke-width="10"/>
+<path d="M125 201L117 265M158 215L152 264M205 218L207 267M235 202L240 264" fill="none" stroke="#84745c" stroke-width="19" stroke-linecap="round"/>
+<path d="M98 162Q52 146 55 99M240 140L270 113Q295 71 320 102L315 165Q284 189 251 175Z" fill="url(#wool)" stroke="#6a5f50" stroke-width="10"/>
+<path d="M271 106L264 56L281 65L294 108M294 104L323 51L324 95" stroke="#afa084" stroke-width="12" fill="none" stroke-linecap="round"/>
+<path d="M295 137L326 156L311 171Z" fill="#7e6d61"/>
+<ellipse cx="300" cy="128" rx="9" ry="7" fill="#363e3b"/><circle cx="302" cy="127" r="3" fill="#f3dc9a"/>
+<path d="M280 175L286 202L298 175" fill="#c4ab8a" stroke="#75624a" stroke-width="5"/>
+<path d="M254 167L284 177" stroke="#b39556" stroke-width="9" stroke-linecap="round"/>
+</svg>

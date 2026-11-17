@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="360" height="530" viewBox="0 0 360 530">
+<title>Original Filipino farmhand NPC — tired but calm with a woven hat and lantern</title>
+<defs>
+<linearGradient id="cloth" x1="0" x2="1" y1="0" y2="1"><stop stop-color="#b1aa8b"/><stop offset="1" stop-color="#626a60"/></linearGradient>
+<linearGradient id="skin" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#cda484"/><stop offset="1" stop-color="#866750"/></linearGradient>
+</defs>
+<ellipse cx="183" cy="499" rx="97" ry="20" fill="#0c2630" opacity=".23"/>
+<path d="M132 345L155 495L200 496L201 357ZM214 353L204 495L255 492L264 333" fill="#424a49" stroke="#26363a" stroke-width="13"/>
+<path d="M154 477L148 498L206 506L212 488M203 488L199 505L268 505L265 488" stroke="#353330" stroke-width="19" stroke-linecap="round"/>
+<path d="M113 215Q172 193 238 209L279 349L208 382L114 349Z" fill="url(#cloth)" stroke="#50584f" stroke-width="11"/>
+<path d="M124 237L72 323L93 349L162 270M245 240L285 313L270 356L233 292" fill="none" stroke="url(#skin)" stroke-width="29" stroke-linecap="round"/>
+<path d="M135 217Q158 245 179 257Q219 244 240 218" fill="none" stroke="#e0d0b1" stroke-width="10"/>
+<path d="M149 113L144 217Q167 239 202 221L221 137Z" fill="url(#skin)" stroke="#785747" stroke-width="11"/>
+<path d="M151 155Q168 166 186 156M203 155Q211 149 222 149" fill="none" stroke="#413730" stroke-width="7" stroke-linecap="round"/>
+<path d="M168 201Q187 208 207 196" stroke="#5c403b" stroke-width="6" fill="none" stroke-linecap="round"/>
+<path d="M105 124Q170 83 245 121L304 147Q239 173 112 168L60 150Z" fill="#b89e6e" stroke="#705d47" stroke-width="11"/>
+<path d="M133 121Q143 56 188 50Q242 70 247 128Q197 156 133 121Z" fill="#988057" stroke="#6d5c43" stroke-width="10"/>
+<g fill="none" stroke="#e9c993" stroke-width="4" opacity=".57"><path d="M97 142Q171 120 270 148M144 107Q189 90 235 116M162 77Q191 80 213 84"/></g>
+<path d="M276 343L288 425" stroke="#a0875d" stroke-width="11"/>
+<path d="M269 413L315 413L307 468L276 472Z" fill="#dca95d" stroke="#584c37" stroke-width="8"/>
+<path d="M280 419L301 420L294 449L282 449Z" fill="#eaca78"/>
+<circle cx="290" cy="443" r="27" fill="#ffc16e" opacity=".10"/>
+</svg>
