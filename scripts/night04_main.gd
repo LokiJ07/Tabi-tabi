@@ -182,13 +182,19 @@ func _process(delta: float) -> void:
 	# apprentice during a real attack, not cropped at the top of the phone.
 	# This is the world camera only; Night 1 shared touch HUD never moves.
 	var framing_target := player_pos + aim*64
-	if story.phase == 3 or debug_wake_preview:
-		var approach := Vector2(260,-155)
+	var close_encounter := story.phase == 3 or debug_wake_preview
+	if close_encounter:
+		# A full wing span needs more vertical room on a 2340×1080 Android
+		# viewport. The default QA preview is the roofline, not the courtyard.
+		var approach := Vector2(270,-465)
 		match story.current_warning():
-			"roofline": approach = Vector2(270,-540)
-			"rear_window": approach = Vector2(550,-310)
+			"roofline": approach = Vector2(270,-465)
+			"rear_window": approach = Vector2(485,-263)
 			"courtyard": approach = Vector2(260,-155)
-		framing_target += (approach-player_pos).limit_length(270.0)*.90
+		framing_target += (approach-player_pos).limit_length(405.0)*.90
+	var zoom_target := Vector2(.86,.86) if close_encounter else Vector2(1.03,1.03)
+	camera.zoom = camera.zoom.lerp(zoom_target,
+		1.0 if prefs.reduced_motion else clampf(delta*4.2,0.0,1.0))
 	camera.position = camera.position.lerp(framing_target,
 		1.0 if prefs.reduced_motion else clampf(delta*4.5,0,1))
 	if not _modal() and not travel_in_progress and player_pos.distance_to(RETURN_RIDGE)<56:
@@ -252,6 +258,10 @@ func _unhandled_input(event: InputEvent) -> void:
 					print("NIGHT4_QA_COURTYARD")
 				KEY_F9:
 					player_pos = SAFE_COURT
+					# This is a debug-only view of DEEP NIGHT, after the three
+					# mourners have finished entering; normal story transitions stay.
+					indoor_transition_seconds = ActorMotion.INDOOR_DURATION
+					previous_light_stage = 3
 					print("NIGHT4_QA_MANANANGGAL_NIGHT")
 			bantay_pos = player_pos+Vector2(-49,29)
 			camera.position = player_pos
@@ -408,7 +418,7 @@ func _draw() -> void:
 	# Paint AFTER the darkness grade for visibility but BEHIND people and HUD.
 	if story.phase == 3 or debug_wake_preview:
 		var warning: String = story.current_warning()
-		var from := Vector2(270,-540) if warning == "roofline" or warning == "" else Vector2(550,-310) if warning == "rear_window" else Vector2(260,-155)
+		var from := Vector2(270,-465) if warning == "roofline" or warning == "" else Vector2(485,-263) if warning == "rear_window" else Vector2(260,-155)
 		var drift := Vector2(sin(elapsed*.81)*16,cos(elapsed*.71)*8) if not prefs.reduced_motion else Vector2.ZERO
 		for i in range(4,0,-1):
 			draw_circle(from+drift,60.0+float(i)*31.0,Color(.29,.41,.48,.009))
