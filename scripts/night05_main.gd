@@ -93,6 +93,9 @@ var debug_farm_preview := false
 var travel_in_progress := false
 var farmer_retreat_seconds := 0.0
 var previous_stage := 0
+# Scene-only interpolation. Canonical rescued_groups is saved in Night05State;
+# reloads place already-saved animals safely at the gate.
+var animal_rescue_motion: Dictionary = {}
 var hud: CanvasLayer
 var controls: Control
 var objective: Label
@@ -194,12 +197,10 @@ func _process(delta: float) -> void:
 	bantay_pos = bantay_pos.lerp(player_pos+Vector2(-49,28),clampf(delta*3.2,0,1))
 	var framing_target := player_pos+aim*64.0
 	if story.phase == 3 or debug_farm_preview:
-		var shade: Vector2 = SHADOW_POS[clampi(story.shadow_index,0,2)]
-		# The first barn-eave silhouette is far above the safe perimeter.
-		# Fit BOTH the moving hero and the full Sigbin silhouette into the
-		# same mobile-height frame, rather than aiming only 87px toward it.
-		# This is the real encounter camera too, not just a QA screenshot fix.
-		framing_target = player_pos.lerp(shade,.58)+Vector2(0,-30)+aim*28.0
+		# Grounded Sigbin is the subject; the roof shadow is only a clue.
+		# Keep the actual creature and player in the same Android frame.
+		var sigbin_subject := SigbinPresence.ground_anchor(story.shadow_index)
+		framing_target = player_pos.lerp(sigbin_subject+Vector2(0,-95),.49)+Vector2(0,-26)+aim*28.0
 	var zoom_target := Vector2(.78,.78) if story.phase == 3 or debug_farm_preview else Vector2(1.03,1.03)
 	camera.zoom = camera.zoom.lerp(zoom_target,
 		1.0 if prefs.reduced_motion else clampf(delta*4.5,0,1))
@@ -220,6 +221,11 @@ func _process(delta: float) -> void:
 				"The false silhouettes are too close. We still have the safe perimeter. No one has died. Retry this shadow or withdraw.",
 				[{"label":"RETRY FROM THE STABLE PERIMETER","action":"retry"},
 				 {"label":"WITHDRAW & LEAVE A FOLLOW-UP","action":"retreat"}])
+	# Animate successfully rescued animals over the outside walkway,
+	# independent of modal text so the world does not visually freeze.
+	for rescued_id in animal_rescue_motion.keys():
+		animal_rescue_motion[rescued_id] = minf(1.0,
+			float(animal_rescue_motion[rescued_id])+maxf(delta,0.0)/2.65)
 	if ambient != null:
 		ambient.set_night_stage(_stage())
 		ambient.set_tension(story.fear)
@@ -361,19 +367,27 @@ func _draw() -> void:
 				FarmArt.paint_lantern(self,pos,story.preparations.has(id),elapsed,prefs.reduced_motion)
 	if story.phase >= 3 or debug_farm_preview:
 		FarmArt.paint_shadow_links(self,SHADOW_POS,
-			clampi(story.shadow_index,0,2),elapsed,prefs.reduced_motion)
+			clampi(story.shadow_index,0,2),elapsed,prefs.reduced_motion,
+			story.rescued_groups,[PREP_POS["lantern_west"],
+				PREP_POS["lantern_north"],PREP_POS["lantern_east"]])
 		for id in ["lantern_west","lantern_north","lantern_east"]:
 			FarmArt.paint_lantern(self,PREP_POS[id],true,elapsed,prefs.reduced_motion)
 	if _stage() == 1:
 		draw_rect(MAP.grow(190),Color(.29,.17,.07,.11))
 	elif _stage() >= 2:
-		draw_rect(MAP.grow(190),Color(.016,.037,.070,.34))
+		# Dark midnight blue, distinct from dusk; household windows and
+		# farm lamps are re-lit above the grade, preserving safe routes.
+		draw_rect(MAP.grow(190),Color(.012,.025,.060,
+			.49 if _stage() >= 3 else .37))
 		Landscape.mist(self,Vector2(130,330),730,elapsed,
 			not prefs.reduced_motion,true)
 		# Amber lamps get reflected on top of the world darkness.
 		for id in ["lantern_west","lantern_north","lantern_east"]:
+			var lantern_lit := story.preparations.has(id) or debug_farm_preview
+			FarmArt.paint_lantern_ground_pool(self,PREP_POS[id],
+				lantern_lit,elapsed,prefs.reduced_motion)
 			FarmArt.paint_lantern(self,PREP_POS[id],
-				story.preparations.has(id) or debug_farm_preview,elapsed,prefs.reduced_motion)
+				lantern_lit,elapsed,prefs.reduced_motion)
 		# Household safe window glow is lighter than the abandoned barn.
 		for i in range(2):
 			NightWindows.paint_window(self,FARMHOUSE+Vector2(-69+float(i)*120,5),
@@ -410,9 +424,8 @@ func _draw() -> void:
 	# safe gate, not deleted from the screen. None is shown hurt or bleeding.
 	for i in range(3):
 		var safe: bool = story.rescued_groups > i
-		var at: Vector2 = SAFE_GATE+Vector2(-170+float(i)*86,65)
-		if not safe:
-			at = Vector2(340+float(i)*107,188+float(i%2)*40)
+		var at := FarmArt.animal_crossing_position(i,SAFE_GATE,safe,
+			float(animal_rescue_motion.get(i,1.0)))
 		DimensionalArt.paint_grounded(self,CHICKEN if i == 2 else GOAT,
 			at,Vector2(70,71) if i == 2 else Vector2(102,95),
 			Color.WHITE,.28)
@@ -708,6 +721,8 @@ func _choose(value: String) -> void:
 				[{"label":"RETRY THIS SHADOW","action":"close"}])
 	elif value in ["lantern_west","lantern_north","lantern_east"]:
 		if story.respond(value):
+			if not prefs.reduced_motion:
+				animal_rescue_motion[story.rescued_groups-1] = 0.0
 			_auto_save()
 			if story.phase == 4:
 				_talk("FARMER • ALL ANIMALS OUT",
