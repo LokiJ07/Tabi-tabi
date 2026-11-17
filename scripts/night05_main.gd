@@ -381,6 +381,10 @@ func _draw() -> void:
 			elapsed,story.shadow_index,prefs.reduced_motion)
 		var opacity := SigbinPresence.visibility(_stage(),
 			story.shadow_identified,debug_farm_preview,elapsed)
+		# Draw contact shade and subdued hoof dust UNDER the moving four-leg
+		# silhouette. This grounds the creature even on dark Android screens.
+		SigbinPresence.paint_ground_contact(self,foot,
+			elapsed,prefs.reduced_motion,opacity)
 		SigbinPresence.paint_reverse_tracks(self,foot,opacity)
 		if opacity > .01:
 			# Jointed near/far hooves actually step in the Godot world.
