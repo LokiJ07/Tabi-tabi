@@ -384,7 +384,7 @@ func _draw() -> void:
 			not prefs.reduced_motion,true)
 		# Amber lamps get reflected on top of the world darkness.
 		for id in ["lantern_west","lantern_north","lantern_east"]:
-			var lantern_lit := story.preparations.has(id) or debug_farm_preview
+			var lantern_lit: bool = story.preparations.has(id) or debug_farm_preview
 			FarmArt.paint_lantern_ground_pool(self,PREP_POS[id],
 				lantern_lit,elapsed,prefs.reduced_motion)
 			FarmArt.paint_lantern(self,PREP_POS[id],
