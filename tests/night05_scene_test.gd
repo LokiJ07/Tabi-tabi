@@ -39,7 +39,7 @@ func _run() -> void:
 	check(game.GOAT.get_width()>300 and game.CHICKEN.get_width()>200,
 		"animals are real in-game sprites, not text-only rewards")
 	check(game.story.phase == 0,"real investigation begins before creature reveal")
-	check(game.SIGBIN_EAR_NEAR.get_width() >= 100 and game.SIGBIN_EAR_FAR.get_height() >= 200,
+	check(game.SIGBIN_EAR_NEAR.get_width() >= 200 and game.SIGBIN_EAR_FAR.get_height() >= 120,
 		"two independent original Sigbin ear sprites actually imported")
 	check(SigbinPresence.visibility(0,false,false,0.0) == 0.0
 		and SigbinPresence.visibility(3,true,false,1.0) == 1.0,
@@ -47,6 +47,17 @@ func _run() -> void:
 	check(SigbinPresence.backward_foot(Vector2.ZERO,1.0,0,false).x < 0.0
 		and SigbinPresence.backward_foot(Vector2.ZERO,2.0,0,true) == Vector2.ZERO,
 		"backward retreat uses real world coordinates and reduced-motion option")
+	check(SigbinPresence.backward_foot(Vector2.ZERO,5.0,0,false).x
+		< SigbinPresence.backward_foot(Vector2.ZERO,1.0,0,false).x
+		and SigbinPresence.retreating(5.0,0),
+		"reverse walk advances backward over real time without foot teleporting")
+	check(not is_equal_approx(SigbinPresence.stride(1.0,0.0,false),
+		SigbinPresence.stride(1.3,0.0,false))
+		and SigbinPresence.stride(1.0,0.0,true) == 0.0,
+		"four-limb gait animates and respects Reduced Motion")
+	check(SigbinPresence.hoof_lift(0.0,0.0,false) > 0.0
+		and SigbinPresence.hoof_lift(0.0,0.0,true) == 0.0,
+		"jointed feet lift and return to the earth")
 	check(SigbinPresence.detect_warning(3,250.0,0.0,false).contains("ODOR")
 		and SigbinPresence.detect_warning(3,250.0,4.5,false).contains("EAR-CLAPS")
 		and SigbinPresence.detect_warning(3,250.0,8.5,false).contains("BACKWARD"),
