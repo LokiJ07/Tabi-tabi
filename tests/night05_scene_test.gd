@@ -40,6 +40,10 @@ func _run() -> void:
 	check(game.GOAT.get_width()>300 and game.CHICKEN.get_width()>200,
 		"animals are real in-game sprites, not text-only rewards")
 	check(game.story.phase == 0,"real investigation begins before creature reveal")
+	check(FarmArt.gate_label(0,false) == "GATE • CLOSED"
+		and FarmArt.gate_label(2,false) == "GATE • PREPARE"
+		and FarmArt.gate_label(2,true) == "GATE • READY",
+		"player never sees a PREPARE prompt before gate interaction is unlocked")
 	check(not FarmArt.animals_revealed(game.story.phase,false)
 		and not FarmArt.animals_revealed(1,false)
 		and FarmArt.animals_revealed(2,false)
