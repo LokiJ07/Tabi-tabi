@@ -230,6 +230,9 @@ func _process(delta: float) -> void:
 			elapsed,story.shadow_index,prefs.reduced_motion)
 		var proximity := clampf(1.0-player_pos.distance_to(sigbin_ground)/1100.0,0.0,1.0)
 		ambient.set_sigbin_presence(proximity if _stage() >= 2 else 0.0)
+		ambient.set_sigbin_gait(
+			SigbinPresence.gait_strength(elapsed,story.shadow_index,prefs.reduced_motion)
+			if _stage() >= 2 else 0.0)
 	if atmosphere != null:
 		atmosphere.configure(5,_stage(),story.fear,prefs.reduced_motion)
 	if pressure != null:
