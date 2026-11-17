@@ -40,6 +40,23 @@ func _run() -> void:
 	check(game.story.phase == 0,"real investigation begins before creature reveal")
 	if game.dialogue.visible:
 		game._choose("close")
+	# Regression: the original midnight screenshot showed DAY / TRACKS and no
+	# Sigbin because the distant eave was outside the vertical camera frame.
+	# Test the actual live encounter camera as well as its preview stage label.
+	game.debug_farm_preview = true
+	game.player_pos = game.SAFE_PERIMETER
+	game.camera.position = game.player_pos
+	game._process(1.0)
+	var sigbin_foot: Vector2 = game.SHADOW_POS[0] + Vector2(-35,41)
+	var half_view_height: float = 720.0 / (2.0 * game.camera.zoom.y)
+	check(game._stage() == 3 and game.subtitle.text.begins_with("MIDNIGHT / SIGBIN"),
+		"midnight QA capture is explicitly the Sigbin reveal, never DAY / TRACKS")
+	check(absf((sigbin_foot.y - 206.0) - game.camera.position.y) < half_view_height - 18.0,
+		"full first Sigbin silhouette fits the Android encounter camera height")
+	check(absf(game.player_pos.y - game.camera.position.y) < half_view_height - 18.0,
+		"player at safe perimeter remains in the same frame as Sigbin")
+	game.debug_farm_preview = false
+	game._refresh()
 	game.player_pos = game.FARMER_POS
 	game._interact()
 	check(game.story.seen.has("farmer"),"Farmer reports missing goats in actual dialogue")
