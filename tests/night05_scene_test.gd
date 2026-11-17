@@ -61,10 +61,12 @@ func _run() -> void:
 	# paddock ACROSS the 116px-wide public footpath. The actual road and its
 	# half-width must remain outside BOTH fenced rectangles at every point.
 	var main_road: PackedVector2Array = FarmArt.main_road_route(
-		game.RETURN_WAKE,game.SAFE_PERIMETER)
-	check(main_road.size() == 5 and main_road[main_road.size()-1]
-		== FarmArt.MAIN_ROAD_END,
-		"farm main road keeps its independent endpoint beyond observation")
+		game.RETURN_WAKE,game.SAFE_PERIMETER,game.FUTURE_TRAIL)
+	check(main_road.size() == 11 and main_road[4] == FarmArt.MAIN_ROAD_END
+		and main_road[9] == game.FUTURE_TRAIL
+		and main_road[10].y < game.FUTURE_TRAIL.y
+		and World.TRAIL_FARM_NIGHT06 == game.FUTURE_TRAIL,
+		"Night 4 farm path MUST continue to canonical Night 6 gateway and beyond, never terminate at animal junction")
 	for segment in range(main_road.size()-1):
 		for step in range(21):
 			var walk_point: Vector2 = main_road[segment].lerp(
@@ -89,10 +91,18 @@ func _run() -> void:
 	check(not tree_bounds.intersects(FarmArt.HOLDING)
 		and not banana_bounds.intersects(FarmArt.HOLDING),
 		"no foreground trees or bananas can cover rescued animals in their holding area")
-	check(FarmArt.HOLDING_SIGN_AT.x < FarmArt.HOLDING.position.x
-		and FarmArt.HOLDING_SIGN_AT.y > FarmArt.HOLDING.end.y+40.0
+	check(FarmArt.HOLDING_SIGN_AT.x+227.0 < FarmArt.HOLDING.position.x
+		and FarmArt.HOLDING_SIGN_AT.y > FarmArt.MAIN_ROAD_END.y+80.0
 		and not FarmArt.PEN.grow(48.0).has_point(FarmArt.HOLDING_SIGN_AT),
-		"receiving paddock sign sits left/below the fence, away from mobile LOOK controls")
+		"receiving paddock sign sits safely below main road and left of the fence, away from LOOK controls")
+	var before_night06 := game.FUTURE_TRAIL+Vector2(0,95)
+	var beyond_night06 := game.FUTURE_TRAIL+Vector2(0,-32)
+	check(FarmArt.keep_player_before_locked_trail(before_night06,beyond_night06,
+			game.FUTURE_TRAIL,true).y >= game.FUTURE_TRAIL.y+50.0
+		and FarmArt.keep_player_before_locked_trail(before_night06,beyond_night06,
+			game.FUTURE_TRAIL,false) == beyond_night06
+		and not World.implemented("night06"),
+		"road visibly continues but current player cannot cross unbuilt Night 6 threshold")
 	var road_entry := Vector2(555,205)
 	check(FarmArt.keep_player_outside_pen(road_entry,Vector2(555,85)) == road_entry,
 		"player cannot phase through uphill pen from its gate approach")
@@ -150,6 +160,13 @@ func _run() -> void:
 		"confirmed Sigbin warning stays compact above the playfield")
 	if game.dialogue.visible:
 		game._choose("close")
+	game.player_pos = game.FUTURE_TRAIL+Vector2(0,75)
+	check(game._nearby() == "trail_locked",
+		"real walkable Night 6 gateway produces an explicit story interaction")
+	game._interact()
+	check(game.dialogue.visible,
+		"unbuilt Night 6 exit explains the connected but locked story trail")
+	game._choose("close")
 	# Regression: the original midnight screenshot showed DAY / TRACKS and no
 	# Sigbin because the distant eave was outside the vertical camera frame.
 	# Test the actual live encounter camera as well as its preview stage label.
@@ -241,13 +258,19 @@ func _run() -> void:
 			and midpoint.y > 80.0,
 			"animated livestock crosses open SOIL, never teleports through the collapsing barn")
 		var threshold: Vector2 = FarmArt.animal_crossing_position(i,
-			game.SAFE_GATE,true,.62)
+			game.SAFE_GATE,true,.55)
 		check(absf(threshold.x-game.SAFE_GATE.x) < 1.0
 			and threshold.y > FarmArt.PEN.end.y,
 			"every animal uses the SAME prepared gate gap rather than crossing a solid rail")
 		check(FarmArt.GATE_LEFT < threshold.x
 			and threshold.x < FarmArt.GATE_RIGHT,
 			"single animal exit lies physically inside the real fence opening")
+		var receiver_entrance: Vector2 = FarmArt.animal_crossing_position(i,
+			game.SAFE_GATE,true,.86)
+		check(FarmArt.HOLDING.has_point(receiver_entrance)
+			and receiver_entrance.x < FarmArt.HOLDING.position.x+35.0
+			and receiver_entrance.y < FarmArt.HOLDING.position.y+122.0,
+			"rescued animal enters safe paddock through WEST open mouth, never northern rail")
 		check(FarmArt.animal_crossing_position(i,game.SAFE_GATE,true,1.0)
 			== FarmArt.animal_gate_position(i,game.SAFE_GATE),
 			"completed livestock path lands exactly at the safe gate")
