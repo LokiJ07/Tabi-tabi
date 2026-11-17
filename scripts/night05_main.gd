@@ -38,7 +38,7 @@ const FARMHOUSE := Vector2(-795,-220)
 const FARM_DOOR := Vector2(-732,-110)
 const FARMER_POS := Vector2(-525,235)
 const SAFE_PERIMETER := Vector2(135,295)
-const SAFE_GATE := Vector2(555,312)
+const SAFE_GATE := Vector2(555,138)
 const FUTURE_TRAIL := Vector2(955,-470)
 const PLAYER_SPEED := 250.0
 const CLUE_POS := {
@@ -67,7 +67,7 @@ const PREP_POS := {
 	"lantern_east":Vector2(573,-32)
 }
 const SHADOW_POS := [
-	Vector2(-54,-362),Vector2(546,-194),Vector2(460,225)
+	Vector2(-54,-362),Vector2(546,-194),Vector2(460,80)
 ]
 const SHADOW_LABELS := [
 	"Barn eave — long shadows connect to the goats",
@@ -355,12 +355,14 @@ func _draw() -> void:
 		draw_rect(Rect2(MAP.position.x,y,MAP.size.x,54),
 			Color("#384c3d").lerp(Color("#6b7758"),float(i)/29.0))
 	draw_texture_rect(SOIL,Rect2(-1110,-765,2210,1530),false,Color(1,1,1,.21))
-	# One connected old footpath from the wake, around the safe perimeter,
-	# to a future Night 6 route that remains locked on this chapter.
-	var path := PackedVector2Array([RETURN_WAKE,Vector2(-730,330),
-		Vector2(-405,338),SAFE_PERIMETER,SAFE_GATE])
+	# Main public road MUST NEVER cut through the livestock kural or
+	# holding paddock. A separate narrow spur ends BEFORE the animal-only gate.
+	var path := FarmArt.main_road_route(RETURN_WAKE,SAFE_PERIMETER)
 	draw_polyline(path,Color("#34443a"),116,true)
 	draw_polyline(path,Color("#ae9570"),81,true)
+	var gate_spur := FarmArt.gate_approach_route()
+	draw_polyline(gate_spur,Color("#34443a"),50,true)
+	draw_polyline(gate_spur,Color("#bba07d"),34,true)
 	FarmArt.paint_ground_texture(self,_stage()>=2)
 	FarmArt.paint_crop_rows(self,_stage()>=2)
 	FarmArt.paint_squash_patch(self,Vector2(-650,140),_stage()>=2)
@@ -369,7 +371,7 @@ func _draw() -> void:
 		Vector2(948,-65),Vector2(865,430)]:
 		DimensionalArt.paint_grounded(self,TREE,at+Vector2(0,30),
 			Vector2(235,294),Color("#91ab92"),.26)
-	for at in [Vector2(-850,-80),Vector2(750,200),Vector2(806,583)]:
+	for at in [Vector2(-850,-80),Vector2(895,12),Vector2(806,583)]:
 		DimensionalArt.paint_grounded(self,BANANA,at,
 			Vector2(145,210),Color("#8fa884"),.26)
 	_paint_farmhouse()
@@ -432,12 +434,12 @@ func _draw() -> void:
 		"LIVESTOCK PEN • NO ENTRY"
 		if FarmArt.animals_revealed(story.phase,debug_farm_preview)
 		else "MISSING HERD • FOLLOW TRACKS",
-		Vector2(385,83),286.0,_stage()>=2)
+		Vector2(375,-93),286.0,_stage()>=2)
 	FarmArt.paint_farm_sign(self,
 		FarmArt.gate_label(story.phase,story.preparations.has("safe_gate")),
-		Vector2(620,228),196.0,_stage()>=2)
+		Vector2(698,83),196.0,_stage()>=2)
 	FarmArt.paint_farm_sign(self,"SAFE HOLDING • %d/3" % story.rescued_groups,
-		Vector2(360,442),227.0,_stage()>=2)
+		Vector2(750,376),227.0,_stage()>=2)
 	if story.phase in [1,2,3]:
 		FarmArt.paint_farm_sign(self,"OBSERVE HERE",
 			SAFE_PERIMETER+Vector2(-250,-120),174.0,_stage()>=2)
