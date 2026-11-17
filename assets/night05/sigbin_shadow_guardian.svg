@@ -9,25 +9,23 @@
 </defs>
 <!-- Dense cloud of soft-edged shadows remains below the animal and does not resemble an enemy HP effect. -->
 <path d="M80 449C178 400 478 414 640 460Q493 507 280 481Q129 472 80 449Z" fill="#071d27" opacity=".28"/>
-<!-- Strong hind haunches, lower-than-dog stance and distinctive oversized ears. -->
+<!-- Hornless, low goatlike torso and oversized spring-loaded hind haunches. -->
 <path d="M148 357Q181 262 314 258Q411 239 495 275Q545 326 534 383L484 430L433 418L358 405Q287 431 216 419Z" fill="url(#fur)" stroke="#172a30" stroke-width="13"/>
 <path d="M155 350Q100 318 103 247Q111 198 132 214Q127 281 197 304" fill="none" stroke="#26393b" stroke-width="37" stroke-linecap="round"/>
-<path d="M199 366Q156 395 124 456L164 476Q202 449 236 428L278 388" fill="url(#fur)" stroke="#18282e" stroke-width="12"/>
-<path d="M441 361Q480 400 496 452L551 465Q553 449 521 406L495 348" fill="url(#fur)" stroke="#18292c" stroke-width="13"/>
-<!-- Elongated forward limbs, low paws, inverted posture not borrowed from a household dog. -->
-<path d="M269 357Q238 420 229 454Q240 478 280 463L310 400" fill="url(#fur)" stroke="#182d30" stroke-width="11"/>
-<path d="M477 361Q466 423 452 455Q467 478 506 466L527 398" fill="url(#fur)" stroke="#182d30" stroke-width="11"/>
+<path d="M199 349Q153 366 123 411L96 463L145 478Q185 446 219 423L281 383" fill="url(#fur)" stroke="#18282e" stroke-width="12"/>
+<path d="M439 330Q507 352 545 400L583 467L540 483Q502 443 475 407L479 353" fill="url(#fur)" stroke="#18292c" stroke-width="13"/>
+<!-- Small contracted forelegs are much shorter than the strong rear legs. -->
+<path d="M269 379Q248 402 249 435Q264 451 292 434L311 399" fill="url(#fur)" stroke="#182d30" stroke-width="11"/>
+<path d="M459 374Q443 403 460 439Q479 453 500 435L509 389" fill="url(#fur)" stroke="#182d30" stroke-width="11"/>
 <path d="M126 466L114 475M144 474L140 483M229 463L216 479M263 467L257 485M478 467L473 487M504 460L511 478" fill="none" stroke="#aeac95" stroke-width="7" stroke-linecap="round" opacity=".75"/>
-<!-- Angular ears reveal the species' strange profile to players at phone size. -->
-<path d="M479 272Q508 178 550 142Q549 221 560 275Q602 220 644 190Q616 289 600 333" fill="url(#fur)" stroke="#1b3032" stroke-width="11" stroke-linejoin="round"/>
-<path d="M515 231L535 181L535 249M578 266L609 230L589 291" fill="none" stroke="#bc998a" stroke-width="14" stroke-linecap="round" opacity=".65"/>
-<!-- Snout with a kind but fiercely protective expression. -->
-<path d="M451 292Q525 250 588 287Q625 302 629 350Q619 383 582 400L491 378Q453 356 451 292Z" fill="url(#fur)" stroke="#1e3334" stroke-width="11"/>
-<path d="M556 344Q609 330 656 356Q645 388 584 390Q557 383 556 344Z" fill="url(#chest)" stroke="#324345" stroke-width="8"/>
-<path d="M633 345Q661 340 671 356Q658 370 637 364Z" fill="#243638"/>
-<ellipse cx="551" cy="320" rx="18" ry="12" fill="#1f2a2b"/>
-<ellipse cx="552" cy="320" rx="12" ry="8" fill="url(#eye)"/><circle cx="556" cy="319" r="4" fill="#16272a"/>
-<path d="M564 373Q584 388 605 379" fill="none" stroke="#304549" stroke-width="5" stroke-linecap="round"/>
+<!-- The two ears now live in separately pivoted SVG textures so they can clap. -->
+<!-- Head lowered between its shoulders: cautious gaze, goatlike nose. -->
+<path d="M438 322Q514 278 588 315Q625 328 629 377Q619 410 579 429L488 403Q449 385 438 322Z" fill="url(#fur)" stroke="#1e3334" stroke-width="11"/>
+<path d="M548 368Q608 350 655 380Q644 415 580 416Q552 404 548 368Z" fill="url(#chest)" stroke="#324345" stroke-width="8"/>
+<path d="M632 373Q660 365 672 381Q660 396 635 390Z" fill="#243638"/>
+<ellipse cx="546" cy="347" rx="18" ry="12" fill="#1f2a2b"/>
+<ellipse cx="548" cy="347" rx="12" ry="8" fill="url(#eye)"/><circle cx="551" cy="345" r="4" fill="#16272a"/>
+<path d="M563 404Q583 419 604 407" fill="none" stroke="#304549" stroke-width="5" stroke-linecap="round"/>
 <!-- Wind-stirred fur and protective dim moon highlights. -->
 <path d="M233 301Q288 273 336 291M313 305L353 286M367 289L395 305M283 368L357 342M398 375L429 364" stroke="#a2a89b" stroke-width="6" opacity=".23" fill="none" stroke-linecap="round"/>
 <path d="M194 333Q228 340 249 359M387 340Q417 338 442 352" stroke="#d5c3a6" stroke-width="4" opacity=".30" fill="none"/>
