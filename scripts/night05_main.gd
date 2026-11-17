@@ -269,7 +269,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			_open_options()
 	if OS.get_name() == "Android" and OS.has_feature("debug") and event is InputEventKey:
 		var key := event as InputEventKey
-		if key.pressed and not key.echo and key.keycode in [KEY_F3,KEY_F5,KEY_F6,KEY_F9]:
+		if key.pressed and not key.echo and key.keycode in [KEY_F3,KEY_F5,KEY_F6,KEY_F9,KEY_F10]:
 			_close_dialogue()
 			notes.hide()
 			options.hide()
@@ -289,6 +289,26 @@ func _unhandled_input(event: InputEvent) -> void:
 					farmer_retreat_seconds = 3.3
 					previous_stage = 3
 					print("NIGHT5_QA_SIGBIN_NIGHT")
+				KEY_F10:
+					# Android DEBUG CI only: exercise the real investigation,
+					# preparation and correct first-lantern state transitions.
+					# Do not modify the save; the QA emulator is disposable.
+					if story.phase == 0:
+						for clue_id in Story.CLUES:
+							story.inspect(clue_id)
+					if story.phase == 1:
+						story.deduce("guardian")
+					if story.phase == 2:
+						for prep_id in Story.PREPARATIONS:
+							story.prepare(prep_id)
+						story.begin_rescue()
+					if story.phase == 3 and story.shadow_index == 0:
+						story.observe_tick(1.30,true,true)
+						if story.respond("lantern_west"):
+							animal_rescue_motion[0] = 0.0
+					player_pos = SAFE_PERIMETER
+					if story.phase == 3 and story.rescued_groups == 1:
+						print("NIGHT5_QA_FIRST_RESCUE_ACTIVE")
 			bantay_pos = player_pos+Vector2(-49,29)
 			camera.position = player_pos
 			_refresh()
