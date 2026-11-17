@@ -232,17 +232,62 @@ func _draw_house(foot: Vector2,width: float,night: bool,lit: bool) -> void:
 		Color("#c2a37b"),4.0,true)
 	draw_rect(Rect2(foot+Vector2(-w*.23,-w*.72),Vector2(w*.19,w*.42)),Color("#493e34"))
 	draw_rect(Rect2(foot+Vector2(-w*.28,-w*.27),Vector2(w*.36,7)),Color("#b5a589"))
+	# Bamboo-lath and braced side-wall detail follows the wall's angle.
+	for i in range(5):
+		var layer := float(i)
+		draw_line(foot+Vector2(-w*.44,-w*(.72-layer*.072)),
+			foot+Vector2(-w*.06,-w*(.95-layer*.072)),
+			Color(.86,.75,.56,.48),2.0,true)
+	draw_line(foot+Vector2(w*.06,-w*.60),foot+Vector2(w*.45,-w*.83),
+		Color("#a6a08a"),3.0,true)
+	draw_line(foot+Vector2(w*.17,-w*.55),foot+Vector2(w*.17,-w*1.02),
+		Color("#868674"),3.0,true)
 	Windows.paint_window(self,foot+Vector2(w*.27,-w*.84),
 		Vector2(w*.20,w*.20),0 if lit else 2,night,clock,prefs.reduced_motion)
 
 func _paint_evidence(at: Vector2,name: String,read: bool) -> void:
-	draw_circle(at+Vector2(0,7),38,Color(.03,.07,.08,.25))
-	draw_circle(at-Vector2(0,19),24,
+	# Real nearby inspection marker, never a wall of floating text over
+	# walkways or the Night 1 HUD. Distant sources remain identifiable by compass.
+	draw_circle(at+Vector2(0,5),28,Color(.02,.06,.06,.22))
+	draw_circle(at-Vector2(0,20),20,
 		Color("#759e87") if read else Color("#e6ce8c"))
-	draw_circle(at-Vector2(0,19),12,Color("#263f47"))
-	var font := ThemeDB.fallback_font
-	draw_string(font,at+Vector2(-95,39),name,HORIZONTAL_ALIGNMENT_CENTER,190,16,
-		Color("#e8e4c7"))
+	draw_circle(at-Vector2(0,20),9,Color("#263f47"))
+	if player_pos.distance_to(at) > 215.0:
+		return
+	var plaque_width: float = clampf(float(name.length())*8.5+22,100.0,198.0)
+	var plate := Rect2(at+Vector2(-plaque_width*.5,10),Vector2(plaque_width,27))
+	draw_rect(plate,Color(.055,.15,.17,.90))
+	draw_rect(plate,Color("#c8a36b"),false,1.5)
+	draw_string(ThemeDB.fallback_font,plate.position+Vector2(9,19),
+		name,HORIZONTAL_ALIGNMENT_LEFT,plaque_width-18,14,Color("#f7e6bd"))
+
+func _paint_old_rescue_banca(foot: Vector2) -> void:
+	# Abandoned rescue boat grounded by a real contact shadow, angled hull,
+	# visible ribs, tied outrigger and dry planks. NOT a floating prop.
+	draw_colored_polygon(PackedVector2Array([
+		foot+Vector2(-121,17),foot+Vector2(-72,37),
+		foot+Vector2(91,34),foot+Vector2(125,-10),
+		foot+Vector2(52,-40),foot+Vector2(-84,-37)]),Color("#544335"))
+	draw_colored_polygon(PackedVector2Array([
+		foot+Vector2(-118,4),foot+Vector2(-69,22),
+		foot+Vector2(84,21),foot+Vector2(115,-14),
+		foot+Vector2(49,-43),foot+Vector2(-84,-40)]),Color("#aa865c"))
+	draw_colored_polygon(PackedVector2Array([
+		foot+Vector2(-80,-30),foot+Vector2(50,-34),
+		foot+Vector2(88,-10),foot+Vector2(-60,-4)]),Color("#6b5946"))
+	for i in range(5):
+		var x := float(i)*28.0-56.0
+		draw_line(foot+Vector2(x,-27),foot+Vector2(x+15,1),
+			Color("#bd9d71"),4,true)
+	for side in [-1.0,1.0]:
+		draw_line(foot+Vector2(-64,side*20),foot+Vector2(93,side*41),
+			Color("#6d5945"),6,true)
+		draw_line(foot+Vector2(-78,side*52),foot+Vector2(110,side*59),
+			Color("#aa8a61"),5,true)
+	draw_line(foot+Vector2(-4,-22),foot+Vector2(20,-90),
+		Color("#907355"),5.0,true)
+	draw_line(foot+Vector2(20,-90),foot+Vector2(90,-30),
+		Color(.84,.81,.67,.32),2.0,true)
 
 func _draw() -> void:
 	var night := _stage()>=2
@@ -250,6 +295,14 @@ func _draw() -> void:
 	Landscape.parallax_ridges(self,MAP.grow(200),camera.position,6,_stage())
 	draw_rect(Rect2(-1180,-720,2510,1600),Color("#516757"))
 	draw_texture_rect(SOIL,Rect2(-1180,-735,2510,1590),false,Color(1,1,1,.17))
+	# Terrain relief and river-cut gullies, never fake square biome borders.
+	for i in range(17):
+		var n := float(i)
+		var earth := Vector2(-1130+n*153.0,-540+sin(n*1.71)*54.0)
+		draw_colored_polygon(PackedVector2Array([
+			earth+Vector2(-70,12),earth+Vector2(-24,-18),
+			earth+Vector2(49,-13),earth+Vector2(100,18),
+			earth+Vector2(34,29)]),Color(.18,.27,.22,.14))
 	var road := PackedVector2Array([
 		RETURN_FARM,Vector2(-875,-370),Vector2(-675,-178),
 		Vector2(-425,-65),Vector2(-115,88),Vector2(180,185)])
@@ -266,12 +319,25 @@ func _draw() -> void:
 		Vector2(1350,835),Vector2(-1250,835)])
 	draw_colored_polygon(water_region,Color("#1d4f59") if night else Color("#3b7778"))
 	draw_texture_rect(WATER,Rect2(-1160,250,2500,560),false,Color(1,1,1,.19))
-	draw_polyline(shore,Color("#a9a68a"),17,true)
-	for i in range(24):
-		var yy := 310.0+float(i)*17.0
-		var drift := 0.0 if prefs.reduced_motion else sin(clock*.72+float(i)) * 14.0
-		draw_line(Vector2(-1090+drift,yy),Vector2(1205+drift,yy-7),
-			Color(.66,.86,.83,.065+(float(i%3)*.025)),2.0,true)
+	draw_polyline(shore,Color("#4b665d"),34,true)
+	draw_polyline(shore,Color("#b8aa87"),11,true)
+	# Short drifting water-ripple clusters keep the stream visibly alive,
+	# instead of parallel full-screen ruler lines.
+	for i in range(105):
+		var n := float(i)
+		var xx := -1145.0+float(i%15)*169.0+sin(n*1.71)*37.0
+		var yy := 310.0+float(i/15)*69.0+cos(n*2.13)*17.0
+		var drift := 0.0 if prefs.reduced_motion else sin(clock*.76+n)*11.0
+		draw_line(Vector2(xx+drift,yy),Vector2(xx+drift+40.0+float(i%3)*13.0,yy-4.0),
+			Color(.72,.89,.83,.08+(float(i%3)*.018)),2.0,true)
+	# Reeds, river stones and wet-bank shadows stay OFF the walkable road.
+	for i in range(18):
+		var n := float(i)
+		var bank_foot := Vector2(-1090+n*135.0,212.0+sin(n*.81)*22.0)
+		if i % 3 != 0:
+			Landscape.reeds(self,bank_foot,49.0,clock*.27+n,night)
+		else:
+			Landscape.rock(self,bank_foot,21.0,not night)
 	# The raised opposite bank is visible beyond the crossing, not a void.
 	draw_colored_polygon(PackedVector2Array([
 		Vector2(790,520),Vector2(1110,485),Vector2(1330,550),
@@ -283,6 +349,18 @@ func _draw() -> void:
 	_draw_house(ARCHIVE+Vector2(0,-24),225,night,false)
 	_draw_house(SABEL_AT+Vector2(17,-20),172,night,true)
 	_draw_house(LOLA_AT+Vector2(40,-28),172,night,true)
+	# Old rescue equipment survives at the lower public-bank landing.
+	_paint_old_rescue_banca(Vector2(-566,311))
+	for at in [Vector2(-750,258),Vector2(-700,270),Vector2(-337,265)]:
+		draw_colored_polygon(PackedVector2Array([
+			at+Vector2(-17,-28),at+Vector2(6,-36),
+			at+Vector2(23,-23),at+Vector2(0,-16)]),Color("#b08b61"))
+		draw_colored_polygon(PackedVector2Array([
+			at+Vector2(-17,-28),at+Vector2(0,-16),
+			at+Vector2(0,12),at+Vector2(-17,-1)]),Color("#665644"))
+		draw_colored_polygon(PackedVector2Array([
+			at+Vector2(0,-16),at+Vector2(23,-23),
+			at+Vector2(23,4),at+Vector2(0,12)]),Color("#7b654c"))
 	# Historians' board is a physical model beside the public path: not time travel.
 	draw_colored_polygon(PackedVector2Array([
 		TABLE+Vector2(-135,-62),TABLE+Vector2(-20,-104),
@@ -292,14 +370,16 @@ func _draw() -> void:
 		TABLE+Vector2(13,26),TABLE+Vector2(-135,-25)]),Color("#715a45"))
 	draw_line(TABLE+Vector2(-109,-48),TABLE+Vector2(111,-57),Color("#d4c2a0"),4,true)
 	draw_line(TABLE+Vector2(-45,-86),TABLE+Vector2(32,-34),Color("#547c80"),7,true)
-	# Named survivor routes are separated in the map exhibit; no magic replay.
-	for id in Story.ROUTE:
-		var dot: Vector2 = ROUTE_POS[id]
-		_paint_evidence(dot,id.replace("_"," ").to_upper(),
-			story.route_index>Story.ROUTE.find(id))
-	for id in Story.CLUES:
-		var clue_at: Vector2 = CLUE_POS[id]
-		if story.phase <= 1:
+	# Display only the CURRENT reconstruction's markers. Historical route
+	# pins must not overlap present-day source clues before their chapter.
+	if story.phase == 2:
+		for id in Story.ROUTE:
+			var dot: Vector2 = ROUTE_POS[id]
+			_paint_evidence(dot,id.replace("_"," ").to_upper(),
+				story.route_index>Story.ROUTE.find(id))
+	if story.phase <= 1:
+		for id in Story.CLUES:
+			var clue_at: Vector2 = CLUE_POS[id]
 			_paint_evidence(clue_at,id.replace("_"," ").to_upper(),story.clues.has(id))
 	for id in Story.IDENTITY:
 		if story.phase == 3:
@@ -307,16 +387,30 @@ func _draw() -> void:
 				story.identity_sources.has(id))
 	# Three physical stepping-stone sites have actual support and a clear route.
 	var stone_path := PackedVector2Array([Vector2(170,177),STEPS[0],STEPS[1],STEPS[2]])
-	draw_polyline(stone_path,Color("#2b4040"),89,true)
-	draw_polyline(stone_path,Color("#6f7c6f"),61,true)
+	# Thin submerged guide rope and short timber spans communicate a crossing,
+	# not a giant paved highway through floodwater.
+	draw_polyline(stone_path,Color(.18,.36,.37,.74),15.0,true)
+	for i in range(stone_path.size()-1):
+		var start: Vector2 = stone_path[i]
+		var finish: Vector2 = stone_path[i+1]
+		var direction: Vector2 = (finish-start).normalized()
+		var tangent := Vector2(-direction.y,direction.x)
+		for board in range(3):
+			var pos: Vector2 = start.lerp(finish,(float(board)+1.0)/4.0)
+			draw_colored_polygon(PackedVector2Array([
+				pos-tangent*17-direction*9,pos+tangent*17-direction*9,
+				pos+tangent*17+direction*9,pos-tangent*17+direction*9]),
+				Color("#79857a"))
+			draw_line(pos-tangent*16,pos+tangent*16,Color("#b1ad86"),2.2,true)
 	for i in range(STEPS.size()):
 		var at: Vector2 = STEPS[i]
 		Landscape.rock(self,at,74,not night)
 		draw_circle(at+Vector2(0,-14),13,
 			Color("#e5cf90") if story.phase >= 6 and i <= story.step_index else Color("#86ada7"))
 		var label: String = "SAFE STONE %d" % [i+1]
-		draw_string(ThemeDB.fallback_font,at+Vector2(-102,65),label,
-			HORIZONTAL_ALIGNMENT_CENTER,204,19,Color("#eee0b9"))
+		if player_pos.distance_to(at)<240.0 or story.phase == 6:
+			draw_string(ThemeDB.fallback_font,at+Vector2(-72,65),label,
+				HORIZONTAL_ALIGNMENT_LEFT,145,15,Color("#eee0b9"))
 	for id in Story.PREPARATIONS:
 		if story.phase >= 5:
 			var pos: Vector2 = PREP_POS[id]
@@ -366,14 +460,20 @@ func _draw() -> void:
 	var bob := 0.0 if prefs.reduced_motion else absf(sin(walk_time))*2.8
 	Depth.paint_grounded(self,BANTAY,bantay_pos,Vector2(95,102),Color.WHITE,.31,bob)
 	Depth.paint_grounded(self,HERO,player_pos,Vector2(108,142),Color.WHITE,.37,bob)
-	draw_string(ThemeDB.fallback_font,RETURN_FARM+Vector2(12,-74),
-		"UPHILL FARM TRAIL • RETURN",HORIZONTAL_ALIGNMENT_LEFT,460,19,Color("#f1d8ad"))
-	draw_string(ThemeDB.fallback_font,Vector2(90,233),
-		"OLD CROSSING • USE MARKED STONES",HORIZONTAL_ALIGNMENT_LEFT,480,21,Color("#f3e6be"))
-	draw_string(ThemeDB.fallback_font,TABLE+Vector2(-132,-124),
-		"FLOOD RECONSTRUCTION • DOCUMENTED SOURCES",HORIZONTAL_ALIGNMENT_LEFT,550,19,Color("#f1e0bb"))
-	draw_string(ThemeDB.fallback_font,Vector2(900,475),
-		"BALETE GROUNDS • NIGHT 7 LOCKED",HORIZONTAL_ALIGNMENT_LEFT,430,18,Color("#f2d89e"))
+	# Nearby ground signs are concise and contextual, never overlaid across
+	# the touchscreen or blocking the player during exploration.
+	if player_pos.distance_to(RETURN_FARM)<270:
+		draw_string(ThemeDB.fallback_font,RETURN_FARM+Vector2(-75,-68),
+			"FARM RETURN",HORIZONTAL_ALIGNMENT_LEFT,180,16,Color("#f1d8ad"))
+	if player_pos.distance_to(TABLE)<245 and story.phase in [1,3]:
+		draw_string(ThemeDB.fallback_font,TABLE+Vector2(-62,-117),
+			"FLOOD RECORD",HORIZONTAL_ALIGNMENT_LEFT,160,16,Color("#f1e0bb"))
+	if player_pos.distance_to(Vector2(190,210))<270:
+		draw_string(ThemeDB.fallback_font,Vector2(80,128),
+			"OLD CROSSING",HORIZONTAL_ALIGNMENT_LEFT,220,16,Color("#f3e6be"))
+	if story.outcome != "" and player_pos.distance_to(Vector2(800,530))<280:
+		draw_string(ThemeDB.fallback_font,Vector2(825,476),
+			"NIGHT 7 • NOT YET OPEN",HORIZONTAL_ALIGNMENT_LEFT,310,15,Color("#f2d89e"))
 
 func _fit_status_card() -> void:
 	if status_panel == null or status_stack == null or not is_inside_tree(): return
