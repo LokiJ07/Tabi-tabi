@@ -57,14 +57,57 @@ func _run() -> void:
 		and not FarmArt.inside_livestock_pen(game.SAFE_PERIMETER)
 		and not FarmArt.inside_livestock_pen(game.CLUE_POS["broken_barn"]),
 		"animal gate, watch marker and evidence remain safely reachable OUTSIDE fences")
-	var road_entry := Vector2(555,337)
-	check(FarmArt.keep_player_outside_pen(road_entry,Vector2(555,268)) == road_entry,
-		"player cannot phase through kural from safe road toward livestock")
-	check(FarmArt.keep_player_outside_pen(Vector2(275,210),Vector2(320,210)).x <= 286.0,
+	# Regression: the previous "final" night put the pen and receiving
+	# paddock ACROSS the 116px-wide public footpath. The actual road and its
+	# half-width must remain outside BOTH fenced rectangles at every point.
+	var main_road: PackedVector2Array = FarmArt.main_road_route(
+		game.RETURN_WAKE,game.SAFE_PERIMETER)
+	check(main_road.size() == 5 and main_road[main_road.size()-1]
+		== FarmArt.MAIN_ROAD_END,
+		"farm main road keeps its independent endpoint beyond observation")
+	for segment in range(main_road.size()-1):
+		for step in range(21):
+			var walk_point: Vector2 = main_road[segment].lerp(
+				main_road[segment+1],float(step)/20.0)
+			check(not FarmArt.PEN.grow(58.0).has_point(walk_point)
+				and not FarmArt.HOLDING.grow(58.0).has_point(walk_point),
+				"entire 116px main road stays clear of both fences at sample "+
+				str(segment)+"/"+str(step))
+	var road_spur: PackedVector2Array = FarmArt.gate_approach_route()
+	check(road_spur.size() == 2
+		and not FarmArt.PEN.grow(24.0).has_point(road_spur[1])
+		and not FarmArt.HOLDING.grow(24.0).has_point(road_spur[1])
+		and road_spur[1].distance_to(game.SAFE_GATE) < 135.0,
+		"narrow side path reaches animal gate interact range without touching fenced pen")
+	# Painterly props and labels are excluded from the receiving pen and
+	# the shared right-side LOOK/INTERACT HUD. Earlier QA showed a large tree
+	# through the goats and the SAFE HOLDING sign underneath the LOOK button.
+	var tree_bounds := Rect2(FarmArt.LOWER_TREE+Vector2(-117.5,-264.0),
+		Vector2(235,294))
+	var banana_bounds := Rect2(FarmArt.LOWER_BANANA+Vector2(-72.5,-210.0),
+		Vector2(145,210))
+	check(not tree_bounds.intersects(FarmArt.HOLDING)
+		and not banana_bounds.intersects(FarmArt.HOLDING),
+		"no foreground trees or bananas can cover rescued animals in their holding area")
+	check(FarmArt.HOLDING_SIGN_AT.x < FarmArt.HOLDING.position.x
+		and FarmArt.HOLDING_SIGN_AT.y > FarmArt.HOLDING.end.y+40.0
+		and not FarmArt.PEN.grow(48.0).has_point(FarmArt.HOLDING_SIGN_AT),
+		"receiving paddock sign sits left/below the fence, away from mobile LOOK controls")
+	var road_entry := Vector2(555,205)
+	check(FarmArt.keep_player_outside_pen(road_entry,Vector2(555,85)) == road_entry,
+		"player cannot phase through uphill pen from its gate approach")
+	check(FarmArt.keep_player_outside_pen(Vector2(275,55),Vector2(320,55)).x <= 286.0,
 		"western animal fence blocks unsafe approach while letting player slide")
-	check(FarmArt.keep_player_outside_pen(Vector2(355,210),Vector2(355,220)).y
+	check(FarmArt.keep_player_outside_pen(Vector2(355,75),Vector2(355,82)).y
 		> FarmArt.PEN.end.y,
-		"an older save inside pen is relocated outside the safe gate boundary")
+		"an older save inside relocated pen is recovered to accessible safe soil")
+	for animal_index in range(3):
+		var pen_foot: Vector2 = FarmArt.animal_pen_position(animal_index)
+		var holding_foot: Vector2 = FarmArt.animal_gate_position(
+			animal_index,game.SAFE_GATE)
+		check(FarmArt.inside_livestock_pen(pen_foot)
+			and FarmArt.HOLDING.has_point(holding_foot),
+			"animal "+str(animal_index)+" starts inside uphill pen, ends inside off-road holding paddock")
 	check(game.SIGBIN_EAR_NEAR.get_width() >= 200 and game.SIGBIN_EAR_FAR.get_height() >= 120,
 		"two independent original Sigbin ear sprites actually imported")
 	check(SigbinPresence.visibility(0,false,false,0.0) == 0.0
