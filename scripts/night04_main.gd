@@ -81,6 +81,8 @@ var travel_in_progress := false
 var hud: CanvasLayer
 var controls: Control
 var objective: Label
+var status_panel: PanelContainer
+var status_stack: VBoxContainer
 var subtitle: Label
 var pressure: Label
 var waypoint: Label
@@ -473,6 +475,15 @@ func _draw() -> void:
 	draw_string(font,WAKE_HOUSE+Vector2(-160,206),"THE WAKE • LAMAY",HORIZONTAL_ALIGNMENT_LEFT,350,20,Color("#f7d79d"))
 	draw_string(font,Vector2(630,-140),"THE FARM TRAIL • "+("OPEN" if story.outcome != "" else "LOCKED"),HORIZONTAL_ALIGNMENT_LEFT,355,18,Color("#e3ca97"))
 
+func _fit_status_card() -> void:
+	# Same dynamic status height as Night 1–3: objectives must never overflow.
+	if status_panel == null or status_stack == null or not is_inside_tree():
+		return
+	var needed: float = status_stack.get_combined_minimum_size().y + 30.0
+	var available: float = get_viewport().get_visible_rect().size.y * 0.67
+	status_panel.offset_bottom = clampf(needed, 145.0, available)
+
+
 func _build_ui() -> void:
 	var atmosphere_layer := CanvasLayer.new()
 	atmosphere_layer.layer = 3
@@ -488,7 +499,10 @@ func _build_ui() -> void:
 	hud.add_child(controls)
 	var status: Dictionary = SharedHUD.create_status_card(controls,"BARRIO LAWOM   /   NIGHT 4",prefs.text_scale)
 	objective = status["objective"]
-	var stack: VBoxContainer = status["stack"]
+	status_panel = status["panel"]
+	status_stack = status["stack"]
+	status_stack.minimum_size_changed.connect(func(): call_deferred("_fit_status_card"))
+	var stack: VBoxContainer = status_stack
 	subtitle = Label.new()
 	subtitle.add_theme_font_size_override("font_size",17)
 	subtitle.add_theme_color_override("font_color",Color("#c6dccd"))
@@ -524,18 +538,28 @@ func _build_ui() -> void:
 			"SAFE RETREAT":
 				SharedHUD.make_gameplay_button(controls,title,at,size2,
 					_confirm_retreat,func():pass,prefs.text_scale)
+	# Match the exact Night 1–3 top action slots (and make each control real).
+	var prep_button := SharedHUD.make_gameplay_button(controls,"PREPARE",
+		Vector2(1050,276),Vector2(180,56),_open_preparation_briefing,func():pass,prefs.text_scale)
+	prep_button.name = "PrepareButton"
+	var save_button := SharedHUD.make_gameplay_button(controls,"SAVE",
+		Vector2(1050,345),Vector2(85,52),_save_feedback,func():pass,prefs.text_scale)
+	save_button.name = "SaveButton"
+	var retry_button := SharedHUD.make_gameplay_button(controls,"RETRY",
+		Vector2(1142,345),Vector2(88,52),_retry_from_saved_checkpoint,func():pass,prefs.text_scale)
+	retry_button.name = "RetryButton"
 	SharedHUD.make_options_button(controls,_open_options,prefs.text_scale)
 	var pad := AimPad.new()
 	pad.name = "SharedLookPad"
-	pad.prompt_text = "LOOK"
+	pad.prompt_text = "LOOK AROUND"
 	pad.anchor_left = 1.0
 	pad.anchor_right = 1.0
 	pad.anchor_top = 1.0
 	pad.anchor_bottom = 1.0
-	pad.offset_left = -450.0
-	pad.offset_right = -280.0
-	pad.offset_top = -185.0
-	pad.offset_bottom = -18.0
+	pad.offset_left = -435.0
+	pad.offset_right = -260.0
+	pad.offset_top = -205.0
+	pad.offset_bottom = -40.0
 	pad.aim_changed.connect(func(d: Vector2): aim = d)
 	pad.aim_released.connect(func(): aim = Vector2.ZERO)
 	controls.add_child(pad)
@@ -717,6 +741,9 @@ func _show_attack_warning() -> void:
 		 {"label":"ESCORT THE GUESTS INSIDE","action":"escort_group"}])
 
 func _choose(value: String) -> void:
+	if value == "reload_saved":
+		get_tree().call_deferred("reload_current_scene")
+		return
 	if value == "close":
 		_close_dialogue()
 		return
@@ -867,6 +894,23 @@ func _open_notes() -> void:
 	notes_text.text += "\nPrevious records: Santelmo %s; Kapre %s; Tikbalang %s." % [
 		story.night01_outcome,story.night02_outcome,story.night03_outcome]
 	_sync_ui()
+
+func _open_preparation_briefing() -> void:
+	if _modal():
+		return
+	_talk("WAKE SAFETY PREPARATION",
+		"Defense ready: %d/4. Use INTERACT at the rear bell, courtyard lantern, rear shutter and Mara lookout. Protect the mourners as a group; do not approach the roof alone." % story.defenses.size(),
+		[{"label":"RETURN TO THE WAKE","action":"close"}])
+
+
+func _retry_from_saved_checkpoint() -> void:
+	if _modal() or travel_in_progress:
+		return
+	_talk("RETRY • LAST SAVED CHECKPOINT",
+		"Reload the last offline checkpoint for this Night? Unsaved actions will be lost; previous chapter records remain intact.",
+		[{"label":"RETRY LAST SAVED CHECKPOINT","action":"reload_saved"},
+		 {"label":"KEEP PLAYING","action":"close"}])
+
 
 func _open_options() -> void:
 	if dialogue.visible or ending.visible:
