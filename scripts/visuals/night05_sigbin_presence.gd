@@ -27,6 +27,25 @@ static func backward_foot(anchor: Vector2, seconds: float, route: int,
 	var offset := 148.0*_ease(cycle/8.5) if cycle < 8.5 else 148.0*(1.0-_ease((cycle-8.5)/6.5))
 	return anchor+Vector2(-offset,2.2*sin(seconds*4.2))
 
+## Derivative of the retreat path. Hooves stop cycling when travel pauses;
+## the previous 4.2 Hz gait kept running despite almost-zero displacement.
+static func gait_strength(seconds: float, route: int,
+		reduced_motion: bool) -> float:
+	if reduced_motion:
+		return 0.0
+	var cycle := fposmod(seconds+float(route)*1.7,15.0)
+	var t := cycle/8.5 if cycle < 8.5 else (cycle-8.5)/6.5
+	return clampf(4.5*t*(1.0-t),0.0,1.0)
+
+static func body_weight_shift(seconds: float, route: int,
+		reduced_motion: bool) -> Vector2:
+	if reduced_motion:
+		return Vector2.ZERO
+	var gait := gait_strength(seconds,route,false)
+	# The ribcage lags the stepping hindquarters, but never bobs off soil.
+	return Vector2(sin(seconds*4.2+.65)*1.5*gait,
+		-.8*sin(seconds*.92)-2.0*gait*maxf(0.0,sin(seconds*4.2+.65)))
+
 static func stride(seconds: float, phase: float, reduced_motion: bool) -> float:
 	return 0.0 if reduced_motion else sin(seconds*4.2+phase)
 
@@ -53,10 +72,13 @@ static func _organic_contour(centers: PackedVector2Array, width: float) -> Packe
 
 static func _limb(target: CanvasItem, foot: Vector2, seconds: float,
 		hip_local: Vector2, hind: bool, phase: float,
-		reduced_motion: bool, opacity: float, behind: bool) -> void:
-	var hip := foot+hip_local
-	var gait := stride(seconds,phase,reduced_motion)
-	var lift := hoof_lift(seconds,phase,reduced_motion)
+		reduced_motion: bool, opacity: float, behind: bool,
+		route: int) -> void:
+	var strength := gait_strength(seconds,route,reduced_motion)
+	var weight := body_weight_shift(seconds,route,reduced_motion)
+	var hip := foot+hip_local+weight
+	var gait := stride(seconds,phase,reduced_motion)*strength
+	var lift := hoof_lift(seconds,phase,reduced_motion)*strength
 	var ankle := foot+Vector2(hip_local.x+(11.0 if hind else 2.0)+gait*(8.0 if hind else 6.0),
 		-4.0-lift)
 	var knee := hip+Vector2((-18.0 if hind else -7.0)+gait*2.2,
@@ -92,7 +114,8 @@ static func _limb(target: CanvasItem, foot: Vector2, seconds: float,
 		Color(.48,.49,.41,opacity*.36),1.6,true)
 
 static func paint_ground_contact(target: CanvasItem, foot: Vector2,
-		seconds: float, reduced_motion: bool, opacity: float) -> void:
+		seconds: float, reduced_motion: bool, opacity: float,
+		route: int = 0) -> void:
 	if opacity <= .01:
 		return
 	# A soft multi-radius contact ellipse holds the animal visually on soil,
@@ -104,7 +127,7 @@ static func paint_ground_contact(target: CanvasItem, foot: Vector2,
 	target.draw_set_transform(Vector2.ZERO,0.0,Vector2.ONE)
 	if reduced_motion:
 		return
-	var puff := maxf(0.0,cos(seconds*4.2))
+	var puff := maxf(0.0,cos(seconds*4.2))*gait_strength(seconds,route,false)
 	for d in range(3):
 		var p := foot+Vector2(-46+float(d)*26,-2-float(d%2)*3)
 		target.draw_circle(p+Vector2(0,-puff*9.0),
@@ -112,17 +135,17 @@ static func paint_ground_contact(target: CanvasItem, foot: Vector2,
 
 static func paint_limb_pair(target: CanvasItem, foot: Vector2,
 		seconds: float, reduced_motion: bool, opacity: float,
-		behind: bool) -> void:
+		behind: bool, route: int = 0) -> void:
 	if behind:
 		_limb(target,foot,seconds,Vector2(-45,-61),true,PI,
-			reduced_motion,opacity*.73,true)
+			reduced_motion,opacity*.73,true,route)
 		_limb(target,foot,seconds,Vector2(44,-43),false,0.0,
-			reduced_motion,opacity*.70,true)
+			reduced_motion,opacity*.70,true,route)
 	else:
 		_limb(target,foot,seconds,Vector2(-66,-69),true,0.0,
-			reduced_motion,opacity,false)
+			reduced_motion,opacity,false,route)
 		_limb(target,foot,seconds,Vector2(62,-47),false,PI,
-			reduced_motion,opacity,false)
+			reduced_motion,opacity,false,route)
 
 static func clap_strength(seconds: float, reduced_motion: bool) -> float:
 	if reduced_motion:
