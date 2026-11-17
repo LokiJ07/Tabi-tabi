@@ -1,5 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="760" height="620" viewBox="0 0 760 620">
-<title>Manananggal — winged nighttime silhouette, non-graphic folklore artwork</title>
+<title>Manananggal original 2.5D torso head and arms</title>
 <defs>
 <linearGradient id="wing" x1="0" y1="0" x2="1" y2="1">
 <stop stop-color="#76807e"/><stop offset=".2" stop-color="#303a43"/><stop offset=".62" stop-color="#171e2b"/><stop offset="1" stop-color="#0a1822"/></linearGradient>
@@ -9,15 +10,6 @@
 <stop stop-color="#9c806e"/><stop offset=".44" stop-color="#735e5c"/><stop offset="1" stop-color="#322c33"/></linearGradient>
 <radialGradient id="eye"><stop stop-color="#fff4bc"/><stop offset=".35" stop-color="#f6ba83"/><stop offset="1" stop-color="#a74d42"/></radialGradient>
 </defs>
-<!-- Flight form is atmospheric, with explicitly no gore or exposed anatomy. -->
-<path d="M335 258Q242 169 129 119L37 95L77 166L28 208L114 219L51 290
-L172 269L109 355L227 296L277 337L342 326Z" fill="url(#wing)" stroke="#151b22" stroke-width="15"/>
-<path d="M422 256Q521 165 640 108L723 82L686 156L736 193L651 219L720 279
-L603 270L659 341L532 287L486 340L414 321Z" fill="url(#wing)" stroke="#111b25" stroke-width="15"/>
-<g fill="none" stroke="#87908a" opacity=".27" stroke-width="8">
-<path d="M332 268Q220 194 69 147M318 291Q202 254 77 204M321 301Q216 306 103 349
-M425 266Q543 193 696 138M439 292Q576 259 707 206M429 306Q542 302 661 335"/>
-</g>
 <path d="M283 295Q266 355 291 422L343 473L380 452L413 473L473 418
 Q491 337 458 284L431 271L380 286L333 272Z"
 fill="url(#cloth)" stroke="#202028" stroke-width="12"/>
