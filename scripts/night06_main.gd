@@ -31,7 +31,7 @@ const MAP := Rect2(-1160,-815,2470,1630)
 const RETURN_FARM := Vector2(-1040,-480)
 const ARCHIVE := Vector2(-580,-277)
 const TABLE := Vector2(-170,-90)
-const MARA_AT := Vector2(-490,-116)
+const MARA_AT := Vector2(-628,-255)
 const DADO_AT := Vector2(-475,175)
 const SABEL_AT := Vector2(362,-258)
 const LOLA_AT := Vector2(-160,-312)
@@ -428,8 +428,8 @@ func _draw() -> void:
 	for strip in range(22):
 		var t: float = float(strip)/21.0
 		var ground := Color("#3c5b52").lerp(Color("#66755b"),t)
-		draw_rect(Rect2(-1180,-720+float(strip)*45,2510,47),ground)
-	draw_texture_rect(SOIL,Rect2(-1180,-735,2510,1590),false,Color(1,1,1,.25))
+		draw_rect(Rect2(-2460,-720+float(strip)*45,4970,47),ground)
+	draw_texture_rect(SOIL,Rect2(-2250,-735,4600,1590),false,Color(1,1,1,.25))
 	# Terrain relief and river-cut gullies, never fake square biome borders.
 	for i in range(17):
 		var n := float(i)
