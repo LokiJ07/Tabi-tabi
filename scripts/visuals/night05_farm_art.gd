@@ -11,6 +11,11 @@ const PEN := Rect2(286.0,128.0,375.0,180.0)
 const GATE_LEFT := 500.0
 const GATE_RIGHT := 610.0
 
+static func animals_revealed(phase: int, debug_preview: bool) -> bool:
+	# The herds were reported missing at dawn: showing them in full view
+	# before following the clues makes the investigation feel nonsensical.
+	return phase >= 2 or debug_preview
+
 static func inside_livestock_pen(point: Vector2) -> bool:
 	return PEN.has_point(point)
 
