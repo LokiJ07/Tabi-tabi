@@ -79,6 +79,20 @@ func _run() -> void:
 		and not FarmArt.HOLDING.grow(24.0).has_point(road_spur[1])
 		and road_spur[1].distance_to(game.SAFE_GATE) < 135.0,
 		"narrow side path reaches animal gate interact range without touching fenced pen")
+	# Painterly props and labels are excluded from the receiving pen and
+	# the shared right-side LOOK/INTERACT HUD. Earlier QA showed a large tree
+	# through the goats and the SAFE HOLDING sign underneath the LOOK button.
+	var tree_bounds := Rect2(FarmArt.LOWER_TREE+Vector2(-117.5,-264.0),
+		Vector2(235,294))
+	var banana_bounds := Rect2(FarmArt.LOWER_BANANA+Vector2(-72.5,-210.0),
+		Vector2(145,210))
+	check(not tree_bounds.intersects(FarmArt.HOLDING)
+		and not banana_bounds.intersects(FarmArt.HOLDING),
+		"no foreground trees or bananas can cover rescued animals in their holding area")
+	check(FarmArt.HOLDING_SIGN_AT.x < FarmArt.HOLDING.position.x
+		and FarmArt.HOLDING_SIGN_AT.y > FarmArt.HOLDING.end.y+40.0
+		and not FarmArt.PEN.grow(48.0).has_point(FarmArt.HOLDING_SIGN_AT),
+		"receiving paddock sign sits left/below the fence, away from mobile LOOK controls")
 	var road_entry := Vector2(555,205)
 	check(FarmArt.keep_player_outside_pen(road_entry,Vector2(555,85)) == road_entry,
 		"player cannot phase through uphill pen from its gate approach")
