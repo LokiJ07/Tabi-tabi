@@ -7,9 +7,23 @@ const RAIL := Color("#9a8566")
 const SHADOW := Color("#13242a")
 # Actual contiguous enclosure and one animal-sized gap at the prepared gate.
 # Animals start INSIDE; the party stays OUTSIDE for safe observation.
-const PEN := Rect2(286.0,128.0,375.0,180.0)
+# Both yards are OFF the main public path. The animal pen is uphill/north
+# of the path, and the safe holding paddock is east of the path terminus.
+const PEN := Rect2(286.0,-42.0,375.0,180.0)
+const HOLDING := Rect2(690.0,212.0,335.0,150.0)
+const MAIN_ROAD_END := Vector2(570.0,318.0)
 const GATE_LEFT := 500.0
 const GATE_RIGHT := 610.0
+
+static func main_road_route(start: Vector2, observe: Vector2) -> PackedVector2Array:
+	# Through-road is independent of the animal-only gate. DO NOT terminate
+	# or draw any 116px wide public road through either animal enclosure.
+	return PackedVector2Array([start,Vector2(-730.0,330.0),
+		Vector2(-405.0,338.0),observe,MAIN_ROAD_END])
+
+static func gate_approach_route() -> PackedVector2Array:
+	# Small side spur ends in front of the pen. The road continues unobstructed.
+	return PackedVector2Array([MAIN_ROAD_END,Vector2(555.0,223.0)])
 
 static func gate_label(phase: int, prepared: bool) -> String:
 	if prepared:
@@ -64,26 +78,35 @@ static func paint_livestock_enclosure(target: CanvasItem,
 		Vector2(PEN.end.x,PEN.end.y),
 		Vector2(PEN.position.x,PEN.end.y)]),
 		Color(.38,.30,.18,.13 if night else .16))
-	paint_fence(target,Vector2(286,128),Vector2(661,128),9,night)
-	_side_fence(target,286.0,128.0,308.0,night)
-	_side_fence(target,661.0,128.0,308.0,night)
-	paint_fence(target,Vector2(286,308),Vector2(GATE_LEFT,308),5,night)
-	paint_fence(target,Vector2(GATE_RIGHT,308),Vector2(661,308),2,night)
+	paint_fence(target,Vector2(PEN.position.x,PEN.position.y),
+		Vector2(PEN.end.x,PEN.position.y),9,night)
+	_side_fence(target,PEN.position.x,PEN.position.y,PEN.end.y,night)
+	_side_fence(target,PEN.end.x,PEN.position.y,PEN.end.y,night)
+	paint_fence(target,Vector2(PEN.position.x,PEN.end.y),
+		Vector2(GATE_LEFT,PEN.end.y),5,night)
+	paint_fence(target,Vector2(GATE_RIGHT,PEN.end.y),
+		Vector2(PEN.end.x,PEN.end.y),2,night)
 	paint_safe_gate(target,gate,prepared)
 
 static func paint_safe_holding_area(target: CanvasItem,
 		rescued_count: int, night: bool) -> void:
-	# Separate receiving paddock BELOW the gate. West edge stays open to
-	# the party's stable road, while the south/east sides contain the animals.
+	# The receiving pen sits EAST of the through-road, not across it.
+	# Its WEST entrance at y=212..252 accepts the animals after they exit
+	# the first gate; the southern/eastern boundaries are complete rails.
 	target.draw_colored_polygon(PackedVector2Array([
-		Vector2(336,344),Vector2(701,344),
-		Vector2(715,459),Vector2(317,459)]),
+		HOLDING.position,Vector2(HOLDING.end.x,HOLDING.position.y),
+		HOLDING.end,Vector2(HOLDING.position.x,HOLDING.end.y)]),
 		Color(.18,.38,.27,.23 if night else .18))
-	paint_fence(target,Vector2(320,463),Vector2(703,463),8,night)
-	_side_fence(target,703.0,342.0,463.0,night)
-	# Subtle amber stakes distinguish sanctuary from the unsafe barn.
+	paint_fence(target,Vector2(HOLDING.position.x,HOLDING.position.y),
+		Vector2(HOLDING.end.x,HOLDING.position.y),7,night)
+	paint_fence(target,Vector2(HOLDING.position.x,HOLDING.end.y),
+		Vector2(HOLDING.end.x,HOLDING.end.y),7,night)
+	_side_fence(target,HOLDING.end.x,HOLDING.position.y,HOLDING.end.y,night)
+	# Only the lower west rail remains; the north-west mouth is a real gap.
+	_side_fence(target,HOLDING.position.x,HOLDING.position.y+122.0,
+		HOLDING.end.y,night)
 	for i in range(3):
-		var pos := Vector2(361.0+float(i)*155.0,466.0)
+		var pos := Vector2(750.0+float(i)*113.0,HOLDING.end.y+3.0)
 		target.draw_circle(pos,6.0,
 			Color(.96,.72,.35,.67 if rescued_count>0 else .24))
 
@@ -206,10 +229,12 @@ static func route_is_open(index: int, rescued_count: int) -> bool:
 	return index >= 0 and index < 3 and index < clampi(rescued_count,0,3)
 
 static func animal_pen_position(index: int) -> Vector2:
-	return Vector2(340.0+float(index)*107.0,188.0+float(index%2)*40.0)
+	return Vector2(340.0+float(index)*107.0,34.0+float(index%2)*27.0)
 
 static func animal_gate_position(index: int, safe_gate: Vector2) -> Vector2:
-	return safe_gate+Vector2(-170.0+float(index)*86.0,65.0)
+	# Safe destinations are fully INSIDE the separate east-side paddock.
+	return safe_gate+Vector2(200.0+float(index)*100.0,
+		128.0+float(index%2)*28.0)
 
 static func animal_crossing_position(index: int, safe_gate: Vector2,
 		rescued: bool, progress: float) -> Vector2:
@@ -235,7 +260,7 @@ static func paint_shadow_links(target: CanvasItem, nodes: Array,
 		rescued_count: int = 0, lantern_positions: Array = []) -> void:
 	if idx < 0 or idx >= nodes.size():
 		return
-	var pen := Vector2(460,270)
+	var pen := Vector2(460,83)
 	# Previously resolved pathways stay open in the REAL world after rescue.
 	# Current route remains a dark connection until correctly illuminated.
 	for i in range(nodes.size()):
