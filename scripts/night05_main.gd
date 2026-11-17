@@ -368,10 +368,10 @@ func _draw() -> void:
 	FarmArt.paint_squash_patch(self,Vector2(-650,140),_stage()>=2)
 	Landscape.trail_stones(self,RETURN_WAKE,Vector2(-355,341),17,80,_stage()>=2)
 	for at in [Vector2(-950,-445),Vector2(-835,-660),Vector2(775,-615),
-		Vector2(948,-65),Vector2(865,430)]:
+		Vector2(948,-65),FarmArt.LOWER_TREE]:
 		DimensionalArt.paint_grounded(self,TREE,at+Vector2(0,30),
 			Vector2(235,294),Color("#91ab92"),.26)
-	for at in [Vector2(-850,-80),Vector2(895,12),Vector2(806,583)]:
+	for at in [Vector2(-850,-80),Vector2(895,12),FarmArt.LOWER_BANANA]:
 		DimensionalArt.paint_grounded(self,BANANA,at,
 			Vector2(145,210),Color("#8fa884"),.26)
 	_paint_farmhouse()
@@ -438,8 +438,8 @@ func _draw() -> void:
 	FarmArt.paint_farm_sign(self,
 		FarmArt.gate_label(story.phase,story.preparations.has("safe_gate")),
 		Vector2(698,83),196.0,_stage()>=2)
-	FarmArt.paint_farm_sign(self,"SAFE HOLDING • %d/3" % story.rescued_groups,
-		Vector2(750,376),227.0,_stage()>=2)
+	FarmArt.paint_farm_sign(self,"SAFE HOLDING → %d/3" % story.rescued_groups,
+		FarmArt.HOLDING_SIGN_AT,227.0,_stage()>=2)
 	if story.phase in [1,2,3]:
 		FarmArt.paint_farm_sign(self,"OBSERVE HERE",
 			SAFE_PERIMETER+Vector2(-250,-120),174.0,_stage()>=2)
