@@ -811,8 +811,8 @@ func _open_notes() -> void:
 	for id in Story.CLUES:
 		notes_text.text += ("[OBSERVED] " if story.clues.has(id) else "[MISSING] ")+str(CLUE_NAMES[id])+"\n"
 	notes_text.text += "\nFOLKLORE SIGNS (regional accounts vary): backward retreat, long hind legs, clapping ears, pungent odor, brief night sightings. These are traditional accounts, not proof of a supernatural animal.\n"
-	for signal in ["sigbin_odor","sigbin_ear_clap","sigbin_reverse_steps"]:
-		notes_text.text += ("[CONFIRMED] " if story.seen.has(signal) else "[UNCONFIRMED] ")+signal.replace("sigbin_","").replace("_"," ").to_upper()+"\n"
+	for cue_id in ["sigbin_odor","sigbin_ear_clap","sigbin_reverse_steps"]:
+		notes_text.text += ("[CONFIRMED] " if story.seen.has(cue_id) else "[UNCONFIRMED] ")+cue_id.replace("sigbin_","").replace("_"," ").to_upper()+"\n"
 	notes_text.text += "\nA shadow is not evidence of harm; the caretaker's old bond and the goats' safety must be judged separately.\n\n"
 	for id in Story.PREPARATIONS:
 		notes_text.text += ("[READY] " if story.preparations.has(id) else "[UNPREPARED] ")+id.replace("_"," ")+"\n"
