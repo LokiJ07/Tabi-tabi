@@ -11,8 +11,9 @@
 | **Night 3 — Tikbalang** | Bamboo flood ridge and watchpost | Connected hillside route, true-versus-false trail evidence, ordered safety markers, guardian, witness, fair outcomes and separate save |
 | **Night 4 — Manananggal: The Wake** | Wake-house compound | Investigation and caretaker protection; Aling Nena is the vulnerable target, NOT the creature. Four preparations, three group defenses, fair retries, original animated winged creature, and independent outcome/save |
 | **Night 5 — Sigbin: The Abandoned Farm** | Connected old farm, barn and livestock pen | Four tangible clues, nonviolent guardian deduction, marked observation point, five preparations, three connected lantern-shadow routes, actual fenced livestock pen and gate, animated rescue into a fenced safe holding area, meaningful outcomes and offline save |
+| **Night 6 — What the Water Took** | Uphill farm road to old flood crossing and river terrace | Four historical sources, ordered cancellation / rescue-route / rescuer-identity reconstructions, private Sabel and Lola testimony, three marked-stone river surges, separate offline save and safe aftermath |
 
-All five are chapters of **one story** with the same Apprentice and Bantay and a connected-world ledger. Night 6 and Night 7 are future chapters and are **not implemented** in this baseline.
+All six are chapters of **one story** with the same Apprentice and Bantay and a connected-world ledger. Only Night 7 (Balete Grounds) remains unimplemented and locked.
 
 ## Shared experience
 
@@ -39,16 +40,25 @@ The player may approach and prepare the gate from outside; they **cannot enter**
 
 The MAIN footpath **does not end at the animal gate or the far side of the farm**. It continues from the Night 4 wake, through the Night 5 observation area, branches off a narrow gate spur, winds north-east uphill between (but never through) the two farm enclosures, and reaches the visibly signed **NIGHT 6 TRAIL**. The road itself carries on beyond the sign into the hillside so it never resembles a cut-off texture. The receiving paddock has been placed far enough downhill to leave clearance for the road and raised wooden posts. Animal rescue uses a separate west-side receiving opening, not the public path.
 
-Night 6's visible trail checkpoint is **deliberately locked** until the genuine connected chapter scene and transition are implemented. It does not fake a playable level, silently teleport the player, or overwrite Night 1–5 progress. The canonical trail coordinate lives in `scripts/core/connected_world.gd` (`TRAIL_FARM_NIGHT06`). This should become Night 6's entry point/arrival transition once that chapter is built.
+Night 6's farm checkpoint now unlocks after the **genuine Night 5 outcome** is stored in the connected-world ledger. The same uninterrupted footpath streams into the real Night 6 river-terrace scene and supports a save-safe return to the farm. The canonical coordinate remains `scripts/core/connected_world.gd` (`TRAIL_FARM_NIGHT06`). The unbuilt Night 7 remains locked.
+
+### Night 6 player route (source-backed and nonfatal)
+
+1. Collect the cancelled launch order, water gauge, evacuation register and alternative-route log. Dado may decline to testify.
+2. Reconstruct why the second official rescue was stopped: real danger **and** unequal decisions. An independent private rescue does not prove officials could safely cross.
+3. Plot the returning boat's dock → stranded far bank → shelter route. Verify two separate sources before identifying the brave rescuer as Sabel's husband (distinct from Mang Celso).
+4. Respect Sabel's private/public remembrance choice and examine Lola's limited-refuge promise and withheld records.
+5. Secure the rope anchor, lantern beacon and marked stones; use the **same Night 1 touch HUD** with HOLD OBSERVE at three different river surges. Retrying never loses lives or earlier evidence.
+6. Record a truthful Resolve, Contain or Partial/Retreat outcome. The Night 7 Balete route is still intentionally locked.
 
 ## Test and release status
 
-Nights 1–5 form an **engineering-ready Android QA baseline**, not a finished public seven-night release. Night 5 has real Godot scene/state tests plus Android emulator chapter and rescued-animal crossing captures. Check the latest relevant Godot validation and Android emulator runs in GitHub Actions before calling a change release-ready.
+Nights 1–6 form an **engineering QA baseline**, not a finished seven-night commercial release. Night 6 has headless real-scene/evidence-state tests and dedicated Android emulator capture, in addition to previous farm and Sigbin regression checks. Check the latest relevant Godot validation and Android emulator runs in GitHub Actions before calling a change release-ready.
 
 Still needed for production: actual phone comfort/performance/heat, all outcomes played by humans, detailed art approval, and a stable signing key. CI-generated QA APKs use temporary signing, and uninstalling old builds can erase saves.
 
 ## Development direction
 
-Build each night on a separate PR, following Final Master Script & Development Plan v1.0 (14 November 2026). Do not change canon, previous outcomes, shared touch controls, or the established art/HUD system. Night 5 uses Sigbin's shadow logic, missing goats and a rescue of farm animals without turning the folklore witness into a generic enemy. Night 6 must be developed as a new connected chapter/PR after the Night 5 merge and its explicit QA gate.
+Build each night on a separate PR, following Final Master Script & Development Plan v1.0 (14 November 2026). Do not change canon, previous outcomes, shared touch controls, or the established art/HUD system. Night 5 uses Sigbin's shadow logic, missing goats and a rescue of farm animals without turning the folklore witness into a generic enemy. Night 6 implementation is a connected and source-backed river history chapter, not a generic monster duel. Finish its visual, phone, accessibility and outcome sign-off before preparing Night 7.
 
 CI: https://github.com/LokiJ07/Tabi-tabi/actions

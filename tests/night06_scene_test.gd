@@ -32,6 +32,24 @@ func _run() -> void:
 	for name in ["PrepareButton","SaveButton","RetryButton","Options","SharedLookPad"]:
 		check(game.controls.get_node_or_null(name) != null,
 			"Night 1 HUD action must exist: "+name)
+	# Strict Night 1 thumb-control parity: same screen corners and touch rectangles.
+	for slot in [
+		["PrepareButton",-230.0,-444.0,180.0,56.0],
+		["SaveButton",-230.0,-375.0,85.0,52.0],
+		["RetryButton",-138.0,-375.0,88.0,52.0]
+	]:
+		var button := game.controls.get_node_or_null(str(slot[0])) as Button
+		check(button != null,"Night 1 fixed control is present: "+str(slot[0]))
+		if button != null:
+			check(is_equal_approx(button.offset_left,float(slot[1]))
+				and is_equal_approx(button.offset_top,float(slot[2]))
+				and button.offset_right-button.offset_left >= float(slot[3])
+				and button.offset_right-button.offset_left <= float(slot[3])+36.0
+				and button.offset_bottom-button.offset_top >= float(slot[4])
+				and button.offset_bottom-button.offset_top <= float(slot[4])+16.0
+				and button.anchor_left == 1.0 and button.anchor_top == 1.0
+				and button.get_meta("hud_component","") == "night1-shared",
+				"HUD placement or factory deviates from approved Night 1 "+str(slot[0]))
 	var look = game.controls.get_node_or_null("SharedLookPad") as Control
 	check(look != null and is_equal_approx(look.offset_left,-435.0) and
 		is_equal_approx(look.offset_right,-260.0) and

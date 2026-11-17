@@ -8,6 +8,7 @@ const Night05State = preload("res://scripts/narrative/night05_state.gd")
 const Night05Save = preload("res://scripts/core/night05_save.gd")
 const World = preload("res://scripts/core/connected_world.gd")
 const Prefs = preload("res://scripts/core/preferences.gd")
+const RiverSound = preload("res://scripts/audio/night06_ambience.gd")
 const SharedHUD = preload("res://scripts/ui/shared_hud.gd")
 const DialogueMotion = preload("res://scripts/ui/shared_dialogue_motion.gd")
 const Depth = preload("res://scripts/visuals/layered_25d.gd")
@@ -59,6 +60,8 @@ var prefs = Prefs.new()
 var player_pos := Story.START
 var bantay_pos := Story.START+Vector2(-47,26)
 var camera: Camera2D
+var ambient
+var indoor_seconds := 0.0
 var hud: CanvasLayer
 var controls: Control
 var status_panel: PanelContainer
@@ -114,6 +117,11 @@ func _ready() -> void:
 	camera.position_smoothing_speed = 4.5
 	camera.zoom = Vector2(1.02,1.02)
 	add_child(camera)
+	indoor_seconds = 3.3 if _stage() >= 2 else 0.0
+	ambient = RiverSound.new()
+	ambient.name = "UnfinishedRiverAndRopeSound"
+	add_child(ambient)
+	ambient.set_audio_level(prefs.audio_level)
 	_build_ui()
 	_refresh()
 	if story.outcome != "":
@@ -143,6 +151,13 @@ func _safe_corridor(p: Vector2) -> bool:
 
 func _process(delta: float) -> void:
 	clock += delta if not prefs.reduced_motion else 0.0
+	if _stage() >= 2:
+		indoor_seconds = minf(3.3,indoor_seconds+delta)
+	else:
+		indoor_seconds = 0.0
+	if ambient != null:
+		ambient.set_stage(_stage())
+		ambient.set_risk(story.tension)
 	unsafe_notice_cooldown = maxf(0.0,unsafe_notice_cooldown-delta)
 	var axis := (Input.get_vector("ui_left","ui_right","ui_up","ui_down")+move_axis).limit_length()
 	if _modal() or travel_in_progress: axis = Vector2.ZERO
@@ -332,13 +347,22 @@ func _draw() -> void:
 			Windows.paint_window(self,pos,Vector2(30,29),0,night,clock,prefs.reduced_motion)
 	if story.phase == 7:
 		draw_rect(MAP.grow(220),Color(.48,.59,.61,.08))
+	# Nightly villagers actually withdraw indoors instead of staying in the
+	# empty street when the river becomes dangerous. Last few frames fade at
+	# their own doorway, while warm house windows remain visibly inhabited.
 	for actor in [
-		[MARA,MARA_AT,Vector2(98,153)],
-		[DADO,DADO_AT,Vector2(101,159)],
-		[SABEL,SABEL_AT,Vector2(99,157)],
-		[LOLA,LOLA_AT,Vector2(103,155)]
+		[MARA,MARA_AT,Vector2(98,153),ARCHIVE+Vector2(-28,-70)],
+		[DADO,DADO_AT,Vector2(101,159),ARCHIVE+Vector2(14,-70)],
+		[SABEL,SABEL_AT,Vector2(99,157),SABEL_AT+Vector2(40,-60)],
+		[LOLA,LOLA_AT,Vector2(103,155),LOLA_AT+Vector2(53,-65)]
 	]:
-		Depth.paint_grounded(self,actor[0],actor[1],actor[2],Color.WHITE,.23)
+		var fade: float = clampf(indoor_seconds/3.3,0.0,1.0) if night else 0.0
+		if fade >= 1.0:
+			continue
+		var resident_foot: Vector2 = actor[1]
+		resident_foot = resident_foot.lerp(actor[3],fade)
+		Depth.paint_grounded(self,actor[0],resident_foot,actor[2],
+			Color(1,1,1,1.0-smoothstep(.77,1.0,fade)),.23)
 	var bob := 0.0 if prefs.reduced_motion else absf(sin(walk_time))*2.8
 	Depth.paint_grounded(self,BANTAY,bantay_pos,Vector2(95,102),Color.WHITE,.31,bob)
 	Depth.paint_grounded(self,HERO,player_pos,Vector2(108,142),Color.WHITE,.37,bob)
