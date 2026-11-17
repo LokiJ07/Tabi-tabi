@@ -321,6 +321,7 @@ func _draw() -> void:
 	draw_polyline(path,Color("#34443a"),116,true)
 	draw_polyline(path,Color("#ae9570"),81,true)
 	FarmArt.paint_crop_rows(self,_stage()>=2)
+	FarmArt.paint_squash_patch(self,Vector2(-650,140),_stage()>=2)
 	Landscape.trail_stones(self,RETURN_WAKE,Vector2(-355,341),17,80,_stage()>=2)
 	for at in [Vector2(-950,-445),Vector2(-835,-660),Vector2(775,-615),
 		Vector2(948,-65),Vector2(865,430)]:
@@ -343,6 +344,7 @@ func _draw() -> void:
 	draw_rect(Rect2(photo+Vector2(-22,-84),Vector2(45,61)),Color("#a9b2a3"))
 	draw_circle(photo+Vector2(0,-66),11,Color("#655f58"))
 	draw_line(photo+Vector2(-8,-44),photo+Vector2(12,-42),Color("#625c54"),13,true)
+	FarmArt.paint_caretaker_jar(self,photo+Vector2(84,5),_stage()>=2)
 	if story.phase == 2:
 		for id in Story.PREPARATIONS:
 			var pos: Vector2 = PREP_POS[id]
