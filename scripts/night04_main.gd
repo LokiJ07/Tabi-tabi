@@ -12,6 +12,7 @@ const SharedHUD = preload("res://scripts/ui/shared_hud.gd")
 const DimensionalArt = preload("res://scripts/visuals/layered_25d.gd")
 const NightWindows = preload("res://scripts/visuals/nighttime_windows.gd")
 const WakeVigil = preload("res://scripts/visuals/night04_vigil_art.gd")
+const ActorMotion = preload("res://scripts/visuals/night04_character_motion.gd")
 const Landscape = preload("res://scripts/visuals/folklore_landscape_25d.gd")
 const Atmosphere = preload("res://scripts/visuals/shared_immersive_atmosphere.gd")
 const Ambient = preload("res://scripts/audio/night04_ambience.gd")
@@ -22,6 +23,8 @@ const MARA: Texture2D = preload("res://assets/characters/mara.svg")
 const SABEL: Texture2D = preload("res://assets/characters/sabel.svg")
 const NENA: Texture2D = preload("res://assets/night04/nena_caretaker.svg")
 const MANANANGGAL: Texture2D = preload("res://assets/night04/manananggal_wake.svg")
+const MANANANGGAL_LEFT: Texture2D = preload("res://assets/night04/manananggal_wing_left.svg")
+const MANANANGGAL_RIGHT: Texture2D = preload("res://assets/night04/manananggal_wing_right.svg")
 const NIPA: Texture2D = preload("res://assets/world/nipa_thatch_roof.svg")
 const WEAVE: Texture2D = preload("res://assets/world/lola_sawali_wall.svg")
 const LEAVES: Texture2D = preload("res://assets/world/north_forest_tree.svg")
@@ -64,6 +67,8 @@ var camera: Camera2D
 var ambient
 var atmosphere
 var elapsed := 0.0
+var indoor_transition_seconds := 0.0
+var previous_light_stage := 0
 var walk_phase := 0.0
 var walk_weight := 0.0
 var motion := Vector2.ZERO
@@ -101,6 +106,9 @@ func _ready() -> void:
 		story.night02_outcome = before.night02_outcome
 		story.night01_outcome = before.night01_outcome
 	Save.read(story)
+	previous_light_stage = _stage()
+	# Reloading an active encounter cannot bring the mourners back outdoors.
+	indoor_transition_seconds = ActorMotion.INDOOR_DURATION if previous_light_stage >= 2 else 0.0
 	player_pos = story.player_position
 	var arrival := World.consume_arrival("night04")
 	if str(arrival.get("from","")) == "night03":
@@ -142,6 +150,17 @@ func _modal() -> bool:
 
 func _process(delta: float) -> void:
 	elapsed += delta if not prefs.reduced_motion else 0.0
+	var stage_now := _stage()
+	if stage_now >= 2:
+		if previous_light_stage < 2:
+			# Dialogue can finish before people begin entering the house.
+			indoor_transition_seconds = ActorMotion.INDOOR_DURATION if prefs.reduced_motion else 0.0
+		elif not _modal():
+			indoor_transition_seconds = minf(ActorMotion.INDOOR_DURATION,
+				indoor_transition_seconds + maxf(delta,0.0))
+	else:
+		indoor_transition_seconds = 0.0
+	previous_light_stage = stage_now
 	var axis := Input.get_vector("ui_left","ui_right","ui_up","ui_down")+motion
 	if _modal():
 		axis = Vector2.ZERO
@@ -358,19 +377,6 @@ func _draw() -> void:
 			draw_rect(Rect2(pos+Vector2(-38,-93),Vector2(78,48)),hue)
 		else:
 			draw_line(pos+Vector2(-35,-72),pos+Vector2(32,-65),hue,8)
-	# The supernatural presence traverses over the roof, not glued to a random NPC.
-	if story.phase == 3 or debug_wake_preview:
-		var warning := story.current_warning()
-		var from := Vector2(270,-540) if warning == "roofline" else Vector2(550,-310) if warning == "rear_window" else Vector2(260,-155)
-		var flight := Vector2(sin(elapsed*.9)*19,cos(elapsed*.67)*9) if not prefs.reduced_motion else Vector2.ZERO
-		for i in range(5,0,-1):
-			draw_circle(from+flight,70.0+float(i)*30.0,Color(.33,.43,.52,.012))
-		var creature_at := from+flight+Vector2(-5,110)
-		DimensionalArt.paint_grounded(self,MANANANGGAL,creature_at,
-			Vector2(300,247),Color("#a0a4a0"),0.0)
-		for i in range(4):
-			draw_line(from+Vector2(-58+float(i)*39,85),from+Vector2(-46+float(i)*44,117),
-				Color(.24,.29,.32,.34),4,true)
 	if _stage() == 1:
 		draw_rect(MAP.grow(220),Color(.28,.13,.06,.15))
 	elif _stage() >= 2:
@@ -398,15 +404,33 @@ func _draw() -> void:
 		NightWindows.paint_window(self,Vector2(365,-225),Vector2(53,51),
 			2,true,elapsed,prefs.reduced_motion,false)
 	WakeVigil.paint_inner_lights(self,_stage(),elapsed,prefs.reduced_motion)
+	# A real three-plane winged creature: independent shoulders, then body.
+	# Paint AFTER the darkness grade for visibility but BEHIND people and HUD.
+	if story.phase == 3 or debug_wake_preview:
+		var warning: String = story.current_warning()
+		var from := Vector2(270,-540) if warning == "roofline" or warning == "" else Vector2(550,-310) if warning == "rear_window" else Vector2(260,-155)
+		var drift := Vector2(sin(elapsed*.81)*16,cos(elapsed*.71)*8) if not prefs.reduced_motion else Vector2.ZERO
+		for i in range(4,0,-1):
+			draw_circle(from+drift,60.0+float(i)*31.0,Color(.29,.41,.48,.009))
+		ActorMotion.paint_flying(self,MANANANGGAL,MANANANGGAL_LEFT,MANANANGGAL_RIGHT,
+			from+drift+Vector2(-5,110),elapsed,prefs.reduced_motion,Color("#bcc1b8"))
 	# Human cast is rendered above the warmth. Story dialogue and evidence
 	# still work when residents have moved inside, not been deleted.
 	var people: Array[Dictionary] = []
-	if NightWindows.outdoor_actor_visible(4,_stage(),"NENA"):
-		people.append({"at":Vector2(-420,-180),"tex":NENA,"size":Vector2(107,140)})
-	if NightWindows.outdoor_actor_visible(4,_stage(),"SABEL"):
-		people.append({"at":Vector2(-515,145),"tex":SABEL,"size":Vector2(91,125)})
-	if NightWindows.outdoor_actor_visible(4,_stage(),"MARA"):
-		people.append({"at":Vector2(-265,100),"tex":MARA,"size":Vector2(95,130)})
+	var civilians: Array[Dictionary] = [
+		{"role":"NENA","at":Vector2(-420,-180),"tex":NENA,"size":Vector2(107,140)},
+		{"role":"SABEL","at":Vector2(-515,145),"tex":SABEL,"size":Vector2(91,125)},
+		{"role":"MARA","at":Vector2(-265,100),"tex":MARA,"size":Vector2(95,130)}
+	]
+	for civilian in civilians:
+		var role: String = civilian["role"]
+		if NightWindows.outdoor_actor_visible(4,_stage(),role):
+			people.append(civilian)
+		elif _stage() >= 2 and indoor_transition_seconds < ActorMotion.INDOOR_DURATION:
+			var heading_inside: Dictionary = civilian.duplicate()
+			heading_inside["at"] = ActorMotion.indoor_position(role,civilian["at"],indoor_transition_seconds)
+			heading_inside["alpha"] = ActorMotion.indoor_alpha(indoor_transition_seconds)
+			people.append(heading_inside)
 	people.append({"at":bantay_pos+Vector2(0,19),"tex":BANTAY,"size":Vector2(96,104)})
 	people.append({"at":player_pos+Vector2(0,8),"tex":HERO,"size":Vector2(108,142)})
 	people.sort_custom(func(a: Dictionary,b: Dictionary)->bool:
@@ -419,7 +443,10 @@ func _draw() -> void:
 		var bob := 0.0
 		if not prefs.reduced_motion and (is_hero or is_dog):
 			bob = absf(sin(walk_phase))*3.2*walk_weight
-		DimensionalArt.paint_grounded(self,actor["tex"],p,size2,Color.WHITE,.38,bob)
+		var transparency: float = float(actor.get("alpha",1.0))
+		if transparency > .005:
+			DimensionalArt.paint_grounded(self,actor["tex"],p,size2,
+				Color(1,1,1,transparency),.38*transparency,bob)
 	var font := ThemeDB.fallback_font
 	draw_string(font,RETURN_RIDGE+Vector2(25,-90),"FLOOD RIDGE • RETURN",HORIZONTAL_ALIGNMENT_LEFT,320,18,Color("#e8cb94"))
 	draw_string(font,WAKE_HOUSE+Vector2(-160,206),"THE WAKE • LAMAY",HORIZONTAL_ALIGNMENT_LEFT,350,20,Color("#f7d79d"))
