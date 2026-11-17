@@ -32,6 +32,7 @@ const LANTERN: Texture2D = preload("res://assets/world/lantern_post.svg")
 const SOIL: Texture2D = preload("res://assets/world/soil_ground.svg")
 const MAP := Rect2(-980,-740,1980,1480)
 const RETURN_RIDGE := Vector2(-880,420)
+const FARM_TRAIL := Vector2(815,-185)
 const WAKE_HOUSE := Vector2(75,-190)
 const SAFE_COURT := Vector2(125,205)
 const PLAYER_SPEED := 250.0
@@ -114,6 +115,9 @@ func _ready() -> void:
 	if str(arrival.get("from","")) == "night03":
 		player_pos = Vector2(-715,280)
 		print("TABI_WORLD_ARRIVAL_WAKE_FROM_RIDGE")
+	elif str(arrival.get("from","")) == "night05":
+		player_pos = FARM_TRAIL+Vector2(-80,90)
+		print("TABI_WORLD_ARRIVAL_WAKE_FROM_FARM")
 	bantay_pos = player_pos+Vector2(-44,29)
 	camera = Camera2D.new()
 	camera.name = "Night04WakeCamera"
@@ -467,7 +471,7 @@ func _draw() -> void:
 	var font := ThemeDB.fallback_font
 	draw_string(font,RETURN_RIDGE+Vector2(25,-90),"FLOOD RIDGE • RETURN",HORIZONTAL_ALIGNMENT_LEFT,320,18,Color("#e8cb94"))
 	draw_string(font,WAKE_HOUSE+Vector2(-160,206),"THE WAKE • LAMAY",HORIZONTAL_ALIGNMENT_LEFT,350,20,Color("#f7d79d"))
-	draw_string(font,Vector2(630,-140),"THE FARM TRAIL • CLOSED",HORIZONTAL_ALIGNMENT_LEFT,355,18,Color("#e3ca97"))
+	draw_string(font,Vector2(630,-140),"THE FARM TRAIL • "+("OPEN" if story.outcome != "" else "LOCKED"),HORIZONTAL_ALIGNMENT_LEFT,355,18,Color("#e3ca97"))
 
 func _build_ui() -> void:
 	var atmosphere_layer := CanvasLayer.new()
@@ -628,6 +632,8 @@ func _hold_move(dir: String,on: bool) -> void:
 func _nearby() -> String:
 	if player_pos.distance_to(RETURN_RIDGE)<115:
 		return "return_ridge"
+	if player_pos.distance_to(FARM_TRAIL)<135:
+		return "farm_trail" if story.outcome != "" else "farm_locked"
 	if story.phase == 0:
 		for id in Story.CLUES:
 			if not story.clues.has(id) and player_pos.distance_to(CLUE_POS[id])<115:
@@ -654,6 +660,12 @@ func _interact() -> void:
 	var id := _nearby()
 	if id == "return_ridge":
 		_return_to_ridge()
+	elif id == "farm_trail":
+		_travel_to_farm()
+	elif id == "farm_locked":
+		_talk("BANTAY • FINISH THE WAKE",
+			"We cannot leave the family during the crisis. Record a safe Night 4 outcome, then the connected farm road will open.",
+			[{"label":"RETURN TO THE WAKE","action":"close"}])
 	elif id == "coffee":
 		if story.serve_coffee():
 			_auto_save()
@@ -891,6 +903,18 @@ func _save_menu() -> void:
 		return
 	get_tree().change_scene_to_file("res://scenes/title.tscn")
 
+func _travel_to_farm() -> void:
+	if travel_in_progress or story.outcome == "":
+		return
+	if not _auto_save() or not World.begin_travel("night04","night05",story.outcome):
+		save_error.popup_centered(Vector2i(600,180))
+		return
+	travel_in_progress = true
+	motion = Vector2.ZERO
+	observe_held = false
+	print("TABI_WORLD_TRAVEL_WAKE_TO_FARM")
+	get_tree().change_scene_to_file(World.scene_for("night05"))
+
 func _return_to_ridge() -> void:
 	if travel_in_progress:
 		return
@@ -931,6 +955,7 @@ func _show_ending() -> void:
 		ending.hide()
 		_open_notes()
 	)
+	_button(stack,"ENTER THE ABANDONED FARM (SAVE)",_travel_to_farm)
 	_button(stack,"RETURN TO FLOOD RIDGE (SAVE)",_return_to_ridge)
 	_button(stack,"SAVE & MAIN MENU",_save_menu)
 	_sync_ui()
