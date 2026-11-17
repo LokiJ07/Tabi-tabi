@@ -10,6 +10,7 @@ var level := 2
 var night_stage := 0
 var tension := 0.0
 var sigbin_proximity := 0.0
+var sigbin_gait := 0.0
 
 func _ready() -> void:
 	if DisplayServer.get_name() == "headless":
@@ -40,6 +41,9 @@ func set_tension(value: float) -> void:
 func set_sigbin_presence(value: float) -> void:
 	sigbin_proximity = clampf(value,0.0,1.0)
 
+func set_sigbin_gait(value: float) -> void:
+	sigbin_gait = clampf(value,0.0,1.0)
+
 func _exit_tree() -> void:
 	set_process(false)
 	if player != null and is_instance_valid(player):
@@ -68,5 +72,11 @@ func _process(_delta: float) -> void:
 		var ear_slap := darkness*sigbin_proximity*(slap_a+slap_b)*white*.025
 		var bleat_window := maxf(0.0,1.0-absf(fposmod(clock,11.70)-6.45)/.38)
 		var distant_bleat := darkness*sigbin_proximity*bleat_window*.007*sin(clock*TAU*113.0+sin(clock*9.0)*2.5)
-		var mix := clampf(breeze+crickets+loose_barn+pressure+ear_slap+distant_bleat,-.065,.065)
+		# A soft dirt scrape is ONLY audible while hooves are actually moving.
+		# This follows in-world gait strength instead of playing a fake
+		# footstep loop when the creature is paused and listening.
+		var step_cycle := fposmod(clock*1.70,.99)
+		var step_envelope := maxf(0.0,1.0-absf(step_cycle-.08)/.09)
+		var ground_scuff := darkness*sigbin_proximity*sigbin_gait*.011*step_envelope*filter
+		var mix := clampf(breeze+crickets+loose_barn+pressure+ear_slap+distant_bleat+ground_scuff,-.065,.065)
 		playback.push_frame(Vector2(mix,mix))
