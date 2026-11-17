@@ -10,11 +10,11 @@ const SHADOW := Color("#13242a")
 # Both yards are OFF the main public path. The animal pen is uphill/north
 # of the path, and the safe holding paddock is east of the path terminus.
 const PEN := Rect2(286.0,-42.0,375.0,180.0)
-const HOLDING := Rect2(690.0,350.0,335.0,150.0)
+const HOLDING := Rect2(690.0,425.0,335.0,150.0)
 const MAIN_ROAD_END := Vector2(570.0,318.0)
 # Off-road scenery must never occupy either fenced paddock or cover its sign.
 const LOWER_TREE := Vector2(270.0,705.0)
-const LOWER_BANANA := Vector2(970.0,760.0)
+const LOWER_BANANA := Vector2(530.0,705.0)
 const HOLDING_SIGN_AT := Vector2(430.0,423.0)
 const GATE_LEFT := 500.0
 const GATE_RIGHT := 610.0
@@ -274,7 +274,7 @@ static func animal_pen_position(index: int) -> Vector2:
 static func animal_gate_position(index: int, safe_gate: Vector2) -> Vector2:
 	# Safe destinations are fully INSIDE the separate east-side paddock.
 	return safe_gate+Vector2(200.0+float(index)*100.0,
-		275.0+float(index%2)*28.0)
+		335.0+float(index%2)*28.0)
 
 static func animal_crossing_position(index: int, safe_gate: Vector2,
 		rescued: bool, progress: float) -> Vector2:
