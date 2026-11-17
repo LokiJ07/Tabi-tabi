@@ -62,6 +62,12 @@ func _run() -> void:
 		and SigbinPresence.detect_warning(3,250.0,4.5,false).contains("EAR-CLAPS")
 		and SigbinPresence.detect_warning(3,250.0,8.5,false).contains("BACKWARD"),
 		"three distinct proximity-based folklore signals visible in live HUD")
+	for tick in [0.0,4.5,8.5]:
+		var cue: String = SigbinPresence.detect_warning(3,250.0,tick,false)
+		check(cue.length() <= 32,
+			"folklore detector fits Night 1 shared mobile HUD without three-line overflow")
+	check(SigbinPresence.detect_warning(3,250.0,1.0,true).length() <= 32,
+		"confirmed Sigbin warning stays compact above the playfield")
 	if game.dialogue.visible:
 		game._choose("close")
 	# Regression: the original midnight screenshot showed DAY / TRACKS and no
@@ -72,6 +78,8 @@ func _run() -> void:
 	game.camera.position = game.player_pos
 	game._refresh() # Mirror the real F9 QA input which refreshes the HUD.
 	game._process(1.0)
+	check(game.interaction_hint.text.length() <= 32,
+		"actual live Sigbin encounter does not cover the upper HUD with multiline warning")
 	var sigbin_foot: Vector2 = SigbinPresence.ground_anchor(0)
 	check(sigbin_foot.y > -80.0
 		and SigbinPresence.ground_anchor(1).y > -80.0,
