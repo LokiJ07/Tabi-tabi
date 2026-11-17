@@ -26,7 +26,7 @@ All five are chapters of **one story** with the same Apprentice and Bantay and a
 
 ### Night 5 player route (no barn shortcuts)
 
-1. Speak to the farmer and inspect four clues **outside** the unsafe raised barn and fenced livestock pen.
+1. Speak to the farmer and inspect four clues **outside** the unsafe raised barn and fenced livestock pen. The goats and chickens are missing during the initial investigation, not inexplicably visible from the start.
 2. At the marked `OBSERVE HERE` area, interpret evidence without blaming an actual family; identify the creature's guardian role.
 3. Prepare the stable perimeter, animal-only safe gate and west/north/east lanterns.
 4. Stand at `OBSERVE HERE` and hold `HOLD OBSERVE` to identify one real shadow, then select which lantern interrupts it.
