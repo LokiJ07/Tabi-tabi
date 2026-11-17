@@ -497,7 +497,7 @@ func _build_ui() -> void:
 	controls.name = "SharedGameplayHUD"
 	controls.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	hud.add_child(controls)
-	var status: Dictionary = SharedHUD.create_status_card(controls,"BARRIO LAWOM   /   NIGHT 4",prefs.text_scale)
+	var status: Dictionary = SharedHUD.create_status_card(controls,"TABI-TABI  •  NIGHT 4 / THE WAKE",prefs.text_scale)
 	objective = status["objective"]
 	status_panel = status["panel"]
 	status_stack = status["stack"]
