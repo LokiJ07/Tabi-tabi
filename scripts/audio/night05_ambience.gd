@@ -9,6 +9,7 @@ var seed := 615052
 var level := 2
 var night_stage := 0
 var tension := 0.0
+var sigbin_proximity := 0.0
 
 func _ready() -> void:
 	if DisplayServer.get_name() == "headless":
@@ -36,6 +37,9 @@ func set_night_stage(value: int) -> void:
 func set_tension(value: float) -> void:
 	tension = clampf(value,0.0,1.0)
 
+func set_sigbin_presence(value: float) -> void:
+	sigbin_proximity = clampf(value,0.0,1.0)
+
 func _exit_tree() -> void:
 	set_process(false)
 	if player != null and is_instance_valid(player):
@@ -56,5 +60,13 @@ func _process(_delta: float) -> void:
 		var crickets := .004*darkness*pow(maxf(0.0,sin(clock*3.35)),7.0)*sin(clock*TAU*1422.0)
 		var loose_barn := .004*pow(maxf(0.0,sin(clock*.37)),17.0)*sin(clock*TAU*108.0)
 		var pressure := darkness*tension*.012*filter*sin(clock*1.08)
-		var mix := clampf(breeze+crickets+loose_barn+pressure,-.065,.065)
+		# Distinct quiet DOUBLE ear-slaps, gradually louder when closer.
+		# All audio remains original synthesized content and respects mute.
+		var beat := fposmod(clock,5.80)
+		var slap_a := maxf(0.0,1.0-absf(beat-1.08)/.045)
+		var slap_b := maxf(0.0,1.0-absf(beat-1.29)/.045)
+		var ear_slap := darkness*sigbin_proximity*(slap_a+slap_b)*white*.025
+		var bleat_window := maxf(0.0,1.0-absf(fposmod(clock,11.70)-6.45)/.38)
+		var distant_bleat := darkness*sigbin_proximity*bleat_window*.007*sin(clock*TAU*113.0+sin(clock*9.0)*2.5)
+		var mix := clampf(breeze+crickets+loose_barn+pressure+ear_slap+distant_bleat,-.065,.065)
 		playback.push_frame(Vector2(mix,mix))
