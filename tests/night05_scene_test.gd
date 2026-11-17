@@ -46,6 +46,7 @@ func _run() -> void:
 	game.debug_farm_preview = true
 	game.player_pos = game.SAFE_PERIMETER
 	game.camera.position = game.player_pos
+	game._refresh() # Mirror the real F9 QA input which refreshes the HUD.
 	game._process(1.0)
 	var sigbin_foot: Vector2 = game.SHADOW_POS[0] + Vector2(-35,41)
 	var half_view_height: float = 720.0 / (2.0 * game.camera.zoom.y)
