@@ -281,7 +281,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			_open_options()
 	if OS.get_name() == "Android" and OS.has_feature("debug") and event is InputEventKey:
 		var key := event as InputEventKey
-		if key.pressed and not key.echo and key.keycode in [KEY_F3,KEY_F5,KEY_F6,KEY_F9,KEY_F10]:
+		if key.pressed and not key.echo and key.keycode in [KEY_F3,KEY_F5,KEY_F6,KEY_F9,KEY_F10,KEY_F11]:
 			_close_dialogue()
 			notes.hide()
 			options.hide()
@@ -301,6 +301,11 @@ func _unhandled_input(event: InputEvent) -> void:
 					farmer_retreat_seconds = 3.3
 					previous_stage = 3
 					print("NIGHT5_QA_SIGBIN_NIGHT")
+				KEY_F11:
+					# QA shows the actual continuous farm road + Night 6 rope,
+					# not a painted mockup or a disconnected title preview.
+					player_pos = FUTURE_TRAIL+Vector2(-35,115)
+					print("NIGHT5_QA_CONNECTED_NIGHT06_TRAIL")
 				KEY_F10:
 					# Android DEBUG CI only: exercise the real investigation,
 					# preparation and correct first-lantern state transitions.
