@@ -58,3 +58,21 @@ static func paint_flying(target: CanvasItem, body: Texture2D,
 		wing_pivot(false, top_left, dimensions),
 		wing_angle(false, seconds, reduced_motion), tone)
 	target.draw_texture_rect(body, Rect2(top_left, dimensions), false, tone)
+
+## Compute a portrait-safe composition in actual Godot canvas pixels.
+## The Android window is physically 2340×1080 but the logical camera is
+## 1280×720; framing by physical pixels cropped the creature.
+static func camera_fit(hero: Vector2, creature_from: Vector2,
+		canvas_size: Vector2, look_direction: Vector2 = Vector2.ZERO) -> Dictionary:
+	# The creature's rendered foot is 110px below the approach origin.
+	# Include 24px for wing flap rotation and 105px below hero for Bantay.
+	var top_y: float = creature_from.y + 110.0 - FULL_SIZE.y - 24.0
+	var bottom_y: float = hero.y + 105.0
+	var span_y: float = maxf(bottom_y-top_y, 1.0)
+	var available: float = maxf(250.0,canvas_size.y-170.0)
+	var target_zoom: float = clampf(available/span_y,.54,.82)
+	var target_center := Vector2(lerpf(hero.x,creature_from.x,.52),
+		(top_y+bottom_y)*.5)
+	target_center += Vector2(clampf(look_direction.x,-1,1)*20.0,0.0)
+	return {"center":target_center,"zoom":target_zoom,
+		"top":top_y,"bottom":bottom_y}

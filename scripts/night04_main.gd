@@ -148,6 +148,12 @@ func _stage() -> int:
 func _modal() -> bool:
 	return dialogue.visible or notes.visible or options.visible or ending.visible
 
+func _manananggal_approach() -> Vector2:
+	match story.current_warning():
+		"rear_window": return Vector2(485,-263)
+		"courtyard": return Vector2(260,-155)
+	return Vector2(270,-465) # roofline, also QA-only preview
+
 func _process(delta: float) -> void:
 	elapsed += delta if not prefs.reduced_motion else 0.0
 	var stage_now := _stage()
@@ -181,18 +187,18 @@ func _process(delta: float) -> void:
 	# A tall, airborne Manananggal must be framed together with the
 	# apprentice during a real attack, not cropped at the top of the phone.
 	# This is the world camera only; Night 1 shared touch HUD never moves.
-	var framing_target := player_pos + aim*64
+	var framing_target := player_pos + aim*64.0
 	var close_encounter: bool = story.phase == 3 or debug_wake_preview
+	var target_zoom: float = 1.03
 	if close_encounter:
-		# A full wing span needs more vertical room on a 2340×1080 Android
-		# viewport. The default QA preview is the roofline, not the courtyard.
-		var approach := Vector2(270,-465)
-		match story.current_warning():
-			"roofline": approach = Vector2(270,-465)
-			"rear_window": approach = Vector2(485,-263)
-			"courtyard": approach = Vector2(260,-155)
-		framing_target += (approach-player_pos).limit_length(405.0)*.90
-	var zoom_target := Vector2(.86,.86) if close_encounter else Vector2(1.03,1.03)
+		# Fit both the wing tip and the player in Godot's actual logical
+		# canvas (1280x720 on a typical phone), NOT Android hardware pixels.
+		var approach: Vector2 = _manananggal_approach()
+		var fit: Dictionary = ActorMotion.camera_fit(player_pos,approach,
+			get_viewport_rect().size,aim)
+		framing_target = fit["center"]
+		target_zoom = fit["zoom"]
+	var zoom_target := Vector2(target_zoom,target_zoom)
 	camera.zoom = camera.zoom.lerp(zoom_target,
 		1.0 if prefs.reduced_motion else clampf(delta*4.2,0.0,1.0))
 	camera.position = camera.position.lerp(framing_target,
@@ -417,8 +423,7 @@ func _draw() -> void:
 	# A real three-plane winged creature: independent shoulders, then body.
 	# Paint AFTER the darkness grade for visibility but BEHIND people and HUD.
 	if story.phase == 3 or debug_wake_preview:
-		var warning: String = story.current_warning()
-		var from := Vector2(270,-465) if warning == "roofline" or warning == "" else Vector2(485,-263) if warning == "rear_window" else Vector2(260,-155)
+		var from: Vector2 = _manananggal_approach()
 		var drift := Vector2(sin(elapsed*.81)*16,cos(elapsed*.71)*8) if not prefs.reduced_motion else Vector2.ZERO
 		for i in range(4,0,-1):
 			draw_circle(from+drift,60.0+float(i)*31.0,Color(.29,.41,.48,.009))
