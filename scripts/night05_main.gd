@@ -374,7 +374,6 @@ func _draw() -> void:
 	# Documented regional signs appear as an IN-WORLD animal rather than
 	# a static enemy: backward steps, two hinged ears, and cautious concealment.
 	if _stage() >= 2 or debug_farm_preview:
-		var node: Vector2 = SHADOW_POS[clampi(story.shadow_index,0,2)]
 		# The eave casts the clue, but the Sigbin's hooves are on firm soil
 		# beneath the barn, NOT hanging in front of its roof.
 		var foot := SigbinPresence.backward_foot(
