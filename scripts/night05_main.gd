@@ -472,8 +472,8 @@ func _draw() -> void:
 		var safe: bool = story.rescued_groups > i
 		var at := FarmArt.animal_crossing_position(i,SAFE_GATE,safe,
 			float(animal_rescue_motion.get(i,1.0)))
-		var moving := safe and animal_rescue_motion.has(i)
-			and float(animal_rescue_motion[i]) < 1.0
+		var moving: bool = safe and animal_rescue_motion.has(i) and float(
+			animal_rescue_motion.get(i,1.0)) < 1.0
 		var hoof_bob := 0.0 if prefs.reduced_motion or not moving else absf(
 			sin(float(animal_rescue_motion[i])*TAU*3.0))*2.8
 		DimensionalArt.paint_grounded(self,CHICKEN if i == 2 else GOAT,
