@@ -13,6 +13,7 @@ const DimensionalArt = preload("res://scripts/visuals/layered_25d.gd")
 const NightWindows = preload("res://scripts/visuals/nighttime_windows.gd")
 const Landscape = preload("res://scripts/visuals/folklore_landscape_25d.gd")
 const FarmArt = preload("res://scripts/visuals/night05_farm_art.gd")
+const SigbinPresence = preload("res://scripts/visuals/night05_sigbin_presence.gd")
 const Atmosphere = preload("res://scripts/visuals/shared_immersive_atmosphere.gd")
 const Ambient = preload("res://scripts/audio/night05_ambience.gd")
 const AimPad = preload("res://scripts/ui/aim_pad.gd")
@@ -20,6 +21,8 @@ const HERO: Texture2D = preload("res://assets/characters/apprentice.svg")
 const BANTAY: Texture2D = preload("res://assets/characters/bantay.svg")
 const FARMER: Texture2D = preload("res://assets/night05/farmer_witness.svg")
 const SIGBIN: Texture2D = preload("res://assets/night05/sigbin_shadow_guardian.svg")
+const SIGBIN_EAR_NEAR: Texture2D = preload("res://assets/night05/sigbin_ear_near.svg")
+const SIGBIN_EAR_FAR: Texture2D = preload("res://assets/night05/sigbin_ear_far.svg")
 const BARN: Texture2D = preload("res://assets/night05/abandoned_barn_25d.svg")
 const GOAT: Texture2D = preload("res://assets/night05/rescued_goat.svg")
 const CHICKEN: Texture2D = preload("res://assets/night05/rescued_chicken.svg")
@@ -51,9 +54,9 @@ const CLUE_NAMES := {
 	"broken_barn":"Missing barn planks and unsafe supports"
 }
 const CLUE_TEXT := {
-	"backward_tracks":"The tracks face backward in places, but the goats walked: no torn ground, no struggle, no blood. Follow where the dust really moved.",
+	"backward_tracks":"Two trails overlap: hooves toward the barn, and strange long-hind-foot prints pointing back. Some Visayan accounts say a Sigbin retreats backwards, watching behind itself. Follow the dust, not the toe direction.",
 	"unbroken_fence":"The pen fence is intact. Both goats walked along a narrow route into the abandoned barn. The creature may be guiding, not hunting.",
-	"caretaker_photo":"The old caretaker once kept this animal as a guardian. A promise outlived the family who made it. Sabel understands what waiting can do to a place.",
+	"caretaker_photo":"The caretaker's promise remains beside an old clay pot. Some Cebuano accounts describe a sigbin tied to an owner or family. This is folklore, not evidence to accuse a living person.",
 	"broken_barn":"The missing wall panels and weak posts are a real collapse hazard. No one, including the animals, may be rescued by walking through the barn."
 }
 const PREP_POS := {
@@ -220,6 +223,9 @@ func _process(delta: float) -> void:
 	if ambient != null:
 		ambient.set_night_stage(_stage())
 		ambient.set_tension(story.fear)
+		var sigbin_node: Vector2 = SHADOW_POS[clampi(story.shadow_index,0,2)]
+		var proximity := clampf(1.0-player_pos.distance_to(sigbin_node)/1100.0,0.0,1.0)
+		ambient.set_sigbin_presence(proximity if _stage() >= 2 else 0.0)
 	if atmosphere != null:
 		atmosphere.configure(5,_stage(),story.fear,prefs.reduced_motion)
 	if pressure != null:
@@ -361,13 +367,20 @@ func _draw() -> void:
 		for i in range(2):
 			NightWindows.paint_window(self,FARMHOUSE+Vector2(-69+float(i)*120,5),
 				Vector2(49,47),i,true,elapsed,prefs.reduced_motion)
-	# The creature's false shadows precede it. It only reveals its low body
-	# once observed through the safe perimeter, never by daylight.
-	if (story.phase == 3 and story.shadow_identified) or debug_farm_preview:
+	# Documented regional signs appear as an IN-WORLD animal rather than
+	# a static enemy: backward steps, two hinged ears, and cautious concealment.
+	if _stage() >= 2 or debug_farm_preview:
 		var node: Vector2 = SHADOW_POS[clampi(story.shadow_index,0,2)]
-		var flicker := Vector2.ZERO if prefs.reduced_motion else Vector2(sin(elapsed*.67)*9,cos(elapsed*.56)*4)
-		DimensionalArt.paint_grounded(self,SIGBIN,node+Vector2(-35,41)+flicker,
-			Vector2(258,206),Color("#a7b9aa"),.20)
+		var foot := SigbinPresence.backward_foot(node+Vector2(-35,41),
+			elapsed,story.shadow_index,prefs.reduced_motion)
+		var opacity := SigbinPresence.visibility(_stage(),
+			story.shadow_identified,debug_farm_preview,elapsed)
+		SigbinPresence.paint_reverse_tracks(self,foot,opacity)
+		if opacity > .01:
+			DimensionalArt.paint_grounded(self,SIGBIN,foot,
+				Vector2(258,206),Color(.70,.76,.69,opacity),.20*opacity)
+			SigbinPresence.paint_clapping_ears(self,SIGBIN_EAR_NEAR,
+				SIGBIN_EAR_FAR,foot,elapsed,prefs.reduced_motion,opacity)
 	# Livestock groups are physical sprites. Rescued ones are moved to the
 	# safe gate, not deleted from the screen. None is shown hurt or bleeding.
 	for i in range(3):
@@ -597,7 +610,7 @@ func _interact() -> void:
 		story.seen["farmer"] = true
 		_auto_save()
 		_talk("FARMER • TWO MISSING GOATS",
-			"Two goats disappeared last night. No blood, no broken fence. The prints look backwards. I thought something had taken them, but my children heard them breathing in the old barn.",
+			"Two goats vanished, but the pen is intact. At dusk I smelled something bitter near the squash vines. Then: pak-pak, like palms clapping under the barn. The hoofprints face the wrong way. Are they coming or going?",
 			[{"label":"INSPECT THE REAL TRACKS","action":"close"}])
 	elif story.phase == 0 and Story.CLUES.has(id):
 		if story.inspect(id):
@@ -641,8 +654,8 @@ func _show_shadow_choices() -> void:
 	if story.phase != 3 or not story.shadow_identified:
 		return
 	var route: String = str(SHADOW_LABELS[clampi(story.shadow_index,0,2)])
-	_talk("SIGBIN • CONNECTED SHADOW",
-		route+"\nA false silhouette has no breath or tracks. Change ONE lamp to cut the connected shadow, then guide the next group along the open gate.",
+	_talk("BANTAY • SIGBIN SIGNS",
+		route+"\nA shadow alone is not the creature. You sensed a pungent odor, heard paired ear-claps, and watched it step backwards. Shift ONE lamp to open the animal route without entering the barn.",
 		[{"label":"SHIFT WEST LANTERN","action":"lantern_west"},
 		 {"label":"SHIFT NORTH LANTERN","action":"lantern_north"},
 		 {"label":"SHIFT EAST LANTERN","action":"lantern_east"},
@@ -757,7 +770,12 @@ func _refresh_hint() -> void:
 	if interaction_hint == null:
 		return
 	var id := _nearby()
-	interaction_hint.text = "FOLLOW WAYPOINT • SAFE FARM ROUTE" if id == "" else "INTERACT • "+id.replace("_"," ").to_upper()
+	var farm_hint := "FOLLOW WAYPOINT • SAFE FARM ROUTE"
+	if id == "" and story.outcome == "":
+		var sigbin_node: Vector2 = SHADOW_POS[clampi(story.shadow_index,0,2)]
+		farm_hint = SigbinPresence.detect_warning(_stage(),
+			player_pos.distance_to(sigbin_node),elapsed,story.shadow_identified)
+	interaction_hint.text = farm_hint if id == "" else "INTERACT • "+id.replace("_"," ").to_upper()
 	var goal := RETURN_WAKE
 	var title := "RETURN TO THE WAKE"
 	if story.phase == 0:
@@ -792,7 +810,10 @@ func _open_notes() -> void:
 	notes_text.text = "THE SIGBIN OF THE ABANDONED FARM / FIELD NOTES\n\n"
 	for id in Story.CLUES:
 		notes_text.text += ("[OBSERVED] " if story.clues.has(id) else "[MISSING] ")+str(CLUE_NAMES[id])+"\n"
-	notes_text.text += "\nTracks, dust and real breathing distinguish actual movement from false silhouettes. The guardian inherited an old bond; it is NOT proof of a livestock kill.\n\n"
+	notes_text.text += "\nFOLKLORE SIGNS (regional accounts vary): backward retreat, long hind legs, clapping ears, pungent odor, brief night sightings. These are traditional accounts, not proof of a supernatural animal.\n"
+	for signal in ["sigbin_odor","sigbin_ear_clap","sigbin_reverse_steps"]:
+		notes_text.text += ("[CONFIRMED] " if story.seen.has(signal) else "[UNCONFIRMED] ")+signal.replace("sigbin_","").replace("_"," ").to_upper()+"\n"
+	notes_text.text += "\nA shadow is not evidence of harm; the caretaker's old bond and the goats' safety must be judged separately.\n\n"
 	for id in Story.PREPARATIONS:
 		notes_text.text += ("[READY] " if story.preparations.has(id) else "[UNPREPARED] ")+id.replace("_"," ")+"\n"
 	notes_text.text += "\nANIMAL GROUPS SAFELY OUT %d/3  •  FEAR %d%%\n" % [story.rescued_groups,roundi(story.fear*100)]
