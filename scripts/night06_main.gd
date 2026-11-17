@@ -249,6 +249,25 @@ func _draw_house(foot: Vector2,width: float,night: bool,lit: bool) -> void:
 	Windows.paint_window(self,foot+Vector2(w*.27,-w*.84),
 		Vector2(w*.20,w*.20),0 if lit else 2,night,clock,prefs.reduced_motion)
 
+func _nearest_evidence() -> Vector2:
+	# Exactly one nearby plaque can open in the world, even when documented
+	# sources stand close together. Distant landmarks remain small pins.
+	var sites: Array[Vector2] = []
+	if story.phase <= 1:
+		for id in Story.CLUES: sites.append(CLUE_POS[id])
+	elif story.phase == 2:
+		for id in Story.ROUTE: sites.append(ROUTE_POS[id])
+	elif story.phase == 3:
+		for id in Story.IDENTITY: sites.append(IDENTITY_POS[id])
+	var nearest := Vector2(INF,INF)
+	var best := 216.0
+	for at in sites:
+		var distance: float = player_pos.distance_to(at)
+		if distance < best:
+			best = distance
+			nearest = at
+	return nearest
+
 func _paint_evidence(at: Vector2,name: String,read: bool) -> void:
 	# Real nearby inspection marker, never a wall of floating text over
 	# walkways or the Night 1 HUD. Distant sources remain identifiable by compass.
@@ -256,7 +275,7 @@ func _paint_evidence(at: Vector2,name: String,read: bool) -> void:
 	draw_circle(at-Vector2(0,20),20,
 		Color("#759e87") if read else Color("#e6ce8c"))
 	draw_circle(at-Vector2(0,20),9,Color("#263f47"))
-	if player_pos.distance_to(at) > 215.0:
+	if player_pos.distance_to(at) > 215.0 or at != _nearest_evidence():
 		return
 	var plaque_width: float = clampf(float(name.length())*8.5+22,100.0,198.0)
 	var plate := Rect2(at+Vector2(-plaque_width*.5,10),Vector2(plaque_width,27))
@@ -297,6 +316,7 @@ func _paint_old_rescue_banca(foot: Vector2) -> void:
 func _flood_rise() -> float:
 	# Source-backed danger becomes visible before any confrontation. It rises
 	# despite a dry sky, then recedes at dawn; never randomizes navigation.
+	if qa_river_preview: return 23.0
 	if story.phase <= 1: return 2.0
 	if story.phase == 2: return 8.0
 	if story.phase == 3: return 12.0
@@ -589,7 +609,7 @@ func _draw() -> void:
 	if player_pos.distance_to(TABLE)<245 and story.phase in [1,3]:
 		draw_string(ThemeDB.fallback_font,TABLE+Vector2(-62,-117),
 			"FLOOD RECORD",HORIZONTAL_ALIGNMENT_LEFT,160,16,Color("#f1e0bb"))
-	if player_pos.distance_to(Vector2(190,210))<270:
+	if story.phase >= 5 and player_pos.distance_to(Vector2(190,210))<170:
 		draw_string(ThemeDB.fallback_font,Vector2(80,128),
 			"OLD CROSSING",HORIZONTAL_ALIGNMENT_LEFT,220,16,Color("#f3e6be"))
 	if story.outcome != "" and player_pos.distance_to(Vector2(800,530))<280:
@@ -1035,6 +1055,8 @@ func _refresh() -> void:
 		"MIDNIGHT / SAFE CROSSING","DAWN / VERIFIED MEMORY"]
 	subtitle.text = "%s  •  RECONSTRUCTION %d/3" % [
 		steps[clampi(story.phase,0,7)],clampi(story.phase-1,0,3)]
+	if qa_river_preview:
+		subtitle.text = "MIDNIGHT RIVER • VISUAL QA PREVIEW"
 	match story.phase:
 		0: objective.text = "Inspect FOUR independent flood records. Dado may choose to share privately."
 		1: objective.text = "At the archive table: compare the second rescue order, danger and unequal choices."
@@ -1044,6 +1066,8 @@ func _refresh() -> void:
 		5: objective.text = "Secure rope, lantern and marked stones before entering the dangerous river."
 		6: objective.text = "SAFE STONE %d/3: follow the marked route and HOLD OBSERVE." % [story.step_index+1]
 		7: objective.text = "RIVER RECORD • %s  •  Night 7 Balete trail remains locked." % story.outcome.to_upper() if story.outcome != "" else "Choose a recorded result. Night 7 preparations continue."
+	if qa_river_preview:
+		objective.text = "RIVER ENVIRONMENT PREVIEW • Historical evidence remains unchanged."
 	_refresh_hint()
 	call_deferred("_fit_status_card")
 
