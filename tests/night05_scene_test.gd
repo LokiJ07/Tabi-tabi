@@ -40,6 +40,11 @@ func _run() -> void:
 	check(game.GOAT.get_width()>300 and game.CHICKEN.get_width()>200,
 		"animals are real in-game sprites, not text-only rewards")
 	check(game.story.phase == 0,"real investigation begins before creature reveal")
+	check(not FarmArt.animals_revealed(game.story.phase,false)
+		and not FarmArt.animals_revealed(1,false)
+		and FarmArt.animals_revealed(2,false)
+		and FarmArt.animals_revealed(0,true),
+		"daytime missing goats are NOT visible before the evidence deduction; QA preview is separate")
 	check(FarmArt.inside_livestock_pen(FarmArt.animal_pen_position(0))
 		and FarmArt.inside_livestock_pen(FarmArt.animal_pen_position(1))
 		and FarmArt.inside_livestock_pen(FarmArt.animal_pen_position(2)),
