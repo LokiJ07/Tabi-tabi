@@ -232,6 +232,7 @@ jobs:
             build/android-night5-safe-gate.png
             build/android-night5-courtyard.png
             build/android-night5-sigbin-night.png
+            build/android-night5-sigbin-motion.png
             build/android-night5-log.txt
             build/android-night1-notebook.png
             build/android-night1-notebook-scrolled.png
