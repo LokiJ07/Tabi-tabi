@@ -82,11 +82,11 @@ static func paint_shadow_node(target: CanvasItem, at: Vector2,
 		target.draw_line(at+Vector2(44,-47),at+Vector2(58,8),
 			Color(.17,.23,.26,.18),12.0,true)
 
-static func paint_shadow_links(target: CanvasItem, nodes: Array[Vector2],
+static func paint_shadow_links(target: CanvasItem, nodes: Array,
 		idx: int, clock: float, reduced_motion: bool) -> void:
 	if idx < 0 or idx >= nodes.size():
 		return
-	var active := nodes[idx]
+	var active: Vector2 = nodes[idx]
 	var pen := Vector2(460,270)
 	# Visible *connected* shadows are essential to the puzzle, not random dark
 	# overlays. Lamps cut a specific segment of the path to the animal pens.
