@@ -58,6 +58,7 @@ jobs:
           lines = path.read_text().splitlines()
           run = int(os.environ["GITHUB_RUN_NUMBER"])
           lines = [f"version/code={run}" if line.startswith("version/code=") else
+                   f'version/name="0.18.0-sigbin-farm-qa.{run}"' if os.environ.get("GITHUB_REF", "").endswith("night05-sigbin-abandoned-farm") and line.startswith("version/name=") else
                    f'version/name="0.17.0-cinematic-creature.{run}"' if os.environ.get("GITHUB_REF", "").endswith("night04-cinematic-creature-presence") and line.startswith("version/name=") else
                    f'version/name="0.16.0-night4-animated-qa.{run}"' if os.environ.get("GITHUB_REF", "").endswith("night04-final-character-animation") and line.startswith("version/name=") else
                    f'version/name="0.15.0-wake-vigil-qa.{run}"' if os.environ.get("GITHUB_REF", "").endswith("night04-wake-immersive-vigil") and line.startswith("version/name=") else
@@ -117,6 +118,8 @@ jobs:
           run_test res://tests/night04_state_test.gd
           run_test res://tests/night04_scene_test.gd
           run_test res://tests/night04_vigil_immersive_test.gd
+          run_test res://tests/night05_state_test.gd
+          run_test res://tests/night05_scene_test.gd
           run_test res://tests/connected_world_test.gd
           run_test res://tests/north_grove_art_test.gd
           run_test res://tests/connected_world_playthrough_test.gd
@@ -224,6 +227,12 @@ jobs:
             build/android-night4-wingbeat-followup.png
             build/android-night4-ridge-return.png
             build/android-night4-log.txt
+            build/android-night5-intro.png
+            build/android-night5-tracks-day.png
+            build/android-night5-safe-gate.png
+            build/android-night5-courtyard.png
+            build/android-night5-sigbin-night.png
+            build/android-night5-log.txt
             build/android-night1-notebook.png
             build/android-night1-notebook-scrolled.png
             build/android-night1-preparation.png
