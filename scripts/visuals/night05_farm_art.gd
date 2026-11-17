@@ -13,8 +13,8 @@ const PEN := Rect2(286.0,-42.0,375.0,180.0)
 const HOLDING := Rect2(690.0,350.0,335.0,150.0)
 const MAIN_ROAD_END := Vector2(570.0,318.0)
 # Off-road scenery must never occupy either fenced paddock or cover its sign.
-const LOWER_TREE := Vector2(920.0,700.0)
-const LOWER_BANANA := Vector2(1070.0,700.0)
+const LOWER_TREE := Vector2(320.0,705.0)
+const LOWER_BANANA := Vector2(970.0,760.0)
 const HOLDING_SIGN_AT := Vector2(444.0,535.0)
 const GATE_LEFT := 500.0
 const GATE_RIGHT := 610.0
@@ -33,7 +33,7 @@ static func main_road_route(start: Vector2, observe: Vector2,
 
 static func gate_approach_route() -> PackedVector2Array:
 	# A narrow branch, not the public road's destination.
-	return PackedVector2Array([MAIN_ROAD_END,Vector2(555.0,223.0)])
+	return PackedVector2Array([Vector2(640.0,244.0),Vector2(555.0,223.0)])
 
 static func keep_player_before_locked_trail(previous: Vector2,
 		desired: Vector2, entrance: Vector2, locked: bool) -> Vector2:
