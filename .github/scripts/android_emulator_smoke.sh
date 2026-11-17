@@ -422,9 +422,17 @@ if [ "${GITHUB_REF:-}" = "refs/heads/feature/night05-sigbin-abandoned-farm" ]; t
   # F10 drives the REAL state-machine inspection -> deduction -> safety prep
   # -> observe -> first correct lamp; only the Android DEBUG binary exposes it.
   # This captures an actual goat in motion and its settled destination.
-  adb shell input keyevent 140 # F10, first canonical successful rescue
-  sleep 2
-  if ! adb logcat -d -v brief | grep -q "NIGHT5_QA_FIRST_RESCUE_ACTIVE"; then
+  rescue_ready=0
+  for attempt in 1 2 3; do
+    adb shell input keyevent 140 # F10, first canonical successful rescue
+    sleep 2
+    if adb logcat -d -v brief | grep -q "NIGHT5_QA_FIRST_RESCUE_ACTIVE"; then
+      rescue_ready=1
+      break
+    fi
+    echo "Sigbin first-rescue QA key not acknowledged (attempt $attempt)"
+  done
+  if [ "$rescue_ready" -ne 1 ]; then
     echo "ERROR: first Sigbin lantern rescue did not reach actual gameplay state"
     adb logcat -d -v brief | grep -E 'NIGHT5_QA|Godot|SCRIPT ERROR' | tail -n 90 || true
     exit 1
