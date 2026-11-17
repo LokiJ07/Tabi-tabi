@@ -44,6 +44,10 @@ func _run() -> void:
 		check(model.respond(State.CORRECT_LIGHTS[i]),"correct lamp safely opens route")
 		check(model.rescued_groups == i+1,"exactly one rescued group per route")
 	check(model.phase == 4 and model.rescued_groups == 3,"two goats and chickens rescued alive")
+	check(model.sigbin_signs_confirmed()
+		and model.seen.has("sigbin_odor") and model.seen.has("sigbin_ear_clap")
+		and model.seen.has("sigbin_reverse_steps"),
+		"real HOLD OBSERVE confirmed odor, paired ear claps and reverse gait")
 	check(not model.commit("resolve"),"perfect territory ending requires no wrong guesses")
 	check(model.commit("safe_rescue"),"fair safe-rescue outcome reflects actual mistakes")
 	check(model.outcome == "safe_rescue" and model.bestiary.has("sigbin"),
