@@ -392,6 +392,15 @@ if [ "${GITHUB_REF:-}" = "refs/heads/feature/night05-sigbin-abandoned-farm" ]; t
     adb exec-out screencap -p > "build/android-night5-$3.png"
     python3 .github/scripts/assert_gameplay_visible.py "build/android-night5-$3.png"
   done
+  # Separate REAL live frame demonstrates the backward movement / hinged
+  # ears. Do not pass off an unchanged character cutout as an animation.
+  sleep 2
+  adb exec-out screencap -p > build/android-night5-sigbin-motion.png
+  python3 .github/scripts/assert_gameplay_visible.py build/android-night5-sigbin-motion.png
+  if cmp -s build/android-night5-sigbin-night.png build/android-night5-sigbin-motion.png; then
+    echo "ERROR: Night 5 Sigbin midnight frame stopped updating"
+    exit 1
+  fi
   if cmp -s build/android-night5-tracks-day.png build/android-night5-sigbin-night.png; then
     echo "ERROR: farm daylight and shadow-linked Sigbin night are identical"
     exit 1
