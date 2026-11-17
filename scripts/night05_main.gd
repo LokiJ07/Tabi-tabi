@@ -375,7 +375,10 @@ func _draw() -> void:
 	# a static enemy: backward steps, two hinged ears, and cautious concealment.
 	if _stage() >= 2 or debug_farm_preview:
 		var node: Vector2 = SHADOW_POS[clampi(story.shadow_index,0,2)]
-		var foot := SigbinPresence.backward_foot(node+Vector2(-35,41),
+		# The eave casts the clue, but the Sigbin's hooves are on firm soil
+		# beneath the barn, NOT hanging in front of its roof.
+		var foot := SigbinPresence.backward_foot(
+			SigbinPresence.ground_anchor(story.shadow_index),
 			elapsed,story.shadow_index,prefs.reduced_motion)
 		var opacity := SigbinPresence.visibility(_stage(),
 			story.shadow_identified,debug_farm_preview,elapsed)
