@@ -320,6 +320,7 @@ func _draw() -> void:
 		Vector2(-405,338),SAFE_PERIMETER,SAFE_GATE])
 	draw_polyline(path,Color("#34443a"),116,true)
 	draw_polyline(path,Color("#ae9570"),81,true)
+	FarmArt.paint_ground_texture(self,_stage()>=2)
 	FarmArt.paint_crop_rows(self,_stage()>=2)
 	FarmArt.paint_squash_patch(self,Vector2(-650,140),_stage()>=2)
 	Landscape.trail_stones(self,RETURN_WAKE,Vector2(-355,341),17,80,_stage()>=2)
@@ -331,6 +332,7 @@ func _draw() -> void:
 		DimensionalArt.paint_grounded(self,BANANA,at,
 			Vector2(145,210),Color("#8fa884"),.26)
 	_paint_farmhouse()
+	FarmArt.paint_barn_ground_shadow(self,BARN_FOOT,_stage()>=2)
 	DimensionalArt.paint_grounded(self,BARN,BARN_FOOT,Vector2(780,574),
 		Color("#d0c6aa"),.28)
 	FarmArt.paint_fence(self,Vector2(-620,220),Vector2(-185,230),7,_stage()>=2)
