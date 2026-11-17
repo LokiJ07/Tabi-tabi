@@ -80,6 +80,11 @@ func _run() -> void:
 	game._process(1.0)
 	check(game.interaction_hint.text.length() <= 32,
 		"actual live Sigbin encounter does not cover the upper HUD with multiline warning")
+	var live_foot := SigbinPresence.backward_foot(SigbinPresence.ground_anchor(0),
+		game.elapsed,0,game.prefs.reduced_motion)
+	var real_proximity := clampf(1.0-game.player_pos.distance_to(live_foot)/1100.0,0.0,1.0)
+	check(absf(game.ambient.sigbin_proximity-real_proximity) < .0001,
+		"ears and odor strength follow creature feet, never its old roof shadow")
 	var sigbin_foot: Vector2 = SigbinPresence.ground_anchor(0)
 	check(sigbin_foot.y > -80.0
 		and SigbinPresence.ground_anchor(1).y > -80.0,
