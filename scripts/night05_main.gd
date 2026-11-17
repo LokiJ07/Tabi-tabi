@@ -365,7 +365,8 @@ func _draw() -> void:
 			var pos: Vector2 = PREP_POS[id]
 			if id.begins_with("lantern_"):
 				FarmArt.paint_lantern(self,pos,story.preparations.has(id),elapsed,prefs.reduced_motion)
-	if story.phase >= 3 or debug_farm_preview:
+	# A solved shadow should NOT remain floating over the dawn/morning farm.
+	if story.phase == 3 or debug_farm_preview:
 		FarmArt.paint_shadow_links(self,SHADOW_POS,
 			clampi(story.shadow_index,0,2),elapsed,prefs.reduced_motion,
 			story.rescued_groups,[PREP_POS["lantern_west"],
