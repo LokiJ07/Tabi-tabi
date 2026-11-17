@@ -55,7 +55,7 @@ const CLUE_NAMES := {
 }
 const CLUE_TEXT := {
 	"backward_tracks":"Two trails overlap: hooves toward the barn, and strange long-hind-foot prints pointing back. Some Visayan accounts say a Sigbin retreats backwards, watching behind itself. Follow the dust, not the toe direction.",
-	"unbroken_fence":"The pen fence is intact. Both goats walked along a narrow route into the abandoned barn. The creature may be guiding, not hunting.",
+	"unbroken_fence":"The old fence has no break-in marks. Tracks skirt the unstable barn and continue toward the far livestock pen. Something guided the animals there instead of dragging them.",
 	"caretaker_photo":"The caretaker's promise remains beside an old clay pot. Some Cebuano accounts describe a sigbin tied to an owner or family. This is folklore, not evidence to accuse a living person.",
 	"broken_barn":"The missing wall panels and weak posts are a real collapse hazard. No one, including the animals, may be rescued by walking through the barn."
 }
@@ -428,8 +428,11 @@ func _draw() -> void:
 				Vector2(49,47),i,true,elapsed,prefs.reduced_motion)
 	# Safe-world wayfinding stays readable after the night grade. Signs
 	# distinguish the livestock-only gate from the player observation point.
-	FarmArt.paint_farm_sign(self,"LIVESTOCK PEN • NO ENTRY",
-		Vector2(308,53),272.0,_stage()>=2)
+	FarmArt.paint_farm_sign(self,
+		"LIVESTOCK PEN • NO ENTRY"
+		if FarmArt.animals_revealed(story.phase,debug_farm_preview)
+		else "MISSING HERD • FOLLOW TRACKS",
+		Vector2(308,53),286.0,_stage()>=2)
 	FarmArt.paint_farm_sign(self,
 		"GATE • READY" if story.preparations.has("safe_gate") else "GATE • PREPARE",
 		Vector2(620,287),196.0,_stage()>=2)
@@ -469,6 +472,10 @@ func _draw() -> void:
 	# Livestock groups are physical sprites. Rescued ones are moved to the
 	# safe gate, not deleted from the screen. None is shown hurt or bleeding.
 	for i in range(3):
+		# Missing animals remain hidden from the initial daylight clue hunt.
+		# After deducing the guardian, they become visible in the far pen.
+		if not FarmArt.animals_revealed(story.phase,debug_farm_preview):
+			continue
 		var safe: bool = story.rescued_groups > i
 		var at := FarmArt.animal_crossing_position(i,SAFE_GATE,safe,
 			float(animal_rescue_motion.get(i,1.0)))
@@ -698,7 +705,7 @@ func _interact() -> void:
 		story.seen["farmer"] = true
 		_auto_save()
 		_talk("FARMER • TWO MISSING GOATS",
-			"Two goats vanished, but the pen is intact. At dusk I smelled something bitter near the squash vines. Then: pak-pak, like palms clapping under the barn. The hoofprints face the wrong way. Are they coming or going?",
+			"Two goats went missing this morning, and the chickens went quiet. The kural was intact. At dusk, a bitter smell came from the squash vines, then two sharp ear-claps near the unsafe barn. The hoofprints face the wrong way. Follow them; do not enter the barn.",
 			[{"label":"INSPECT THE REAL TRACKS","action":"close"}])
 	elif story.phase == 0 and Story.CLUES.has(id):
 		if story.inspect(id):
@@ -756,7 +763,7 @@ func _choose(value: String) -> void:
 		if story.deduce("guardian"):
 			_auto_save()
 			_talk("ALING SABEL • WHAT WE WAIT FOR",
-				"Some places keep waiting after the person they waited for is gone. I know that kind of waiting. Let the Sigbin guard a safer boundary; bring the goats home.",
+				"The tracks lead to the far pen: the missing goats and chickens are sheltered there. The barn is unstable. Prepare the animal-only gate and three lanterns, then guide them to the separate safe holding area. Do not enter the pen yourself.",
 				[{"label":"PREPARE A SAFE ROUTE","action":"close"}])
 	elif value == "predator":
 		story.deduce("predator")
