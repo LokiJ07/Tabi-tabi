@@ -58,6 +58,21 @@ func _run() -> void:
 		"Night 6 LOOK touch area exactly matches Nights 1–5")
 	check(World.implemented("night06") and not World.implemented("night07"),
 		"real River scene implemented but Balete remains locked")
+	check(is_equal_approx(game._flood_rise(),2.0),
+		"river starts high but substantially below the midnight surge")
+	game.story.phase = 2
+	check(is_equal_approx(game._flood_rise(),8.0),"evidence reconstruction reveals rising water")
+	game.story.phase = 6
+	check(is_equal_approx(game._flood_rise(),23.0),"river rises without rain by the encounter")
+	game.story.phase = 7
+	check(is_equal_approx(game._flood_rise(),5.0),"river calms after the third challenge")
+	game.qa_river_preview = true
+	check(is_equal_approx(game._flood_rise(),23.0),"Android night preview reflects actual high water")
+	game.qa_river_preview = false
+	game.story.phase = 0
+	game.player_pos = game.CLUE_POS["rescue_order"]
+	check(game._nearest_evidence() == game.CLUE_POS["rescue_order"],
+		"only nearest documented source should reveal a full plaque")
 	check(game._safe_corridor(game.STEPS[0]) and
 		not game._safe_corridor(Vector2(-700,620)),
 		"three visible stones are safe, unmarked floodwater is not")
