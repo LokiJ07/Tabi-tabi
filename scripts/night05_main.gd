@@ -202,6 +202,10 @@ func _process(delta: float) -> void:
 		# Player stays outside the actual kural. The gate is for livestock
 		# rescue; preparing the gate never opens an unsafe player shortcut.
 		player_pos = FarmArt.keep_player_outside_pen(previous_foot,player_pos)
+		# The future chapter's marked checkpoint is locked while its
+		# scene is absent; the road itself remains continuously visible.
+		player_pos = FarmArt.keep_player_before_locked_trail(
+			previous_foot,player_pos,FUTURE_TRAIL,not World.implemented("night06"))
 	bantay_pos = bantay_pos.lerp(player_pos+Vector2(-49,28),clampf(delta*3.2,0,1))
 	var framing_target := player_pos+aim*64.0
 	if story.phase == 3 or debug_farm_preview:
@@ -355,9 +359,9 @@ func _draw() -> void:
 		draw_rect(Rect2(MAP.position.x,y,MAP.size.x,54),
 			Color("#384c3d").lerp(Color("#6b7758"),float(i)/29.0))
 	draw_texture_rect(SOIL,Rect2(-1110,-765,2210,1530),false,Color(1,1,1,.21))
-	# Main public road MUST NEVER cut through the livestock kural or
-	# holding paddock. A separate narrow spur ends BEFORE the animal-only gate.
-	var path := FarmArt.main_road_route(RETURN_WAKE,SAFE_PERIMETER)
+	# The former "end" is a Y-junction, NOT a dead end. A continuous
+	# public road heads east then uphill to the clearly marked Night 6 path.
+	var path := FarmArt.main_road_route(RETURN_WAKE,SAFE_PERIMETER,FUTURE_TRAIL)
 	draw_polyline(path,Color("#34443a"),116,true)
 	draw_polyline(path,Color("#ae9570"),81,true)
 	var gate_spur := FarmArt.gate_approach_route()
@@ -368,10 +372,10 @@ func _draw() -> void:
 	FarmArt.paint_squash_patch(self,Vector2(-650,140),_stage()>=2)
 	Landscape.trail_stones(self,RETURN_WAKE,Vector2(-355,341),17,80,_stage()>=2)
 	for at in [Vector2(-950,-445),Vector2(-835,-660),Vector2(775,-615),
-		Vector2(948,-65),FarmArt.LOWER_TREE]:
+		Vector2(670,-520),FarmArt.LOWER_TREE]:
 		DimensionalArt.paint_grounded(self,TREE,at+Vector2(0,30),
 			Vector2(235,294),Color("#91ab92"),.26)
-	for at in [Vector2(-850,-80),Vector2(895,12),FarmArt.LOWER_BANANA]:
+	for at in [Vector2(-850,-80),Vector2(1030,190),FarmArt.LOWER_BANANA]:
 		DimensionalArt.paint_grounded(self,BANANA,at,
 			Vector2(145,210),Color("#8fa884"),.26)
 	_paint_farmhouse()
@@ -443,6 +447,10 @@ func _draw() -> void:
 	if story.phase in [1,2,3]:
 		FarmArt.paint_farm_sign(self,"OBSERVE HERE",
 			SAFE_PERIMETER+Vector2(-250,-120),174.0,_stage()>=2)
+	# The main road visibly continues beyond this chapter's actual exit.
+	# A locked rope makes the missing next scene explicit, not a cut road.
+	FarmArt.paint_night06_trail_checkpoint(self,FUTURE_TRAIL,
+		not World.implemented("night06"),_stage()>=2)
 	# Documented regional signs appear as an IN-WORLD animal rather than
 	# a static enemy: backward steps, two hinged ears, and cautious concealment.
 	if _stage() >= 2 or debug_farm_preview:
@@ -696,7 +704,7 @@ func _interact() -> void:
 	if id == "return_wake":
 		_return_to_wake()
 	elif id == "trail_locked":
-		_talk("FIELD NOTES","The path beyond the abandoned farm belongs to a later night. Return with the evidence; do not enter an unbuilt region.",
+		_talk("FIELD NOTES","Follow the continuous uphill road past the animal pens to this marked Night 6 entrance. The trail continues beyond the rope, but the next chapter is not playable yet. Keep the farm record and return with Bantay.",
 			[{"label":"BACK TO THE FARM","action":"close"}])
 	elif id == "unsafe_barn":
 		story.enter_unstable_barn()
@@ -862,7 +870,7 @@ func _refresh() -> void:
 		2: objective.text = "Prepare OBSERVE HERE, the animal GATE and THREE lanterns."
 		3: objective.text = "%d/3 animal groups safe. Stand at OBSERVE HERE, HOLD OBSERVE, then shift one lantern." % story.rescued_groups
 		4: objective.text = "All THREE groups are inside the safe holding area. Record the outcome."
-		5: objective.text = "NIGHT 5 RECORDED • %s" % story.outcome.to_upper()
+		5: objective.text = "NIGHT 5 RECORDED • %s  •  NIGHT 6 TRAIL CONNECTED (LOCKED)" % story.outcome.to_upper()
 	_refresh_hint()
 
 func _refresh_hint() -> void:
