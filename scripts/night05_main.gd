@@ -367,7 +367,7 @@ func _draw() -> void:
 	# Livestock groups are physical sprites. Rescued ones are moved to the
 	# safe gate, not deleted from the screen. None is shown hurt or bleeding.
 	for i in range(3):
-		var safe := story.rescued_groups > i
+		var safe: bool = story.rescued_groups > i
 		var at: Vector2 = SAFE_GATE+Vector2(-170+float(i)*86,65)
 		if not safe:
 			at = Vector2(340+float(i)*107,188+float(i%2)*40)
@@ -636,7 +636,7 @@ func _interact() -> void:
 func _show_shadow_choices() -> void:
 	if story.phase != 3 or not story.shadow_identified:
 		return
-	var route := SHADOW_LABELS[clampi(story.shadow_index,0,2)]
+	var route: String = str(SHADOW_LABELS[clampi(story.shadow_index,0,2)])
 	_talk("SIGBIN • CONNECTED SHADOW",
 		route+"\nA false silhouette has no breath or tracks. Change ONE lamp to cut the connected shadow, then guide the next group along the open gate.",
 		[{"label":"SHIFT WEST LANTERN","action":"lantern_west"},
