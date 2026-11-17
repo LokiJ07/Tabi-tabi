@@ -62,7 +62,7 @@ func _run() -> void:
 	if game.dialogue.visible:
 		game._choose("close")
 	game._open_preparation_briefing()
-	check(game.dialogue.visible and game.dialogue_body.text.contains("PREPARATION"),
+	check(game.dialogue.visible and game.dialogue_speaker.text.contains("PREPARATION"),
 		"PREPARE button opens real chapter safety guidance")
 	game._choose("close")
 	game._retry_from_saved_checkpoint()
