@@ -38,6 +38,10 @@ const ARRIVAL_WAKE := Vector2(-715.0,280.0)
 const TRAIL_WAKE_FARM := Vector2(815.0,-185.0)
 const ARRIVAL_FARM := Vector2(-810.0,340.0)
 const TRAIL_FARM_WAKE := Vector2(-990.0,410.0)
+# Canonical physical continuation from the Sigbin farm to the next chapter.
+# Its visible checkpoint exists now; streaming stays disabled until Night 6
+# has a real scene and canonical Night 5 completion.
+const TRAIL_FARM_NIGHT06 := Vector2(955.0,-470.0)
 const ARRIVAL_WAKE_FROM_FARM := Vector2(735.0,-95.0)
 const TRAVEL_RANGE_3D := 3.35
 const TRAVEL_RANGE_2D := 118.0
