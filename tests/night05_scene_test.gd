@@ -72,7 +72,10 @@ func _run() -> void:
 	game.camera.position = game.player_pos
 	game._refresh() # Mirror the real F9 QA input which refreshes the HUD.
 	game._process(1.0)
-	var sigbin_foot: Vector2 = game.SHADOW_POS[0] + Vector2(-35,41)
+	var sigbin_foot: Vector2 = SigbinPresence.ground_anchor(0)
+	check(sigbin_foot.y > -80.0
+		and SigbinPresence.ground_anchor(1).y > -80.0,
+		"Sigbin hooves stand outside hazardous barn footprint, not on roof air")
 	var half_view_height: float = 720.0 / (2.0 * game.camera.zoom.y)
 	check(game._stage() == 3 and game.subtitle.text.begins_with("MIDNIGHT / SIGBIN"),
 		"midnight QA capture is explicitly the Sigbin reveal, never DAY / TRACKS")
