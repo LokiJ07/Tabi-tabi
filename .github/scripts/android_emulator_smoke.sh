@@ -202,7 +202,7 @@ python3 .github/scripts/assert_night_atmosphere.py build/android-night1-shore-do
 # On the Night 2 development branch, launch the REAL new chapter through
 # its debug-only title shortcut. Never silently treat Night 1 screenshots as
 # Kapre evidence; verify the new scene's exact engine log marker first.
-if [ "${GITHUB_REF:-}" = "refs/heads/feature/night2-kapre" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/hud-house-depth-fix" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night03-tikbalang-connected" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/nights1-3-dimensional-art-pass" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night04-manananggal-the-wake" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/nighttime-lived-in-village-nights1-4" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night04-wake-immersive-vigil" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night04-final-character-animation" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night04-cinematic-creature-presence" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night05-sigbin-abandoned-farm" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night05-clear-farm-road" ]; then
+if [ "${GITHUB_REF:-}" = "refs/heads/feature/night2-kapre" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/hud-house-depth-fix" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night03-tikbalang-connected" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/nights1-3-dimensional-art-pass" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night04-manananggal-the-wake" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/nighttime-lived-in-village-nights1-4" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night04-wake-immersive-vigil" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night04-final-character-animation" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night04-cinematic-creature-presence" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night05-sigbin-abandoned-farm" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night05-clear-farm-road" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night05-visible-night06-road-connection" ]; then
   adb shell am force-stop "$PKG" || true
   adb shell monkey -p "$PKG" -c android.intent.category.LAUNCHER 1
   sleep 7
@@ -291,7 +291,7 @@ fi
 
 # Night 3 uses the SAME running Godot APK, original ridge artwork, and
 # actual scene title debug shortcut. These captures are never concept art.
-if [ "${GITHUB_REF:-}" = "refs/heads/feature/night03-tikbalang-connected" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/nights1-3-dimensional-art-pass" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night04-manananggal-the-wake" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/nighttime-lived-in-village-nights1-4" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night04-wake-immersive-vigil" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night04-final-character-animation" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night04-cinematic-creature-presence" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night05-sigbin-abandoned-farm" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night05-clear-farm-road" ]; then
+if [ "${GITHUB_REF:-}" = "refs/heads/feature/night03-tikbalang-connected" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/nights1-3-dimensional-art-pass" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night04-manananggal-the-wake" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/nighttime-lived-in-village-nights1-4" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night04-wake-immersive-vigil" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night04-final-character-animation" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night04-cinematic-creature-presence" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night05-sigbin-abandoned-farm" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night05-clear-farm-road" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night05-visible-night06-road-connection" ]; then
   adb shell am force-stop "$PKG" || true
   adb shell monkey -p "$PKG" -c android.intent.category.LAUNCHER 1
   sleep 7
@@ -332,7 +332,7 @@ if [ "${GITHUB_REF:-}" = "refs/heads/feature/night03-tikbalang-connected" ] || [
 fi
 
 # Wake is a REAL Godot scene entered by a debug-only title key.
-if [ "${GITHUB_REF:-}" = "refs/heads/feature/night04-manananggal-the-wake" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/nighttime-lived-in-village-nights1-4" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night04-wake-immersive-vigil" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night04-final-character-animation" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night04-cinematic-creature-presence" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night05-sigbin-abandoned-farm" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night05-clear-farm-road" ]; then
+if [ "${GITHUB_REF:-}" = "refs/heads/feature/night04-manananggal-the-wake" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/nighttime-lived-in-village-nights1-4" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night04-wake-immersive-vigil" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night04-final-character-animation" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night04-cinematic-creature-presence" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night05-sigbin-abandoned-farm" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night05-clear-farm-road" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night05-visible-night06-road-connection" ]; then
   adb shell am force-stop "$PKG" || true
   adb shell monkey -p "$PKG" -c android.intent.category.LAUNCHER 1
   sleep 7
@@ -376,7 +376,7 @@ fi
 
 # Night 5 authentic Old Farm is unlocked through the actual connected Night 4
 # route in production; F8 enters this specific scene ONLY on Android DEBUG CI.
-if [ "${GITHUB_REF:-}" = "refs/heads/feature/night05-sigbin-abandoned-farm" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night05-clear-farm-road" ]; then
+if [ "${GITHUB_REF:-}" = "refs/heads/feature/night05-sigbin-abandoned-farm" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night05-clear-farm-road" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night05-visible-night06-road-connection" ]; then
   adb shell am force-stop "$PKG" || true
   adb shell monkey -p "$PKG" -c android.intent.category.LAUNCHER 1
   sleep 8
@@ -417,6 +417,22 @@ if [ "${GITHUB_REF:-}" = "refs/heads/feature/night05-sigbin-abandoned-farm" ] ||
   fi
   if cmp -s build/android-night5-tracks-day.png build/android-night5-sigbin-night.png; then
     echo "ERROR: farm daylight and shadow-linked Sigbin night are identical"
+    exit 1
+  fi
+  # Inspect the TRUE future chapter entrance on the live Android farm.
+  # F11 returns the farm to daylight and frames the fully drawn road past
+  # the livestock branch and the physical locked Night 6 rope. Never accept
+  # a disconnected prop or a title screenshot as continuous map evidence.
+  adb shell input keyevent 141  # Android F11
+  sleep 4
+  if ! adb logcat -d -v brief | grep -q "NIGHT5_QA_CONNECTED_NIGHT06_TRAIL"; then
+    echo "ERROR: Night 6 physically connected farm trail was not reached"
+    exit 1
+  fi
+  adb exec-out screencap -p > build/android-night5-night06-road-connected.png
+  python3 .github/scripts/assert_gameplay_visible.py build/android-night5-night06-road-connected.png
+  if cmp -s build/android-night5-safe-gate.png build/android-night5-night06-road-connected.png; then
+    echo "ERROR: Night 6 route camera remained stuck on the animal gate"
     exit 1
   fi
   # F10 drives the REAL state-machine inspection -> deduction -> safety prep
