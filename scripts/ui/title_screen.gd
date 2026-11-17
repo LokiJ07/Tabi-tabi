@@ -299,7 +299,7 @@ func _build_menu() -> void:
 	elif not night5_ready and OS.has_feature("debug"):
 		night5_button.text = "TEST NIGHT 5 (QA)"
 	# Nine entries keep the same anchored left title column.
-	menu.add_theme_constant_override("separation",4)
+	menu.add_theme_constant_override("separation",3)
 	# Chapter labels can become much longer than the original six-button
 	# title layout. Keep EVERY visible label inside its unchanged left column.
 	night2_button.add_theme_font_size_override("font_size", roundi(23.0*prefs.text_scale))
@@ -311,7 +311,7 @@ func _build_menu() -> void:
 	_button("EXIT", menu, func(): get_tree().quit())
 	for item in menu.get_children():
 		if item is Button:
-			(item as Button).custom_minimum_size.y = 47.0
+			(item as Button).custom_minimum_size.y = 48.0
 	var chapter := Label.new()
 	chapter.text = "SANTELMO  /  KAPRE  /  TIKBALANG  /  MANANANGGAL  /  SIGBIN"
 	chapter.anchor_left = 0.075
