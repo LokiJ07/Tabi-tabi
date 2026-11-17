@@ -12,6 +12,10 @@ const SHADOW := Color("#13242a")
 const PEN := Rect2(286.0,-42.0,375.0,180.0)
 const HOLDING := Rect2(690.0,212.0,335.0,150.0)
 const MAIN_ROAD_END := Vector2(570.0,318.0)
+# Off-road scenery must never occupy either fenced paddock or cover its sign.
+const LOWER_TREE := Vector2(920.0,700.0)
+const LOWER_BANANA := Vector2(1070.0,700.0)
+const HOLDING_SIGN_AT := Vector2(495.0,415.0)
 const GATE_LEFT := 500.0
 const GATE_RIGHT := 610.0
 
