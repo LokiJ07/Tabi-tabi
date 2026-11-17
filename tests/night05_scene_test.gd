@@ -58,6 +58,17 @@ func _run() -> void:
 	check(SigbinPresence.hoof_lift(0.0,0.0,false) > 0.0
 		and SigbinPresence.hoof_lift(0.0,0.0,true) == 0.0,
 		"jointed feet lift and return to the earth")
+	check(SigbinPresence.gait_strength(0.0,0,false) == 0.0
+		and SigbinPresence.gait_strength(4.0,0,false) > .7
+		and SigbinPresence.gait_strength(8.5,0,false) == 0.0,
+		"Sigbin feet become planted at both ends of the backward patrol")
+	check(SigbinPresence.gait_strength(4.0,0,true) == 0.0
+		and SigbinPresence.body_weight_shift(4.0,0,true) == Vector2.ZERO,
+		"Reduced Motion also freezes ribcage displacement and walking")
+	check(SigbinPresence.body_weight_shift(4.0,0,false).length() > .1
+		and SigbinPresence.body_weight_shift(4.3,0,false)
+			!= SigbinPresence.body_weight_shift(4.0,0,false),
+		"weight shifting follows genuine motion rather than a fixed floating pose")
 	check(SigbinPresence.detect_warning(3,250.0,0.0,false).contains("ODOR")
 		and SigbinPresence.detect_warning(3,250.0,4.5,false).contains("EAR-CLAPS")
 		and SigbinPresence.detect_warning(3,250.0,8.5,false).contains("BACKWARD"),
