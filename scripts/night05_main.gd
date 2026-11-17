@@ -192,8 +192,12 @@ func _process(delta: float) -> void:
 	var framing_target := player_pos+aim*64.0
 	if story.phase == 3 or debug_farm_preview:
 		var shade: Vector2 = SHADOW_POS[clampi(story.shadow_index,0,2)]
-		framing_target += (shade-player_pos).limit_length(230.0)*.38
-	var zoom_target := Vector2(.96,.96) if story.phase == 3 or debug_farm_preview else Vector2(1.03,1.03)
+		# The first barn-eave silhouette is far above the safe perimeter.
+		# Fit BOTH the moving hero and the full Sigbin silhouette into the
+		# same mobile-height frame, rather than aiming only 87px toward it.
+		# This is the real encounter camera too, not just a QA screenshot fix.
+		framing_target = player_pos.lerp(shade,.58)+Vector2(0,-30)+aim*28.0
+	var zoom_target := Vector2(.78,.78) if story.phase == 3 or debug_farm_preview else Vector2(1.03,1.03)
 	camera.zoom = camera.zoom.lerp(zoom_target,
 		1.0 if prefs.reduced_motion else clampf(delta*4.5,0,1))
 	camera.position = camera.position.lerp(framing_target,
@@ -734,6 +738,12 @@ func _refresh() -> void:
 		"MIDNIGHT / RESCUE","DAWN / SAFETY","MORNING / RECORDED"]
 	subtitle.text = "%s  •  CLUES %d/4  •  SAFETY %d/5" % [
 		tasks[clampi(story.phase,0,5)],story.clues.size(),story.preparations.size()]
+	if debug_farm_preview:
+		# F9 is a developer-only live encounter preview; never label it DAY.
+		subtitle.text = "MIDNIGHT / SIGBIN REVEAL  •  QA PREVIEW"
+		objective.text = "Watch the Sigbin guardian and its connected shadow path from safety."
+		_refresh_hint()
+		return
 	match story.phase:
 		0: objective.text = "Talk to the farmer; inspect FOUR clues outside the unsafe barn."
 		1: objective.text = "Compare tracks and the keeper photo. Is the Sigbin guarding or hunting?"
