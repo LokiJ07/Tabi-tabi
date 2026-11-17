@@ -1,7 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="150" height="240" viewBox="0 0 150 240">
-<title>Sigbin far ear, independently articulated</title>
-<defs><linearGradient id="fur" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#64756e"/><stop offset=".55" stop-color="#354c4b"/><stop offset="1" stop-color="#172a30"/></linearGradient></defs>
-<path d="M77 231Q42 175 20 98Q-1 43 31 14Q80 31 122 94Q148 171 77 231Z" fill="url(#fur)" stroke="#15272e" stroke-width="12"/>
-<path d="M74 212Q50 142 36 91Q26 60 35 44Q92 80 104 146Q112 178 74 212Z" fill="#9b8074" opacity=".57"/>
-<path d="M74 202Q51 147 43 101" fill="none" stroke="#bd9c89" stroke-width="6" opacity=".41"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="220" height="130" viewBox="0 0 220 130">
+<title>Visayan Sigbin wide folding far ear, original game art</title>
+<defs><linearGradient id="hide" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#627368"/><stop offset=".5" stop-color="#334b46"/><stop offset="1" stop-color="#172c2f"/></linearGradient></defs>
+<path d="M207 101Q194 57 144 33Q92 9 42 18L12 30Q45 67 95 88Q158 117 207 101Z" fill="url(#hide)" stroke="#192c30" stroke-width="11" stroke-linejoin="round"/>
+<path d="M185 90Q149 54 105 39Q70 29 35 32Q75 65 121 84Q164 102 185 90Z" fill="#816b64" opacity=".42"/>
+<path d="M179 90Q123 56 32 33M157 73L119 83M110 50L87 68" fill="none" stroke="#c0a392" stroke-width="5" opacity=".34"/>
 </svg>
