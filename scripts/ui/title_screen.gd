@@ -6,8 +6,11 @@ const Night02Scene = preload("res://scenes/night02.tscn")
 const Night03Scene = preload("res://scenes/night03.tscn")
 const Night04Scene = preload("res://scenes/night04.tscn")
 const Night05Scene = preload("res://scenes/night05.tscn")
+const Night06Scene = preload("res://scenes/night06.tscn")
 const Night04State = preload("res://scripts/narrative/night04_state.gd")
 const Night05Save = preload("res://scripts/core/night05_save.gd")
+const Night05State = preload("res://scripts/narrative/night05_state.gd")
+const Night06Save = preload("res://scripts/core/night06_save.gd")
 const Night03State = preload("res://scripts/narrative/night03_state.gd")
 const Night04Save = preload("res://scripts/core/night04_save.gd")
 const Night02State = preload("res://scripts/narrative/night02_state.gd")
@@ -31,6 +34,7 @@ var night2_button: Button
 var night3_button: Button
 var night4_button: Button
 var night5_button: Button
+var night6_button: Button
 var settings_panel: PanelContainer
 var settings_backdrop: ColorRect
 var font_button: Button
@@ -60,6 +64,11 @@ func _input(event: InputEvent) -> void:
 	# without fabricating an unlocked Night 1 save. Production has no shortcut.
 	if OS.get_name() == "Android" and OS.has_feature("debug") and event is InputEventKey:
 		var key := event as InputEventKey
+		if key.pressed and key.keycode == KEY_F7:
+			get_viewport().set_input_as_handled()
+			print("NIGHT6_QA_DEBUG_ENTRY")
+			get_tree().change_scene_to_packed(Night06Scene)
+			return
 		if key.pressed and key.keycode == KEY_F8:
 			get_viewport().set_input_as_handled()
 			print("NIGHT5_QA_DEBUG_ENTRY")
@@ -260,8 +269,8 @@ func _build_menu() -> void:
 	menu.name = "MainMenu"
 	menu.anchor_left = 0.065
 	menu.anchor_right = 0.415
-	menu.anchor_top = 0.285
-	menu.anchor_bottom = 0.945
+	menu.anchor_top = 0.272
+	menu.anchor_bottom = 0.950
 	menu.add_theme_constant_override("separation", 8)
 	add_child(menu)
 	_button("START GAME", menu, _start_game)
@@ -298,7 +307,14 @@ func _build_menu() -> void:
 		night5_button.text = "CONTINUE NIGHT 5  •  THE FARM"
 	elif not night5_ready and OS.has_feature("debug"):
 		night5_button.text = "TEST NIGHT 5 (QA)"
-	# Nine entries keep the same anchored left title column.
+	night6_button = _button("NIGHT 6  •  RIVER'S GRIEF",menu,_enter_night6)
+	var night6_ready := _night6_unlocked()
+	night6_button.disabled = not night6_ready and not OS.has_feature("debug")
+	if Night06Save.exists() and night6_ready:
+		night6_button.text = "CONTINUE NIGHT 6  •  THE RIVER"
+	elif not night6_ready and OS.has_feature("debug"):
+		night6_button.text = "TEST NIGHT 6 (QA)"
+	# Chapter entries retain the same left column; compact type avoids clip.
 	menu.add_theme_constant_override("separation",3)
 	# Chapter labels can become much longer than the original six-button
 	# title layout. Keep EVERY visible label inside its unchanged left column.
@@ -306,19 +322,20 @@ func _build_menu() -> void:
 	night3_button.add_theme_font_size_override("font_size", roundi(22.0*prefs.text_scale))
 	night4_button.add_theme_font_size_override("font_size", roundi(21.0*prefs.text_scale))
 	night5_button.add_theme_font_size_override("font_size", roundi(21.0*prefs.text_scale))
+	night6_button.add_theme_font_size_override("font_size", roundi(20.0*prefs.text_scale))
 	_button("SETTINGS", menu, _open_settings)
 	_button("CREDITS", menu, _credits)
 	_button("EXIT", menu, func(): get_tree().quit())
 	for item in menu.get_children():
 		if item is Button:
-			(item as Button).custom_minimum_size.y = 48.0
+			(item as Button).custom_minimum_size.y = 43.0
 	var chapter := Label.new()
-	chapter.text = "SANTELMO  /  KAPRE  /  TIKBALANG  /  MANANANGGAL  /  SIGBIN"
+	chapter.text = "SANTELMO  /  KAPRE  /  TIKBALANG  /  MANANANGGAL  /  SIGBIN  /  THE RIVER"
 	chapter.anchor_left = 0.075
 	chapter.anchor_right = 0.55
 	chapter.anchor_top = 0.958
 	chapter.anchor_bottom = 0.996
-	chapter.add_theme_font_size_override("font_size", 23)
+	chapter.add_theme_font_size_override("font_size", 19)
 	chapter.add_theme_color_override("font_color", Color("#f7d58c"))
 	add_child(chapter)
 
@@ -347,6 +364,22 @@ func _night5_unlocked() -> bool:
 		return false
 	var wake := Night04State.new()
 	return Night04Save.read(wake) and wake.outcome != ""
+
+func _night6_unlocked() -> bool:
+	if not _night5_unlocked():
+		return false
+	var farm := Night05State.new()
+	return Night05Save.read(farm) and farm.outcome != ""
+
+func _enter_night6() -> void:
+	if not _night6_unlocked() and not OS.has_feature("debug"):
+		return
+	loading_cover.show()
+	var label := loading_cover.get_node_or_null("LoadingStatus") as Label
+	if label != null:
+		label.text = "Opening Night 6: What the Water Took..."
+	await get_tree().process_frame
+	get_tree().change_scene_to_packed(Night06Scene)
 
 func _enter_night5() -> void:
 	if not _night5_unlocked() and not OS.has_feature("debug"):
