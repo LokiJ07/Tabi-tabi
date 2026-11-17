@@ -168,6 +168,10 @@ func _process(delta: float) -> void:
 		var candidate := player_pos+world_axis*PLAYER_SPEED*delta
 		candidate.x = clampf(candidate.x,MAP.position.x+55,MAP.end.x-55)
 		candidate.y = clampf(candidate.y,MAP.position.y+70,MAP.end.y-55)
+		# The uphill road is still physically connected, but Night 7 has
+		# no playable scene and cannot be entered from this region.
+		if candidate.x > 890 and candidate.y > 318 and candidate.y < 570:
+			candidate.x = minf(candidate.x,887.0)
 		if candidate.y > 240 and story.phase < 6:
 			candidate.y = 238.0
 		if story.phase == 6 and candidate.y > 240:
@@ -289,12 +293,123 @@ func _paint_old_rescue_banca(foot: Vector2) -> void:
 	draw_line(foot+Vector2(20,-90),foot+Vector2(90,-30),
 		Color(.84,.81,.67,.32),2.0,true)
 
+
+func _flood_rise() -> float:
+	# Source-backed danger becomes visible before any confrontation. It rises
+	# despite a dry sky, then recedes at dawn; never randomizes navigation.
+	if story.phase <= 1: return 2.0
+	if story.phase == 2: return 8.0
+	if story.phase == 3: return 12.0
+	if story.phase == 4: return 16.0
+	if story.phase in [5,6]: return 23.0
+	return 5.0
+
+func _paint_archive_props() -> void:
+	# Each investigation source has a distinct, physical-scale object, not
+	# four indistinguishable floating beacons. Draw only in relevant phases.
+	for id in Story.CLUES:
+		var at: Vector2 = CLUE_POS[id]
+		var wood := Color("#826649")
+		if id == "flood_gauge":
+			# Real marked gauge on the bank; the moving waterline can be read.
+			draw_rect(Rect2(at+Vector2(-13,-136),Vector2(24,139)),Color("#3d453c"))
+			draw_rect(Rect2(at+Vector2(-8,-130),Vector2(14,130)),Color("#d7c4a1"))
+			for tick in range(9):
+				var ty: float = at.y-116.0+float(tick)*13.2
+				draw_line(Vector2(at.x-6,ty),Vector2(at.x+4 if tick%2 else at.x+9,ty),
+					Color("#58675b"),2.0,true)
+			var rising := clampf(_flood_rise()/26.0,0,1)
+			draw_rect(Rect2(at+Vector2(-7,-rising*90.0),
+				Vector2(13,rising*90.0)),Color(.19,.54,.62,.42))
+		elif id == "rescue_order":
+			draw_rect(Rect2(at+Vector2(-32,-89),Vector2(64,74)),wood)
+			draw_rect(Rect2(at+Vector2(-25,-83),Vector2(52,59)),Color("#ddd0a7"))
+			for line in range(4):
+				draw_line(at+Vector2(-18,-72+float(line)*12),
+					at+Vector2(18,-72+float(line)*12),Color("#8a7a60"),2.0,true)
+			draw_circle(at+Vector2(9,-32),7,Color("#9d5447"))
+		elif id == "evacuation_roll":
+			draw_colored_polygon(PackedVector2Array([
+				at+Vector2(-32,-26),at+Vector2(21,-43),
+				at+Vector2(47,-20),at+Vector2(-9,-4)]),wood)
+			draw_colored_polygon(PackedVector2Array([
+				at+Vector2(-27,-31),at+Vector2(18,-46),
+				at+Vector2(38,-36),at+Vector2(-10,-15)]),Color("#e2cfa1"))
+			for line in range(3):
+				draw_line(at+Vector2(-18,-29+float(line)*5),
+					at+Vector2(11,-36+float(line)*5),Color("#847457"),1.8,true)
+		else:
+			# Alternative-route board on its own stake, facing the path.
+			draw_line(at+Vector2(-4,4),at+Vector2(-4,-78),wood,8,true)
+			draw_colored_polygon(PackedVector2Array([
+				at+Vector2(-46,-85),at+Vector2(40,-91),
+				at+Vector2(45,-40),at+Vector2(-42,-34)]),Color("#a68b68"))
+			draw_line(at+Vector2(-35,-69),at+Vector2(10,-51),Color("#4c7270"),5,true)
+			draw_circle(at+Vector2(20,-53),6,Color("#e2cfa0"))
+
+func _paint_river_landmarks(night: bool) -> void:
+	# Original weathered rescue pier and snapped mooring posts establish scale.
+	# These posts are on the wet bank, not invisible walls over the road.
+	for post in [
+		Vector2(-837,259),Vector2(-765,272),Vector2(-682,277),
+		Vector2(36,256),Vector2(126,265),Vector2(795,350)
+	]:
+		draw_circle(post+Vector2(7,11),22,Color(.02,.06,.07,.26))
+		draw_colored_polygon(PackedVector2Array([
+			post+Vector2(-10,-37),post+Vector2(2,-43),
+			post+Vector2(16,-29),post+Vector2(16,7),
+			post+Vector2(0,13),post+Vector2(-10,3)]),Color("#695944"))
+		draw_line(post+Vector2(-8,-34),post+Vector2(1,-40),
+			Color("#b3a17f"),3,true)
+	# Off-road low stone flood berm. It preserves the whole walkable return
+	# road and makes the watercourse's edge physically legible.
+	for i in range(12):
+		var n := float(i)
+		var at := Vector2(-1050.0+n*152.0,186.0+sin(n*.74)*17.0)
+		if at.distance_to(Vector2(180,185)) < 135:
+			continue
+		Landscape.rock(self,at,20.0+float(i%4)*5.0,not night)
+	# Tangled flood timber follows the current instead of becoming a boss.
+	for at in [Vector2(-970,459),Vector2(-412,505),Vector2(105,615),Vector2(845,670)]:
+		draw_line(at,at+Vector2(86,-16),Color("#6b6853"),7.0,true)
+		draw_line(at+Vector2(39,-8),at+Vector2(69,-29),Color("#a09b79"),3.5,true)
+
+func _paint_hill_checkpoint(night: bool) -> void:
+	# Readable physical continuation toward Balete Grounds (Night 7). The
+	# locked rope is a genuine threshold, never an apparently cut-off road.
+	var trail := PackedVector2Array([
+		Vector2(735,470),Vector2(883,442),
+		Vector2(1019,405),Vector2(1215,286)])
+	draw_polyline(trail,Color("#34463c"),105,true)
+	draw_polyline(trail,Color("#a48e6c"),74,true)
+	for at in [Vector2(884,420),Vector2(1001,397)]:
+		draw_circle(at+Vector2(5,8),21,Color(.03,.04,.03,.26))
+		draw_line(at,at+Vector2(-1,-72),Color("#81684b"),12,true)
+		draw_circle(at+Vector2(-1,-75),10,Color("#bca17a"))
+	draw_line(Vector2(884,354),Vector2(1000,332),Color("#b8a37c"),5.0,true)
+	draw_line(Vector2(884,359),Vector2(1000,337),
+		Color("#655346"),2.5,true)
+	if story.outcome != "":
+		draw_rect(Rect2(942,257,202,54),Color(.09,.20,.20,.90))
+		draw_rect(Rect2(942,257,202,54),Color("#bfa87c"),false,2)
+		draw_string(ThemeDB.fallback_font,Vector2(953,278),
+			"BALETE GROUNDS",HORIZONTAL_ALIGNMENT_LEFT,185,15,Color("#f0e4bd"))
+		draw_string(ThemeDB.fallback_font,Vector2(953,297),
+			"NIGHT 7 • CLOSED",HORIZONTAL_ALIGNMENT_LEFT,185,13,Color("#e1b99b"))
+	if night:
+		draw_circle(Vector2(980,350),37,Color(.90,.68,.36,.04))
+
 func _draw() -> void:
 	var night := _stage()>=2
 	draw_rect(MAP.grow(220),Color("#233e3a"))
 	Landscape.parallax_ridges(self,MAP.grow(200),camera.position,6,_stage())
-	draw_rect(Rect2(-1180,-720,2510,1600),Color("#516757"))
-	draw_texture_rect(SOIL,Rect2(-1180,-735,2510,1590),false,Color(1,1,1,.17))
+	# River terraces have gentle elevation and clay color; do not paint a
+	# completely uniform green field in front of the mountain skyline.
+	for strip in range(22):
+		var t: float = float(strip)/21.0
+		var ground := Color("#3c5b52").lerp(Color("#66755b"),t)
+		draw_rect(Rect2(-1180,-720+float(strip)*45,2510,47),ground)
+	draw_texture_rect(SOIL,Rect2(-1180,-735,2510,1590),false,Color(1,1,1,.25))
 	# Terrain relief and river-cut gullies, never fake square biome borders.
 	for i in range(17):
 		var n := float(i)
@@ -310,15 +425,18 @@ func _draw() -> void:
 	draw_polyline(road,Color("#ad9977"),82,true)
 	Landscape.trail_stones(self,RETURN_FARM,Vector2(-425,-65),17,80,night)
 	# Low river terrace: actual water surface is downriver of the safe bank.
+	var raised: float = _flood_rise()
 	var shore := PackedVector2Array([
-		Vector2(-1200,231),Vector2(-785,220),Vector2(-375,238),
-		Vector2(60,220),Vector2(310,235),Vector2(530,270),
-		Vector2(835,308),Vector2(1340,285)])
+		Vector2(-1200,231-raised),Vector2(-785,220-raised),
+		Vector2(-375,238-raised),Vector2(60,220-raised),
+		Vector2(310,235-raised),Vector2(530,270-raised),
+		Vector2(835,308-raised),Vector2(1340,285-raised)])
 	var water_region := PackedVector2Array([
 		shore[0],shore[1],shore[2],shore[3],shore[4],shore[5],shore[6],shore[7],
 		Vector2(1350,835),Vector2(-1250,835)])
 	draw_colored_polygon(water_region,Color("#1d4f59") if night else Color("#3b7778"))
-	draw_texture_rect(WATER,Rect2(-1160,250,2500,560),false,Color(1,1,1,.19))
+	draw_texture_rect(WATER,Rect2(-1160,250-raised,2500,560+raised),
+		false,Color(1,1,1,.21))
 	draw_polyline(shore,Color("#4b665d"),34,true)
 	draw_polyline(shore,Color("#b8aa87"),11,true)
 	# Short drifting water-ripple clusters keep the stream visibly alive,
@@ -330,6 +448,7 @@ func _draw() -> void:
 		var drift := 0.0 if prefs.reduced_motion else sin(clock*.76+n)*11.0
 		draw_line(Vector2(xx+drift,yy),Vector2(xx+drift+40.0+float(i%3)*13.0,yy-4.0),
 			Color(.72,.89,.83,.08+(float(i%3)*.018)),2.0,true)
+	_paint_river_landmarks(night)
 	# Reeds, river stones and wet-bank shadows stay OFF the walkable road.
 	for i in range(18):
 		var n := float(i)
@@ -349,6 +468,7 @@ func _draw() -> void:
 	_draw_house(ARCHIVE+Vector2(0,-24),225,night,false)
 	_draw_house(SABEL_AT+Vector2(17,-20),172,night,true)
 	_draw_house(LOLA_AT+Vector2(40,-28),172,night,true)
+	_paint_archive_props()
 	# Old rescue equipment survives at the lower public-bank landing.
 	_paint_old_rescue_banca(Vector2(-566,311))
 	for at in [Vector2(-750,258),Vector2(-700,270),Vector2(-337,265)]:
@@ -421,6 +541,7 @@ func _draw() -> void:
 				draw_circle(pos,16,Color("#324d4e"))
 				draw_string(ThemeDB.fallback_font,pos+Vector2(-95,-37),
 					id.replace("_"," ").to_upper(),HORIZONTAL_ALIGNMENT_CENTER,190,16,Color("#e9ddba"))
+	_paint_hill_checkpoint(night)
 	# Blue-grey environmental presence rises from current and river timber.
 	# Not ghosts, victims, personal names or an omniscient historian.
 	if night:
