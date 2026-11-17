@@ -96,3 +96,49 @@ static func paint_shadow_links(target: CanvasItem, nodes: Array,
 		Color(.05,.10,.15,.30),26,true)
 	for i in range(nodes.size()):
 		paint_shadow_node(target,nodes[i],i == idx,clock,reduced_motion)
+
+# Related Leyte segben telling mentions squash blossoms; a plausible farm prop,
+# not magical proof. The vines sit beside normal crops, not across walkable gates.
+static func paint_squash_patch(target: CanvasItem, center: Vector2,
+		night: bool) -> void:
+	for row in range(3):
+		var base := center+Vector2(float(row)*56.0,float(row%2)*33.0)
+		var vine := PackedVector2Array([
+			base,base+Vector2(25,-11),base+Vector2(47,9),
+			base+Vector2(88,-8),base+Vector2(116,5)])
+		target.draw_polyline(vine,Color("#385e43") if night else Color("#547b46"),5.5,true)
+		for leaf in range(3):
+			var at := base+Vector2(20+float(leaf)*37,6+float(leaf%2)*-13)
+			target.draw_colored_polygon(PackedVector2Array([
+				at+Vector2(-23,0),at+Vector2(-12,-17),
+				at+Vector2(1,-19),at+Vector2(15,-9),
+				at+Vector2(24,4),at+Vector2(4,14)]),
+				Color("#426f49") if night else Color("#638b53"))
+			target.draw_line(at+Vector2(-19,-1),at+Vector2(18,4),
+				Color("#a2ab68",.42),2.0,true)
+		var blossom := base+Vector2(89,-23)
+		for petal in range(5):
+			var angle := float(petal)*TAU/5.0
+			var point := blossom+Vector2(cos(angle),sin(angle))*10.0
+			target.draw_circle(point,8.0,
+				Color("#d6a851") if night else Color("#eab854"))
+		target.draw_circle(blossom,6.0,Color("#986a39"))
+
+# A quiet caretaker keepsake. Do not depict it as objective proof that a
+# living person is a sigbinan; local traditions and families must not be accused.
+static func paint_caretaker_jar(target: CanvasItem, at: Vector2,
+		night: bool) -> void:
+	var pottery := Color("#80604b") if night else Color("#ae805f")
+	target.draw_colored_polygon(PackedVector2Array([
+		at+Vector2(-25,-47),at+Vector2(-32,-37),
+		at+Vector2(-29,-9),at+Vector2(-13,4),
+		at+Vector2(15,4),at+Vector2(29,-9),
+		at+Vector2(31,-37),at+Vector2(24,-47)]),pottery)
+	target.draw_line(at+Vector2(-22,-22),at+Vector2(21,-22),
+		Color("#d2ad79",.60),4.0,true)
+	target.draw_circle(at+Vector2(0,-46),23.0,
+		Color("#493a34"))
+	target.draw_circle(at+Vector2(0,-46),17.0,
+		Color("#987457"))
+	target.draw_line(at+Vector2(-17,-15),at+Vector2(17,-15),
+		Color("#e0c292",.34),3.0,true)
