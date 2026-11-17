@@ -6,6 +6,7 @@ const State = preload("res://scripts/narrative/night05_state.gd")
 const Save = preload("res://scripts/core/night05_save.gd")
 const World = preload("res://scripts/core/connected_world.gd")
 const SigbinPresence = preload("res://scripts/visuals/night05_sigbin_presence.gd")
+const FarmArt = preload("res://scripts/visuals/night05_farm_art.gd")
 var errors := 0
 
 func check(ok: bool,reason: String) -> void:
@@ -142,6 +143,12 @@ func _run() -> void:
 	game.player_pos = game.SAFE_PERIMETER
 	game._interact()
 	check(game.story.phase == 3,"rescue starts only with all safety requirements")
+	check(not FarmArt.route_is_open(0,game.story.rescued_groups)
+		and not FarmArt.route_is_open(1,game.story.rescued_groups),
+		"all three connected shadows are blocked before the first safe rescue")
+	check(FarmArt.animal_crossing_position(0,game.SAFE_GATE,false,.5)
+		== FarmArt.animal_pen_position(0),
+		"unrescued animal cannot move to the gate before the lantern is solved")
 	game._choose("close")
 	for i in range(3):
 		game.player_pos = game.SAFE_PERIMETER
@@ -152,9 +159,33 @@ func _run() -> void:
 		game._choose(State.CORRECT_LIGHTS[i])
 		check(game.story.rescued_groups == i+1,
 			"one physical animal group rescued with matching lamp "+str(i))
+		check(FarmArt.route_is_open(i,game.story.rescued_groups)
+			and not FarmArt.route_is_open(i+1,game.story.rescued_groups),
+			"only the correctly shifted light opens the current shadow route "+str(i))
+		if not game.prefs.reduced_motion:
+			check(game.animal_rescue_motion.has(i)
+				and float(game.animal_rescue_motion[i]) == 0.0,
+				"rescued group begins physical crossing after lantern choice "+str(i))
+		var midpoint: Vector2 = FarmArt.animal_crossing_position(i,
+			game.SAFE_GATE,true,.5)
+		check(midpoint.distance_to(FarmArt.animal_pen_position(i)) > 10.0
+			and midpoint.distance_to(FarmArt.animal_gate_position(i,game.SAFE_GATE)) > 10.0
+			and midpoint.y > 80.0,
+			"animated livestock crosses open SOIL, never teleports through the collapsing barn")
+		check(FarmArt.animal_crossing_position(i,game.SAFE_GATE,true,1.0)
+			== FarmArt.animal_gate_position(i,game.SAFE_GATE),
+			"completed livestock path lands exactly at the safe gate")
 		game._choose("close")
 	check(game.story.phase == 4 and game.story.rescued_groups == 3,
 		"complete rescue earns safe aftermath; Sigbin remains unharmed")
+	if not game.prefs.reduced_motion:
+		var last_position: Vector2 = FarmArt.animal_crossing_position(2,game.SAFE_GATE,true,
+			float(game.animal_rescue_motion.get(2,1.0)))
+		game._process(1.0)
+		var next_position: Vector2 = FarmArt.animal_crossing_position(2,game.SAFE_GATE,true,
+			float(game.animal_rescue_motion.get(2,1.0)))
+		check(next_position != last_position,
+			"livestock continues a smooth in-world crossing while the story modal is visible")
 	game._choose("outcomes")
 	game._choose("resolve")
 	check(game.story.outcome == "resolve",
