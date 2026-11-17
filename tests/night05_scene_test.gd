@@ -96,6 +96,12 @@ func _run() -> void:
 	var real_proximity := clampf(1.0-game.player_pos.distance_to(live_foot)/1100.0,0.0,1.0)
 	check(absf(game.ambient.sigbin_proximity-real_proximity) < .0001,
 		"ears and odor strength follow creature feet, never its old roof shadow")
+	check(absf(game.ambient.sigbin_gait
+		-SigbinPresence.gait_strength(game.elapsed,0,game.prefs.reduced_motion)) < .0001,
+		"footstep sound is tied to actual Sigbin movement speed")
+	game.ambient.set_sigbin_gait(-5.0)
+	check(game.ambient.sigbin_gait == 0.0,
+		"ground-scuff generator clamps negative gait and never sounds at rest")
 	var sigbin_foot: Vector2 = SigbinPresence.ground_anchor(0)
 	check(sigbin_foot.y > -80.0
 		and SigbinPresence.ground_anchor(1).y > -80.0,
