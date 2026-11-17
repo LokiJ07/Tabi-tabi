@@ -388,20 +388,21 @@ func _draw() -> void:
 		# Draw contact shade and subdued hoof dust UNDER the moving four-leg
 		# silhouette. This grounds the creature even on dark Android screens.
 		SigbinPresence.paint_ground_contact(self,foot,
-			elapsed,prefs.reduced_motion,opacity)
+			elapsed,prefs.reduced_motion,opacity,story.shadow_index)
 		SigbinPresence.paint_reverse_tracks(self,foot,opacity)
 		if opacity > .01:
-			# Jointed near/far hooves actually step in the Godot world.
-			# Paint far limbs, body, then near limbs for physical depth.
+			# Ribcage follows the hindquarters; hooves settle between steps.
+			# Ground contact stays in place, even when the torso breathes.
+			var weight := SigbinPresence.body_weight_shift(
+				elapsed,story.shadow_index,prefs.reduced_motion)
 			SigbinPresence.paint_limb_pair(self,foot,
-				elapsed,prefs.reduced_motion,opacity,true)
+				elapsed,prefs.reduced_motion,opacity,true,story.shadow_index)
 			DimensionalArt.paint_grounded(self,SIGBIN,
-				foot+Vector2(0,-1.6*SigbinPresence.stride(elapsed,0.0,prefs.reduced_motion)),
-				Vector2(258,206),Color(.70,.76,.69,opacity),.20*opacity)
+				foot+weight,Vector2(258,206),Color(.70,.76,.69,opacity),0.0)
 			SigbinPresence.paint_limb_pair(self,foot,
-				elapsed,prefs.reduced_motion,opacity,false)
+				elapsed,prefs.reduced_motion,opacity,false,story.shadow_index)
 			SigbinPresence.paint_clapping_ears(self,SIGBIN_EAR_NEAR,
-				SIGBIN_EAR_FAR,foot,elapsed,prefs.reduced_motion,opacity)
+				SIGBIN_EAR_FAR,foot+weight,elapsed,prefs.reduced_motion,opacity)
 	# Livestock groups are physical sprites. Rescued ones are moved to the
 	# safe gate, not deleted from the screen. None is shown hurt or bleeding.
 	for i in range(3):
