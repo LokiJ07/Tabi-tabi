@@ -34,7 +34,7 @@ static func hoof_lift(seconds: float, phase: float, reduced_motion: bool) -> flo
 	return 0.0 if reduced_motion else maxf(0.0,cos(seconds*4.2+phase))*7.0
 
 static func _organic_contour(centers: PackedVector2Array, width: float) -> PackedVector2Array:
-	# Curved tapered silhouette instead of two cylindrical lines joined at a
+	# Narrow tapered silhouette instead of two cylindrical lines joined at a
 	# sharp corner; both sides share the same smoothly interpolated spine.
 	var contour := PackedVector2Array()
 	var last: int = centers.size()-1
@@ -59,18 +59,18 @@ static func _limb(target: CanvasItem, foot: Vector2, seconds: float,
 	var lift := hoof_lift(seconds,phase,reduced_motion)
 	var ankle := foot+Vector2(hip_local.x+(11.0 if hind else 2.0)+gait*(8.0 if hind else 6.0),
 		-4.0-lift)
-	var knee := hip+Vector2((-11.0 if hind else -3.0)+gait*2.2,
+	var knee := hip+Vector2((-18.0 if hind else -7.0)+gait*2.2,
 		(36.0 if hind else 21.0)-lift*.20)
 	var outline := Color(.055,.105,.115,opacity*.96)
 	var fur := Color(.13,.22,.21,opacity*.90) if behind else Color(.18,.27,.25,opacity)
 	var rim := Color(.42,.48,.39,opacity*(.20 if behind else .34))
-	var width := 19.0 if hind else 12.0
+	var width := 11.5 if hind else 7.0
 	var centers := PackedVector2Array()
 	for k in range(13):
 		var t := float(k)/12.0
 		var inv := 1.0-t
 		centers.append(hip*inv*inv+knee*(2.0*inv*t)+ankle*t*t)
-	target.draw_colored_polygon(_organic_contour(centers,width+3.0),outline)
+	target.draw_colored_polygon(_organic_contour(centers,width+2.0),outline)
 	target.draw_colored_polygon(_organic_contour(centers,width),fur)
 	# Moonlit, asymmetrical muscle highlight; only one edge is lit.
 	var highlight := PackedVector2Array()
