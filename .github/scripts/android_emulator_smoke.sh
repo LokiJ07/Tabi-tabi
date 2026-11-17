@@ -188,7 +188,7 @@ python3 .github/scripts/assert_night_atmosphere.py build/android-night1-shore-do
 # On the Night 2 development branch, launch the REAL new chapter through
 # its debug-only title shortcut. Never silently treat Night 1 screenshots as
 # Kapre evidence; verify the new scene's exact engine log marker first.
-if [ "${GITHUB_REF:-}" = "refs/heads/feature/night2-kapre" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/hud-house-depth-fix" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night03-tikbalang-connected" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/nights1-3-dimensional-art-pass" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night04-manananggal-the-wake" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/nighttime-lived-in-village-nights1-4" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night04-wake-immersive-vigil" ]; then
+if [ "${GITHUB_REF:-}" = "refs/heads/feature/night2-kapre" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/hud-house-depth-fix" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night03-tikbalang-connected" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/nights1-3-dimensional-art-pass" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night04-manananggal-the-wake" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/nighttime-lived-in-village-nights1-4" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night04-wake-immersive-vigil" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night04-final-character-animation" ]; then
   adb shell am force-stop "$PKG" || true
   adb shell monkey -p "$PKG" -c android.intent.category.LAUNCHER 1
   sleep 7
@@ -262,7 +262,7 @@ fi
 
 # Night 3 uses the SAME running Godot APK, original ridge artwork, and
 # actual scene title debug shortcut. These captures are never concept art.
-if [ "${GITHUB_REF:-}" = "refs/heads/feature/night03-tikbalang-connected" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/nights1-3-dimensional-art-pass" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night04-manananggal-the-wake" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/nighttime-lived-in-village-nights1-4" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night04-wake-immersive-vigil" ]; then
+if [ "${GITHUB_REF:-}" = "refs/heads/feature/night03-tikbalang-connected" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/nights1-3-dimensional-art-pass" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night04-manananggal-the-wake" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/nighttime-lived-in-village-nights1-4" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night04-wake-immersive-vigil" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night04-final-character-animation" ]; then
   adb shell am force-stop "$PKG" || true
   adb shell monkey -p "$PKG" -c android.intent.category.LAUNCHER 1
   sleep 7
@@ -303,7 +303,7 @@ if [ "${GITHUB_REF:-}" = "refs/heads/feature/night03-tikbalang-connected" ] || [
 fi
 
 # Wake is a REAL Godot scene entered by a debug-only title key.
-if [ "${GITHUB_REF:-}" = "refs/heads/feature/night04-manananggal-the-wake" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/nighttime-lived-in-village-nights1-4" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night04-wake-immersive-vigil" ]; then
+if [ "${GITHUB_REF:-}" = "refs/heads/feature/night04-manananggal-the-wake" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/nighttime-lived-in-village-nights1-4" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night04-wake-immersive-vigil" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night04-final-character-animation" ]; then
   adb shell am force-stop "$PKG" || true
   adb shell monkey -p "$PKG" -c android.intent.category.LAUNCHER 1
   sleep 7
