@@ -202,6 +202,7 @@ jobs:
             build/android-night1-title.png
             build/android-night1-launch.png
             build/android-night1-village.png
+            build/android-night1-qa-failed-*.png
             build/android-night1-connected-trail.png
             build/android-night1-shore-dock.png
             build/android-night1-night-river.png
