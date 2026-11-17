@@ -45,8 +45,17 @@ func _run() -> void:
 	game.camera.position = game.player_pos
 	game.debug_wake_preview = true
 	game._process(.7)
-	check(game.camera.position.y < game.player_pos.y-145.0,
-		"cinematic reveal shifts the actual camera to frame wings and hero together")
+	var expected_fit: Dictionary = game.ActorMotion.camera_fit(game.player_pos,
+		Vector2(270,-465),root.get_visible_rect().size)
+	check(game.camera.zoom.x < .82 and game.camera.zoom.y < .82,
+		"encounter zooms out to fit airborne wings and hero")
+	check(game.camera.position.distance_to(expected_fit["center"]) < 5.0,
+		"encounter camera centers the full monster-to-player vertical span")
+	var visual_half_height: float = root.get_visible_rect().size.y * .5 / game.camera.zoom.y
+	check(float(expected_fit["top"]) > game.camera.position.y - visual_half_height+45.0,
+		"entire Manananggal stays below the screen top with safety margin")
+	check(float(expected_fit["bottom"]) < game.camera.position.y + visual_half_height-45.0,
+		"Bantay and hero remain inside the bottom screen boundary")
 	game.debug_wake_preview = false
 	game.player_pos = Story.START
 	game.camera.position = game.player_pos
