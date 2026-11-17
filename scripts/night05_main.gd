@@ -294,10 +294,7 @@ func _paint_farmhouse() -> void:
 			Color("#6e5d46",.52),3.0,true)
 	draw_rect(Rect2(at+Vector2(6,-8),Vector2(58,95)),Color("#2f3833"))
 	draw_rect(Rect2(at+Vector2(6,-8),Vector2(58,95)),Color("#765f47"),false,5.0)
-	if _stage() >= 2:
-		for i in range(2):
-			NightWindows.paint_window(self,at+Vector2(-69+float(i)*120,5),
-				Vector2(49,47),i,true,elapsed,prefs.reduced_motion)
+	# Interior glow is drawn once AFTER the darkness grade in _draw().
 
 func _draw() -> void:
 	draw_rect(MAP.grow(190),Color("#253a32"))
@@ -371,8 +368,9 @@ func _draw() -> void:
 	# safe gate, not deleted from the screen. None is shown hurt or bleeding.
 	for i in range(3):
 		var safe := story.rescued_groups > i
-		var at := SAFE_GATE+Vector2(-170+float(i)*86,65) if safe else
-			Vector2(340+float(i)*107,188+float(i%2)*40)
+		var at: Vector2 = SAFE_GATE+Vector2(-170+float(i)*86,65)
+		if not safe:
+			at = Vector2(340+float(i)*107,188+float(i%2)*40)
 		DimensionalArt.paint_grounded(self,CHICKEN if i == 2 else GOAT,
 			at,Vector2(70,71) if i == 2 else Vector2(102,95),
 			Color.WHITE,.28)

@@ -198,11 +198,11 @@ func from_dict(data: Dictionary) -> bool:
 	for id in PREPARATIONS:
 		if data["preparations"].get(id,false) == true:
 			imported_prep[id] = true
-	if p >= 1 and imported_clues.size() != CLUES.size():
+	if p >= 1 and result != "retreat" and imported_clues.size() != CLUES.size():
 		return false
-	if p >= 2 and not bool(data.get("guardian_verified",false)):
+	if p >= 2 and result != "retreat" and not bool(data.get("guardian_verified",false)):
 		return false
-	if p in [3,4] and imported_prep.size() != PREPARATIONS.size():
+	if p in [3,4,5] and result != "retreat" and imported_prep.size() != PREPARATIONS.size():
 		return false
 	var n := int(data.get("shadow_index",0))
 	var count := int(data.get("rescued_groups",0))
