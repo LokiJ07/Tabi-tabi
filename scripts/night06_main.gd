@@ -136,7 +136,7 @@ func _safe_corridor(p: Vector2) -> bool:
 	if p.y <= 242.0: return true
 	for i in range(STEPS.size()):
 		if p.distance_to(STEPS[i]) < 114.0: return true
-		var begin := Vector2(185,185) if i == 0 else STEPS[i-1]
+		var begin: Vector2 = Vector2(185,185) if i == 0 else STEPS[i-1]
 		var projection := Geometry2D.get_closest_point_to_segment(p,begin,STEPS[i])
 		if p.distance_to(projection) < 104.0: return true
 	return false

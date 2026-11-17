@@ -205,7 +205,7 @@ func from_dict(data: Dictionary) -> bool:
 	if p >= 3 and (route != 3 or not bool(data.get("independent_return_confirmed",false))): return false
 	if p >= 4 and (restored_identity.size() != 2 or not bool(data.get("rescuer_confirmed",false))): return false
 	if p >= 5 and (not bool(data.get("private_sabel_told",false)) or not bool(data.get("lola_covenant_truth_known",false))): return false
-	if p >= 6 and restored_prep.size() != 3: return false
+	if (p == 6 or (p == 7 and ending in ["resolve","contain"])) and restored_prep.size() != 3: return false
 	if p == 6 and step >= 3: return false
 	if p == 7 and ending == "" and step != 3: return false
 	if ending in ["resolve","contain"] and step != 3: return false
