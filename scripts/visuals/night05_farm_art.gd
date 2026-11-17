@@ -13,9 +13,9 @@ const PEN := Rect2(286.0,-42.0,375.0,180.0)
 const HOLDING := Rect2(690.0,350.0,335.0,150.0)
 const MAIN_ROAD_END := Vector2(570.0,318.0)
 # Off-road scenery must never occupy either fenced paddock or cover its sign.
-const LOWER_TREE := Vector2(320.0,705.0)
+const LOWER_TREE := Vector2(270.0,705.0)
 const LOWER_BANANA := Vector2(970.0,760.0)
-const HOLDING_SIGN_AT := Vector2(444.0,535.0)
+const HOLDING_SIGN_AT := Vector2(430.0,423.0)
 const GATE_LEFT := 500.0
 const GATE_RIGHT := 610.0
 
@@ -285,15 +285,19 @@ static func animal_crossing_position(index: int, safe_gate: Vector2,
 	var t := clampf(progress,0.0,1.0)
 	if t >= 1.0:
 		return finish
-	# The old diagonal animation cut straight THROUGH the pen's bottom rail.
-	# All animals now follow one continuous opening at the actual gate:
-	# pen -> centre of prepared opening -> individual safe holding spot.
+	# Both enclosures are real fences. Cross the animal gate first, then
+	# enter the receiving yard via its WEST opening — never through a top rail.
 	var threshold := safe_gate+Vector2(0,23)
-	if t <= .62:
-		var into_gate := smoothstep(0.0,.62,t)
-		return start.lerp(threshold,into_gate)+Vector2(0,-12.0*sin(PI*into_gate))
-	var out_to_yard := smoothstep(.62,1.0,t)
-	return threshold.lerp(finish,out_to_yard)+Vector2(0,9.0*sin(PI*out_to_yard))
+	var receiving_mouth := Vector2(HOLDING.position.x+18.0,
+		HOLDING.position.y+45.0)
+	if t <= .55:
+		var into_gate := smoothstep(0.0,.55,t)
+		return start.lerp(threshold,into_gate)+Vector2(0,-10.0*sin(PI*into_gate))
+	if t <= .86:
+		var into_paddock := smoothstep(.55,.86,t)
+		return threshold.lerp(receiving_mouth,into_paddock)
+	var reach_slot := smoothstep(.86,1.0,t)
+	return receiving_mouth.lerp(finish,reach_slot)
 
 static func paint_shadow_links(target: CanvasItem, nodes: Array,
 		idx: int, clock: float, reduced_motion: bool,
