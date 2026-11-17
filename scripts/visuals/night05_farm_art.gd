@@ -67,6 +67,20 @@ static func paint_lantern(target: CanvasItem, at: Vector2,
 			target.draw_circle(at+Vector2(0,-49),float(i)*26.0,
 				Color(1.0,.68,.31,.012*flicker))
 
+static func paint_lantern_ground_pool(target: CanvasItem, at: Vector2,
+		lit: bool, clock: float, reduced_motion: bool) -> void:
+	if not lit:
+		return
+	# Amber ground reflection layered AFTER blue night grading.
+	# Low total alpha keeps clues and footpaths readable on mobile.
+	var flicker := 1.0 if reduced_motion else .98+.02*sin(clock*.73+at.x*.01)
+	var ground := at+Vector2(0,15)
+	target.draw_set_transform(ground,0.0,Vector2(1.0,.43))
+	for i in range(4,0,-1):
+		target.draw_circle(Vector2.ZERO,32.0+float(i)*35.0,
+			Color(1.0,.64,.22,(.006+float(5-i)*.002)*flicker))
+	target.draw_set_transform(Vector2.ZERO,0.0,Vector2.ONE)
+
 static func paint_shadow_node(target: CanvasItem, at: Vector2,
 		active: bool, seconds: float, reduced_motion: bool) -> void:
 	var drift := 0.0 if reduced_motion else sin(seconds*1.24)*12.0
@@ -82,20 +96,58 @@ static func paint_shadow_node(target: CanvasItem, at: Vector2,
 		target.draw_line(at+Vector2(44,-47),at+Vector2(58,8),
 			Color(.17,.23,.26,.18),12.0,true)
 
+static func route_is_open(index: int, rescued_count: int) -> bool:
+	# Existing authoritative rescued_groups drives the light-scene geometry;
+	# no animation flag needs to be serialized to the Night 5 save.
+	return index >= 0 and index < 3 and index < clampi(rescued_count,0,3)
+
+static func animal_pen_position(index: int) -> Vector2:
+	return Vector2(340.0+float(index)*107.0,188.0+float(index%2)*40.0)
+
+static func animal_gate_position(index: int, safe_gate: Vector2) -> Vector2:
+	return safe_gate+Vector2(-170.0+float(index)*86.0,65.0)
+
+static func animal_crossing_position(index: int, safe_gate: Vector2,
+		rescued: bool, progress: float) -> Vector2:
+	var start := animal_pen_position(index)
+	if not rescued:
+		return start
+	var finish := animal_gate_position(index,safe_gate)
+	if progress >= 1.0:
+		return finish
+	# Hand-authored arcing walkway above open soil, NOT through the raised
+	# barn. Smooth landing, visible travel instead of teleporting goats.
+	var t := smoothstep(0.0,1.0,clampf(progress,0.0,1.0))
+	return start.lerp(finish,t)+Vector2(0,-29.0*sin(PI*t))
+
 static func paint_shadow_links(target: CanvasItem, nodes: Array,
-		idx: int, clock: float, reduced_motion: bool) -> void:
+		idx: int, clock: float, reduced_motion: bool,
+		rescued_count: int = 0, lantern_positions: Array = []) -> void:
 	if idx < 0 or idx >= nodes.size():
 		return
-	var active: Vector2 = nodes[idx]
 	var pen := Vector2(460,270)
-	# Visible *connected* shadows are essential to the puzzle, not random dark
-	# overlays. Lamps cut a specific segment of the path to the animal pens.
-	target.draw_polyline(PackedVector2Array([
-		active,active.lerp(pen,.32)+Vector2(36,-28),
-		active.lerp(pen,.73)+Vector2(-28,23),pen]),
-		Color(.05,.10,.15,.30),26,true)
+	# Previously resolved pathways stay open in the REAL world after rescue.
+	# Current route remains a dark connection until correctly illuminated.
 	for i in range(nodes.size()):
-		paint_shadow_node(target,nodes[i],i == idx,clock,reduced_motion)
+		var at: Vector2 = nodes[i]
+		if route_is_open(i,rescued_count):
+			var source: Vector2 = lantern_positions[i] if i < lantern_positions.size() else at
+			var destination := animal_pen_position(i)
+			var corridor := PackedVector2Array([
+				source,source.lerp(at,.52)+Vector2(0,-24),
+				at.lerp(destination,.42),destination])
+			target.draw_polyline(corridor,Color(.91,.60,.25,.055),26.0,true)
+			target.draw_polyline(corridor,Color(.98,.79,.46,.30),4.0,true)
+			target.draw_circle(at,17.0,Color(.97,.75,.38,.08))
+			# No new HUD popover or full-screen beam; the cleared route
+			# is a muted world-space line visible during next rescue.
+		elif i == idx:
+			target.draw_polyline(PackedVector2Array([
+				at,at.lerp(pen,.32)+Vector2(36,-28),
+				at.lerp(pen,.73)+Vector2(-28,23),pen]),
+				Color(.05,.10,.15,.32),26,true)
+		if not route_is_open(i,rescued_count):
+			paint_shadow_node(target,at,i == idx,clock,reduced_motion)
 
 # Related Leyte segben telling mentions squash blossoms; a plausible farm prop,
 # not magical proof. The vines sit beside normal crops, not across walkable gates.
