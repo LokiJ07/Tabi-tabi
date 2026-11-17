@@ -71,10 +71,15 @@ func _run() -> void:
 		for step in range(21):
 			var walk_point: Vector2 = main_road[segment].lerp(
 				main_road[segment+1],float(step)/20.0)
-			check(not FarmArt.PEN.grow(58.0).has_point(walk_point)
-				and not FarmArt.HOLDING.grow(58.0).has_point(walk_point),
-				"entire 116px main road stays clear of both fences at sample "+
+			# Fence posts project beyond the soil rectangle. Guard BOTH the
+			# road's full 58px half-width and the raised post silhouettes.
+			check(not FarmArt.PEN.grow(76.0).has_point(walk_point)
+				and not FarmArt.HOLDING.grow(150.0).has_point(walk_point),
+				"uncut Night 4-to-6 road clears BOTH farm fences and raised posts at "+
 				str(segment)+"/"+str(step))
+	for waypoint in main_road:
+		check(game.MAP.has_point(waypoint),
+			"connected Night 6 road remains visible inside authored map bounds")
 	var road_spur: PackedVector2Array = FarmArt.gate_approach_route()
 	check(road_spur.size() == 2
 		and not FarmArt.PEN.grow(24.0).has_point(road_spur[1])
