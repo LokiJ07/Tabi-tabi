@@ -9,6 +9,14 @@ static func _ease(t: float) -> float:
 static func retreating(seconds: float, route: int) -> bool:
 	return fposmod(seconds+float(route)*1.7,15.0)<8.5
 
+static func ground_anchor(route: int) -> Vector2:
+	# Physical contact positions OUTSIDE the unstable barn footprint.
+	# Shadow clues may originate at the eave, but the animal crouches below it.
+	match clampi(route,0,2):
+		0: return Vector2(-135,-52)
+		1: return Vector2(520,-64)
+		_: return Vector2(473,207)
+
 static func backward_foot(anchor: Vector2, seconds: float, route: int,
 		reduced_motion: bool) -> Vector2:
 	if reduced_motion:
@@ -31,15 +39,15 @@ static func _limb(target: CanvasItem, foot: Vector2, seconds: float,
 	var hip := foot+hip_local
 	var gait := stride(seconds,phase,reduced_motion)
 	var lift := hoof_lift(seconds,phase,reduced_motion)
-	var ankle := foot+Vector2(hip_local.x+(30.0 if hind else 2.0)+gait*(13.0 if hind else 8.0),
+	var ankle := foot+Vector2(hip_local.x+(11.0 if hind else 2.0)+gait*(8.0 if hind else 6.0),
 		-4.0-lift)
-	var knee := hip+Vector2((-24.0 if hind else -6.0)+gait*3.0,
-		(37.0 if hind else 20.0)-lift*.20)
+	var knee := hip+Vector2((-11.0 if hind else -3.0)+gait*2.2,
+		(36.0 if hind else 21.0)-lift*.20)
 	var outline := Color(.055,.105,.115,opacity*.97)
-	var fur := Color(.20,.30,.285,opacity*.90) if behind else Color(.27,.36,.32,opacity)
-	var rim := Color(.47,.52,.43,opacity*(.28 if behind else .44))
-	var thigh := 23.0 if hind else 14.0
-	var shin := 14.0 if hind else 10.0
+	var fur := Color(.13,.22,.21,opacity*.90) if behind else Color(.18,.27,.25,opacity)
+	var rim := Color(.32,.40,.33,opacity*(.20 if behind else .28))
+	var thigh := 21.0 if hind else 13.0
+	var shin := 15.0 if hind else 9.0
 	target.draw_line(hip,knee,outline,thigh+5.0,true)
 	target.draw_line(knee,ankle,outline,shin+4.0,true)
 	target.draw_line(hip,knee,fur,thigh,true)
