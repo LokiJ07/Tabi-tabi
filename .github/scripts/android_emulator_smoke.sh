@@ -405,6 +405,25 @@ if [ "${GITHUB_REF:-}" = "refs/heads/feature/night05-sigbin-abandoned-farm" ]; t
     echo "ERROR: farm daylight and shadow-linked Sigbin night are identical"
     exit 1
   fi
+  # F10 drives the REAL state-machine inspection -> deduction -> safety prep
+  # -> observe -> first correct lamp; only the Android DEBUG binary exposes it.
+  # This captures an actual goat in motion and its settled destination.
+  adb shell input keyevent 140 # F10, first canonical successful rescue
+  sleep 2
+  if ! adb logcat -d -v brief | grep -q "NIGHT5_QA_FIRST_RESCUE_ACTIVE"; then
+    echo "ERROR: first Sigbin lantern rescue did not reach actual gameplay state"
+    adb logcat -d -v brief | grep -E 'NIGHT5_QA|Godot|SCRIPT ERROR' | tail -n 90 || true
+    exit 1
+  fi
+  adb exec-out screencap -p > build/android-night5-first-rescue-crossing.png
+  python3 .github/scripts/assert_gameplay_visible.py build/android-night5-first-rescue-crossing.png
+  sleep 4
+  adb exec-out screencap -p > build/android-night5-first-rescue-settled.png
+  python3 .github/scripts/assert_gameplay_visible.py build/android-night5-first-rescue-settled.png
+  if cmp -s build/android-night5-first-rescue-crossing.png build/android-night5-first-rescue-settled.png; then
+    echo "ERROR: saved livestock crossing did not produce two distinct gameplay frames"
+    exit 1
+  fi
   adb logcat -d -v brief | grep -Ei 'NIGHT5_QA|Godot|AndroidRuntime' | tail -n 180 > build/android-night5-log.txt || true
   echo "PASS: actual Night 5 abandoned barn, safe livestock gate, Sigbin shadow reveal"
 fi
