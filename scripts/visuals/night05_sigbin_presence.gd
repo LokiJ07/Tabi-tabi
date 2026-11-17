@@ -33,6 +33,24 @@ static func stride(seconds: float, phase: float, reduced_motion: bool) -> float:
 static func hoof_lift(seconds: float, phase: float, reduced_motion: bool) -> float:
 	return 0.0 if reduced_motion else maxf(0.0,cos(seconds*4.2+phase))*7.0
 
+static func _organic_contour(centers: PackedVector2Array, width: float) -> PackedVector2Array:
+	# Curved tapered silhouette instead of two cylindrical lines joined at a
+	# sharp corner; both sides share the same smoothly interpolated spine.
+	var contour := PackedVector2Array()
+	var last: int = centers.size()-1
+	for side in range(2):
+		for j in range(centers.size()):
+			var idx: int = j if side == 0 else last-j
+			var t := float(idx)/float(last)
+			var prev: Vector2 = centers[maxi(0,idx-1)]
+			var next: Vector2 = centers[mini(last,idx+1)]
+			var direction := (next-prev).normalized()
+			var normal := direction.orthogonal()
+			var radius := width*(.80-.43*t)+sin(t*PI)*1.6
+			var sign_side := 1.0 if side == 0 else -1.0
+			contour.append(centers[idx]+normal*radius*sign_side)
+	return contour
+
 static func _limb(target: CanvasItem, foot: Vector2, seconds: float,
 		hip_local: Vector2, hind: bool, phase: float,
 		reduced_motion: bool, opacity: float, behind: bool) -> void:
@@ -43,23 +61,54 @@ static func _limb(target: CanvasItem, foot: Vector2, seconds: float,
 		-4.0-lift)
 	var knee := hip+Vector2((-11.0 if hind else -3.0)+gait*2.2,
 		(36.0 if hind else 21.0)-lift*.20)
-	var outline := Color(.055,.105,.115,opacity*.97)
+	var outline := Color(.055,.105,.115,opacity*.96)
 	var fur := Color(.13,.22,.21,opacity*.90) if behind else Color(.18,.27,.25,opacity)
-	var rim := Color(.32,.40,.33,opacity*(.20 if behind else .28))
-	var thigh := 21.0 if hind else 13.0
-	var shin := 15.0 if hind else 9.0
-	target.draw_line(hip,knee,outline,thigh+5.0,true)
-	target.draw_line(knee,ankle,outline,shin+4.0,true)
-	target.draw_line(hip,knee,fur,thigh,true)
-	target.draw_line(knee,ankle,fur,shin,true)
-	target.draw_circle(knee,shin*.54,fur)
-	target.draw_line(hip+Vector2(-3,-2),knee+Vector2(-4,-1),rim,2.8,true)
-	target.draw_colored_polygon(PackedVector2Array([
-		ankle+Vector2(-12,0),ankle+Vector2(7,-3),
-		ankle+Vector2(16,4),ankle+Vector2(-12,5)]),
-		Color(.12,.17,.16,opacity))
-	target.draw_line(ankle+Vector2(7,-2),ankle+Vector2(9,3),
-		Color(.48,.49,.41,opacity*.48),1.8,true)
+	var rim := Color(.42,.48,.39,opacity*(.20 if behind else .34))
+	var width := 19.0 if hind else 12.0
+	var centers := PackedVector2Array()
+	for k in range(13):
+		var t := float(k)/12.0
+		var inv := 1.0-t
+		centers.append(hip*inv*inv+knee*(2.0*inv*t)+ankle*t*t)
+	target.draw_colored_polygon(_organic_contour(centers,width+3.0),outline)
+	target.draw_colored_polygon(_organic_contour(centers,width),fur)
+	# Moonlit, asymmetrical muscle highlight; only one edge is lit.
+	var highlight := PackedVector2Array()
+	for k in range(2,11):
+		var i := k
+		var t := float(i)/12.0
+		var before: Vector2 = centers[i-1]
+		var after: Vector2 = centers[i+1]
+		var normal := (after-before).normalized().orthogonal()
+		highlight.append(centers[i]-normal*(width*(.80-.43*t)*.75))
+	target.draw_polyline(highlight,rim,2.2,true)
+	# Soft cloven toe pads; stepped hooves return to the same soil plane.
+	var hoof := PackedVector2Array([
+		ankle+Vector2(-9,0),ankle+Vector2(2,-4),
+		ankle+Vector2(14,-1),ankle+Vector2(16,4),
+		ankle+Vector2(-11,4)])
+	target.draw_colored_polygon(hoof,Color(.12,.17,.16,opacity))
+	target.draw_line(ankle+Vector2(8,-2),ankle+Vector2(9,3),
+		Color(.48,.49,.41,opacity*.36),1.6,true)
+
+static func paint_ground_contact(target: CanvasItem, foot: Vector2,
+		seconds: float, reduced_motion: bool, opacity: float) -> void:
+	if opacity <= .01:
+		return
+	# A soft multi-radius contact ellipse holds the animal visually on soil,
+	# avoiding the "floating" silhouette in the previous Android capture.
+	target.draw_set_transform(foot+Vector2(-16,3),0.0,Vector2(1.38,.23))
+	for layer in range(3,0,-1):
+		target.draw_circle(Vector2.ZERO,51.0+float(layer)*11.0,
+			Color(.01,.04,.04,opacity*.040))
+	target.draw_set_transform(Vector2.ZERO,0.0,Vector2.ONE)
+	if reduced_motion:
+		return
+	var puff := maxf(0.0,cos(seconds*4.2))
+	for d in range(3):
+		var p := foot+Vector2(-46+float(d)*26,-2-float(d%2)*3)
+		target.draw_circle(p+Vector2(0,-puff*9.0),
+			3.0+float(d%2)*2.0,Color(.56,.54,.39,opacity*.13*puff))
 
 static func paint_limb_pair(target: CanvasItem, foot: Vector2,
 		seconds: float, reduced_motion: bool, opacity: float,
@@ -126,8 +175,8 @@ static func detect_warning(stage: int, distance: float, seconds: float,
 	if stage < 2 or distance > 960.0:
 		return "FOLLOW WAYPOINT • SAFE FARM ROUTE"
 	if identified:
-		return "WATCH: THE FIGURE RETREATS BACKWARD • KEEP THE SAFE PERIMETER"
+		return "SIGBIN • BACKWARD RETREAT"
 	match int(floor(seconds/4.2))%3:
-		0: return "SENSE: SOUR, PUNGENT ODOR FROM THE OLD BARN"
-		1: return "LISTEN: TWO DRY EAR-CLAPS BEHIND THE SHUTTER"
-		_: return "LOOK: TOES FACE EAST, BUT DUST DRIFTS WEST • BACKWARD TRACKS"
+		0: return "ODOR • NEAR OLD BARN"
+		1: return "LISTEN • TWO EAR-CLAPS"
+		_: return "TRACKS • BACKWARD STEPS"
