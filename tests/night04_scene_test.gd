@@ -46,7 +46,9 @@ func _run() -> void:
 	game.debug_wake_preview = true
 	game._process(.7)
 	var expected_fit: Dictionary = game.ActorMotion.camera_fit(game.player_pos,
-		Vector2(270,-465),root.get_visible_rect().size)
+		Vector2(270,-335),root.get_visible_rect().size)
+	check(game.ActorMotion.FULL_SIZE.y >= 310.0,
+		"visibly larger winged creature while camera remains responsive")
 	check(game.camera.zoom.x < .82 and game.camera.zoom.y < .82,
 		"encounter zooms out to fit airborne wings and hero")
 	check(game.camera.position.distance_to(expected_fit["center"]) < 5.0,

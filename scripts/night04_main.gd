@@ -152,7 +152,7 @@ func _manananggal_approach() -> Vector2:
 	match story.current_warning():
 		"rear_window": return Vector2(485,-263)
 		"courtyard": return Vector2(260,-155)
-	return Vector2(270,-465) # roofline, also QA-only preview
+	return Vector2(270,-335) # threat descends from roofline toward lit wake
 
 func _process(delta: float) -> void:
 	elapsed += delta if not prefs.reduced_motion else 0.0
@@ -427,8 +427,10 @@ func _draw() -> void:
 		var drift := Vector2(sin(elapsed*.81)*16,cos(elapsed*.71)*8) if not prefs.reduced_motion else Vector2.ZERO
 		for i in range(4,0,-1):
 			draw_circle(from+drift,60.0+float(i)*31.0,Color(.29,.41,.48,.009))
+		ActorMotion.paint_flight_air(self,from+drift+Vector2(0,153),elapsed,
+			prefs.reduced_motion,story.tension)
 		ActorMotion.paint_flying(self,MANANANGGAL,MANANANGGAL_LEFT,MANANANGGAL_RIGHT,
-			from+drift+Vector2(-5,110),elapsed,prefs.reduced_motion,Color("#bcc1b8"))
+			from+drift+Vector2(-5,110),elapsed,prefs.reduced_motion,Color("#d1d5cb"))
 	# Human cast is rendered above the warmth. Story dialogue and evidence
 	# still work when residents have moved inside, not been deleted.
 	var people: Array[Dictionary] = []

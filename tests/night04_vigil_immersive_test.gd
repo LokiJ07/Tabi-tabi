@@ -17,6 +17,18 @@ func _initialize() -> void:
 
 func _run() -> void:
 	check(Vigil.STYLE_ID == "night04-vigil-dressing-v1","nighttime art helper imported")
+	check(Motion.FULL_SIZE.x >= 380.0 and Motion.FULL_SIZE.y >= 310.0,
+		"winged entity has an expanded high-resolution vector silhouette")
+	var fit: Dictionary = Motion.camera_fit(Vector2(125,205),Vector2(270,-335),
+		Vector2(1280,720))
+	var fit_center: Vector2 = fit["center"]
+	var half_height: float = 360.0 / float(fit["zoom"])
+	check(float(fit["top"]) > fit_center.y-half_height+35.0
+		and float(fit["bottom"]) < fit_center.y+half_height-35.0,
+		"full wing sweep and hero/Bantay remain visible at 720p")
+	check(absf(Motion.wing_angle(true,.7,false)-Motion.wing_angle(true,2.0,false))>.07
+		and absf(Motion.wing_angle(false,.7,false)-Motion.wing_angle(false,2.0,false))>.07,
+		"wing tips move visibly across consecutive animated frames")
 	check(Motion.STYLE_ID == "night04-articulated-wing-and-indoor-transition-v1",
 		"independently animated wing and civilian transition module imported")
 	check(Motion.indoor_alpha(0.0) == 1.0

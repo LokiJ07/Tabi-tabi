@@ -13,4 +13,9 @@
 <path d="M335 258Q242 169 129 119L37 95L77 166L28 208L114 219L51 290
 L172 269L109 355L227 296L277 337L342 326Z" fill="url(#wing)" stroke="#151b22" stroke-width="15"/>
 <g fill="none" stroke="#87908a" opacity=".27" stroke-width="8"><path d="M332 268Q220 194 69 147M318 291Q202 254 77 204M321 301Q216 306 103 349"/></g>
+<g fill="none" stroke-linecap="round">
+<path d="M318 260Q220 211 114 157M307 295Q213 279 84 232M311 306Q214 314 143 330" stroke="#bebfb2" stroke-width="3.5" opacity=".28"/>
+<path d="M300 267L218 220M280 307L194 284M236 286L147 266" stroke="#86918f" stroke-width="2" opacity=".34"/>
+<path d="M103 170L76 157M94 234L61 230M139 304L117 319" stroke="#7d8a7c" stroke-width="5" opacity=".30"/>
+</g>
 </svg>

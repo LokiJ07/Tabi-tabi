@@ -58,6 +58,7 @@ jobs:
           lines = path.read_text().splitlines()
           run = int(os.environ["GITHUB_RUN_NUMBER"])
           lines = [f"version/code={run}" if line.startswith("version/code=") else
+                   f'version/name="0.17.0-cinematic-creature.{run}"' if os.environ.get("GITHUB_REF", "").endswith("night04-cinematic-creature-presence") and line.startswith("version/name=") else
                    f'version/name="0.16.0-night4-animated-qa.{run}"' if os.environ.get("GITHUB_REF", "").endswith("night04-final-character-animation") and line.startswith("version/name=") else
                    f'version/name="0.15.0-wake-vigil-qa.{run}"' if os.environ.get("GITHUB_REF", "").endswith("night04-wake-immersive-vigil") and line.startswith("version/name=") else
                    f'version/name="0.14.0-lived-in-night-qa.{run}"' if os.environ.get("GITHUB_REF", "").endswith("nighttime-lived-in-village-nights1-4") and line.startswith("version/name=") else
@@ -77,7 +78,7 @@ jobs:
           set -euo pipefail
           run_test() {
             echo "::group::Headless QA $1"
-            timeout --signal=TERM --kill-after=8s 90s godot --headless --path . --script "$1"
+            timeout --signal=TERM --kill-after=8s 90s godot --headless --audio-driver Dummy --path . --script "$1"
             echo "::endgroup::"
           }
           run_test res://tests/night01_state_test.gd
@@ -220,6 +221,7 @@ jobs:
             build/android-night4-wake-day.png
             build/android-night4-courtyard.png
             build/android-night4-manananggal-night.png
+            build/android-night4-wingbeat-followup.png
             build/android-night4-ridge-return.png
             build/android-night4-log.txt
             build/android-night1-notebook.png
