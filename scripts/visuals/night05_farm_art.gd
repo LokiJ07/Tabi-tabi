@@ -10,24 +10,60 @@ const SHADOW := Color("#13242a")
 # Both yards are OFF the main public path. The animal pen is uphill/north
 # of the path, and the safe holding paddock is east of the path terminus.
 const PEN := Rect2(286.0,-42.0,375.0,180.0)
-const HOLDING := Rect2(690.0,212.0,335.0,150.0)
+const HOLDING := Rect2(690.0,350.0,335.0,150.0)
 const MAIN_ROAD_END := Vector2(570.0,318.0)
 # Off-road scenery must never occupy either fenced paddock or cover its sign.
 const LOWER_TREE := Vector2(920.0,700.0)
 const LOWER_BANANA := Vector2(1070.0,700.0)
-const HOLDING_SIGN_AT := Vector2(495.0,415.0)
+const HOLDING_SIGN_AT := Vector2(444.0,535.0)
 const GATE_LEFT := 500.0
 const GATE_RIGHT := 610.0
 
-static func main_road_route(start: Vector2, observe: Vector2) -> PackedVector2Array:
-	# Through-road is independent of the animal-only gate. DO NOT terminate
-	# or draw any 116px wide public road through either animal enclosure.
-	return PackedVector2Array([start,Vector2(-730.0,330.0),
-		Vector2(-405.0,338.0),observe,MAIN_ROAD_END])
+static func main_road_route(start: Vector2, observe: Vector2,
+		night06_exit: Vector2) -> PackedVector2Array:
+	# The full road continues from Night 4, through the farm, BEYOND the
+	# animal-only side spur to Night 6's separately locked threshold.
+	# There is no invisible dead end at MAIN_ROAD_END.
+	return PackedVector2Array([
+		start,Vector2(-730.0,330.0),Vector2(-405.0,338.0),
+		observe,MAIN_ROAD_END,
+		Vector2(570.0,244.0),Vector2(750.0,244.0),
+		Vector2(830.0,55.0),Vector2(900.0,-180.0),
+		night06_exit,night06_exit+Vector2(50.0,-210.0)])
 
 static func gate_approach_route() -> PackedVector2Array:
-	# Small side spur ends in front of the pen. The road continues unobstructed.
+	# A narrow branch, not the public road's destination.
 	return PackedVector2Array([MAIN_ROAD_END,Vector2(555.0,223.0)])
+
+static func keep_player_before_locked_trail(previous: Vector2,
+		desired: Vector2, entrance: Vector2, locked: bool) -> Vector2:
+	if not locked:
+		return desired
+	# Don't let the player run beyond the not-yet-streamable Night 6 scene.
+	# The road remains fully drawn BEHIND the physical rope checkpoint.
+	if absf(desired.x-entrance.x) < 107.0 and desired.y < entrance.y+50.0:
+		return Vector2(desired.x,entrance.y+50.0)
+	return desired
+
+static func paint_night06_trail_checkpoint(target: CanvasItem,
+		entrance: Vector2, locked: bool, night: bool) -> void:
+	# Low-profile timber gate. A visible path continues on the far side;
+	# only its chapter transition remains disabled until Night 6 exists.
+	var wood := Color("#67513d") if night else Color("#8a7053")
+	var left := entrance+Vector2(-78.0,26.0)
+	var right := entrance+Vector2(78.0,26.0)
+	for post in [left,right]:
+		target.draw_line(post+Vector2(0,18),post+Vector2(0,-84),wood,10.0,true)
+		target.draw_circle(post+Vector2(0,-82),6.0,Color("#c0a878"))
+	if locked:
+		target.draw_line(left+Vector2(3,-33),right+Vector2(-3,-33),
+			Color("#b89456"),5.0,true)
+		for i in range(5):
+			var at := left.lerp(right,float(i+1)/6.0)+Vector2(0,-33)
+			target.draw_circle(at,4.0,Color("#e7c77f"))
+	paint_farm_sign(target,
+		"NIGHT 6 TRAIL  •  LOCKED" if locked else "NIGHT 6 TRAIL",
+		entrance+Vector2(-250.0,-134.0),245.0,night)
 
 static func gate_label(phase: int, prepared: bool) -> String:
 	if prepared:
@@ -238,7 +274,7 @@ static func animal_pen_position(index: int) -> Vector2:
 static func animal_gate_position(index: int, safe_gate: Vector2) -> Vector2:
 	# Safe destinations are fully INSIDE the separate east-side paddock.
 	return safe_gate+Vector2(200.0+float(index)*100.0,
-		128.0+float(index%2)*28.0)
+		275.0+float(index%2)*28.0)
 
 static func animal_crossing_position(index: int, safe_gate: Vector2,
 		rescued: bool, progress: float) -> Vector2:
