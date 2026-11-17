@@ -40,6 +40,22 @@ func _run() -> void:
 	check(game.GOAT.get_width()>300 and game.CHICKEN.get_width()>200,
 		"animals are real in-game sprites, not text-only rewards")
 	check(game.story.phase == 0,"real investigation begins before creature reveal")
+	check(FarmArt.inside_livestock_pen(FarmArt.animal_pen_position(0))
+		and FarmArt.inside_livestock_pen(FarmArt.animal_pen_position(1))
+		and FarmArt.inside_livestock_pen(FarmArt.animal_pen_position(2)),
+		"ALL three animal groups begin inside one real contiguous fenced pen")
+	check(not FarmArt.inside_livestock_pen(game.SAFE_GATE)
+		and not FarmArt.inside_livestock_pen(game.SAFE_PERIMETER)
+		and not FarmArt.inside_livestock_pen(game.CLUE_POS["broken_barn"]),
+		"animal gate, watch marker and evidence remain safely reachable OUTSIDE fences")
+	var road_entry := Vector2(555,337)
+	check(FarmArt.keep_player_outside_pen(road_entry,Vector2(555,268)) == road_entry,
+		"player cannot phase through kural from safe road toward livestock")
+	check(FarmArt.keep_player_outside_pen(Vector2(275,210),Vector2(320,210)).x <= 286.0,
+		"western animal fence blocks unsafe approach while letting player slide")
+	check(FarmArt.keep_player_outside_pen(Vector2(355,210),Vector2(355,220)).y
+		> FarmArt.PEN.end.y,
+		"an older save inside pen is relocated outside the safe gate boundary")
 	check(game.SIGBIN_EAR_NEAR.get_width() >= 200 and game.SIGBIN_EAR_FAR.get_height() >= 120,
 		"two independent original Sigbin ear sprites actually imported")
 	check(SigbinPresence.visibility(0,false,false,0.0) == 0.0
@@ -172,12 +188,23 @@ func _run() -> void:
 			and midpoint.distance_to(FarmArt.animal_gate_position(i,game.SAFE_GATE)) > 10.0
 			and midpoint.y > 80.0,
 			"animated livestock crosses open SOIL, never teleports through the collapsing barn")
+		var threshold: Vector2 = FarmArt.animal_crossing_position(i,
+			game.SAFE_GATE,true,.62)
+		check(absf(threshold.x-game.SAFE_GATE.x) < 1.0
+			and threshold.y > FarmArt.PEN.end.y,
+			"every animal uses the SAME prepared gate gap rather than crossing a solid rail")
+		check(FarmArt.GATE_LEFT < threshold.x
+			and threshold.x < FarmArt.GATE_RIGHT,
+			"single animal exit lies physically inside the real fence opening")
 		check(FarmArt.animal_crossing_position(i,game.SAFE_GATE,true,1.0)
 			== FarmArt.animal_gate_position(i,game.SAFE_GATE),
 			"completed livestock path lands exactly at the safe gate")
 		game._choose("close")
 	check(game.story.phase == 4 and game.story.rescued_groups == 3,
 		"complete rescue earns safe aftermath; Sigbin remains unharmed")
+	check(game.objective.text.contains("safe holding")
+		and FarmArt.animal_gate_position(0,game.SAFE_GATE).y > FarmArt.PEN.end.y,
+		"player end-of-night instructions identify the fenced safe holding area")
 	if not game.prefs.reduced_motion:
 		var last_position: Vector2 = FarmArt.animal_crossing_position(2,game.SAFE_GATE,true,
 			float(game.animal_rescue_motion.get(2,1.0)))
