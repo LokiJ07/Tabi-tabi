@@ -1,39 +1,97 @@
 extends RefCounted
-## Source-aware Visayan Sigbin visual and sensory behavior.
-## World-space drawing only, NO fullscreen static mockup and NO extra colliders.
-const STYLE_ID := "night05-visayan-sigbin-presence-v1"
+## Regional Visayan Sigbin: world-space motion, no fake screen overlays.
+const STYLE_ID := "night05-visayan-sigbin-presence-v2"
+
+static func _ease(t: float) -> float:
+	var x := clampf(t,0.0,1.0)
+	return x*x*(3.0-2.0*x)
+
+static func retreating(seconds: float, route: int) -> bool:
+	return fposmod(seconds+float(route)*1.7,15.0)<8.5
 
 static func backward_foot(anchor: Vector2, seconds: float, route: int,
 		reduced_motion: bool) -> Vector2:
 	if reduced_motion:
 		return anchor
-	# The muzzle points right, but the stronger hind legs lead to the LEFT.
-	var cycle := seconds*.78+float(route)*1.41
-	return anchor+Vector2(-46.0*(.5+.5*sin(cycle)),3.5*sin(cycle*2.0))
+	# Bounded eight-second backward retreat; slower walk back through cover.
+	# Avoid the rapid back-and-forth sliding of the original sprite.
+	var cycle := fposmod(seconds+float(route)*1.7,15.0)
+	var offset := 148.0*_ease(cycle/8.5) if cycle < 8.5 else 148.0*(1.0-_ease((cycle-8.5)/6.5))
+	return anchor+Vector2(-offset,2.2*sin(seconds*4.2))
+
+static func stride(seconds: float, phase: float, reduced_motion: bool) -> float:
+	return 0.0 if reduced_motion else sin(seconds*4.2+phase)
+
+static func hoof_lift(seconds: float, phase: float, reduced_motion: bool) -> float:
+	return 0.0 if reduced_motion else maxf(0.0,cos(seconds*4.2+phase))*7.0
+
+static func _limb(target: CanvasItem, foot: Vector2, seconds: float,
+		hip_local: Vector2, hind: bool, phase: float,
+		reduced_motion: bool, opacity: float, behind: bool) -> void:
+	var hip := foot+hip_local
+	var gait := stride(seconds,phase,reduced_motion)
+	var lift := hoof_lift(seconds,phase,reduced_motion)
+	var ankle := foot+Vector2(hip_local.x+(30.0 if hind else 2.0)+gait*(13.0 if hind else 8.0),
+		-4.0-lift)
+	var knee := hip+Vector2((-24.0 if hind else -6.0)+gait*3.0,
+		(37.0 if hind else 20.0)-lift*.20)
+	var outline := Color(.055,.105,.115,opacity*.97)
+	var fur := Color(.20,.30,.285,opacity*.90) if behind else Color(.27,.36,.32,opacity)
+	var rim := Color(.47,.52,.43,opacity*(.28 if behind else .44))
+	var thigh := 23.0 if hind else 14.0
+	var shin := 14.0 if hind else 10.0
+	target.draw_line(hip,knee,outline,thigh+5.0,true)
+	target.draw_line(knee,ankle,outline,shin+4.0,true)
+	target.draw_line(hip,knee,fur,thigh,true)
+	target.draw_line(knee,ankle,fur,shin,true)
+	target.draw_circle(knee,shin*.54,fur)
+	target.draw_line(hip+Vector2(-3,-2),knee+Vector2(-4,-1),rim,2.8,true)
+	target.draw_colored_polygon(PackedVector2Array([
+		ankle+Vector2(-12,0),ankle+Vector2(7,-3),
+		ankle+Vector2(16,4),ankle+Vector2(-12,5)]),
+		Color(.12,.17,.16,opacity))
+	target.draw_line(ankle+Vector2(7,-2),ankle+Vector2(9,3),
+		Color(.48,.49,.41,opacity*.48),1.8,true)
+
+static func paint_limb_pair(target: CanvasItem, foot: Vector2,
+		seconds: float, reduced_motion: bool, opacity: float,
+		behind: bool) -> void:
+	if behind:
+		_limb(target,foot,seconds,Vector2(-45,-61),true,PI,
+			reduced_motion,opacity*.73,true)
+		_limb(target,foot,seconds,Vector2(44,-43),false,0.0,
+			reduced_motion,opacity*.70,true)
+	else:
+		_limb(target,foot,seconds,Vector2(-66,-69),true,0.0,
+			reduced_motion,opacity,false)
+		_limb(target,foot,seconds,Vector2(62,-47),false,PI,
+			reduced_motion,opacity,false)
 
 static func clap_strength(seconds: float, reduced_motion: bool) -> float:
 	if reduced_motion:
 		return 0.0
-	var cycle := fposmod(seconds,5.8)
-	var one := maxf(0.0,1.0-absf(cycle-1.08)/.28)
-	var two := maxf(0.0,1.0-absf(cycle-1.29)/.28)
-	return maxf(one,two)
+	var beat := fposmod(seconds,5.8)
+	var a := maxf(0.0,1.0-absf(beat-1.08)/.25)
+	var b := maxf(0.0,1.0-absf(beat-1.29)/.25)
+	return maxf(a,b)
 
 static func visibility(stage: int, identified: bool, debug_preview: bool,
 		seconds: float) -> float:
 	if stage < 2 and not debug_preview:
 		return 0.0
-	if debug_preview or identified:
+	if identified or debug_preview:
 		return 1.0
-	# Fleeting indistinct shape; it is not a constant opaque enemy.
 	return .035+.33*pow(maxf(0.0,sin(seconds*.67+1.7)),6.0)
 
-static func _paint_ear(target: CanvasItem, texture: Texture2D, at: Vector2,
-		angle: float, opacity: float, width: float) -> void:
+static func _ear(target: CanvasItem, texture: Texture2D, at: Vector2,
+		angle: float, opacity: float, far: bool) -> void:
 	if texture == null or opacity <= .01:
 		return
+	var width := 72.0 if not far else 66.0
 	target.draw_set_transform(at,angle,Vector2.ONE)
-	target.draw_texture_rect(texture,Rect2(-width*.5,-79.0,width,83.0),
+	# Broad sideways folds attached at the skull, not rabbit points.
+	var x := -width*.88 if far else -width*.12
+	target.draw_texture_rect(texture,Rect2(x,-40.0,width,44.0),
 		false,Color(1.0,1.0,1.0,opacity))
 	target.draw_set_transform(Vector2.ZERO,0.0,Vector2.ONE)
 
@@ -41,21 +99,21 @@ static func paint_clapping_ears(target: CanvasItem, near: Texture2D,
 		far: Texture2D, foot: Vector2, seconds: float,
 		reduced_motion: bool, opacity: float) -> void:
 	var clap := clap_strength(seconds,reduced_motion)
-	_paint_ear(target,far,foot+Vector2(59,-91),-.26+clap*.49,opacity*.88,45.0)
-	_paint_ear(target,near,foot+Vector2(75,-86),.24-clap*.47,opacity,51.0)
+	_ear(target,far,foot+Vector2(46,-91),-.10+clap*.29,opacity*.83,true)
+	_ear(target,near,foot+Vector2(68,-85),.08-clap*.34,opacity,false)
 
-static func paint_reverse_tracks(target: CanvasItem,foot: Vector2, alpha: float) -> void:
-	if alpha <= .02:
+static func paint_reverse_tracks(target: CanvasItem,
+		foot: Vector2, opacity: float) -> void:
+	if opacity <= .02:
 		return
-	# Toes face east, movement is west: readable reversed travel.
 	for i in range(4):
-		var p := foot+Vector2(15.0-float(i)*28.0,14.0+float(i%2)*6.0)
-		var ink := Color(.52,.45,.32,.20*alpha*(1.0-float(i)*.12))
+		var p := foot+Vector2(14.0-float(i)*30.0,12.0+float(i%2)*7.0)
 		target.draw_colored_polygon(PackedVector2Array([
-			p+Vector2(-11,-4),p+Vector2(4,-8),
-			p+Vector2(13,0),p+Vector2(1,8)]),ink)
+			p+Vector2(-12,-3),p+Vector2(5,-8),
+			p+Vector2(14,1),p+Vector2(0,8)]),
+			Color(.48,.42,.32,.15*opacity*(1.0-float(i)*.15)))
 
-static func detect_warning(stage: int,distance: float,seconds: float,
+static func detect_warning(stage: int, distance: float, seconds: float,
 		identified: bool) -> String:
 	if stage < 2 or distance > 960.0:
 		return "FOLLOW WAYPOINT • SAFE FARM ROUTE"
