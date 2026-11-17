@@ -223,8 +223,12 @@ func _process(delta: float) -> void:
 	if ambient != null:
 		ambient.set_night_stage(_stage())
 		ambient.set_tension(story.fear)
-		var sigbin_node: Vector2 = SHADOW_POS[clampi(story.shadow_index,0,2)]
-		var proximity := clampf(1.0-player_pos.distance_to(sigbin_node)/1100.0,0.0,1.0)
+		# Sound strength must follow the moving animal on the ground, not
+		# the remote eave-shadow clue. Otherwise hearing conflicts with sight.
+		var sigbin_ground := SigbinPresence.backward_foot(
+			SigbinPresence.ground_anchor(story.shadow_index),
+			elapsed,story.shadow_index,prefs.reduced_motion)
+		var proximity := clampf(1.0-player_pos.distance_to(sigbin_ground)/1100.0,0.0,1.0)
 		ambient.set_sigbin_presence(proximity if _stage() >= 2 else 0.0)
 	if atmosphere != null:
 		atmosphere.configure(5,_stage(),story.fear,prefs.reduced_motion)
@@ -789,9 +793,11 @@ func _refresh_hint() -> void:
 	var id := _nearby()
 	var farm_hint := "FOLLOW WAYPOINT • SAFE FARM ROUTE"
 	if id == "" and story.outcome == "":
-		var sigbin_node: Vector2 = SHADOW_POS[clampi(story.shadow_index,0,2)]
+		var sigbin_ground := SigbinPresence.backward_foot(
+			SigbinPresence.ground_anchor(story.shadow_index),
+			elapsed,story.shadow_index,prefs.reduced_motion)
 		farm_hint = SigbinPresence.detect_warning(_stage(),
-			player_pos.distance_to(sigbin_node),elapsed,story.shadow_identified)
+			player_pos.distance_to(sigbin_ground),elapsed,story.shadow_identified)
 	interaction_hint.text = farm_hint if id == "" else "INTERACT • "+id.replace("_"," ").to_upper()
 	var goal := RETURN_WAKE
 	var title := "RETURN TO THE WAKE"
