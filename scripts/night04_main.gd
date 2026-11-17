@@ -182,7 +182,7 @@ func _process(delta: float) -> void:
 	# apprentice during a real attack, not cropped at the top of the phone.
 	# This is the world camera only; Night 1 shared touch HUD never moves.
 	var framing_target := player_pos + aim*64
-	var close_encounter := story.phase == 3 or debug_wake_preview
+	var close_encounter: bool = story.phase == 3 or debug_wake_preview
 	if close_encounter:
 		# A full wing span needs more vertical room on a 2340×1080 Android
 		# viewport. The default QA preview is the roofline, not the courtyard.
