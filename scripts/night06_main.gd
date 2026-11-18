@@ -10,6 +10,7 @@ const World = preload("res://scripts/core/connected_world.gd")
 const Prefs = preload("res://scripts/core/preferences.gd")
 const RiverSound = preload("res://scripts/audio/night06_ambience.gd")
 const SharedHUD = preload("res://scripts/ui/shared_hud.gd")
+const PostgameResidents = preload("res://scripts/world/postgame_residents.gd")
 const DialogueMotion = preload("res://scripts/ui/shared_dialogue_motion.gd")
 const Depth = preload("res://scripts/visuals/layered_25d.gd")
 const Landscape = preload("res://scripts/visuals/folklore_landscape_25d.gd")
@@ -604,6 +605,7 @@ func _draw() -> void:
 	var bob := 0.0 if prefs.reduced_motion else absf(sin(walk_time))*2.8
 	Depth.paint_grounded(self,BANTAY,bantay_pos,Vector2(95,102),Color.WHITE,.31,bob)
 	Depth.paint_grounded(self,HERO,player_pos,Vector2(108,142),Color.WHITE,.37,bob)
+	PostgameResidents.paint(self,"night06",clock,prefs.reduced_motion,player_pos)
 	# Nearby ground signs are concise and contextual, never overlaid across
 	# the touchscreen or blocking the player during exploration.
 	if player_pos.distance_to(RETURN_FARM)<270:
@@ -820,11 +822,19 @@ func _nearby() -> String:
 		if player_pos.distance_to(PREP_POS["lantern_beacon"])<195: return "begin_river"
 	elif story.phase == 6 and player_pos.distance_to(STEPS[story.step_index])<130:
 		return "watch"
+	var postgame_neighbor := PostgameResidents.nearby(self,"night06",player_pos)
+	if postgame_neighbor != "":
+		return postgame_neighbor
 	return ""
 
 func _interact() -> void:
 	if _modal() or travel_in_progress: return
 	var id := _nearby()
+	if id.begins_with("postgame:"):
+		_talk(PostgameResidents.speaker(id),
+			PostgameResidents.talk(self,id),
+			[{"label":"SALAMAT • CONTINUE","action":"close"}])
+		return
 	if id == "return_farm":
 		_return_farm()
 	elif id == "dado":
