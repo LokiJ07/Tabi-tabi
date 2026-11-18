@@ -153,6 +153,9 @@ jobs:
         run: timeout --signal=TERM --kill-after=8s 150s godot --headless --audio-driver Dummy --path . --script res://tests/night07_connected_playthrough_test.gd
       - name: Restarting a new campaign resets all seven saves and the automatic world clock
         run: godot --headless --path . --script res://tests/night07_new_game_reset_test.gd
+      - name: Final art movement, HUD held-state, mobile aim and Balete camera parity
+        timeout-minutes: 3
+        run: timeout --signal=TERM --kill-after=8s 150s godot --headless --audio-driver Dummy --path . --script res://tests/final_polish_all_nights_test.gd
       - name: Seven-night one-world graph and shared narrative integrity
         run: godot --headless --path . --script res://tests/connected_world_test.gd
       - name: Postgame automatic 24-minute day-night cycle, save and travel gate
