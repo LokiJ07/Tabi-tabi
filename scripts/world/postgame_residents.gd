@@ -88,6 +88,9 @@ static func talk(scene: Node, target: String) -> String:
 	if _clock(scene) == null or not target.begins_with("postgame:"):
 		return ""
 	var key := target.trim_prefix("postgame:")
+	var village_clock := _clock(scene)
+	if village_clock != null and village_clock.village_mood == "healing" and key == "river_fisher":
+		return "The old crossing is still watched carefully. I help mend the landing until it is safe to cast the nets."
 	return str(CONVERSATION.get(key, ""))
 
 static func speaker(target: String) -> String:
@@ -104,6 +107,8 @@ static func paint(scene: Node2D, region: String, seconds: float, reduced_motion:
 	for person in ACTORS.get(region, []):
 		var at := activity_position(person, period, 0.0 if reduced_motion else seconds)
 		var job: String = str(person["job"])
+		if confidence == "healing" and region == "night06" and str(person["id"]) == "river_fisher":
+			job = "repair"
 		if period == "home":
 			continue # At home, the authored house window lights represent residents.
 		var id: String = str(person["id"])
@@ -141,7 +146,7 @@ static func _paint_work(scene: Node2D, job: String, at: Vector2, period: String,
 	match job:
 		"fish":
 			var tip := at + Vector2(70,-78)
-			var float_pos := at + Vector2(112,36)
+			var float_pos := at + Vector2(112,104)
 			scene.draw_line(at + Vector2(14,-59), tip, wood, 4.0, true)
 			scene.draw_line(tip, float_pos, Color("#d7caaa"),1.5,true)
 			scene.draw_circle(float_pos, 5, Color("#eec28d"))
