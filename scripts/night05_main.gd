@@ -2,6 +2,7 @@ extends Node2D
 ## Tabi-tabi Night 5: Sigbin of the Abandoned Farm.
 ## Continuous from Night 4, genuine investigation and nonviolent animal rescue.
 const Story = preload("res://scripts/narrative/night05_state.gd")
+const Postgame = preload("res://scripts/narrative/postgame_conclusion.gd")
 const Save = preload("res://scripts/core/night05_save.gd")
 const Night04State = preload("res://scripts/narrative/night04_state.gd")
 const Night04Save = preload("res://scripts/core/night04_save.gd")
@@ -119,8 +120,12 @@ var observation_meter: ProgressBar
 
 var free_roam_mode := false
 
+const POSTGAME_MARKER := Vector2(-95,350)
+var postgame_ending := ""
+
 func _ready() -> void:
 	free_roam_mode = World.free_roam_unlocked()
+	postgame_ending = Postgame.saved_ending() if free_roam_mode else ""
 	name = "TabiTabiNight5"
 	set_meta("dimensional_art",DimensionalArt.STYLE_ID)
 	set_meta("art_contract",FarmArt.STYLE_ID)
@@ -539,6 +544,9 @@ func _draw() -> void:
 		Vector2(96,103),Color.WHITE,.33,bob)
 	DimensionalArt.paint_grounded(self,HERO,player_pos+Vector2(0,7),
 		Vector2(107,140),Color.WHITE,.38,bob)
+	if postgame_ending != "":
+		Postgame.paint_region_2d(self,MAP.grow(100),POSTGAME_MARKER,
+			postgame_ending,player_pos)
 	var font := ThemeDB.fallback_font
 	draw_string(font,RETURN_WAKE+Vector2(26,-90),"WAKE TRAIL • RETURN",HORIZONTAL_ALIGNMENT_LEFT,335,18,Color("#f3d8a6"))
 	draw_string(font,BARN_FOOT+Vector2(-141,62),"OLD BARN • UNSAFE TO ENTER",HORIZONTAL_ALIGNMENT_LEFT,430,18,Color("#efd8a3"))
@@ -730,6 +738,8 @@ func _nearby() -> String:
 		return "return_wake"
 	if player_pos.distance_to(FUTURE_TRAIL)<125:
 		return "river_trail" if story.outcome != "" or free_roam_mode else "trail_locked"
+	if free_roam_mode and player_pos.distance_to(POSTGAME_MARKER)<130:
+		return "after_story"
 	if player_pos.distance_to(Vector2(350,-95))<110:
 		return "unsafe_barn"
 	if story.phase == 0:
@@ -758,6 +768,10 @@ func _interact() -> void:
 	var id := _nearby()
 	if id == "return_wake":
 		_return_to_wake()
+	elif id == "after_story":
+		_talk("THE FARM • AFTER THE SEVEN NIGHTS",
+			Postgame.region_after(postgame_ending,"night05",story.outcome),
+			[{"label":"VISIT THE REMAINING SAFE ROADS","action":"close"}])
 	elif id == "trail_locked" or id == "river_trail":
 		if (story.outcome != "" or free_roam_mode) and World.implemented("night06"):
 			_travel_to_river()

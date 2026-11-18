@@ -66,6 +66,15 @@ func _run() -> void:
 	await process_frame
 	check(game.status_panel.offset_bottom >= 145.0, "quest status reflows at large font")
 	check(game.interact_hint.offset_bottom >= 89.0, "nearby hint has two-line room")
+	# Free Roam from the finalized seven-night story adds a real grounded
+	# bulletin board and world lighting, not a separate HUD or menu mockup.
+	game.free_roam_mode = true
+	game.postgame_ending = "true"
+	game._install_postgame_barrio()
+	check(game.interaction_nodes.has("AFTERMATH_RECORD"),
+		"finished village contains physical seven-night recap marker")
+	check(game.get_node_or_null("Seven Night Conclusion Sign") is Label3D,
+		"Night 1 shows ending mood on real 3D village record board")
 	game.queue_free()
 	print("Night 1 actual art, title and accessibility checks: ", "PASS" if failures == 0 else str(failures) + " failures")
 	quit(0 if failures == 0 else 1)

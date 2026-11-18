@@ -4,6 +4,7 @@ extends Node2D
 ## trail crossings, clues, route puzzles, safe observation and multiple endings.
 ## Android compatible: CanvasItem art, shared HUD, shared NPC cinematic system.
 const Story = preload("res://scripts/narrative/night03_state.gd")
+const Postgame = preload("res://scripts/narrative/postgame_conclusion.gd")
 const Save = preload("res://scripts/core/night03_save.gd")
 const Night02Save = preload("res://scripts/core/night02_save.gd")
 const Night02State = preload("res://scripts/narrative/night02_state.gd")
@@ -102,8 +103,12 @@ var ambient
 
 var free_roam_mode := false
 
+const POSTGAME_MARKER := Vector2(-285,-110)
+var postgame_ending := ""
+
 func _ready() -> void:
 	free_roam_mode = ConnectedWorld.free_roam_unlocked()
+	postgame_ending = Postgame.saved_ending() if free_roam_mode else ""
 	name = "TabiTabiNight3"
 	set_meta("dimensional_art", DimensionalArt.STYLE_ID)
 	prefs.load_from()
@@ -471,6 +476,9 @@ func _draw() -> void:
 			lift = absf(sin(walk_phase * (1.12 if is_dog else 1.0))) * (3.0 if is_player else 2.1) * walk_weight
 		DimensionalArt.paint_grounded(self, actor["tex"], where, dimensions,
 			Color.WHITE, .43, lift)
+	if postgame_ending != "":
+		Postgame.paint_region_2d(self,MAP_BOUNDS.grow(100),POSTGAME_MARKER,
+			postgame_ending,player_pos)
 	# In-world wayfinding signs are small, correctly oriented and non-obstructive.
 	var font := ThemeDB.fallback_font
 	draw_string(font,ConnectedWorld.TRAIL_RIDGE+Vector2(-125,90),
@@ -797,6 +805,8 @@ func _nearby() -> String:
 		return "return_mango"
 	if player_pos.distance_to(ConnectedWorld.TRAIL_RIDGE_WAKE) < 115.0:
 		return "wake_gate" if story.outcome != "" or free_roam_mode else "wake_gate_locked"
+	if free_roam_mode and player_pos.distance_to(POSTGAME_MARKER)<128:
+		return "after_story"
 	if story.phase == 0:
 		for id in Story.CLUES:
 			if not story.clues.has(id) and player_pos.distance_to(CLUES_AT[id]) < 122.0:
@@ -825,6 +835,11 @@ func _interact() -> void:
 		return
 	if target == "wake_gate":
 		_to_wake()
+		return
+	if target == "after_story":
+		_show_dialogue("RIDGE WATCHPOST • AFTER THE SEVEN NIGHTS",
+			Postgame.region_after(postgame_ending,"night03",story.outcome),
+			[{"label":"RETURN TO THE REAL TRAIL","action":"close"}])
 		return
 	if target == "wake_gate_locked":
 		_show_dialogue("BANTAY","The east trail leads to the wake. We must finish the ridge account before leaving its rescue signs unresolved.",

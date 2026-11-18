@@ -5,6 +5,7 @@ const World = preload("res://scripts/core/connected_world.gd")
 const Finale = preload("res://scripts/narrative/night07_state.gd")
 const FinaleSave = preload("res://scripts/core/night07_save.gd")
 const TitleScene = preload("res://scenes/title.tscn")
+const Night02Scene = preload("res://scenes/night02.tscn")
 const Night03Scene = preload("res://scenes/night03.tscn")
 const Night04Scene = preload("res://scenes/night04.tscn")
 const Night05Scene = preload("res://scenes/night05.tscn")
@@ -126,6 +127,7 @@ func _run() -> void:
 	# loads with the permanent postgame exploration flag, with no old
 	# chapter-completion modal blocking movement and road interactions.
 	for spec in [
+		[Night02Scene,"old_mango","_nearby","ridge_gate"],
 		[Night03Scene,"night03","_nearby","wake_gate"],
 		[Night04Scene,"night04","_nearby","farm_trail"],
 		[Night05Scene,"night05","_nearby","river_trail"],
@@ -143,11 +145,22 @@ func _run() -> void:
 		if str(spec[1])=="night07":
 			check(game.story.finished and not game.outcome_panel.visible,
 				"revisiting the finale starts open world, not blocking final outcome")
+			game.player_pos=game.POSTGAME_MARKER
+			check(game._nearest()=="after_story","finale has in-world readable seven-night record")
+			game._interact()
+			check(game.notebook.visible and game.notebook_text.text.contains("NIGHT 7"),
+				"keeper's morning board opens full evidence-based conclusion")
 		else:
-			var modal_open: bool = bool(game.call("_modal_open")) if str(spec[1])=="night03" else bool(game.call("_modal"))
+			var modal_open: bool = false
+			if str(spec[1])=="old_mango":
+				modal_open=game.dialogue.visible or game.notebook.visible 					or game.options_panel.visible or game.ending_panel.visible
+			else:
+				modal_open=bool(game.call("_modal_open")) if str(spec[1])=="night03" else bool(game.call("_modal"))
 			check(game.free_roam_mode and not modal_open,
 				"old ending screen no longer blocks walking: "+str(spec[1]))
-			if str(spec[1])=="night03":
+			if str(spec[1])=="old_mango":
+				game.player_pos=World.TRAIL_MANGO_RIDGE
+			elif str(spec[1])=="night03":
 				game.player_pos=World.TRAIL_RIDGE_WAKE
 			elif str(spec[1])=="night04":
 				game.player_pos=game.FARM_TRAIL
@@ -157,6 +170,14 @@ func _run() -> void:
 				game.player_pos=game.NIGHT07_GATE
 			check(game._nearby()==str(spec[3]),
 				"real scene exit is interactive in Free Roam: "+str(spec[1]))
+			check(game.postgame_ending=="good" and game.POSTGAME_MARKER is Vector2,
+				"every restored map adopts canonical GOOD community morning")
+			game.player_pos=game.POSTGAME_MARKER
+			check(game._nearby()=="after_story",
+				"physical ending-specific remembrance board can be approached: "+str(spec[1]))
+			game._interact()
+			check(game.dialogue.visible,
+				"seven-night local story plays in real scene interaction: "+str(spec[1]))
 		game.queue_free()
 		await process_frame
 

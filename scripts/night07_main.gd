@@ -3,6 +3,7 @@ extends Node2D
 ## No Keeper HP bar. The story doesn't turn victims into monsters, or force
 ## public grief or perfect scores from the previous six chapters.
 const Story = preload("res://scripts/narrative/night07_state.gd")
+const Postgame = preload("res://scripts/narrative/postgame_conclusion.gd")
 const Save = preload("res://scripts/core/night07_save.gd")
 const Night06State = preload("res://scripts/narrative/night06_state.gd")
 const Night06Save = preload("res://scripts/core/night06_save.gd")
@@ -54,6 +55,7 @@ const PATH_STONES := [
 const AWAKENED_STONES := [
 	Vector2(385,-100),Vector2(598,-35),Vector2(777,-109)
 ]
+const POSTGAME_MARKER := Vector2(-575,84)
 const EPILOGUE_POS := {
 	"mara":Vector2(-523,-196),
 	"sabel":Vector2(-817,-69),
@@ -609,6 +611,11 @@ func _draw() -> void:
 	if story.phase in [2,3,4,5,6] and player_pos.distance_to(KEEPER)<300:
 		draw_string(ThemeDB.fallback_font,KEEPER+Vector2(-124,103),
 			"ANCIENT KEEPER • FICTIONAL GUARDIAN",HORIZONTAL_ALIGNMENT_CENTER,320,16,Color("#e4dbc1"))
+	# A tangible seven-night aftermath board with a mood that matches the
+	# actual ending, not a generic happy dawn for all four outcomes.
+	if story.phase == 7:
+		Postgame.paint_region_2d(self,MAP.grow(130),POSTGAME_MARKER,
+			story.outcome,player_pos)
 
 func _build_ui() -> void:
 	hud=CanvasLayer.new()
@@ -772,6 +779,8 @@ func _hold(id: String,on: bool) -> void:
 		float(int(held.get("down",false))-int(held.get("up",false)))).limit_length()
 
 func _nearest() -> String:
+	if story.phase == 7 and player_pos.distance_to(POSTGAME_MARKER)<130:
+		return "after_story"
 	if player_pos.distance_to(RIVER_TRAIL)<128: return "river_return"
 	if story.phase == 0:
 		if player_pos.distance_to(READINESS_BOARD)<190: return "readiness"
@@ -812,6 +821,8 @@ func _interact() -> void:
 	var id:=_nearest()
 	if id=="river_return":
 		_return_to_river()
+	elif id=="after_story":
+		_open_final_record()
 	elif id=="readiness" or id=="begin_trial":
 		_readiness_dialog()
 	elif id=="sabel":
@@ -960,29 +971,23 @@ func _show_final_choice() -> void:
 
 func _epilogue(id: String) -> void:
 	if story.phase != 7: return
-	story.speak_epilogue(id)
-	var speaker2: String="BARRIO LAWOM • THE NEXT MORNING"
-	var line: String=""
-	match id:
-		"mara":
-			line="Mara keeps the documented timeline at school; students can question the record safely. Her cooperation began before this final decision."
-		"sabel":
-			line="Sabel remembers her husband as a laughing neighbour, not only his final night. She chose %s remembrance. No one is entitled to her public testimony." % story.sabel_privacy
-		"dado":
-			line="Dado shows the path that once led to shelter. Respecting his choice about his name does not erase the verified rescue records."
-		"lola":
-			line="Lola is resting, still living and accountable to the community. Her personal future is not an automatic reward or sacrifice for a finale." if story.lola_is_living else "Bantay settles beside Lola's keepsake. Her passing was recorded separately, never caused by the player's ending."
-		"river":
-			line="The river is quieter; the waterline markers remain as public reminders that safety takes maintenance and honest decisions."
-		"memorial":
-			if story.community_fractured:
-				line="A memorial plan exists, but the people responsible have fractured their cooperation. The work is unfinished despite what was promised."
-			else:
-				line="The community's memorial plan has begun, with families' consent." if story.commitments.has("family_memorial") else "The memorial still has no approved plan; its unfinished notice remains beside the public records."
-		"bantay":
-			line="Bantay stays beside the Apprentice, in every ending. Life continues even when a promise remains unfinished."
+	if not story.speak_epilogue(id): return
+	var voice: String={
+		"mara":"TEACHER MARA • THE CORRECTED RECORD",
+		"sabel":"ALING SABEL • HER OWN REMEMBRANCE",
+		"dado":"TATAY DADO • THE SAFE PASSAGE",
+		"lola":"LOLA PASING • ANSWERING FOR SILENCE",
+		"river":"THE RIVER • WATERLINE",
+		"memorial":"THE FAMILY MEMORIAL",
+		"bantay":"BANTAY • THE NEXT MORNING"
+	}.get(id,"BARRIO LAWOM • THE NEXT MORNING")
+	var line: String=Postgame.character_after(
+		story.outcome,id,story.sabel_privacy,story.lola_is_living,
+		story.commitments.has("family_memorial"),
+		story.previous_facts.get("returning_boat",false) == true)
 	_save_story()
-	_talk(speaker2,line,[{"label":"CONTINUE THE MORNING WALK","id":"close"},
+	_talk(voice,line,[{"label":"CONTINUE THE MORNING WALK","id":"close"},
+		{"label":"REVIEW THE FULL SEVEN-NIGHT RECORD","id":"full_record"},
 		{"label":"CHOOSE WHEN TO FINISH THE STORY","id":"finish_confirm"}])
 
 func _choose(id: String) -> void:
@@ -994,6 +999,9 @@ func _choose(id: String) -> void:
 		return
 	if id=="notes" or id=="readiness_notes":
 		_open_notebook()
+		return
+	if id=="full_record":
+		_open_final_record()
 		return
 	if id=="return_river":
 		_close_dialogue()
@@ -1136,6 +1144,23 @@ func _choose(id: String) -> void:
 		player_pos=RIVER_TRAIL+Vector2(225,-145)
 		camera.position=player_pos
 		_refresh()
+		_talk("DAWN • SEVEN NIGHTS, ONE STORY",
+			Postgame.outcome_message(story.outcome)+"\n\nThe Great Flood's survivors still live with its consequences. The village now has to decide what to do with the truth.",
+			[{"label":"WHAT HAPPENED DURING THE GREAT FLOOD?","id":"flood_act_one"},
+			 {"label":"WALK THROUGH THE VILLAGE AFTERMATH","id":"close"}])
+	elif id=="flood_act_one":
+		var first: String = "The river was genuinely dangerous, but independent records show the official second rescue was stopped after some families were prioritised. Kapitan Ruben, not the dead former captain, now must correct the surviving record." if story.previous_facts.get("cancelled_rescue",false) == true else "The surviving order and missing evacuation names remain disputed. We cannot make a public claim until the remaining sources are verified."
+		_talk("MARA • THE CANCELLED SECOND RESCUE",first,
+			[{"label":"WHAT HAPPENED TO SABEL'S HUSBAND?","id":"flood_act_two"}])
+	elif id=="flood_act_two":
+		var second: String = "Survivor and family evidence connects the independent returning rescue boat to Sabel's husband. He brought others toward shelter but never came home. Mang Celso of the Santelmo mooring was a different boatman. This heroism never cancelled the official duty." if story.previous_facts.get("returning_boat",false) == true else "Sabel's husband disappeared during the flood. A separate returning boat may have helped others, but the identity and route still need independent corroboration. Mang Celso was a different boatman; her privacy cannot be traded for a guess."
+		_talk("SABEL • THE BOAT THAT RETURNED",second,
+			[{"label":"WHY COULD THE KEEPER NOT SAVE EVERYONE?","id":"flood_act_three"}])
+	elif id=="flood_act_three":
+		var third: String = "The corroborated refuge record shows the Keeper guarded only the higher Balete ground, not the whole river. Lola kept that limit quiet, and must answer for it. The Keeper did not control the six earlier encounters; there is no magical absolution." if story.previous_facts.get("limited_refuge",false) == true else "The Balete refuge may have been limited, but the surviving evidence is incomplete. The Keeper cannot reveal unverified history. Lola must still explain what she knew; no one is required to forgive."
+		_talk("LOLA PASING • THE LIMITED REFUGE",third,
+			[{"label":"READ ALL SEVEN NIGHT RECORDS","id":"full_record"},
+			 {"label":"WALK AND SEE WHAT CHANGED","id":"close"}])
 	elif id=="finish_confirm":
 		_talk("THE MORNING AFTER • YOUR OWN PACE",
 			"Completing the seven-night story unlocks FREE ROAM. Afterward, walk the visible connections from Balete Grounds back through River, Farm, Wake, Ridge, Mango and Barrio Lawom. Your endings and NPC memories remain saved.",
@@ -1209,7 +1234,7 @@ func _refresh() -> void:
 		6: objective.text="Choose an evidence-credible ending. The dark choice requires deliberate confirmation."
 		7:
 			if World.free_roam_unlocked():
-				objective.text="FREE ROAM • ALL 7 MAPS OPEN • Follow the RIVER RETURN trail to explore the connected world."
+				objective.text="FREE ROAM • %s • All 7 maps open; RIVER RETURN leads home." % Postgame.mood(story.outcome)
 			else:
 				objective.text="THE MORNING AFTER • %s • Walk freely; finish when you choose." % story.outcome.to_upper()
 	if qa_view!=0:
@@ -1248,6 +1273,13 @@ func _refresh_hint() -> void:
 		7: goal=RIVER_TRAIL;label="MORNING WALK / RIVER"
 	waypoint.text="%s  •  %d STEPS" % [label,roundi(player_pos.distance_to(goal)/12)]
 
+func _open_final_record() -> void:
+	_open_notebook()
+	if notebook.visible and story.phase == 7:
+		notebook_text.text = Postgame.long_conclusion(
+			story.outcome,story.previous_facts,story.prior_outcomes())
+		_sync_ui()
+
 func _open_notebook() -> void:
 	if _modal() and not dialogue.visible and not options.visible and not outcome_panel.visible:
 		return
@@ -1281,6 +1313,9 @@ func _open_notebook() -> void:
 		for missing in story.readiness_missing():
 			content+="- "+missing+"\n"
 		content+="You may return to Night 6 or consciously proceed once prepared.\n"
+	if story.phase == 7:
+		content+="\n\nPOST-STORY WORLD STATE\n"+Postgame.mood(story.outcome)
+		content+="\n\n"+Postgame.outcome_message(story.outcome)
 	notebook_text.text=content
 	_sync_ui()
 
@@ -1359,6 +1394,7 @@ func _show_outcome() -> void:
 		child.queue_free()
 	var box:=_stack(outcome_panel)
 	_label(box,"TABI-TABI • THE MORNING AFTER",28,Color("#f0d39e"))
+	_label(box,Postgame.mood(story.outcome),18,Postgame.notice_color(story.outcome))
 	var title: String={
 		"true":"TRUE • TABI-TABI",
 		"good":"GOOD • THE QUIET BARRIO",
@@ -1372,9 +1408,12 @@ func _show_outcome() -> void:
 		"bittersweet":"Credible truths are public, but cooperation or serious commitments have broken down. Residents now know what happened; not all are ready to respond.",
 		"dark":"The known history was knowingly denied. Roots remain unsettled, but Bantay and the Apprentice survive, able to live with and revisit their choice."
 	}
-	_label(box,str(descriptions.get(story.outcome,"The community returns home.")),21,Color("#e7e6db"))
+	_label(box,str(descriptions.get(story.outcome,"The community returns home.")),19,Color("#e7e6db"))
+	# The detailed local impact belongs in the walkable dawn and long record,
+	# not another lengthy modal paragraph that clips at 140% font size.
 	_label(box,"LOLA'S PERSONAL STORY IS SEPARATE • SABEL'S PRIVACY REMAINS RESPECTED",17,Color("#b5d2ba"))
 	_button(box,"PLAY THE MORNING AFTER",func():_choose("epilogue"))
+	_button(box,"READ THE COMPLETE SEVEN-NIGHT HISTORY",_open_final_record)
 	_button(box,"REVIEW FINAL EVIDENCE",_open_notebook)
 	_button(box,"SAVE & MAIN MENU",_save_menu)
 	_sync_ui()

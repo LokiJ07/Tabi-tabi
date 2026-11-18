@@ -3,6 +3,7 @@ extends Node2D
 ## Entire night is grounded 2.5D art, canonical social deduction + group
 ## protection (not an HP fight). One connected Barrio Lawom world.
 const Story = preload("res://scripts/narrative/night04_state.gd")
+const Postgame = preload("res://scripts/narrative/postgame_conclusion.gd")
 const Save = preload("res://scripts/core/night04_save.gd")
 const Night03State = preload("res://scripts/narrative/night03_state.gd")
 const Night03Save = preload("res://scripts/core/night03_save.gd")
@@ -101,8 +102,12 @@ var observation_meter: ProgressBar
 
 var free_roam_mode := false
 
+const POSTGAME_MARKER := Vector2(-115,160)
+var postgame_ending := ""
+
 func _ready() -> void:
 	free_roam_mode = World.free_roam_unlocked()
+	postgame_ending = Postgame.saved_ending() if free_roam_mode else ""
 	name = "TabiTabiNight4"
 	set_meta("dimensional_art",DimensionalArt.STYLE_ID)
 	prefs.load_from()
@@ -475,10 +480,13 @@ func _draw() -> void:
 		if transparency > .005:
 			DimensionalArt.paint_grounded(self,actor["tex"],p,size2,
 				Color(1,1,1,transparency),.38*transparency,bob)
+	if postgame_ending != "":
+		Postgame.paint_region_2d(self,MAP.grow(110),POSTGAME_MARKER,
+			postgame_ending,player_pos)
 	var font := ThemeDB.fallback_font
 	draw_string(font,RETURN_RIDGE+Vector2(25,-90),"FLOOD RIDGE • RETURN",HORIZONTAL_ALIGNMENT_LEFT,320,18,Color("#e8cb94"))
 	draw_string(font,WAKE_HOUSE+Vector2(-160,206),"THE WAKE • LAMAY",HORIZONTAL_ALIGNMENT_LEFT,350,20,Color("#f7d79d"))
-	draw_string(font,Vector2(630,-140),"THE FARM TRAIL • "+("OPEN" if story.outcome != "" else "LOCKED"),HORIZONTAL_ALIGNMENT_LEFT,355,18,Color("#e3ca97"))
+	draw_string(font,Vector2(630,-140),"THE FARM TRAIL • "+("OPEN" if story.outcome != "" or free_roam_mode else "LOCKED"),HORIZONTAL_ALIGNMENT_LEFT,355,18,Color("#e3ca97"))
 
 func _fit_status_card() -> void:
 	# Same dynamic status height as Night 1–3: objectives must never overflow.
@@ -663,6 +671,8 @@ func _nearby() -> String:
 		return "return_ridge"
 	if player_pos.distance_to(FARM_TRAIL)<135:
 		return "farm_trail" if story.outcome != "" or free_roam_mode else "farm_locked"
+	if free_roam_mode and player_pos.distance_to(POSTGAME_MARKER)<130:
+		return "after_story"
 	if story.phase == 0:
 		for id in Story.CLUES:
 			if not story.clues.has(id) and player_pos.distance_to(CLUE_POS[id])<115:
@@ -689,6 +699,10 @@ func _interact() -> void:
 	var id := _nearby()
 	if id == "return_ridge":
 		_return_to_ridge()
+	elif id == "after_story":
+		_talk("THE WAKE • THE MORNING AFTER",
+			Postgame.region_after(postgame_ending,"night04",story.outcome),
+			[{"label":"CONTINUE WALKING THE VILLAGE","action":"close"}])
 	elif id == "farm_trail":
 		_travel_to_farm()
 	elif id == "farm_locked":

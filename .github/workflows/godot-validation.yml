@@ -148,6 +148,8 @@ jobs:
       - name: Night 7 playable Keeper scene, fixed Night 1 HUD and full evidence trial
         timeout-minutes: 4
         run: timeout --signal=TERM --kill-after=8s 180s godot --headless --audio-driver Dummy --path . --script res://tests/night07_scene_test.gd
+      - name: One seven-night Great Flood resolution, distinct ending moods and human consequences
+        run: godot --headless --path . --script res://tests/postgame_story_conclusion_test.gd
       - name: Post-ending FREE ROAM all seven maps, save preservation, chapter return and title
         timeout-minutes: 4
         run: timeout --signal=TERM --kill-after=8s 180s godot --headless --audio-driver Dummy --path . --script res://tests/postgame_free_roam_test.gd

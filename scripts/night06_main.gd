@@ -3,6 +3,7 @@ extends Node2D
 ## Authored connected river chapter. Historical reconstructions are source-backed
 ## hypotheses; environmental memory neither summons souls nor reveals facts.
 const Story = preload("res://scripts/narrative/night06_state.gd")
+const Postgame = preload("res://scripts/narrative/postgame_conclusion.gd")
 const Save = preload("res://scripts/core/night06_save.gd")
 const Night05State = preload("res://scripts/narrative/night05_state.gd")
 const Night05Save = preload("res://scripts/core/night05_save.gd")
@@ -95,8 +96,12 @@ var unsafe_notice_cooldown := 0.0
 
 var free_roam_mode := false
 
+const POSTGAME_MARKER := Vector2(-340,92)
+var postgame_ending := ""
+
 func _ready() -> void:
 	free_roam_mode = World.free_roam_unlocked()
+	postgame_ending = Postgame.saved_ending() if free_roam_mode else ""
 	name = "TabiTabiNight6"
 	set_meta("dimensional_art",SCENE_STYLE)
 	set_meta("canon","what-the-water-took-v1")
@@ -614,6 +619,9 @@ func _draw() -> void:
 	var bob := 0.0 if prefs.reduced_motion else absf(sin(walk_time))*2.8
 	Depth.paint_grounded(self,BANTAY,bantay_pos,Vector2(95,102),Color.WHITE,.31,bob)
 	Depth.paint_grounded(self,HERO,player_pos,Vector2(108,142),Color.WHITE,.37,bob)
+	if postgame_ending != "":
+		Postgame.paint_region_2d(self,MAP.grow(120),POSTGAME_MARKER,
+			postgame_ending,player_pos)
 	# Nearby ground signs are concise and contextual, never overlaid across
 	# the touchscreen or blocking the player during exploration.
 	if player_pos.distance_to(RETURN_FARM)<270:
@@ -627,7 +635,7 @@ func _draw() -> void:
 			"OLD CROSSING",HORIZONTAL_ALIGNMENT_LEFT,220,16,Color("#f3e6be"))
 	if (story.outcome != "" or free_roam_mode) and player_pos.distance_to(Vector2(800,530))<280:
 		draw_string(ThemeDB.fallback_font,Vector2(825,476),
-			"NIGHT 7 • NOT YET OPEN",HORIZONTAL_ALIGNMENT_LEFT,310,15,Color("#f2d89e"))
+			"NIGHT 7 • OPEN",HORIZONTAL_ALIGNMENT_LEFT,310,15,Color("#f2d89e"))
 
 func _fit_status_card() -> void:
 	if status_panel == null or status_stack == null or not is_inside_tree(): return
@@ -806,6 +814,7 @@ func _hold_move(dir: String,on: bool) -> void:
 
 func _nearby() -> String:
 	if (story.outcome != "" or free_roam_mode) and World.implemented("night07") 			and player_pos.distance_to(NIGHT07_GATE)<135: return "balete_gate"
+	if free_roam_mode and player_pos.distance_to(POSTGAME_MARKER)<130: return "after_story"
 	if player_pos.distance_to(RETURN_FARM)<125: return "return_farm"
 	if story.phase == 0:
 		if story.dado_choice == "unasked" and player_pos.distance_to(DADO_AT)<130:
@@ -838,6 +847,10 @@ func _interact() -> void:
 	var id := _nearby()
 	if id == "return_farm":
 		_return_farm()
+	elif id == "after_story":
+		_talk("THE RIVER • THE FINAL HISTORICAL RECORD",
+			Postgame.region_after(postgame_ending,"night06",story.outcome),
+			[{"label":"FOLLOW THE RIVER ROAD","action":"close"}])
 	elif id == "balete_gate":
 		_travel_to_balete()
 	elif id == "dado":

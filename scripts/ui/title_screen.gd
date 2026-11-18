@@ -15,6 +15,7 @@ const Night06Save = preload("res://scripts/core/night06_save.gd")
 const Night06State = preload("res://scripts/narrative/night06_state.gd")
 const Night07Save = preload("res://scripts/core/night07_save.gd")
 const World = preload("res://scripts/core/connected_world.gd")
+const Postgame = preload("res://scripts/narrative/postgame_conclusion.gd")
 const Night03State = preload("res://scripts/narrative/night03_state.gd")
 const Night04Save = preload("res://scripts/core/night04_save.gd")
 const Night02State = preload("res://scripts/narrative/night02_state.gd")
@@ -367,7 +368,7 @@ func _build_menu() -> void:
 		if item is Button:
 			(item as Button).custom_minimum_size.y = 48.0
 	var chapter := Label.new()
-	chapter.text = "SEVEN NIGHTS • ONE STORY • FOUR MEANINGFUL ENDINGS"
+	chapter.text = "BARRIO LAWOM • "+Postgame.mood(Postgame.saved_ending()) 		if World.free_roam_unlocked() else "SEVEN NIGHTS • ONE STORY • FOUR MEANINGFUL ENDINGS"
 	chapter.anchor_left = 0.54
 	chapter.anchor_right = 0.99
 	chapter.anchor_top = 0.65
