@@ -4,6 +4,7 @@ extends SceneTree
 ## treating a passing build or a sprite-import as "visual QA complete".
 const Walk = preload("res://scripts/world/shared_walkability_2d.gd")
 const Hut = preload("res://scripts/world/lola_hut_interior.gd")
+const World = preload("res://scripts/core/connected_world.gd")
 const Night2Scene = preload("res://scenes/night02.tscn")
 var failures := 0
 
@@ -16,6 +17,10 @@ func _initialize() -> void:
 	call_deferred("_run")
 
 func _run() -> void:
+	check(not Walk.is_blocked(2,World.ARRIVAL_MANGO),
+		"night-1 arrival must not spawn inside the shelter footprint")
+	check(World.ARRIVAL_MANGO.distance_to(World.TRAIL_MANGO)>65.0,
+		"entry must not instantly return the player to Night 1")
 	# These are the exact two roof/treetop failures reported from Android.
 	check(Walk.scenery_covers_actor(2,Vector2(-595,320)),
 		"an actor behind Safe Shelter must be painted before the roof")
