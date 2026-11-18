@@ -128,8 +128,10 @@ func _run() -> void:
 	game._interact()
 	check(game.story.phase==2,"public consent-based gathering opens Balete root gate")
 	game._choose("close")
+	game.player_pos=game.GATE+Vector2(-141,0)
 	game._interact()
-	check(game.story.phase==3,"Keeper appears without omniscient fact injection")
+	check(game.story.phase==3 and game.player_pos==game.GATE,
+		"Keeper reveal grounds side-approaching players on first safe root threshold")
 	game._choose("close")
 	for action in State.PATH_RESPONSES:
 		game.player_pos=game.PATH_STONES[game.story.path_index]
