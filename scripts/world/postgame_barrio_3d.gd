@@ -76,7 +76,7 @@ static func ensure(world: Node3D) -> Node3D:
 	return root
 
 static func update(root: Node3D, fraction: float, elapsed: float,
-		reduced_motion: bool) -> void:
+		reduced_motion: bool, village_mood: String = "healing") -> void:
 	if root == null:
 		return
 	var hour := fraction*24.0
@@ -105,7 +105,7 @@ static func update(root: Node3D, fraction: float, elapsed: float,
 	var boat := root.get_node_or_null("WorkingFishingBanca") as Node3D
 	if boat != null:
 		boat.visible = hour >= 5.5 and hour < 16.5
-		boat.position = Vector3(-15.0,.12,0.5+(0.0 if reduced_motion else sin(elapsed*.09)*3.2))
+		boat.position = Vector3(-15.0,.12,0.5+(0.0 if reduced_motion or village_mood != "restored" else sin(elapsed*.09)*3.2))
 		Banca.animate(boat, elapsed, reduced_motion)
 	var market := root.get_node_or_null("Market table") as MeshInstance3D
 	if market != null:
