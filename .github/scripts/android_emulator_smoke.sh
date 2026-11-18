@@ -71,7 +71,9 @@ fi
 
 # The real START GAME button occupies this location on our 2340x1080 landscape
 # emulator. The previous fixed (780, 555) recovery tap opened SETTINGS instead.
-adb shell input tap 520 370
+# The seven-chapter title shifted START GAME above the old disabled
+# CONTINUE row. Tap the verified top menu action, not the old y=370.
+adb shell input tap 520 300
 sleep 7
 scene_ready=0
 if adb logcat -d -v brief | grep -q "NIGHT1_QA_GAMEPLAY_SCENE_READY"; then
