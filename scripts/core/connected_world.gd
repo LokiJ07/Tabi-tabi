@@ -120,6 +120,10 @@ static func unlock_free_roam() -> bool:
 		return false
 	var record: Dictionary = read()
 	var outcomes: Dictionary = record.get("outcomes",{})
+	# Reopening the title must not rewrite/back up the full world JSON on
+	# every session when the unlock has already been safely persisted.
+	if record.get("free_roam",false) == true 			and str(outcomes.get("night07","")) == ending.outcome:
+		return true
 	outcomes["night07"] = ending.outcome
 	record["outcomes"] = outcomes
 	record["free_roam"] = true

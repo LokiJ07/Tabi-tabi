@@ -510,8 +510,13 @@ func _enter_night2() -> void:
 func _has_save() -> bool:
 	return FileAccess.file_exists(Save.PATH) or FileAccess.file_exists(Save.PATH + ".bak")
 
+func _has_any_story_progress() -> bool:
+	# An old/missing Night 1 file must NOT make New Story wipe the remaining
+	# completed chapter saves without a destructive-reset confirmation.
+	return _has_save() or Night02Save.exists() or Night03Save.exists() 		or Night04Save.exists() or Night05Save.exists() 		or Night06Save.exists() or Night07Save.exists() 		or FileAccess.file_exists(World.PATH) or FileAccess.file_exists(World.PATH+".bak")
+
 func _start_game() -> void:
-	if _has_save():
+	if _has_any_story_progress():
 		new_game_dialog.popup_centered(Vector2i(650, 220))
 	else:
 		_enter_game(true)

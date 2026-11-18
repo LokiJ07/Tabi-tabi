@@ -115,6 +115,8 @@ func _run() -> void:
 	await process_frame
 	check(not title.continue_button.disabled and title.continue_button.text.begins_with("FREE ROAM"),
 		"title invites Explore All 7 Maps instead of restarting Night 1")
+	check(title._has_any_story_progress(),
+		"new story must require explicit reset confirmation even if Night 1 is missing")
 	check(title._resume_free_roam_at("night04") and World.free_roam_resume_region()=="night04",
 		"direct chapter picker updates last-visited postgame region")
 	title.queue_free()
