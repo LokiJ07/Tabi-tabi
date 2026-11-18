@@ -42,6 +42,11 @@ const TREE := Vector2(245, -120)
 const OBSERVATION := Vector2(-25, -330)
 const PLAYER_SPEED := 255.0
 const MAP_LIMIT := Rect2(-950, -690, 1900, 1420)
+# Development camera views are also REAL world positions. Never teleport
+# through walls or inside illustrated leaves when taking emulator screenshots.
+const QA_MANGO_POINT := Vector2(120,95)
+const QA_SHELTER_POINT := Vector2(-640,515)
+const QA_RETURN_POINT := Vector2(-665,500)
 const TARGETS := {
 	"fallen_limb": Vector2(470, 82),
 	"exposed_roots": Vector2(342, 250),
@@ -309,18 +314,18 @@ func _unhandled_input(event: InputEvent) -> void:
 			debug_dusk_preview = false
 			debug_night_reveal = false
 			if key.keycode == KEY_F3:
-				player_pos = Vector2(90,-270)
+				player_pos = QA_MANGO_POINT
 				print("NIGHT2_QA_MANGO_DAY_VIEW")
 			elif key.keycode == KEY_F4:
 				debug_night_reveal = true
-				player_pos = Vector2(-595,405)
+				player_pos = QA_SHELTER_POINT
 				print("NIGHT2_QA_SHELTER_NIGHT_VIEW")
 			elif key.keycode == KEY_F5:
-				player_pos = Vector2(-645, 455)
+				player_pos = QA_RETURN_POINT
 				print("NIGHT2_QA_RETURN_TRAIL_VIEW")
 			elif key.keycode == KEY_F6:
 				debug_dusk_preview = true
-				player_pos = Vector2(90,-270)
+				player_pos = QA_MANGO_POINT
 				print("NIGHT2_QA_DUSK_VIEW")
 			elif key.keycode == KEY_F7:
 				player_pos = Vector2(-345,-315)
@@ -330,9 +335,11 @@ func _unhandled_input(event: InputEvent) -> void:
 				print("NIGHT2_QA_ROUTE_VIEW")
 			else:
 				debug_night_reveal = true
-				player_pos = Vector2(90,-270)
+				player_pos = QA_MANGO_POINT
 				print("NIGHT2_QA_MANGO_VIEW")
-			dog_pos = player_pos+Vector2(-42,25)
+			# The QA camera must obey the same walkable rules as the player.
+			player_pos = Walkability.repair_saved_position(2,player_pos)
+			dog_pos = Walkability.repair_saved_position(2,player_pos+Vector2(-42,25))
 			camera.position = player_pos
 			get_viewport().set_input_as_handled()
 
