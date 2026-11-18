@@ -503,7 +503,7 @@ fi
 # Exact Night 7 QA branch: capture the actual Android-rendered Balete,
 # final root challenge and memorial in the live Godot scene. These are
 # DEBUG ONLY key positions and do not mutate the canonical story/save.
-if [ "${GITHUB_REF:-}" = "refs/heads/feature/night07-balete-finale" ]; then
+if [ "${GITHUB_REF:-}" = "refs/heads/feature/night07-balete-finale" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/rendered-gallery-nights1-7" ]; then
   adb shell am force-stop "$PKG" || true
   adb shell monkey -p "$PKG" -c android.intent.category.LAUNCHER 1
   sleep 8
@@ -533,6 +533,36 @@ if [ "${GITHUB_REF:-}" = "refs/heads/feature/night07-balete-finale" ]; then
   fi
   adb logcat -d -v brief | grep -Ei 'NIGHT7_QA|Godot|AndroidRuntime' | tail -n 160 > build/android-night7-log.txt || true
   echo "PASS: real Android Night 7 Balete, connected road and ancient Keeper rendered"
+fi
+
+
+# Screenshot-only QA fixtures to show the actual postgame renderer at day and
+# night without claiming a tester completed all seven chapters. These frames
+# are SYNTHETIC COMPLETED-SAVE PREVIEWS; the canonical gameplay and main
+# branch are unchanged.
+if [ "${GITHUB_REF:-}" = "refs/heads/feature/rendered-gallery-nights1-7" ]; then
+  for entry in "133 DAY day" "134 NIGHT night"; do
+    set -- $entry
+    adb shell am force-stop "$PKG" || true
+    adb shell monkey -p "$PKG" -c android.intent.category.LAUNCHER 1
+    sleep 8
+    adb shell input keyevent "$1" # Debug title F3=day / F4=night fixture
+    sleep 7
+    if ! adb logcat -d -v brief | grep -q "POSTGAME_QA_SYNTHETIC_$2_SCENE_READY"; then
+      echo "ERROR: missing synthetic postgame QA marker $2"
+      adb logcat -d -v brief | grep -Ei 'POSTGAME|SCRIPT ERROR|Godot' | tail -n 120 || true
+      exit 1
+    fi
+    adb shell input keyevent 136 # F6 Night1 QA camera: actual central barrio
+    sleep 5
+    adb exec-out screencap -p > "build/android-postgame-synthetic-$3.png"
+    python3 .github/scripts/assert_gameplay_visible.py "build/android-postgame-synthetic-$3.png"
+  done
+  if cmp -s build/android-postgame-synthetic-day.png build/android-postgame-synthetic-night.png; then
+    echo "ERROR: postgame day and night QA frames are identical"
+    exit 1
+  fi
+  echo "PASS: emulator rendered postgame populated village at two simulated times"
 fi
 
 adb logcat -d -s AndroidRuntime:E Godot:E GodotEngine:E > build/android-night1-launch-log.txt || true
