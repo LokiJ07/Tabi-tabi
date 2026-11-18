@@ -588,7 +588,9 @@ func _toggle_title_motion() -> void:
 
 func _open_settings() -> void:
 	settings_backdrop.show()
+	settings_panel.show()
 	_refresh_settings()
+	print("TITLE_QA_OPTIONS_OPEN")
 
 func _credits() -> void:
 	var dialog := AcceptDialog.new()

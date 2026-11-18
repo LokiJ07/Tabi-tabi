@@ -807,6 +807,7 @@ func _open_options() -> void:
 		return
 	options.show()
 	_sync_ui()
+	print("NIGHT7_QA_OPTIONS_OPEN")
 
 func _retry_saved() -> void:
 	if _modal():

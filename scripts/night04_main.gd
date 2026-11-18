@@ -964,6 +964,7 @@ func _open_options() -> void:
 	modal_backdrop.show()
 	options.show()
 	_sync_ui()
+	print("NIGHT4_QA_OPTIONS_OPEN")
 
 func _confirm_retreat() -> void:
 	if _modal() or story.outcome != "":

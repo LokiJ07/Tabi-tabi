@@ -1222,6 +1222,7 @@ func _open_options() -> void:
 	if dialogue.visible or ending.visible: return
 	options.show()
 	_sync_ui()
+	print("NIGHT6_QA_OPTIONS_OPEN")
 
 func _retry_from_save() -> void:
 	if _modal(): return

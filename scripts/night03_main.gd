@@ -1013,6 +1013,7 @@ func _open_options() -> void:
 		return
 	options_panel.show()
 	_sync_hud()
+	print("NIGHT3_QA_OPTIONS_OPEN")
 
 func _close_options() -> void:
 	options_panel.hide()

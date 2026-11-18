@@ -1693,6 +1693,7 @@ func _open_settings() -> void:
 	settings_panel.show()
 	_refresh_options()
 	_sync_modal_ui()
+	print("NIGHT1_QA_OPTIONS_OPEN")
 
 
 func _build_navigation_confirmations(parent: Control) -> void:

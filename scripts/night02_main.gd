@@ -1323,6 +1323,8 @@ func _open_options() -> void:
 	motion = Vector2.ZERO
 	held_moves.clear()
 	options_panel.show()
+	_sync_gameplay_hud()
+	print("NIGHT2_QA_OPTIONS_OPEN")
 
 func _auto_save() -> bool:
 	story.player_position = player_pos
