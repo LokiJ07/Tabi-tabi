@@ -301,7 +301,7 @@ func _paint_hut(foot: Vector2,w: float,lit: bool) -> void:
 
 func _draw() -> void:
 	var night:=_stage()>=2
-	var morning:=story.phase == 7 or qa_view == 4
+	var morning: bool = story.phase == 7 or qa_view == 4
 	draw_rect(MAP.grow(450),Color("#2c4940"))
 	Landscape.parallax_ridges(self,MAP.grow(280),camera.position,7,3 if night else 0)
 	for band in range(26):
