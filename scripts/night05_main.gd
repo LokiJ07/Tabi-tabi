@@ -159,7 +159,8 @@ func _ready() -> void:
 	ambient.set_audio_level(prefs.audio_level)
 	_build_ui()
 	_refresh()
-	if story.outcome != "":
+	var postgame_ready := get_node_or_null("/root/PostgameClock")
+	if story.outcome != "" and not (postgame_ready != null and postgame_ready.is_active()):
 		_show_ending()
 	elif story.phase == 0 and story.clues.is_empty():
 		_talk("LOLA PASING • THE OLD PROMISE",
@@ -181,6 +182,14 @@ func _modal() -> bool:
 	return dialogue.visible or notes.visible or options.visible or ending.visible
 
 func _process(delta: float) -> void:
+	var village_clock := get_node_or_null("/root/PostgameClock")
+	if village_clock != null and village_clock.is_active() and objective != null:
+		var free_roam_status := "FREE ROAM • OLD FARM • LIVESTOCK & CROPS\n%s  |  %s" % [
+			village_clock.clock_label(),
+			"RESTORED" if village_clock.village_mood == "restored" else "REBUILDING"
+		]
+		if objective.text != free_roam_status:
+			objective.text = free_roam_status
 	elapsed += delta if not prefs.reduced_motion else 0.0
 	var stage_now := _stage()
 	if stage_now >= 2:
