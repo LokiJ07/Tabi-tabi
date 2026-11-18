@@ -1339,7 +1339,7 @@ func _enter_ridge() -> void:
 	motion = Vector2.ZERO
 	held_moves.clear()
 	print("TABI_WORLD_TRAVEL_MANGO_TO_RIDGE")
-	get_tree().change_scene_to_file(ConnectedWorld.scene_for("night03"))
+	SceneTransit.change_to_file(ConnectedWorld.scene_for("night03"))
 
 
 func _return_to_barrio() -> void:
@@ -1356,7 +1356,7 @@ func _return_to_barrio() -> void:
 	motion = Vector2.ZERO
 	held_moves.clear()
 	print("TABI_WORLD_TRAVEL_MANGO_TO_BARRIO")
-	get_tree().change_scene_to_file(ConnectedWorld.scene_for("barrio_lawom"))
+	SceneTransit.change_to_file(ConnectedWorld.scene_for("barrio_lawom"))
 
 func _save_and_notify() -> void:
 	if _auto_save():
@@ -1369,7 +1369,7 @@ func _save_and_main_menu() -> void:
 	if not _auto_save():
 		save_error.popup_centered(Vector2i(610,190))
 		return
-	get_tree().change_scene_to_file("res://scenes/title.tscn")
+	SceneTransit.change_to_file("res://scenes/title.tscn")
 
 func _save_and_quit() -> void:
 	if not _auto_save():
