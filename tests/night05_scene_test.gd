@@ -43,6 +43,16 @@ func _run() -> void:
 		"new isometric farm art uses shared style")
 	check(game.controls.get_node_or_null("QuestStatusCard") is PanelContainer,
 		"exact shared status-card component, not a new custom HUD")
+	# Contextual animal-gate sign must not sit under right-side touch buttons.
+	check(FarmArt.GATE_SIGN_AT.distance_to(game.SAFE_GATE) < 151.0
+		and FarmArt.GATE_SIGN_AT.x < game.SAFE_GATE.x,
+		"animal gate sign is located by the animal-only entrance")
+	var original_position: Vector2 = game.player_pos
+	game.player_pos = game.SAFE_GATE+Vector2(18,45)
+	check(game._gate_sign_visible(),"gate sign appears beside the actual gate")
+	game.player_pos = game.RETURN_WAKE
+	check(not game._gate_sign_visible(),"distant gate sign stays hidden instead of covering touch UI")
+	game.player_pos = original_position
 	# Visual parity gate: Night 4/5 must retain Night 1 slots, not just a shared color scheme.
 	for slot in [
 		["PrepareButton",-230.0,-444.0,180.0,56.0],

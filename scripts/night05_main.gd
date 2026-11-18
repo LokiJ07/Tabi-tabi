@@ -364,6 +364,9 @@ func _paint_farmhouse() -> void:
 	draw_rect(Rect2(at+Vector2(6,-8),Vector2(58,95)),Color("#765f47"),false,5.0)
 	# Interior glow is drawn once AFTER the darkness grade in _draw().
 
+func _gate_sign_visible() -> bool:
+	return player_pos.distance_to(SAFE_GATE) < 410.0
+
 func _draw() -> void:
 	draw_rect(MAP.grow(190),Color("#253a32"))
 	Landscape.parallax_ridges(self,MAP.grow(180),camera.position,4,_stage())
@@ -454,7 +457,7 @@ func _draw() -> void:
 		Vector2(375,-93),286.0,_stage()>=2)
 	# World signs may not cover Night 1's fixed right-side touch stack.
 	# Only reveal the gate label when its actual physical pen is nearby.
-	if player_pos.distance_to(SAFE_GATE) < 410.0:
+	if _gate_sign_visible():
 		FarmArt.paint_farm_sign(self,
 			FarmArt.gate_label(story.phase,story.preparations.has("safe_gate")),
 			FarmArt.GATE_SIGN_AT,196.0,_stage()>=2)

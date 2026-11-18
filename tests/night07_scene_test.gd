@@ -70,9 +70,22 @@ func _run() -> void:
 		"Night 7 LOOK anchor unchanged from Night 1")
 	check(World.implemented("night07") and World.seven_night_chain_is_connected(),
 		"all seven nights are real connected regions")
+	game.story.phase=2
+	check(not game._keeper_gate_open(),
+		"Keeper gate stays physically closed until the initial reveal")
 	game.story.phase=3
+	game.story.path_index=0
+	check(game._keeper_gate_open() and game._safe_retry_foot()==game.GATE,
+		"reveal opens only first safe root and preserves checkpoint")
+	check(not game._safe_segment(game.PATH_STONES[2]),
+		"unobserved third root is not a free walkway from the gate")
 	check(game._safe_segment(game.PATH_STONES[0]) and not game._safe_segment(Vector2(-790,630)),
 		"moving roots have mapped safe corridor and unsafe outside")
+	game.story.phase=5
+	game.story.awake_index=0
+	check(game._safe_retry_foot()==game.PATH_STONES[2]
+		and not game._safe_segment(game.AWAKENED_STONES[2]),
+		"awakened-root future steps lock; safe save reload returns to entrance")
 	game.story.phase=0
 	check(game.story.phase==0 and game.story.night06_outcome=="partial",
 		"real source data seeds honest readiness; no fake six-resolve demand")
