@@ -153,7 +153,7 @@ func _ready() -> void:
 	_create_ui()
 	_apply_preferences()
 	_restore_story()
-	if PostgameClock.is_active() and daynight_button != null:
+	if _postgame_is_active() and daynight_button != null:
 		daynight_button.text = "AUTO CYCLE"
 		daynight_button.disabled = true
 		daynight_button.tooltip_text = "After the finale, day and night advance automatically."
@@ -172,8 +172,8 @@ func _ready() -> void:
 func _physics_process(delta: float) -> void:
 	# The complete seven-night epilogue replaces the old time switch with
 	# one shared continuous clock; unfinished chapters stay story-controlled.
-	if PostgameClock.is_active():
-		var world_night: bool = PostgameClock.is_night()
+	if _postgame_is_active():
+		var world_night: bool = get_node("/root/PostgameClock").is_night()
 		if is_night != world_night:
 			is_night = world_night
 			living_sound.set_night(is_night)
@@ -1471,8 +1471,13 @@ func _close_dialogue() -> void:
 	_sync_modal_ui()
 
 
+func _postgame_is_active() -> bool:
+	var clock := get_node_or_null("/root/PostgameClock")
+	return clock != null and clock.is_active()
+
+
 func _toggle_night() -> void:
-	if PostgameClock.is_active():
+	if _postgame_is_active():
 		return # Free-roam time is automatic and cannot be manually overridden.
 	if in_lola_hut:
 		_show_dialogue("Finish breakfast and use Lola's door to return outside before starting the night.")
