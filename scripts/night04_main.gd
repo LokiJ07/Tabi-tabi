@@ -136,7 +136,8 @@ func _ready() -> void:
 	ambient.set_audio_level(prefs.audio_level)
 	_build_ui()
 	_refresh()
-	if story.outcome != "":
+	var postgame_ready := get_node_or_null("/root/PostgameClock")
+	if story.outcome != "" and not (postgame_ready != null and postgame_ready.is_active()):
 		_show_ending()
 	elif story.phase == 0 and story.clues.is_empty():
 		_talk("LOLA PASING","Night 4 — The Wake. Ang kasubo sa pamilya dili ebidensya sa dautan. Attend the mourners, listen before judging, and protect the people who are left alone.",
@@ -165,6 +166,14 @@ func _manananggal_approach() -> Vector2:
 	return Vector2(270,-335) # threat descends from roofline toward lit wake
 
 func _process(delta: float) -> void:
+	var village_clock := get_node_or_null("/root/PostgameClock")
+	if village_clock != null and village_clock.is_active() and objective != null:
+		var free_roam_status := "FREE ROAM • WAKE HOUSE • COMMUNITY CARE\n%s  |  %s" % [
+			village_clock.clock_label(),
+			"RESTORED" if village_clock.village_mood == "restored" else "REBUILDING"
+		]
+		if objective.text != free_roam_status:
+			objective.text = free_roam_status
 	elapsed += delta if not prefs.reduced_motion else 0.0
 	var stage_now := _stage()
 	if stage_now >= 2:
