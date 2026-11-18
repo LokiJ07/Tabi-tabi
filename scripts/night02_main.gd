@@ -11,6 +11,7 @@ const Preferences = preload("res://scripts/core/preferences.gd")
 const Night02Ambience = preload("res://scripts/audio/night02_ambience.gd")
 const ConnectedWorld = preload("res://scripts/core/connected_world.gd")
 const SharedHUD = preload("res://scripts/ui/shared_hud.gd")
+const SharedOptions = preload("res://scripts/ui/shared_options.gd")
 const Walkability = preload("res://scripts/world/shared_walkability_2d.gd")
 const PostgameResidents = preload("res://scripts/world/postgame_residents.gd")
 const SharedDialogueMotion = preload("res://scripts/ui/shared_dialogue_motion.gd")
@@ -909,27 +910,15 @@ func _build_ui() -> void:
 	_action(notebook_stack, "CLOSE NOTEBOOK", func(): notebook.hide())
 	notebook.hide()
 
-	options_panel = PanelContainer.new()
-	options_panel.name = "Night2Options"
-	# A pause menu with four actions should not consume almost the whole
-	# screen and leave a giant empty blue rectangle on landscape phones.
-	options_panel.anchor_left = .18
-	options_panel.anchor_right = .82
-	options_panel.anchor_top = .18
-	options_panel.anchor_bottom = .81
-	SharedHUD.style_modal_panel(options_panel)
-	layout.add_child(options_panel)
-	var opts := VBoxContainer.new()
-	options_panel.add_child(opts)
-	var oh := Label.new()
-	oh.text = "NIGHT 2 • PAUSE AND OPTIONS"
-	oh.add_theme_font_size_override("font_size", 28)
-	opts.add_child(oh)
-	_action(opts, "SAVE PROGRESS", func(): _save_and_notify())
-	_action(opts, "SAVE & MAIN MENU", func(): menu_confirm.popup_centered(Vector2i(610, 210)))
-	_action(opts, "SAVE & QUIT GAME", func(): quit_confirm.popup_centered(Vector2i(610, 210)))
-	_action(opts, "BACK TO GAME", func(): options_panel.hide())
-	options_panel.hide()
+	var unified := SharedOptions.create(layout,prefs,"NIGHT 2 • KAPRE",{
+		"save": _save_and_notify,
+		"notes": func(): options_panel.hide(); _open_notebook(),
+		"menu": _save_and_main_menu,
+		"quit": _save_and_quit,
+		"back": func(): options_panel.hide(); _sync_gameplay_hud(),
+		"confirm_navigation": true
+	},_apply_shared_settings,"Night2Options")
+	options_panel = unified["panel"]
 
 	ending_panel = PanelContainer.new()
 	ending_panel.name = "Night2Aftermath"
@@ -1320,6 +1309,12 @@ func _open_notebook() -> void:
 		lines += "\nENDING: %s. The safety route remains part of the community record.\n" % story.outcome.to_upper()
 	notebook_content.text = lines
 	notebook.show()
+
+func _apply_shared_settings() -> void:
+	camera.position_smoothing_enabled = not prefs.reduced_motion
+	if ambient_sound != null:
+		ambient_sound.set_audio_level(prefs.audio_level)
+	_sync_gameplay_hud()
 
 func _open_options() -> void:
 	if dialogue.visible or notebook.visible or ending_panel.visible:

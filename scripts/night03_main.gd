@@ -10,6 +10,7 @@ const Night02State = preload("res://scripts/narrative/night02_state.gd")
 const ConnectedWorld = preload("res://scripts/core/connected_world.gd")
 const Preferences = preload("res://scripts/core/preferences.gd")
 const SharedHUD = preload("res://scripts/ui/shared_hud.gd")
+const SharedOptions = preload("res://scripts/ui/shared_options.gd")
 const Walkability = preload("res://scripts/world/shared_walkability_2d.gd")
 const PostgameResidents = preload("res://scripts/world/postgame_residents.gd")
 const SharedMotion = preload("res://scripts/ui/shared_dialogue_motion.gd")
@@ -670,23 +671,16 @@ func _build_ui() -> void:
 	notes_scroll.add_child(notebook_body)
 	_modal_button(notes,"CLOSE NOTEBOOK",func(): _close_notebook())
 	notebook.hide()
-	options_panel = PanelContainer.new()
-	options_panel.name = "Night3Options"
-	options_panel.anchor_left = .18
-	options_panel.anchor_right = .82
-	options_panel.anchor_top = .15
-	options_panel.anchor_bottom = .84
-	SharedHUD.style_modal_panel(options_panel)
-	layout.add_child(options_panel)
-	var menu := VBoxContainer.new()
-	menu.add_theme_constant_override("separation",12)
-	options_panel.add_child(menu)
-	_label(menu,"NIGHT 3  /  PAUSE & OPTIONS",29,Color("#f2d6a4"))
-	_modal_button(menu,"SAVE PROGRESS",_save_feedback)
-	_modal_button(menu,"RETURN TO OLD MANGO (SAVE)",_return_to_mango)
-	_modal_button(menu,"SAVE & MAIN MENU",_save_menu)
-	_modal_button(menu,"BACK TO GAME",_close_options)
-	options_panel.hide()
+	var unified := SharedOptions.create(layout,prefs,"NIGHT 3 • TIKBALANG",{
+		"save": _save_feedback,
+		"notes": func(): _close_options(); _open_notebook(),
+		"menu": _save_menu,
+		"quit": _quit_with_save,
+		"back": _close_options,
+		"confirm_navigation": true
+	},_apply_shared_settings,"Night3Options")
+	options_panel = unified["panel"]
+
 	ending_panel = PanelContainer.new()
 	ending_panel.name = "Night3Aftermath"
 	ending_panel.anchor_left = .20
@@ -1008,6 +1002,12 @@ func _close_notebook() -> void:
 	notebook.hide()
 	_sync_hud()
 
+func _apply_shared_settings() -> void:
+	camera.position_smoothing_enabled = not prefs.reduced_motion
+	if ambient != null:
+		ambient.set_audio_level(prefs.audio_level)
+	_sync_hud()
+
 func _open_options() -> void:
 	if dialogue.visible or notebook.visible or ending_panel.visible:
 		return
@@ -1056,6 +1056,12 @@ func _save_feedback() -> void:
 			[{"label":"CONTINUE","action":"close"}])
 	else:
 		save_error.popup_centered(Vector2i(610,190))
+
+func _quit_with_save() -> void:
+	if not _auto_save():
+		save_error.popup_centered(Vector2i(600,190))
+		return
+	get_tree().quit()
 
 func _save_menu() -> void:
 	if not _auto_save():

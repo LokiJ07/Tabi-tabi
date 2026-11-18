@@ -9,6 +9,7 @@ const RiverSave = preload("res://scripts/core/night06_save.gd")
 const World = preload("res://scripts/core/connected_world.gd")
 const Prefs = preload("res://scripts/core/preferences.gd")
 const SharedHUD = preload("res://scripts/ui/shared_hud.gd")
+const SharedOptions = preload("res://scripts/ui/shared_options.gd")
 const Walkability = preload("res://scripts/world/shared_walkability_2d.gd")
 const SharedDialogueMotion = preload("res://scripts/ui/shared_dialogue_motion.gd")
 const Depth = preload("res://scripts/visuals/layered_25d.gd")
@@ -416,14 +417,16 @@ func _build_ui() -> void:
 	notes_text = _label(scroll,"",21,Color("#e4e8d9"))
 	notes_text.custom_minimum_size.x = 600
 	_button(ns,"RETURN TO BALETE GROUNDS",func():notes.hide();_sync_ui())
-	options = _panel(backdrop,"Night7Options",Vector4(.22,.14,.78,.86))
-	var os := _stack(options)
-	_label(os,"PAUSE • NIGHT 7",30,Color("#f0daa8"))
-	_button(os,"SAVE OFFLINE",_save_feedback)
-	_button(os,"FIELD NOTES",_open_notes)
-	_button(os,"SAVE & MAIN MENU",_save_menu)
-	_button(os,"CLOSE",func():options.hide();_sync_ui())
-	ending = _panel(backdrop,"Night7Epilogue",Vector4(.13,.10,.87,.90))
+	var unified := SharedOptions.create(backdrop,prefs,"NIGHT 7 • BALETE GROUNDS",{
+		"save": _save_feedback,
+		"notes": func(): options.hide(); _open_notes(); _sync_ui(),
+		"menu": _save_menu,
+		"quit": _quit_with_save,
+		"back": func(): options.hide(); _sync_ui(),
+		"confirm_navigation": true
+	},_apply_shared_settings,"Night7Options")
+	options = unified["panel"]
+		ending = _panel(backdrop,"Night7Epilogue",Vector4(.13,.10,.87,.90))
 	save_error = AcceptDialog.new()
 	save_error.dialog_text = "Unable to save offline. Please check available storage."
 	hud.add_child(save_error)
@@ -795,6 +798,10 @@ func _open_preparation() -> void:
 		"Observe first. Avoid unstable roots and damaged waymarks. Record what the documents actually prove, respect Sabel and Dado's right to privacy, and hold OBSERVE at each marked stone.",
 		[{"label":"RETURN TO THE PATH","action":"close"}])
 
+func _apply_shared_settings() -> void:
+	camera.position_smoothing_enabled = not prefs.reduced_motion
+	_sync_ui()
+
 func _open_options() -> void:
 	if dialogue.visible or ending.visible:
 		return
@@ -824,6 +831,12 @@ func _save_feedback() -> void:
 	options.hide()
 	_talk("OFFLINE RECORD SAVED","Night 7 checkpoint saved. All earlier chapters remain intact.",
 		[{"label":"CONTINUE","action":"close"}])
+
+func _quit_with_save() -> void:
+	if not _save_story():
+		save_error.popup_centered(Vector2i(600,190))
+		return
+	get_tree().quit()
 
 func _save_menu() -> void:
 	if not _save_story():

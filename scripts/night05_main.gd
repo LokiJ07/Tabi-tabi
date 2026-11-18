@@ -8,6 +8,7 @@ const Night04Save = preload("res://scripts/core/night04_save.gd")
 const World = preload("res://scripts/core/connected_world.gd")
 const Preferences = preload("res://scripts/core/preferences.gd")
 const SharedHUD = preload("res://scripts/ui/shared_hud.gd")
+const SharedOptions = preload("res://scripts/ui/shared_options.gd")
 const Walkability = preload("res://scripts/world/shared_walkability_2d.gd")
 const PostgameResidents = preload("res://scripts/world/postgame_residents.gd")
 const DialogueMotion = preload("res://scripts/ui/shared_dialogue_motion.gd")
@@ -675,14 +676,16 @@ func _build_ui() -> void:
 	notes_text = _label(scroll,"",21,Color("#dfebe1"))
 	notes_text.custom_minimum_size.x = 580
 	_button(nstack,"RETURN TO FARM",func():notes.hide())
-	options = _panel(modal_backdrop,"FarmOptions",Vector4(.22,.15,.78,.85))
-	var ostack := _stack(options)
-	_label(ostack,"PAUSE • NIGHT 5",32,Color("#f7dfab"))
-	_button(ostack,"SAVE OFFLINE",_save_feedback)
-	_button(ostack,"FIELD NOTES",_open_notes)
-	_button(ostack,"SAVE & MAIN MENU",_save_menu)
-	_button(ostack,"CLOSE",func(): options.hide())
-	ending = _panel(modal_backdrop,"FarmAftermath",Vector4(.16,.12,.84,.88))
+	var unified := SharedOptions.create(modal_backdrop,prefs,"NIGHT 5 • SIGBIN FARM",{
+		"save": _save_feedback,
+		"notes": func(): options.hide(); _open_notes(); _sync_ui(),
+		"menu": _save_menu,
+		"quit": _quit_with_save,
+		"back": func(): options.hide(); _sync_ui(),
+		"confirm_navigation": true
+	},_apply_shared_settings,"FarmOptions")
+	options = unified["panel"]
+		ending = _panel(modal_backdrop,"FarmAftermath",Vector4(.16,.12,.84,.88))
 	save_error = AcceptDialog.new()
 	save_error.dialog_text = "The offline record could not be saved. Check device storage."
 	hud.add_child(save_error)
@@ -1033,6 +1036,12 @@ func _retry_from_saved_checkpoint() -> void:
 		 {"label":"KEEP PLAYING","action":"close"}])
 
 
+func _apply_shared_settings() -> void:
+	camera.position_smoothing_enabled = not prefs.reduced_motion
+	if ambient != null:
+		ambient.set_audio_level(prefs.audio_level)
+	_sync_ui()
+
 func _open_options() -> void:
 	if dialogue.visible or ending.visible:
 		return
@@ -1062,6 +1071,12 @@ func _save_feedback() -> void:
 	options.hide()
 	_talk("FIELD NOTES","Night 5 saved offline. The previous FOUR night records are intact.",
 		[{"label":"CONTINUE","action":"close"}])
+
+func _quit_with_save() -> void:
+	if not _auto_save():
+		save_error.popup_centered(Vector2i(600,190))
+		return
+	get_tree().quit()
 
 func _save_menu() -> void:
 	if not _auto_save():

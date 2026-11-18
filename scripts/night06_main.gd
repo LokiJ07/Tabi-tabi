@@ -10,6 +10,7 @@ const World = preload("res://scripts/core/connected_world.gd")
 const Prefs = preload("res://scripts/core/preferences.gd")
 const RiverSound = preload("res://scripts/audio/night06_ambience.gd")
 const SharedHUD = preload("res://scripts/ui/shared_hud.gd")
+const SharedOptions = preload("res://scripts/ui/shared_options.gd")
 const Walkability = preload("res://scripts/world/shared_walkability_2d.gd")
 const PostgameResidents = preload("res://scripts/world/postgame_residents.gd")
 const PostgameDialogue = preload("res://scripts/narrative/postgame_dialogue.gd")
@@ -766,14 +767,16 @@ func _build_ui() -> void:
 	notes_text = _label(scroll,"",21,Color("#e5e7d8"))
 	notes_text.custom_minimum_size.x = 600
 	_button(ns,"RETURN TO RIVER",func():notes.hide();_sync_ui())
-	options = _panel(backdrop,"RiverOptions",Vector4(.22,.14,.78,.86))
-	var os := _stack(options)
-	_label(os,"PAUSE • NIGHT 6",30,Color("#ead49a"))
-	_button(os,"SAVE OFFLINE",_save_feedback)
-	_button(os,"FIELD NOTES",_open_notes)
-	_button(os,"SAVE & MAIN MENU",_save_menu)
-	_button(os,"CLOSE",func():options.hide();_sync_ui())
-	ending = _panel(backdrop,"RiverAftermath",Vector4(.16,.10,.84,.90))
+	var unified := SharedOptions.create(backdrop,prefs,"NIGHT 6 • RIVER",{
+		"save": _save_feedback,
+		"notes": func(): options.hide(); _open_notes(); _sync_ui(),
+		"menu": _save_menu,
+		"quit": _quit_with_save,
+		"back": func(): options.hide(); _sync_ui(),
+		"confirm_navigation": true
+	},_apply_shared_settings,"RiverOptions")
+	options = unified["panel"]
+		ending = _panel(backdrop,"RiverAftermath",Vector4(.16,.10,.84,.90))
 	save_error = AcceptDialog.new()
 	save_error.dialog_text = "Offline save failed. Check storage before continuing."
 	hud.add_child(save_error)
@@ -1209,6 +1212,12 @@ func _open_preparation() -> void:
 		"Use the original Night 1 thumb controls. Investigation comes first. When the river rises, prepare the rope anchor, lantern beacon and stable stones. Remain on marked ground; hold OBSERVE to read three separate surges.",
 		[{"label":"RETURN TO RIVER","action":"close"}])
 
+func _apply_shared_settings() -> void:
+	camera.position_smoothing_enabled = not prefs.reduced_motion
+	if ambient != null:
+		ambient.set_audio_level(prefs.audio_level)
+	_sync_ui()
+
 func _open_options() -> void:
 	if dialogue.visible or ending.visible: return
 	options.show()
@@ -1246,6 +1255,12 @@ func _save_feedback() -> void:
 	options.hide()
 	_talk("FIELD RECORD","Night 6 saved offline. Nights 1–5 remain unchanged.",
 		[{"label":"CONTINUE","action":"close"}])
+
+func _quit_with_save() -> void:
+	if not _save_story():
+		save_error.popup_centered(Vector2i(600,190))
+		return
+	get_tree().quit()
 
 func _save_menu() -> void:
 	if not _save_story():
