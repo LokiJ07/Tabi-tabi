@@ -117,7 +117,10 @@ var save_error: AcceptDialog
 var modal_backdrop: ColorRect
 var observation_meter: ProgressBar
 
+var free_roam_mode := false
+
 func _ready() -> void:
+	free_roam_mode = World.free_roam_unlocked()
 	name = "TabiTabiNight5"
 	set_meta("dimensional_art",DimensionalArt.STYLE_ID)
 	set_meta("art_contract",FarmArt.STYLE_ID)
@@ -160,7 +163,7 @@ func _ready() -> void:
 	_refresh()
 	# In post-story Free Roam, revisit a completed chapter as a live map.
 	# Don't repeatedly block the connected road with its old ending popup.
-	if story.outcome != "" and not World.free_roam_unlocked():
+	if story.outcome != "" and not free_roam_mode:
 		_show_ending()
 	elif story.phase == 0 and story.clues.is_empty():
 		_talk("LOLA PASING • THE OLD PROMISE",
@@ -212,7 +215,7 @@ func _process(delta: float) -> void:
 		# The future chapter's marked checkpoint is locked while its
 		# scene is absent; the road itself remains continuously visible.
 		player_pos = FarmArt.keep_player_before_locked_trail(
-			previous_foot,player_pos,FUTURE_TRAIL,not World.implemented("night06") or story.outcome == "")
+			previous_foot,player_pos,FUTURE_TRAIL,not World.implemented("night06") or (story.outcome == "" and not free_roam_mode))
 	bantay_pos = bantay_pos.lerp(player_pos+Vector2(-49,28),clampf(delta*3.2,0,1))
 	var framing_target := player_pos+aim*64.0
 	if story.phase == 3 or debug_farm_preview:
@@ -225,7 +228,7 @@ func _process(delta: float) -> void:
 		1.0 if prefs.reduced_motion else clampf(delta*4.5,0,1))
 	camera.position = camera.position.lerp(framing_target,
 		1.0 if prefs.reduced_motion else clampf(delta*4.5,0,1))
-	if not _modal() and not travel_in_progress and story.outcome != "" and player_pos.distance_to(FUTURE_TRAIL)<78:
+	if not _modal() and not travel_in_progress and (story.outcome != "" or free_roam_mode) and player_pos.distance_to(FUTURE_TRAIL)<78:
 		_travel_to_river()
 		return
 	if not _modal() and not travel_in_progress and player_pos.distance_to(RETURN_WAKE)<58:
@@ -478,7 +481,7 @@ func _draw() -> void:
 	# The main road visibly continues beyond this chapter's actual exit.
 	# A locked rope makes the missing next scene explicit, not a cut road.
 	FarmArt.paint_night06_trail_checkpoint(self,FUTURE_TRAIL,
-		not World.implemented("night06") or story.outcome == "",_stage()>=2)
+		not World.implemented("night06") or (story.outcome == "" and not free_roam_mode),_stage()>=2)
 	# Documented regional signs appear as an IN-WORLD animal rather than
 	# a static enemy: backward steps, two hinged ears, and cautious concealment.
 	if _stage() >= 2 or debug_farm_preview:
@@ -540,7 +543,7 @@ func _draw() -> void:
 	draw_string(font,RETURN_WAKE+Vector2(26,-90),"WAKE TRAIL • RETURN",HORIZONTAL_ALIGNMENT_LEFT,335,18,Color("#f3d8a6"))
 	draw_string(font,BARN_FOOT+Vector2(-141,62),"OLD BARN • UNSAFE TO ENTER",HORIZONTAL_ALIGNMENT_LEFT,430,18,Color("#efd8a3"))
 	draw_string(font,FUTURE_TRAIL+Vector2(-200,-45),
-		"HILL TRAIL • NIGHT 6 RIVER" if World.implemented("night06") and story.outcome != "" else "HILL TRAIL • FINISH FARM FIRST",
+		"HILL TRAIL • NIGHT 6 RIVER" if World.implemented("night06") and (story.outcome != "" or free_roam_mode) else "HILL TRAIL • FINISH FARM FIRST",
 		HORIZONTAL_ALIGNMENT_LEFT,410,17,Color("#e0c58f"))
 
 func _fit_status_card() -> void:
@@ -726,7 +729,7 @@ func _nearby() -> String:
 	if player_pos.distance_to(RETURN_WAKE)<125:
 		return "return_wake"
 	if player_pos.distance_to(FUTURE_TRAIL)<125:
-		return "trail_locked"
+		return "river_trail" if story.outcome != "" or free_roam_mode else "trail_locked"
 	if player_pos.distance_to(Vector2(350,-95))<110:
 		return "unsafe_barn"
 	if story.phase == 0:
@@ -755,8 +758,8 @@ func _interact() -> void:
 	var id := _nearby()
 	if id == "return_wake":
 		_return_to_wake()
-	elif id == "trail_locked":
-		if story.outcome != "" and World.implemented("night06"):
+	elif id == "trail_locked" or id == "river_trail":
+		if (story.outcome != "" or free_roam_mode) and World.implemented("night06"):
 			_travel_to_river()
 		else:
 			_talk("BANTAY • COMPLETE THE FARM FIRST",
@@ -1043,7 +1046,7 @@ func _save_menu() -> void:
 	get_tree().change_scene_to_file("res://scenes/title.tscn")
 
 func _travel_to_river() -> void:
-	if travel_in_progress or story.outcome == "":
+	if travel_in_progress or (story.outcome == "" and not free_roam_mode):
 		return
 	if not _auto_save() or not World.begin_travel("night05","night06",story.outcome):
 		save_error.popup_centered(Vector2i(600,180))

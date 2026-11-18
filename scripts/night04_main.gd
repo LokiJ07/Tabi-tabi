@@ -99,7 +99,10 @@ var save_error: AcceptDialog
 var modal_backdrop: ColorRect
 var observation_meter: ProgressBar
 
+var free_roam_mode := false
+
 func _ready() -> void:
+	free_roam_mode = World.free_roam_unlocked()
 	name = "TabiTabiNight4"
 	set_meta("dimensional_art",DimensionalArt.STYLE_ID)
 	prefs.load_from()
@@ -137,7 +140,7 @@ func _ready() -> void:
 	_refresh()
 	# In post-story Free Roam, revisit a completed chapter as a live map.
 	# Don't repeatedly block the connected road with its old ending popup.
-	if story.outcome != "" and not World.free_roam_unlocked():
+	if story.outcome != "" and not free_roam_mode:
 		_show_ending()
 	elif story.phase == 0 and story.clues.is_empty():
 		_talk("LOLA PASING","Night 4 — The Wake. Ang kasubo sa pamilya dili ebidensya sa dautan. Attend the mourners, listen before judging, and protect the people who are left alone.",
@@ -659,7 +662,7 @@ func _nearby() -> String:
 	if player_pos.distance_to(RETURN_RIDGE)<115:
 		return "return_ridge"
 	if player_pos.distance_to(FARM_TRAIL)<135:
-		return "farm_trail" if story.outcome != "" else "farm_locked"
+		return "farm_trail" if story.outcome != "" or free_roam_mode else "farm_locked"
 	if story.phase == 0:
 		for id in Story.CLUES:
 			if not story.clues.has(id) and player_pos.distance_to(CLUE_POS[id])<115:
@@ -950,7 +953,7 @@ func _save_menu() -> void:
 	get_tree().change_scene_to_file("res://scenes/title.tscn")
 
 func _travel_to_farm() -> void:
-	if travel_in_progress or story.outcome == "":
+	if travel_in_progress or (story.outcome == "" and not free_roam_mode):
 		return
 	if not _auto_save() or not World.begin_travel("night04","night05",story.outcome):
 		save_error.popup_centered(Vector2i(600,180))

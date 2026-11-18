@@ -136,7 +136,10 @@ func _light_stage() -> int:
 func _kapre_revealed() -> bool:
 	return (story.phase == 3 and story.outcome == "") or debug_night_reveal
 
+var free_roam_mode := false
+
 func _ready() -> void:
+	free_roam_mode = ConnectedWorld.free_roam_unlocked()
 	name = "TabiTabiNight2"
 	set_meta("dimensional_art", DimensionalArt.STYLE_ID)
 	prefs.load_from()
@@ -169,7 +172,7 @@ func _ready() -> void:
 	_rebuild_objective()
 	# In post-story Free Roam, revisit a completed chapter as a live map.
 	# Don't repeatedly block the connected road with its old ending popup.
-	if story.outcome != "" and not ConnectedWorld.free_roam_unlocked():
+	if story.outcome != "" and not free_roam_mode:
 		_show_ending()
 	elif story.phase == 0 and story.clues.is_empty():
 		_show_dialogue("LOLA PASING",
@@ -1301,7 +1304,7 @@ func _auto_save() -> bool:
 func _enter_ridge() -> void:
 	if travel_in_progress:
 		return
-	if story.outcome == "":
+	if story.outcome == "" and not free_roam_mode:
 		_show_dialogue("BANTAY","Before the north ridge is safe to enter, finish the Kapre investigation and mark the dangerous mango approaches.",
 			[{"label":"FINISH NIGHT 2","action":"close"}])
 		return

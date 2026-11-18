@@ -138,7 +138,10 @@ var window_light_refresh := 0.0
 var encounter_autosave_clock := 0.0
 
 
+var free_roam_mode := false
+
 func _ready() -> void:
+	free_roam_mode = ConnectedWorld.free_roam_unlocked()
 	preferences.load_from()
 	_create_world()
 	_create_ambient_walkers()
@@ -154,7 +157,7 @@ func _ready() -> void:
 	_restore_story()
 	NightWindows.sync_barrio_3d(self,is_night,elapsed,preferences.reduced_motion)
 	_apply_connected_world_arrival()
-	if story.outcome == "" and not story.prologue_ready():
+	if story.outcome == "" and not story.prologue_ready() and not free_roam_mode:
 		_enter_lola_hut(true)
 	_update_objective()
 	# An observable *game scene* signal: a title/options screen must never
@@ -1711,7 +1714,7 @@ func _save_before_navigation() -> bool:
 
 
 func _enter_mango_trail() -> void:
-	if story.outcome == "":
+	if story.outcome == "" and not free_roam_mode:
 		_show_dialogue("The old mango trail is visible, but the Santelmo investigation is not complete. Finish Night 1 before heading north with Bantay.")
 		return
 	if not _save_before_navigation():
@@ -1726,7 +1729,7 @@ func _enter_mango_trail() -> void:
 
 
 func _begin_night2() -> void:
-	if story.outcome == "":
+	if story.outcome == "" and not free_roam_mode:
 		_show_dialogue("Complete Night 1 before entering the old mango tree.")
 		return
 	if not _save_before_navigation():

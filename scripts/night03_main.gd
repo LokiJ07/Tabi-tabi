@@ -100,7 +100,10 @@ var save_error: AcceptDialog
 var atmosphere
 var ambient
 
+var free_roam_mode := false
+
 func _ready() -> void:
+	free_roam_mode = ConnectedWorld.free_roam_unlocked()
 	name = "TabiTabiNight3"
 	set_meta("dimensional_art", DimensionalArt.STYLE_ID)
 	prefs.load_from()
@@ -135,7 +138,7 @@ func _ready() -> void:
 	_refresh_objective()
 	# In post-story Free Roam, revisit a completed chapter as a live map.
 	# Don't repeatedly block the connected road with its old ending popup.
-	if story.outcome != "" and not ConnectedWorld.free_roam_unlocked():
+	if story.outcome != "" and not free_roam_mode:
 		_show_ending()
 	elif story.phase == 0 and story.clues.is_empty():
 		_show_dialogue("LOLA PASING",
@@ -793,7 +796,7 @@ func _nearby() -> String:
 	if player_pos.distance_to(ConnectedWorld.TRAIL_RIDGE) < 110.0:
 		return "return_mango"
 	if player_pos.distance_to(ConnectedWorld.TRAIL_RIDGE_WAKE) < 115.0:
-		return "wake_gate" if story.outcome != "" else "wake_gate_locked"
+		return "wake_gate" if story.outcome != "" or free_roam_mode else "wake_gate_locked"
 	if story.phase == 0:
 		for id in Story.CLUES:
 			if not story.clues.has(id) and player_pos.distance_to(CLUES_AT[id]) < 122.0:
@@ -1039,7 +1042,7 @@ func _save_menu() -> void:
 	get_tree().change_scene_to_file("res://scenes/title.tscn")
 
 func _to_wake() -> void:
-	if travel_in_progress or story.outcome == "":
+	if travel_in_progress or (story.outcome == "" and not free_roam_mode):
 		return
 	if not _auto_save() or not ConnectedWorld.begin_travel("night03","night04",story.outcome):
 		save_error.popup_centered(Vector2i(610,190))
