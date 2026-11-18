@@ -12,8 +12,8 @@ const ICON_DAYNIGHT: Texture2D = preload("res://assets/ui/daynight.svg")
 const ICON_RETREAT: Texture2D = preload("res://assets/ui/retreat.svg")
 const STATUS_WIDTH := .37
 const HOLD_LABEL := "OBSERVING..."
-const HOLD_COLOR := Color("#3c6755")
-const HOLD_BORDER := Color("#ffe092")
+const HOLD_COLOR := Color("#665123")
+const HOLD_BORDER := Color("#ffda70")
 
 static func create_status_card(parent: Control, chapter_heading: String, text_scale: float = 1.0) -> Dictionary:
 	var panel := PanelContainer.new()
