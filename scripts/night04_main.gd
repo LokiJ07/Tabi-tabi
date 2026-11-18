@@ -9,6 +9,7 @@ const Night03Save = preload("res://scripts/core/night03_save.gd")
 const World = preload("res://scripts/core/connected_world.gd")
 const Preferences = preload("res://scripts/core/preferences.gd")
 const SharedHUD = preload("res://scripts/ui/shared_hud.gd")
+const PostgameResidents = preload("res://scripts/world/postgame_residents.gd")
 const DimensionalArt = preload("res://scripts/visuals/layered_25d.gd")
 const NightWindows = preload("res://scripts/visuals/nighttime_windows.gd")
 const WakeVigil = preload("res://scripts/visuals/night04_vigil_art.gd")
@@ -473,6 +474,7 @@ func _draw() -> void:
 		if transparency > .005:
 			DimensionalArt.paint_grounded(self,actor["tex"],p,size2,
 				Color(1,1,1,transparency),.38*transparency,bob)
+	PostgameResidents.paint(self,"night04",elapsed,prefs.reduced_motion,player_pos)
 	var font := ThemeDB.fallback_font
 	draw_string(font,RETURN_RIDGE+Vector2(25,-90),"FLOOD RIDGE • RETURN",HORIZONTAL_ALIGNMENT_LEFT,320,18,Color("#e8cb94"))
 	draw_string(font,WAKE_HOUSE+Vector2(-160,206),"THE WAKE • LAMAY",HORIZONTAL_ALIGNMENT_LEFT,350,20,Color("#f7d79d"))
@@ -679,12 +681,20 @@ func _nearby() -> String:
 	elif story.phase == 3:
 		if player_pos.distance_to(SAFE_COURT)<225:
 			return "watch"
+	var postgame_neighbor := PostgameResidents.nearby(self,"night04",player_pos)
+	if postgame_neighbor != "":
+		return postgame_neighbor
 	return ""
 
 func _interact() -> void:
 	if _modal() or travel_in_progress:
 		return
 	var id := _nearby()
+	if id.begins_with("postgame:"):
+		_talk(PostgameResidents.speaker(id),
+			PostgameResidents.talk(self,id),
+			[{"label":"SALAMAT • CONTINUE","action":"close"}])
+		return
 	if id == "return_ridge":
 		_return_to_ridge()
 	elif id == "farm_trail":
