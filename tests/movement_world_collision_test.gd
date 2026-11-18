@@ -17,16 +17,16 @@ func _run() -> void:
 	var prefs := Prefs.new()
 	var layer := Control.new()
 	root.add_child(layer)
-	var latest_axis := Vector2(9,9)
-	var stick := HUD.create_movement_joystick(layer,prefs,func(axis: Vector2): latest_axis = axis)
+	var captured := {"axis":Vector2(9,9)}
+	var stick := HUD.create_movement_joystick(layer,prefs,func(axis: Vector2): captured["axis"] = axis)
 	await process_frame
 	check(stick.name == "MovementJoystick" and stick.position.x > 60.0,
 		"left movement input is inset, not stuck at edge")
 	stick._set_axis_from_local(stick.CENTER+Vector2(50,0))
-	check(latest_axis.x > .70 and absf(latest_axis.y) < .01,
+	check((captured["axis"] as Vector2).x > .70 and absf((captured["axis"] as Vector2).y) < .01,
 		"analog thumb direction drives movement")
 	stick._release()
-	check(latest_axis == Vector2.ZERO,"joystick release resets movement")
+	check(captured["axis"] == Vector2.ZERO,"joystick release resets movement")
 	prefs.from_dict({"schema":1,"joystick_x":99.0,"joystick_y":-99.0})
 	check(prefs.joystick_x <= .45 and prefs.joystick_y >= .50,
 		"moved controls remain within safe zone")
