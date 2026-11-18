@@ -51,6 +51,15 @@ static func _point_in_footprint(point: Vector2, corners: Array) -> bool:
 			return true
 	return false
 
+static func mango_road_centerline() -> Array[Vector2]:
+	# The original straight road went through the giant mango's roots,
+	# while the drawn canopy made the player look airborne. Curve the
+	# physical route around the southern side of the tree instead.
+	return [Vector2(-910,330),Vector2(-760,285),Vector2(-570,240),
+		Vector2(-350,190),Vector2(-90,120),Vector2(140,80),
+		Vector2(405,-65),Vector2(655,-310),Vector2(910,-535)]
+
+
 static func repair_saved_position(chapter: int, at: Vector2) -> Vector2:
 	# Older chapter saves can already contain a ghosted position INSIDE a
 	# house or tree. A swept collision cannot get such a player unstuck.
