@@ -86,10 +86,14 @@ static func build(world: Node3D) -> Dictionary:
 		Vector3(2.0, 0.16, 0.18), Color("#c29c6c"), false)
 	_box(room, "Window woven curtain", Vector3(2.76, 2.35, -3.7),
 		Vector3(1.55, 0.30, 0.05), Color("#e2c393"), false)
-	_box(room, "Breakfast table", Vector3(1.25, 0.52, -0.65), Vector3(1.85, 0.22, 1.15), Color(0.30, 0.20, 0.13), false)
+	_box(room, "Morning window warm glow", Vector3(2.76, 1.86, -3.69),
+		Vector3(1.30, 0.68, 0.055), Color("#dbc38e"), false)
+	_box(room, "Window cross lattice", Vector3(2.76,1.85,-3.65),
+		Vector3(0.085,0.78,0.08),Color("#7e5739"),false)
+	_box(room, "Breakfast table", Vector3(1.25, 0.52, -0.65), Vector3(1.85, 0.22, 1.15), Color(0.30, 0.20, 0.13), true)
 	# A separate study desk beside the back wall gives the notebook a
 	# believable, visible tabletop placement instead of sitting in the aisle.
-	_box(room, "Writing desk top", Vector3(-2.65, 0.57, -2.25), Vector3(1.75, 0.16, 0.96), Color("#78543c"), false)
+	_box(room, "Writing desk top", Vector3(-2.65, 0.57, -2.25), Vector3(1.75, 0.16, 0.96), Color("#78543c"), true)
 	for x in [-3.40, -1.90]:
 		for z in [-2.60, -1.90]:
 			_box(room, "Desk leg", Vector3(x, 0.29, z), Vector3(0.14, 0.58, 0.14), Color("#4e3426"), false)
