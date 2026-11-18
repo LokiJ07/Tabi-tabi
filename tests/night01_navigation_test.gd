@@ -17,8 +17,8 @@ func _run() -> void:
 	root.add_child(game)
 	current_scene = game
 	await process_frame
-	check(game.settings_panel.get_node_or_null("SettingsLayout/SaveAndMainMenu") != null, "Save & Main Menu is a fixed, real gameplay button")
-	check(game.settings_panel.get_node_or_null("SettingsLayout/QuitGame") != null, "Quit Game is a fixed, real gameplay button")
+	check(game.settings_panel.get_node_or_null("SettingsLayout/Columns/ActionStack/SaveAndMainMenu") != null, "Save & Main Menu is a fixed, real gameplay button")
+	check(game.settings_panel.get_node_or_null("SettingsLayout/Columns/ActionStack/QuitGame") != null, "Quit Game is a fixed, real gameplay button")
 	check(game.main_menu_confirmation != null and game.quit_game_confirmation != null, "both routes have confirmation")
 	check(game.navigation_error_dialog != null, "save failures block navigation instead of losing progress")
 	game._close_dialogue()

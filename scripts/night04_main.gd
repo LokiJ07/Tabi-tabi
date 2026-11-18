@@ -9,6 +9,7 @@ const Night03Save = preload("res://scripts/core/night03_save.gd")
 const World = preload("res://scripts/core/connected_world.gd")
 const Preferences = preload("res://scripts/core/preferences.gd")
 const SharedHUD = preload("res://scripts/ui/shared_hud.gd")
+const SharedOptions = preload("res://scripts/ui/shared_options.gd")
 const Walkability = preload("res://scripts/world/shared_walkability_2d.gd")
 const SharedDialogueMotion = preload("res://scripts/ui/shared_dialogue_motion.gd")
 const PostgameResidents = preload("res://scripts/world/postgame_residents.gd")
@@ -123,6 +124,8 @@ func _ready() -> void:
 	elif str(arrival.get("from","")) == "night05":
 		player_pos = FARM_TRAIL+Vector2(-80,90)
 		print("TABI_WORLD_ARRIVAL_WAKE_FROM_FARM")
+	# Recover legacy saves from inside decorative walls and trunks.
+	player_pos = Walkability.repair_saved_position(4,player_pos)
 	bantay_pos = player_pos+Vector2(-44,29)
 	camera = Camera2D.new()
 	camera.name = "Night04WakeCamera"
@@ -202,7 +205,8 @@ func _process(delta: float) -> void:
 		candidate.x = clampf(candidate.x,MAP.position.x+65,MAP.end.x-65)
 		candidate.y = clampf(candidate.y,MAP.position.y+75,MAP.end.y-75)
 		player_pos = Walkability.slide(4,player_pos,candidate)
-	bantay_pos = bantay_pos.lerp(player_pos+Vector2(-49,29),clampf(delta*3.2,0,1))
+	var dog_goal := bantay_pos.lerp(player_pos+Vector2(-49,29),clampf(delta*3.2,0,1))
+	bantay_pos = Walkability.slide(4,bantay_pos,dog_goal)
 	# A tall, airborne Manananggal must be framed together with the
 	# apprentice during a real attack, not cropped at the top of the phone.
 	# This is the world camera only; Night 1 shared touch HUD never moves.
@@ -361,6 +365,7 @@ func _draw() -> void:
 	draw_polyline(PackedVector2Array([RETURN_RIDGE,Vector2(-680,310),
 		Vector2(-365,222),SAFE_COURT,Vector2(400,260)]),Color("#af9875"),83,true)
 	Landscape.trail_stones(self,RETURN_RIDGE,Vector2(-400,235),18,90,_stage()>=2)
+	_paint_chapter_people(true)
 	for at in [Vector2(-800,-400),Vector2(-850,-140),Vector2(-680,-595),
 		Vector2(690,-510),Vector2(800,-145),Vector2(812,500)]:
 		DimensionalArt.paint_grounded(self,LEAVES,at+Vector2(0,27),
@@ -452,6 +457,14 @@ func _draw() -> void:
 			from+drift+Vector2(-5,110),elapsed,prefs.reduced_motion,Color("#d1d5cb"))
 	# Human cast is rendered above the warmth. Story dialogue and evidence
 	# still work when residents have moved inside, not been deleted.
+	_paint_chapter_people(false)
+	PostgameResidents.paint(self,"night04",elapsed,prefs.reduced_motion,player_pos)
+	var font := ThemeDB.fallback_font
+	draw_string(font,RETURN_RIDGE+Vector2(25,-90),"FLOOD RIDGE • RETURN",HORIZONTAL_ALIGNMENT_LEFT,320,18,Color("#e8cb94"))
+	draw_string(font,WAKE_HOUSE+Vector2(-160,206),"THE WAKE • LAMAY",HORIZONTAL_ALIGNMENT_LEFT,350,20,Color("#f7d79d"))
+	draw_string(font,Vector2(630,-140),"THE FARM TRAIL • "+("OPEN" if story.outcome != "" else "LOCKED"),HORIZONTAL_ALIGNMENT_LEFT,355,18,Color("#e3ca97"))
+
+func _paint_chapter_people(behind: bool) -> void:
 	var people: Array[Dictionary] = []
 	var civilians: Array[Dictionary] = [
 		{"role":"NENA","at":Vector2(-420,-180),"tex":NENA,"size":Vector2(107,140)},
@@ -473,6 +486,8 @@ func _draw() -> void:
 		return (a["at"] as Vector2).y < (b["at"] as Vector2).y)
 	for actor in people:
 		var p: Vector2 = actor["at"]
+		if Walkability.scenery_covers_actor(4,p) != behind:
+			continue
 		var size2: Vector2 = actor["size"]
 		var is_hero: bool = actor["tex"] == HERO
 		var is_dog: bool = actor["tex"] == BANTAY
@@ -485,11 +500,6 @@ func _draw() -> void:
 			else:
 				DimensionalArt.paint_grounded(self,actor["tex"],p,size2,
 					Color(1,1,1,transparency),.38*transparency)
-	PostgameResidents.paint(self,"night04",elapsed,prefs.reduced_motion,player_pos)
-	var font := ThemeDB.fallback_font
-	draw_string(font,RETURN_RIDGE+Vector2(25,-90),"FLOOD RIDGE • RETURN",HORIZONTAL_ALIGNMENT_LEFT,320,18,Color("#e8cb94"))
-	draw_string(font,WAKE_HOUSE+Vector2(-160,206),"THE WAKE • LAMAY",HORIZONTAL_ALIGNMENT_LEFT,350,20,Color("#f7d79d"))
-	draw_string(font,Vector2(630,-140),"THE FARM TRAIL • "+("OPEN" if story.outcome != "" else "LOCKED"),HORIZONTAL_ALIGNMENT_LEFT,355,18,Color("#e3ca97"))
 
 func _fit_status_card() -> void:
 	# Same dynamic status height as Night 1–3: objectives must never overflow.
@@ -608,13 +618,15 @@ func _build_ui() -> void:
 	notes_text = _label(scroll,"",21,Color("#dfebe1"))
 	notes_text.custom_minimum_size.x = 580
 	_button(nstack,"RETURN TO WAKE",func():notes.hide())
-	options = _panel(modal_backdrop,"WakeOptions",Vector4(.22,.15,.78,.85))
-	var ostack := _stack(options)
-	_label(ostack,"PAUSE • NIGHT 4",32,Color("#f7dfab"))
-	_button(ostack,"SAVE OFFLINE",_save_feedback)
-	_button(ostack,"FIELD NOTES",_open_notes)
-	_button(ostack,"SAVE & MAIN MENU",_save_menu)
-	_button(ostack,"CLOSE",func(): options.hide())
+	var unified := SharedOptions.create(modal_backdrop,prefs,"NIGHT 4 • THE WAKE",{
+		"save": _save_feedback,
+		"notes": func(): options.hide(); _open_notes(); _sync_ui(),
+		"menu": _save_menu,
+		"quit": _quit_with_save,
+		"back": func(): options.hide(); _sync_ui(),
+		"confirm_navigation": true
+	},_apply_shared_settings,"WakeOptions")
+	options = unified["panel"]
 	ending = _panel(modal_backdrop,"WakeAftermath",Vector4(.16,.12,.84,.88))
 	save_error = AcceptDialog.new()
 	save_error.dialog_text = "The offline record could not be saved. Check device storage."
@@ -940,12 +952,19 @@ func _retry_from_saved_checkpoint() -> void:
 		 {"label":"KEEP PLAYING","action":"close"}])
 
 
+func _apply_shared_settings() -> void:
+	camera.position_smoothing_enabled = not prefs.reduced_motion
+	if ambient != null:
+		ambient.set_audio_level(prefs.audio_level)
+	_sync_ui()
+
 func _open_options() -> void:
 	if dialogue.visible or ending.visible:
 		return
 	modal_backdrop.show()
 	options.show()
 	_sync_ui()
+	print("NIGHT4_QA_OPTIONS_OPEN")
 
 func _confirm_retreat() -> void:
 	if _modal() or story.outcome != "":
@@ -968,6 +987,12 @@ func _save_feedback() -> void:
 	options.hide()
 	_talk("FIELD RECORD","Night 4 saved offline. All three earlier chapter records remain intact.",
 		[{"label":"CONTINUE","action":"close"}])
+
+func _quit_with_save() -> void:
+	if not _auto_save():
+		save_error.popup_centered(Vector2i(600,190))
+		return
+	get_tree().quit()
 
 func _save_menu() -> void:
 	if not _auto_save():

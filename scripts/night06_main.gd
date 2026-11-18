@@ -10,6 +10,7 @@ const World = preload("res://scripts/core/connected_world.gd")
 const Prefs = preload("res://scripts/core/preferences.gd")
 const RiverSound = preload("res://scripts/audio/night06_ambience.gd")
 const SharedHUD = preload("res://scripts/ui/shared_hud.gd")
+const SharedOptions = preload("res://scripts/ui/shared_options.gd")
 const Walkability = preload("res://scripts/world/shared_walkability_2d.gd")
 const PostgameResidents = preload("res://scripts/world/postgame_residents.gd")
 const PostgameDialogue = preload("res://scripts/narrative/postgame_dialogue.gd")
@@ -116,6 +117,8 @@ func _ready() -> void:
 	elif str(arrival.get("from","")) == "night07":
 		player_pos = World.ARRIVAL_RIVER_BALETE
 		print("TABI_WORLD_ARRIVAL_RIVER_FROM_BALETE")
+	# Recover legacy saves from inside decorative walls and trunks.
+	player_pos = Walkability.repair_saved_position(6,player_pos)
 	camera = Camera2D.new()
 	camera.name = "Night06RiverCamera"
 	camera.position = player_pos
@@ -207,7 +210,8 @@ func _process(delta: float) -> void:
 		elif story.phase == 7 and story.outcome == "" and candidate.y > 575:
 			candidate.y = 575
 		player_pos = Walkability.slide(6,foot,candidate)
-	bantay_pos = bantay_pos.lerp(player_pos+Vector2(-53,28),clampf(delta*3.5,0.0,1.0))
+	var dog_goal := bantay_pos.lerp(player_pos+Vector2(-53,28),clampf(delta*3.5,0.0,1.0))
+	bantay_pos = Walkability.slide(6,bantay_pos,dog_goal)
 	var target := player_pos+aim*48.0
 	if story.phase == 6 or qa_river_preview:
 		target = player_pos.lerp(Vector2(475,300),.16)+aim*34.0
@@ -504,6 +508,7 @@ func _draw() -> void:
 	draw_colored_polygon(PackedVector2Array([
 		Vector2(790,520),Vector2(1110,485),Vector2(1330,550),
 		Vector2(1360,820),Vector2(780,830)]),Color("#536b58"))
+	_paint_chapter_people(true)
 	for foot in [Vector2(-1020,-245),Vector2(-880,-550),Vector2(1020,-340),Vector2(1150,180)]:
 		Depth.paint_grounded(self,TREE,foot,Vector2(233,268),Color("#c0c6a8"),.20)
 	for foot in [Vector2(-790,-270),Vector2(940,-130)]:
@@ -608,23 +613,7 @@ func _draw() -> void:
 	# Nightly villagers actually withdraw indoors instead of staying in the
 	# empty street when the river becomes dangerous. Last few frames fade at
 	# their own doorway, while warm house windows remain visibly inhabited.
-	for actor in [
-		[MARA,MARA_AT,Vector2(98,153),ARCHIVE+Vector2(-28,-70)],
-		[DADO,DADO_AT,Vector2(101,159),ARCHIVE+Vector2(14,-70)],
-		[SABEL,SABEL_AT,Vector2(99,157),SABEL_AT+Vector2(40,-60)],
-		[LOLA,LOLA_AT,Vector2(103,155),LOLA_AT+Vector2(53,-65)]
-	]:
-		var fade: float = clampf(indoor_seconds/3.3,0.0,1.0) if night else 0.0
-		if fade >= 1.0:
-			continue
-		var resident_foot: Vector2 = actor[1]
-		resident_foot = resident_foot.lerp(actor[3],fade)
-		Depth.paint_grounded(self,actor[0],resident_foot,actor[2],
-			Color(1,1,1,1.0-smoothstep(.77,1.0,fade)),.23)
-	Depth.paint_animated_actor(self,BANTAY,bantay_pos,Vector2(95,102),
-		walk_time,walk_weight,prefs.reduced_motion,Color.WHITE,.31,true)
-	Depth.paint_animated_actor(self,HERO,player_pos,Vector2(108,142),
-		walk_time,walk_weight,prefs.reduced_motion,Color.WHITE,.37)
+	_paint_chapter_people(false)
 	PostgameResidents.paint(self,"night06",clock,prefs.reduced_motion,player_pos)
 	# Nearby ground signs are concise and contextual, never overlaid across
 	# the touchscreen or blocking the player during exploration.
@@ -640,6 +629,30 @@ func _draw() -> void:
 	if story.outcome != "" and player_pos.distance_to(Vector2(800,530))<280:
 		draw_string(ThemeDB.fallback_font,Vector2(825,476),
 			"NIGHT 7 • BALETE TRAIL OPEN" if World.implemented("night07") and story.outcome != "" else "NIGHT 7 • FINISH RIVER FIRST",HORIZONTAL_ALIGNMENT_LEFT,365,15,Color("#f2d89e"))
+
+func _paint_chapter_people(behind: bool) -> void:
+	var night := _stage() >= 2
+	for actor in [
+		[MARA,MARA_AT,Vector2(98,153),ARCHIVE+Vector2(-28,-70)],
+		[DADO,DADO_AT,Vector2(101,159),ARCHIVE+Vector2(14,-70)],
+		[SABEL,SABEL_AT,Vector2(99,157),SABEL_AT+Vector2(40,-60)],
+		[LOLA,LOLA_AT,Vector2(103,155),LOLA_AT+Vector2(53,-65)]
+	]:
+		var fade: float = clampf(indoor_seconds/3.3,0.0,1.0) if night else 0.0
+		if fade >= 1.0:
+			continue
+		var resident_foot: Vector2 = actor[1]
+		resident_foot = resident_foot.lerp(actor[3],fade)
+		if Walkability.scenery_covers_actor(6,resident_foot) != behind:
+			continue
+		Depth.paint_grounded(self,actor[0],resident_foot,actor[2],
+			Color(1,1,1,1.0-smoothstep(.77,1.0,fade)),.23)
+	if Walkability.scenery_covers_actor(6,bantay_pos) == behind:
+		Depth.paint_animated_actor(self,BANTAY,bantay_pos,Vector2(95,102),
+			walk_time,walk_weight,prefs.reduced_motion,Color.WHITE,.31,true)
+	if Walkability.scenery_covers_actor(6,player_pos) == behind:
+		Depth.paint_animated_actor(self,HERO,player_pos,Vector2(108,142),
+			walk_time,walk_weight,prefs.reduced_motion,Color.WHITE,.37)
 
 func _fit_status_card() -> void:
 	if status_panel == null or status_stack == null or not is_inside_tree(): return
@@ -754,13 +767,15 @@ func _build_ui() -> void:
 	notes_text = _label(scroll,"",21,Color("#e5e7d8"))
 	notes_text.custom_minimum_size.x = 600
 	_button(ns,"RETURN TO RIVER",func():notes.hide();_sync_ui())
-	options = _panel(backdrop,"RiverOptions",Vector4(.22,.14,.78,.86))
-	var os := _stack(options)
-	_label(os,"PAUSE • NIGHT 6",30,Color("#ead49a"))
-	_button(os,"SAVE OFFLINE",_save_feedback)
-	_button(os,"FIELD NOTES",_open_notes)
-	_button(os,"SAVE & MAIN MENU",_save_menu)
-	_button(os,"CLOSE",func():options.hide();_sync_ui())
+	var unified := SharedOptions.create(backdrop,prefs,"NIGHT 6 • RIVER",{
+		"save": _save_feedback,
+		"notes": func(): options.hide(); _open_notes(); _sync_ui(),
+		"menu": _save_menu,
+		"quit": _quit_with_save,
+		"back": func(): options.hide(); _sync_ui(),
+		"confirm_navigation": true
+	},_apply_shared_settings,"RiverOptions")
+	options = unified["panel"]
 	ending = _panel(backdrop,"RiverAftermath",Vector4(.16,.10,.84,.90))
 	save_error = AcceptDialog.new()
 	save_error.dialog_text = "Offline save failed. Check storage before continuing."
@@ -1197,10 +1212,17 @@ func _open_preparation() -> void:
 		"Use the original Night 1 thumb controls. Investigation comes first. When the river rises, prepare the rope anchor, lantern beacon and stable stones. Remain on marked ground; hold OBSERVE to read three separate surges.",
 		[{"label":"RETURN TO RIVER","action":"close"}])
 
+func _apply_shared_settings() -> void:
+	camera.position_smoothing_enabled = not prefs.reduced_motion
+	if ambient != null:
+		ambient.set_audio_level(prefs.audio_level)
+	_sync_ui()
+
 func _open_options() -> void:
 	if dialogue.visible or ending.visible: return
 	options.show()
 	_sync_ui()
+	print("NIGHT6_QA_OPTIONS_OPEN")
 
 func _retry_from_save() -> void:
 	if _modal(): return
@@ -1234,6 +1256,12 @@ func _save_feedback() -> void:
 	options.hide()
 	_talk("FIELD RECORD","Night 6 saved offline. Nights 1–5 remain unchanged.",
 		[{"label":"CONTINUE","action":"close"}])
+
+func _quit_with_save() -> void:
+	if not _save_story():
+		save_error.popup_centered(Vector2i(600,190))
+		return
+	get_tree().quit()
 
 func _save_menu() -> void:
 	if not _save_story():

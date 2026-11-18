@@ -28,7 +28,8 @@ const CONNECTIONS := {
 const TRAIL_BARRIO := Vector3(1.0, 0.20, -32.0)
 const TRAIL_MANGO := Vector2(-765.0, 485.0)
 const ARRIVAL_BARRIO := Vector3(1.0, 0.75, -29.1)
-const ARRIVAL_MANGO := Vector2(-635.0, 385.0)
+# Safe footpath outside the refuge building; no roof spawn.
+const ARRIVAL_MANGO := Vector2(-640.0, 515.0)
 const TRAIL_MANGO_RIDGE := Vector2(800.0, -570.0)
 const ARRIVAL_MANGO_RIDGE := Vector2(730.0, -505.0)
 const TRAIL_RIDGE := Vector2(-880.0, 410.0)

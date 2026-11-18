@@ -10,6 +10,7 @@ const Night02State = preload("res://scripts/narrative/night02_state.gd")
 const ConnectedWorld = preload("res://scripts/core/connected_world.gd")
 const Preferences = preload("res://scripts/core/preferences.gd")
 const SharedHUD = preload("res://scripts/ui/shared_hud.gd")
+const SharedOptions = preload("res://scripts/ui/shared_options.gd")
 const Walkability = preload("res://scripts/world/shared_walkability_2d.gd")
 const PostgameResidents = preload("res://scripts/world/postgame_residents.gd")
 const SharedMotion = preload("res://scripts/ui/shared_dialogue_motion.gd")
@@ -119,6 +120,8 @@ func _ready() -> void:
 	elif str(arrival.get("from","")) == "night04":
 		player_pos = ConnectedWorld.ARRIVAL_RIDGE_WAKE
 		print("TABI_WORLD_ARRIVAL_RIDGE_FROM_WAKE")
+	# Recover legacy saves from inside decorative walls and trunks.
+	player_pos = Walkability.repair_saved_position(3,player_pos)
 	bantay_pos = player_pos + Vector2(-46,29)
 	camera = Camera2D.new()
 	camera.name = "Night03RidgeCamera"
@@ -188,7 +191,8 @@ func _process(delta: float) -> void:
 		if _in_unsafe_ravine(moved):
 			moved = player_pos
 		player_pos = Walkability.slide(3,player_pos,moved)
-	bantay_pos = bantay_pos.lerp(player_pos + Vector2(-49,29),clampf(delta*3.5,0.0,1.0))
+	var dog_goal := bantay_pos.lerp(player_pos + Vector2(-49,29),clampf(delta*3.5,0.0,1.0))
+	bantay_pos = Walkability.slide(3,bantay_pos,dog_goal)
 	var goal_blend := 1.0 if dialogue_focus and dialogue.visible else 0.0
 	camera_blend = lerpf(camera_blend,goal_blend,1.0 if prefs.reduced_motion else clampf(delta*3.8,0.0,1.0))
 	# The Tikbalang is tall enough that tracking the player's feet alone
@@ -358,6 +362,7 @@ func _draw() -> void:
 	for cliff_rock in [Vector2(-215,362),Vector2(180,514),Vector2(-65,655),
 		Vector2(345,-565),Vector2(515,-510),Vector2(720,-270)]:
 		Landscape.rock(self,cliff_rock,64.0,_stage()<2)
+	_paint_chapter_actors(true)
 	for pos in [Vector2(-890,-430),Vector2(-755,-630),Vector2(-520,-650),
 		Vector2(-20,-610),Vector2(410,-640),Vector2(760,-570),
 		Vector2(870,35),Vector2(690,520),Vector2(-420,625),
@@ -464,24 +469,7 @@ func _draw() -> void:
 			Color("#e0d6c6"), .50)
 	# Keep original shared protagonists readable against darkness. Their
 	# draw order is world-depth based and HUD/cinematic layers stay untouched.
-	var actors := [
-		{"at":bantay_pos+Vector2(0,19),"tex":BANTAY,"size":Vector2(95,104)},
-		{"at":player_pos+Vector2(0,8),"tex":HERO,"size":Vector2(106,141)}
-	]
-	actors.sort_custom(func(a: Dictionary,b: Dictionary)->bool:
-		return (a["at"] as Vector2).y < (b["at"] as Vector2).y)
-	for actor in actors:
-		var where: Vector2 = actor["at"]
-		var dimensions: Vector2 = actor["size"]
-		var is_player: bool = actor["tex"] == HERO
-		var is_dog: bool = actor["tex"] == BANTAY
-		if is_player or is_dog:
-			DimensionalArt.paint_animated_actor(self,actor["tex"],where,
-				dimensions,walk_phase,walk_weight,prefs.reduced_motion,
-				Color.WHITE,.43,is_dog)
-		else:
-			DimensionalArt.paint_grounded(self,actor["tex"],where,dimensions,
-				Color.WHITE,.43)
+	_paint_chapter_actors(false)
 	PostgameResidents.paint(self,"night03",particles,prefs.reduced_motion,player_pos)
 	# In-world wayfinding signs are small, correctly oriented and non-obstructive.
 	var font := ThemeDB.fallback_font
@@ -498,6 +486,28 @@ func _draw() -> void:
 	draw_string(font,Vector2(745,-342),
 		"THE WAKE • EAST TRAIL" if story.outcome != "" else "WAKE TRAIL • FINISH RIDGE FIRST",
 		HORIZONTAL_ALIGNMENT_LEFT,445,17,Color("#e1bd86"))
+
+func _paint_chapter_actors(behind: bool) -> void:
+	var actors := [
+		{"at":bantay_pos+Vector2(0,19),"tex":BANTAY,"size":Vector2(95,104)},
+		{"at":player_pos+Vector2(0,8),"tex":HERO,"size":Vector2(106,141)}
+	]
+	actors.sort_custom(func(a: Dictionary,b: Dictionary)->bool:
+		return (a["at"] as Vector2).y < (b["at"] as Vector2).y)
+	for actor in actors:
+		var where: Vector2 = actor["at"]
+		if Walkability.scenery_covers_actor(3,where) != behind:
+			continue
+		var dimensions: Vector2 = actor["size"]
+		var is_player: bool = actor["tex"] == HERO
+		var is_dog: bool = actor["tex"] == BANTAY
+		if is_player or is_dog:
+			DimensionalArt.paint_animated_actor(self,actor["tex"],where,
+				dimensions,walk_phase,walk_weight,prefs.reduced_motion,
+				Color.WHITE,.43,is_dog)
+		else:
+			DimensionalArt.paint_grounded(self,actor["tex"],where,dimensions,
+				Color.WHITE,.43)
 
 func _build_ui() -> void:
 	var atmosphere_layer := CanvasLayer.new()
@@ -661,23 +671,16 @@ func _build_ui() -> void:
 	notes_scroll.add_child(notebook_body)
 	_modal_button(notes,"CLOSE NOTEBOOK",func(): _close_notebook())
 	notebook.hide()
-	options_panel = PanelContainer.new()
-	options_panel.name = "Night3Options"
-	options_panel.anchor_left = .18
-	options_panel.anchor_right = .82
-	options_panel.anchor_top = .15
-	options_panel.anchor_bottom = .84
-	SharedHUD.style_modal_panel(options_panel)
-	layout.add_child(options_panel)
-	var menu := VBoxContainer.new()
-	menu.add_theme_constant_override("separation",12)
-	options_panel.add_child(menu)
-	_label(menu,"NIGHT 3  /  PAUSE & OPTIONS",29,Color("#f2d6a4"))
-	_modal_button(menu,"SAVE PROGRESS",_save_feedback)
-	_modal_button(menu,"RETURN TO OLD MANGO (SAVE)",_return_to_mango)
-	_modal_button(menu,"SAVE & MAIN MENU",_save_menu)
-	_modal_button(menu,"BACK TO GAME",_close_options)
-	options_panel.hide()
+	var unified := SharedOptions.create(layout,prefs,"NIGHT 3 • TIKBALANG",{
+		"save": _save_feedback,
+		"notes": func(): _close_options(); _open_notebook(),
+		"menu": _save_menu,
+		"quit": _quit_with_save,
+		"back": _close_options,
+		"confirm_navigation": true
+	},_apply_shared_settings,"Night3Options")
+	options_panel = unified["panel"]
+
 	ending_panel = PanelContainer.new()
 	ending_panel.name = "Night3Aftermath"
 	ending_panel.anchor_left = .20
@@ -999,11 +1002,18 @@ func _close_notebook() -> void:
 	notebook.hide()
 	_sync_hud()
 
+func _apply_shared_settings() -> void:
+	camera.position_smoothing_enabled = not prefs.reduced_motion
+	if ambient != null:
+		ambient.set_audio_level(prefs.audio_level)
+	_sync_hud()
+
 func _open_options() -> void:
 	if dialogue.visible or notebook.visible or ending_panel.visible:
 		return
 	options_panel.show()
 	_sync_hud()
+	print("NIGHT3_QA_OPTIONS_OPEN")
 
 func _close_options() -> void:
 	options_panel.hide()
@@ -1047,6 +1057,12 @@ func _save_feedback() -> void:
 			[{"label":"CONTINUE","action":"close"}])
 	else:
 		save_error.popup_centered(Vector2i(610,190))
+
+func _quit_with_save() -> void:
+	if not _auto_save():
+		save_error.popup_centered(Vector2i(600,190))
+		return
+	get_tree().quit()
 
 func _save_menu() -> void:
 	if not _auto_save():

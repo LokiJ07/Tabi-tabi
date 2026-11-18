@@ -23,6 +23,7 @@ const Night01State = preload("res://scripts/narrative/night01_state.gd")
 const Night02Save = preload("res://scripts/core/night02_save.gd")
 const Save = preload("res://scripts/core/save_service.gd")
 const Preferences = preload("res://scripts/core/preferences.gd")
+const SharedOptions = preload("res://scripts/ui/shared_options.gd")
 const ART_MANGROVE: Texture2D = preload("res://assets/world/mangrove_illustrated.svg")
 const ART_BANANA: Texture2D = preload("res://assets/world/banana_plant.svg")
 const ART_FLOWERS: Texture2D = preload("res://assets/world/hibiscus_bush.svg")
@@ -554,34 +555,19 @@ func _build_settings() -> void:
 	settings_backdrop.color = Color(0.0, 0.0, 0.0, 0.76)
 	settings_backdrop.mouse_filter = Control.MOUSE_FILTER_STOP
 	add_child(settings_backdrop)
-	settings_panel = PanelContainer.new()
-	settings_panel.name = "TitleSettings"
-	settings_panel.anchor_left = 0.25
-	settings_panel.anchor_right = 0.75
-	settings_panel.anchor_top = 0.18
-	settings_panel.anchor_bottom = 0.84
-	settings_panel.add_theme_stylebox_override("panel", _panel_style(Color("#0b2b36"), Color("#dcb46a")))
-	settings_backdrop.add_child(settings_panel)
-	var stack := VBoxContainer.new()
-	stack.add_theme_constant_override("separation", 12)
-	settings_panel.add_child(stack)
-	var heading := Label.new()
-	heading.text = "GAME SETTINGS"
-	heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	heading.add_theme_font_size_override("font_size", 36)
-	heading.add_theme_color_override("font_color", Color("#f6d58f"))
-	stack.add_child(heading)
-	font_button = _button("TEXT SIZE", stack, _cycle_title_font)
-	audio_button = _button("AMBIENCE", stack, _cycle_title_audio)
-	motion_button = _button("REDUCED MOTION", stack, _toggle_title_motion)
-	_button("BACK", stack, func(): settings_backdrop.hide())
+	var unified := SharedOptions.create(settings_backdrop,prefs,"GAME SETTINGS",{
+		"title": true,
+		"back": func(): settings_backdrop.hide()
+	},_refresh_settings,"TitleSettings")
+	settings_panel = unified["panel"]
+	font_button = unified["text"]
+	audio_button = unified["audio"]
+	motion_button = unified["motion"]
 	_refresh_settings()
 	settings_backdrop.hide()
 
 func _refresh_settings() -> void:
-	font_button.text = "TEXT SIZE   %d%%" % roundi(prefs.text_scale * 100.0)
-	audio_button.text = "AMBIENCE   " + ["OFF", "QUIET", "NORMAL"][prefs.audio_level]
-	motion_button.text = "REDUCED MOTION   " + ("ON" if prefs.reduced_motion else "OFF")
+	SharedOptions.refresh(settings_panel,prefs)
 
 func _cycle_title_font() -> void:
 	prefs.next_text_scale()
@@ -602,7 +588,9 @@ func _toggle_title_motion() -> void:
 
 func _open_settings() -> void:
 	settings_backdrop.show()
+	settings_panel.show()
 	_refresh_settings()
+	print("TITLE_QA_OPTIONS_OPEN")
 
 func _credits() -> void:
 	var dialog := AcceptDialog.new()

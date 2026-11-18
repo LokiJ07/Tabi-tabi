@@ -9,6 +9,7 @@ const RiverSave = preload("res://scripts/core/night06_save.gd")
 const World = preload("res://scripts/core/connected_world.gd")
 const Prefs = preload("res://scripts/core/preferences.gd")
 const SharedHUD = preload("res://scripts/ui/shared_hud.gd")
+const SharedOptions = preload("res://scripts/ui/shared_options.gd")
 const Walkability = preload("res://scripts/world/shared_walkability_2d.gd")
 const SharedDialogueMotion = preload("res://scripts/ui/shared_dialogue_motion.gd")
 const Depth = preload("res://scripts/visuals/layered_25d.gd")
@@ -101,6 +102,8 @@ func _ready() -> void:
 	if str(arrival.get("from","")) == "night06":
 		player_pos = Story.START
 		print("TABI_WORLD_ARRIVAL_BALETE_FROM_RIVER")
+	# Recover legacy saves from inside decorative walls and trunks.
+	player_pos = Walkability.repair_saved_position(7,player_pos)
 	bantay_pos = player_pos + Vector2(-48,28)
 	camera = Camera2D.new()
 	camera.name = "Night07BaleteCamera"
@@ -157,7 +160,8 @@ func _process(delta: float) -> void:
 		if candidate.y > 595 and candidate.x > -650:
 			candidate.y = 595.0
 		player_pos = Walkability.slide(7,player_pos,candidate)
-	bantay_pos = bantay_pos.lerp(player_pos + Vector2(-51,32),clampf(delta*3.1,0,1))
+	var dog_goal := bantay_pos.lerp(player_pos + Vector2(-51,32),clampf(delta*3.1,0,1))
+	bantay_pos = Walkability.slide(7,bantay_pos,dog_goal)
 	# At the Keeper's covenant the original 760px Balete was cropped
 	# above the Android camera. Fit the canopy and apprentice in the world
 	# camera only; the Night 1 HUD remains fixed in physical screen space.
@@ -224,6 +228,7 @@ func _draw() -> void:
 		if at.distance_to(KEEPER)<470:
 			continue
 		Landscape.rock(self,at,16.0+float(i%3)*8,not night)
+	_paint_chapter_protagonists(true)
 	for at in [Vector2(-880,-220),Vector2(-520,-420),Vector2(25,-430),
 		Vector2(1160,-180),Vector2(1010,480)]:
 		Depth.paint_grounded(self,SMALL_TREE,at,Vector2(250,290),Color("#c6d3b5"),.25)
@@ -286,15 +291,21 @@ func _draw() -> void:
 	if story.phase >= 4 and story.phase <= 5:
 		Depth.paint_grounded(self,MARA,Vector2(290,30),Vector2(103,145),Color.WHITE,.3)
 		Depth.paint_grounded(self,LOLA,Vector2(220,80),Vector2(103,140),Color.WHITE,.3)
-	Depth.paint_animated_actor(self,BANTAY,bantay_pos+Vector2(0,18),
-		Vector2(100,106),walking,walk_weight,prefs.reduced_motion,Color.WHITE,.31,true)
-	Depth.paint_animated_actor(self,HERO,player_pos+Vector2(0,9),
-		Vector2(108,143),walking,walk_weight,prefs.reduced_motion,Color.WHITE,.40)
+	_paint_chapter_protagonists(false)
 	PostgameResidents.paint(self,"night07",elapsed,prefs.reduced_motion,player_pos)
 	draw_string(ThemeDB.fallback_font,ENTRY+Vector2(15,-113),
 		"RIVER TRAIL • RETURN",HORIZONTAL_ALIGNMENT_LEFT,365,20,Color("#efdda9"))
 	draw_string(ThemeDB.fallback_font,KEEPER+Vector2(-270,-820),
 		"THE ANCIENT BALETE",HORIZONTAL_ALIGNMENT_LEFT,520,27,Color("#e9ddb1"))
+
+func _paint_chapter_protagonists(behind: bool) -> void:
+	if Walkability.scenery_covers_actor(7,bantay_pos) == behind:
+		Depth.paint_animated_actor(self,BANTAY,bantay_pos+Vector2(0,18),
+			Vector2(100,106),walking,walk_weight,prefs.reduced_motion,Color.WHITE,.31,true)
+	if Walkability.scenery_covers_actor(7,player_pos) == behind:
+		Depth.paint_animated_actor(self,HERO,player_pos+Vector2(0,9),
+			Vector2(108,143),walking,walk_weight,prefs.reduced_motion,Color.WHITE,.40)
+
 
 func _mark_station(foot: Vector2,word: String,checked: bool,dark: bool) -> void:
 	var ink := Color("#a0cbb1") if checked else Color("#e6c88f")
@@ -406,13 +417,15 @@ func _build_ui() -> void:
 	notes_text = _label(scroll,"",21,Color("#e4e8d9"))
 	notes_text.custom_minimum_size.x = 600
 	_button(ns,"RETURN TO BALETE GROUNDS",func():notes.hide();_sync_ui())
-	options = _panel(backdrop,"Night7Options",Vector4(.22,.14,.78,.86))
-	var os := _stack(options)
-	_label(os,"PAUSE • NIGHT 7",30,Color("#f0daa8"))
-	_button(os,"SAVE OFFLINE",_save_feedback)
-	_button(os,"FIELD NOTES",_open_notes)
-	_button(os,"SAVE & MAIN MENU",_save_menu)
-	_button(os,"CLOSE",func():options.hide();_sync_ui())
+	var unified := SharedOptions.create(backdrop,prefs,"NIGHT 7 • BALETE GROUNDS",{
+		"save": _save_feedback,
+		"notes": func(): options.hide(); _open_notes(); _sync_ui(),
+		"menu": _save_menu,
+		"quit": _quit_with_save,
+		"back": func(): options.hide(); _sync_ui(),
+		"confirm_navigation": true
+	},_apply_shared_settings,"Night7Options")
+	options = unified["panel"]
 	ending = _panel(backdrop,"Night7Epilogue",Vector4(.13,.10,.87,.90))
 	save_error = AcceptDialog.new()
 	save_error.dialog_text = "Unable to save offline. Please check available storage."
@@ -785,11 +798,16 @@ func _open_preparation() -> void:
 		"Observe first. Avoid unstable roots and damaged waymarks. Record what the documents actually prove, respect Sabel and Dado's right to privacy, and hold OBSERVE at each marked stone.",
 		[{"label":"RETURN TO THE PATH","action":"close"}])
 
+func _apply_shared_settings() -> void:
+	camera.position_smoothing_enabled = not prefs.reduced_motion
+	_sync_ui()
+
 func _open_options() -> void:
 	if dialogue.visible or ending.visible:
 		return
 	options.show()
 	_sync_ui()
+	print("NIGHT7_QA_OPTIONS_OPEN")
 
 func _retry_saved() -> void:
 	if _modal():
@@ -814,6 +832,12 @@ func _save_feedback() -> void:
 	options.hide()
 	_talk("OFFLINE RECORD SAVED","Night 7 checkpoint saved. All earlier chapters remain intact.",
 		[{"label":"CONTINUE","action":"close"}])
+
+func _quit_with_save() -> void:
+	if not _save_story():
+		save_error.popup_centered(Vector2i(600,190))
+		return
+	get_tree().quit()
 
 func _save_menu() -> void:
 	if not _save_story():

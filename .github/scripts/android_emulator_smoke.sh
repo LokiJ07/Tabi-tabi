@@ -149,6 +149,24 @@ if ! adb shell pidof "$PKG"; then
   exit 1
 fi
 
+# A real screenshot must prove the fully populated Options overlay opened, not
+# merely that the Android game has not crashed. 2340x1080 landscape AVD.
+capture_real_options() {
+  local chapter="$1" original="$2" marker="$3"
+  local file="build/android-night${chapter}-options.png"
+  adb shell input tap 2205 58
+  sleep 2
+  if ! adb logcat -d -v brief | grep -q "$marker"; then
+    echo "ERROR: Night $chapter Options BUTTON did not invoke real game settings"
+    adb exec-out screencap -p > "$file" || true
+    exit 1
+  fi
+  adb exec-out screencap -p > "$file"
+  python3 .github/scripts/assert_options_visible.py "build/$original" "$file"
+  adb shell input keyevent 111  # Escape / Godot ui_cancel
+  sleep 1
+}
+
 # These are supplemental captures, not gameplay acceptance tests.
 adb shell input tap 2050 660 || true
 sleep 2
@@ -163,9 +181,7 @@ sleep 2
 adb exec-out screencap -p > build/android-night1-preparation.png || true
 adb shell input tap 1160 965 || true
 sleep 1
-adb shell input tap 1940 60 || true
-sleep 2
-adb exec-out screencap -p > build/android-night1-options.png || true
+capture_real_options 1 android-night1-launch.png NIGHT1_QA_OPTIONS_OPEN
 
 # Real QA screenshots from the running Night 1 game scene, captured by
 # debug-only F6/F7/F8 location keys (not generated illustrations).
@@ -204,7 +220,7 @@ python3 .github/scripts/assert_night_atmosphere.py build/android-night1-shore-do
 # On the Night 2 development branch, launch the REAL new chapter through
 # its debug-only title shortcut. Never silently treat Night 1 screenshots as
 # Kapre evidence; verify the new scene's exact engine log marker first.
-if [ "${GITHUB_REF:-}" = "refs/heads/feature/night2-kapre" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/hud-house-depth-fix" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night03-tikbalang-connected" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/nights1-3-dimensional-art-pass" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night04-manananggal-the-wake" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/nighttime-lived-in-village-nights1-4" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night04-wake-immersive-vigil" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night04-final-character-animation" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night04-cinematic-creature-presence" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night05-sigbin-abandoned-farm" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night05-clear-farm-road" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night05-visible-night06-road-connection" ] || [ "${GITHUB_REF:-}" = "refs/heads/fix/shared-hud-night04-night05-consistency-20261117" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night06-rivers-unfinished-memory" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/final-art-animation-hud-polish" ]; then
+if [ "${GITHUB_REF:-}" = "refs/heads/fix/visual-depth-room-occlusion-n1-n2" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night2-kapre" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/hud-house-depth-fix" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night03-tikbalang-connected" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/nights1-3-dimensional-art-pass" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night04-manananggal-the-wake" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/nighttime-lived-in-village-nights1-4" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night04-wake-immersive-vigil" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night04-final-character-animation" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night04-cinematic-creature-presence" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night05-sigbin-abandoned-farm" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night05-clear-farm-road" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night05-visible-night06-road-connection" ] || [ "${GITHUB_REF:-}" = "refs/heads/fix/shared-hud-night04-night05-consistency-20261117" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night06-rivers-unfinished-memory" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/final-art-animation-hud-polish" ]; then
   adb shell am force-stop "$PKG" || true
   adb shell monkey -p "$PKG" -c android.intent.category.LAUNCHER 1
   sleep 7
@@ -287,13 +303,14 @@ if [ "${GITHUB_REF:-}" = "refs/heads/feature/night2-kapre" ] || [ "${GITHUB_REF:
   fi
   adb exec-out screencap -p > build/android-night2-return-trail.png
   python3 .github/scripts/assert_gameplay_visible.py build/android-night2-return-trail.png
+  capture_real_options 2 android-night2-return-trail.png NIGHT2_QA_OPTIONS_OPEN
   adb logcat -d -v brief | grep -Ei 'NIGHT2_QA|Godot|AndroidRuntime' | tail -n 160 > build/android-night2-log.txt || true
   echo "PASS: actual Kapre intro, witness area, shelter and mango tree run on Android"
 fi
 
 # Night 3 uses the SAME running Godot APK, original ridge artwork, and
 # actual scene title debug shortcut. These captures are never concept art.
-if [ "${GITHUB_REF:-}" = "refs/heads/feature/night03-tikbalang-connected" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/nights1-3-dimensional-art-pass" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night04-manananggal-the-wake" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/nighttime-lived-in-village-nights1-4" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night04-wake-immersive-vigil" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night04-final-character-animation" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night04-cinematic-creature-presence" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night05-sigbin-abandoned-farm" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night05-clear-farm-road" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night05-visible-night06-road-connection" ] || [ "${GITHUB_REF:-}" = "refs/heads/fix/shared-hud-night04-night05-consistency-20261117" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night06-rivers-unfinished-memory" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/final-art-animation-hud-polish" ]; then
+if [ "${GITHUB_REF:-}" = "refs/heads/fix/visual-depth-room-occlusion-n1-n2" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night03-tikbalang-connected" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/nights1-3-dimensional-art-pass" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night04-manananggal-the-wake" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/nighttime-lived-in-village-nights1-4" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night04-wake-immersive-vigil" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night04-final-character-animation" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night04-cinematic-creature-presence" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night05-sigbin-abandoned-farm" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night05-clear-farm-road" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night05-visible-night06-road-connection" ] || [ "${GITHUB_REF:-}" = "refs/heads/fix/shared-hud-night04-night05-consistency-20261117" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night06-rivers-unfinished-memory" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/final-art-animation-hud-polish" ]; then
   adb shell am force-stop "$PKG" || true
   adb shell monkey -p "$PKG" -c android.intent.category.LAUNCHER 1
   sleep 7
@@ -330,11 +347,12 @@ if [ "${GITHUB_REF:-}" = "refs/heads/feature/night03-tikbalang-connected" ] || [
     echo "ERROR: Night 3 daytime and nocturnal Tikbalang are identical"
     exit 1
   fi
+  capture_real_options 3 android-night3-watchpost-night.png NIGHT3_QA_OPTIONS_OPEN
   echo "PASS: actual Tikbalang Night 3 intro, bamboo ridge, safe lookout, night reveal and connected trail"
 fi
 
 # Wake is a REAL Godot scene entered by a debug-only title key.
-if [ "${GITHUB_REF:-}" = "refs/heads/feature/night04-manananggal-the-wake" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/nighttime-lived-in-village-nights1-4" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night04-wake-immersive-vigil" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night04-final-character-animation" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night04-cinematic-creature-presence" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night05-sigbin-abandoned-farm" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night05-clear-farm-road" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night05-visible-night06-road-connection" ] || [ "${GITHUB_REF:-}" = "refs/heads/fix/shared-hud-night04-night05-consistency-20261117" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night06-rivers-unfinished-memory" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/final-art-animation-hud-polish" ]; then
+if [ "${GITHUB_REF:-}" = "refs/heads/fix/visual-depth-room-occlusion-n1-n2" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night04-manananggal-the-wake" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/nighttime-lived-in-village-nights1-4" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night04-wake-immersive-vigil" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night04-final-character-animation" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night04-cinematic-creature-presence" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night05-sigbin-abandoned-farm" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night05-clear-farm-road" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night05-visible-night06-road-connection" ] || [ "${GITHUB_REF:-}" = "refs/heads/fix/shared-hud-night04-night05-consistency-20261117" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night06-rivers-unfinished-memory" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/final-art-animation-hud-polish" ]; then
   adb shell am force-stop "$PKG" || true
   adb shell monkey -p "$PKG" -c android.intent.category.LAUNCHER 1
   sleep 7
@@ -372,13 +390,14 @@ if [ "${GITHUB_REF:-}" = "refs/heads/feature/night04-manananggal-the-wake" ] || 
     echo "ERROR: Night 4 daytime and Manananggal night are identical"
     exit 1
   fi
+  capture_real_options 4 android-night4-wake-day.png NIGHT4_QA_OPTIONS_OPEN
   adb logcat -d -v brief | grep -Ei 'NIGHT4_QA|Godot|AndroidRuntime' | tail -n 180 > build/android-night4-log.txt || true
   echo "PASS: actual Night 4 wake, roof predator, courtyard and trail"
 fi
 
 # Night 5 authentic Old Farm is unlocked through the actual connected Night 4
 # route in production; F8 enters this specific scene ONLY on Android DEBUG CI.
-if [ "${GITHUB_REF:-}" = "refs/heads/feature/night05-sigbin-abandoned-farm" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night05-clear-farm-road" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night05-visible-night06-road-connection" ] || [ "${GITHUB_REF:-}" = "refs/heads/fix/shared-hud-night04-night05-consistency-20261117" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night06-rivers-unfinished-memory" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/final-art-animation-hud-polish" ]; then
+if [ "${GITHUB_REF:-}" = "refs/heads/fix/visual-depth-room-occlusion-n1-n2" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night05-sigbin-abandoned-farm" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night05-clear-farm-road" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night05-visible-night06-road-connection" ] || [ "${GITHUB_REF:-}" = "refs/heads/fix/shared-hud-night04-night05-consistency-20261117" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night06-rivers-unfinished-memory" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/final-art-animation-hud-polish" ]; then
   adb shell am force-stop "$PKG" || true
   adb shell monkey -p "$PKG" -c android.intent.category.LAUNCHER 1
   sleep 8
@@ -464,6 +483,7 @@ if [ "${GITHUB_REF:-}" = "refs/heads/feature/night05-sigbin-abandoned-farm" ] ||
     echo "ERROR: saved livestock crossing did not produce two distinct gameplay frames"
     exit 1
   fi
+  capture_real_options 5 android-night5-first-rescue-settled.png NIGHT5_QA_OPTIONS_OPEN
   adb logcat -d -v brief | grep -Ei 'NIGHT5_QA|Godot|AndroidRuntime' | tail -n 180 > build/android-night5-log.txt || true
   echo "PASS: actual Night 5 abandoned barn, safe livestock gate, Sigbin shadow reveal"
 fi
@@ -471,7 +491,7 @@ fi
 
 # Night 6 is a real Godot scene. F7 enters it on Android DEBUG CI only,
 # without forging a completed Night 5 save or changing production story.
-if [ "${GITHUB_REF:-}" = "refs/heads/feature/night06-rivers-unfinished-memory" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/final-art-animation-hud-polish" ]; then
+if [ "${GITHUB_REF:-}" = "refs/heads/fix/visual-depth-room-occlusion-n1-n2" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night06-rivers-unfinished-memory" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/final-art-animation-hud-polish" ]; then
   adb shell am force-stop "$PKG" || true
   adb shell monkey -p "$PKG" -c android.intent.category.LAUNCHER 1
   sleep 8
@@ -499,13 +519,14 @@ if [ "${GITHUB_REF:-}" = "refs/heads/feature/night06-rivers-unfinished-memory" ]
     exit 1
   fi
   adb logcat -d -v brief | grep -Ei 'NIGHT6_QA|Godot|AndroidRuntime' | tail -n 180 > build/android-night6-log.txt || true
+  capture_real_options 6 android-night6-archive-day.png NIGHT6_QA_OPTIONS_OPEN
   echo "PASS: real Night 6 river, archives, reconstruction board and living current"
 fi
 
 # Exact Night 7 QA branch: capture the actual Android-rendered Balete,
 # final root challenge and memorial in the live Godot scene. These are
 # DEBUG ONLY key positions and do not mutate the canonical story/save.
-if [ "${GITHUB_REF:-}" = "refs/heads/feature/night07-balete-finale" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/final-art-animation-hud-polish" ]; then
+if [ "${GITHUB_REF:-}" = "refs/heads/fix/visual-depth-room-occlusion-n1-n2" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/night07-balete-finale" ] || [ "${GITHUB_REF:-}" = "refs/heads/feature/final-art-animation-hud-polish" ]; then
   adb shell am force-stop "$PKG" || true
   adb shell monkey -p "$PKG" -c android.intent.category.LAUNCHER 1
   sleep 8
@@ -533,6 +554,7 @@ if [ "${GITHUB_REF:-}" = "refs/heads/feature/night07-balete-finale" ] || [ "${GI
     echo "ERROR: Balete day/night views are identical on emulator"
     exit 1
   fi
+  capture_real_options 7 android-night7-memorial-dawn.png NIGHT7_QA_OPTIONS_OPEN
   adb logcat -d -v brief | grep -Ei 'NIGHT7_QA|Godot|AndroidRuntime' | tail -n 160 > build/android-night7-log.txt || true
   echo "PASS: real Android Night 7 Balete, connected road and ancient Keeper rendered"
 fi

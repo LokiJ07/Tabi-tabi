@@ -8,6 +8,7 @@ const Night04Save = preload("res://scripts/core/night04_save.gd")
 const World = preload("res://scripts/core/connected_world.gd")
 const Preferences = preload("res://scripts/core/preferences.gd")
 const SharedHUD = preload("res://scripts/ui/shared_hud.gd")
+const SharedOptions = preload("res://scripts/ui/shared_options.gd")
 const Walkability = preload("res://scripts/world/shared_walkability_2d.gd")
 const PostgameResidents = preload("res://scripts/world/postgame_residents.gd")
 const DialogueMotion = preload("res://scripts/ui/shared_dialogue_motion.gd")
@@ -145,6 +146,8 @@ func _ready() -> void:
 		player_pos = FUTURE_TRAIL+Vector2(-100,87)
 		print("TABI_WORLD_ARRIVAL_FARM_FROM_RIVER")
 		print("TABI_WORLD_ARRIVAL_FARM_FROM_WAKE")
+	# Recover legacy saves from inside decorative walls and trunks.
+	player_pos = Walkability.repair_saved_position(5,player_pos)
 	bantay_pos = player_pos+Vector2(-45,31)
 	camera = Camera2D.new()
 	camera.name = "Night05FarmCamera"
@@ -223,7 +226,8 @@ func _process(delta: float) -> void:
 		# scene is absent; the road itself remains continuously visible.
 		player_pos = FarmArt.keep_player_before_locked_trail(
 			previous_foot,player_pos,FUTURE_TRAIL,not World.implemented("night06") or story.outcome == "")
-	bantay_pos = bantay_pos.lerp(player_pos+Vector2(-49,28),clampf(delta*3.2,0,1))
+	var dog_goal := bantay_pos.lerp(player_pos+Vector2(-49,28),clampf(delta*3.2,0,1))
+	bantay_pos = Walkability.slide(5,bantay_pos,dog_goal)
 	var framing_target := player_pos+aim*64.0
 	if story.phase == 3 or debug_farm_preview:
 		# Grounded Sigbin is the subject; the roof shadow is only a clue.
@@ -396,6 +400,7 @@ func _draw() -> void:
 	FarmArt.paint_crop_rows(self,_stage()>=2)
 	FarmArt.paint_squash_patch(self,Vector2(-650,140),_stage()>=2)
 	Landscape.trail_stones(self,RETURN_WAKE,Vector2(-355,341),17,80,_stage()>=2)
+	_paint_chapter_protagonists(true)
 	for at in [Vector2(-950,-445),Vector2(-835,-660),Vector2(775,-615),
 		Vector2(670,-520),FarmArt.LOWER_TREE]:
 		DimensionalArt.paint_grounded(self,TREE,at+Vector2(0,30),
@@ -528,10 +533,7 @@ func _draw() -> void:
 		DimensionalArt.paint_grounded(self,FARMER,at,
 			Vector2(100,158),Color(1,1,1,1.0-smoothstep(.80,1.0,t)
 				if _stage()>=2 else 1.0),.31)
-	DimensionalArt.paint_animated_actor(self,BANTAY,bantay_pos+Vector2(0,18),
-		Vector2(96,103),walk_phase,walk_weight,prefs.reduced_motion,Color.WHITE,.33,true)
-	DimensionalArt.paint_animated_actor(self,HERO,player_pos+Vector2(0,7),
-		Vector2(107,140),walk_phase,walk_weight,prefs.reduced_motion,Color.WHITE,.38)
+	_paint_chapter_protagonists(false)
 	PostgameResidents.paint(self,"night05",elapsed,prefs.reduced_motion,player_pos)
 	var font := ThemeDB.fallback_font
 	draw_string(font,RETURN_WAKE+Vector2(26,-90),"WAKE TRAIL • RETURN",HORIZONTAL_ALIGNMENT_LEFT,335,18,Color("#f3d8a6"))
@@ -539,6 +541,23 @@ func _draw() -> void:
 	draw_string(font,FUTURE_TRAIL+Vector2(-200,-45),
 		"HILL TRAIL • NIGHT 6 RIVER" if World.implemented("night06") and story.outcome != "" else "HILL TRAIL • FINISH FARM FIRST",
 		HORIZONTAL_ALIGNMENT_LEFT,410,17,Color("#e0c58f"))
+
+func _paint_chapter_protagonists(behind: bool) -> void:
+	if Walkability.scenery_covers_actor(5,bantay_pos):
+		if behind:
+			DimensionalArt.paint_animated_actor(self,BANTAY,bantay_pos+Vector2(0,18),
+				Vector2(96,103),walk_phase,walk_weight,prefs.reduced_motion,Color.WHITE,.33,true)
+	elif not behind:
+		DimensionalArt.paint_animated_actor(self,BANTAY,bantay_pos+Vector2(0,18),
+			Vector2(96,103),walk_phase,walk_weight,prefs.reduced_motion,Color.WHITE,.33,true)
+	if Walkability.scenery_covers_actor(5,player_pos):
+		if behind:
+			DimensionalArt.paint_animated_actor(self,HERO,player_pos+Vector2(0,7),
+				Vector2(107,140),walk_phase,walk_weight,prefs.reduced_motion,Color.WHITE,.38)
+	elif not behind:
+		DimensionalArt.paint_animated_actor(self,HERO,player_pos+Vector2(0,7),
+			Vector2(107,140),walk_phase,walk_weight,prefs.reduced_motion,Color.WHITE,.38)
+
 
 func _fit_status_card() -> void:
 	# Same dynamic status height as Night 1–3: objectives must never overflow.
@@ -657,13 +676,15 @@ func _build_ui() -> void:
 	notes_text = _label(scroll,"",21,Color("#dfebe1"))
 	notes_text.custom_minimum_size.x = 580
 	_button(nstack,"RETURN TO FARM",func():notes.hide())
-	options = _panel(modal_backdrop,"FarmOptions",Vector4(.22,.15,.78,.85))
-	var ostack := _stack(options)
-	_label(ostack,"PAUSE • NIGHT 5",32,Color("#f7dfab"))
-	_button(ostack,"SAVE OFFLINE",_save_feedback)
-	_button(ostack,"FIELD NOTES",_open_notes)
-	_button(ostack,"SAVE & MAIN MENU",_save_menu)
-	_button(ostack,"CLOSE",func(): options.hide())
+	var unified := SharedOptions.create(modal_backdrop,prefs,"NIGHT 5 • SIGBIN FARM",{
+		"save": _save_feedback,
+		"notes": func(): options.hide(); _open_notes(); _sync_ui(),
+		"menu": _save_menu,
+		"quit": _quit_with_save,
+		"back": func(): options.hide(); _sync_ui(),
+		"confirm_navigation": true
+	},_apply_shared_settings,"FarmOptions")
+	options = unified["panel"]
 	ending = _panel(modal_backdrop,"FarmAftermath",Vector4(.16,.12,.84,.88))
 	save_error = AcceptDialog.new()
 	save_error.dialog_text = "The offline record could not be saved. Check device storage."
@@ -1015,12 +1036,19 @@ func _retry_from_saved_checkpoint() -> void:
 		 {"label":"KEEP PLAYING","action":"close"}])
 
 
+func _apply_shared_settings() -> void:
+	camera.position_smoothing_enabled = not prefs.reduced_motion
+	if ambient != null:
+		ambient.set_audio_level(prefs.audio_level)
+	_sync_ui()
+
 func _open_options() -> void:
 	if dialogue.visible or ending.visible:
 		return
 	modal_backdrop.show()
 	options.show()
 	_sync_ui()
+	print("NIGHT5_QA_OPTIONS_OPEN")
 
 func _confirm_retreat() -> void:
 	if _modal() or story.outcome != "":
@@ -1044,6 +1072,12 @@ func _save_feedback() -> void:
 	options.hide()
 	_talk("FIELD NOTES","Night 5 saved offline. The previous FOUR night records are intact.",
 		[{"label":"CONTINUE","action":"close"}])
+
+func _quit_with_save() -> void:
+	if not _auto_save():
+		save_error.popup_centered(Vector2i(600,190))
+		return
+	get_tree().quit()
 
 func _save_menu() -> void:
 	if not _auto_save():
