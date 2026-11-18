@@ -159,11 +159,19 @@ func _active_stone() -> Vector2:
 	return GATE
 
 func _safe_segment(p: Vector2) -> bool:
+	# Only corridors up to the current solved stone are safe. The older
+	# implementation inspected ALL future segments, letting a player walk
+	# into the unsolved Keeper roots without observing their warnings.
 	var stones: Array = PATH_STONES if story.phase == 3 else AWAKENED_STONES
 	var start: Vector2 = GATE if story.phase == 3 else PATH_STONES[2]
-	for at in stones:
+	var unlocked: int = clampi(
+		story.path_index if story.phase == 3 else story.awake_index,
+		0,stones.size()-1)
+	for i in range(unlocked+1):
+		var at: Vector2 = stones[i]
 		var near: Vector2 = Geometry2D.get_closest_point_to_segment(p,start,at)
-		if p.distance_to(near) < 93.0: return true
+		if p.distance_to(near) < 93.0:
+			return true
 		start = at
 	return false
 
@@ -184,8 +192,7 @@ func _process(delta: float) -> void:
 		if story.phase in [0,1] and candidate.x > 105:
 			candidate.x = 105 # A visibly roped Keeper path, not a hidden warp.
 		if story.phase in [3,5]:
-			var current: Vector2 = _active_stone()
-			if candidate.distance_to(current) > 190.0 and not _safe_segment(candidate):
+			if not _safe_segment(candidate):
 				candidate = player_pos
 				if unsafe_cooldown <= 0.0:
 					story.unsafe_step()
