@@ -188,7 +188,7 @@ func _physics_process(delta: float) -> void:
 	if postgame_barrio != null:
 		var village_clock := get_node_or_null("/root/PostgameClock")
 		if village_clock != null and village_clock.is_active():
-			PostgameBarrio.update(postgame_barrio,village_clock.fraction(),elapsed,preferences.reduced_motion)
+			PostgameBarrio.update(postgame_barrio,village_clock.fraction(),elapsed,preferences.reduced_motion,village_clock.village_mood)
 	if player == null:
 		return
 	var axis := Input.get_vector("ui_left", "ui_right", "ui_up", "ui_down")
@@ -1317,7 +1317,10 @@ func _interact() -> void:
 			"GARDEN_FARMER":"We plant again, and the children can safely follow the village path.",
 			"TRAIL_CARETAKER":"The mango trail is connected and properly marked. I check the road before sunset."
 		}
-		_show_dialogue(str(lines.get(role,"The village is changing, a day at a time.")))
+		if role == "DOCK_FISHER" and _postgame_is_active() and get_node("/root/PostgameClock").village_mood == "healing":
+			_show_dialogue("The river remains under watch. We mend the nets and keep the banca close until the crossing is safer.")
+		else:
+			_show_dialogue(str(lines.get(role,"The village is changing, a day at a time.")))
 		return
 	if closest == "MANGO_TRAIL":
 		_enter_mango_trail()
