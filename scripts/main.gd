@@ -1555,8 +1555,7 @@ func _toggle_night() -> void:
 
 func _update_objective() -> void:
 	if free_roam_mode:
-		objective.text = "FREE ROAM • "+Postgame.mood(postgame_ending)+
-			" • Seven-night record near the school; north trail returns to Mango."
+		objective.text = "FREE ROAM • %s • Record near school; north trail to Mango." % Postgame.mood(postgame_ending)
 	elif in_lola_hut:
 		if not story.prologue_flags.has("blue_notebook"):
 			objective.text = "MORNING: Find the BLUE NOTEBOOK on Lola's writing desk."
