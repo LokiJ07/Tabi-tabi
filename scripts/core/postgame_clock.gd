@@ -7,6 +7,7 @@ const SAVE_INTERVAL_SECONDS := 15.0
 const START_FRACTION := 0.29 # 06:58 on the first peaceful morning.
 signal light_changed(stage: int)
 
+var village_mood := "healing"
 var _active := false
 var _fraction := START_FRACTION
 var _unsaved_seconds := 0.0
@@ -18,6 +19,9 @@ func refresh() -> void:
 	var ledger: Dictionary = World.read()
 	_active = World.is_postgame(ledger)
 	if _active:
+		var endings: Dictionary = ledger.get("outcomes", {})
+		var final_outcome: String = str(endings.get("night07", "")).to_lower()
+		village_mood = "restored" if final_outcome in ["resolve","reconcile","peaceful","renewal"] else "healing"
 		_fraction = fposmod(clampf(float(ledger.get("postgame_time", START_FRACTION)), 0.0, 1.0), 1.0)
 	_unsaved_seconds = 0.0
 
