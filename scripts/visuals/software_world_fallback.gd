@@ -415,18 +415,10 @@ func _draw_hut() -> void:
 	# Architectural cutaway: all projected coordinates share the native hut's
 	# actual 9x8m footprint. No duplicate imaginary facades or floating roofs.
 	var c := Vector3(55.0, 0.0, 0.0)
-	draw_rect(Rect2(Vector2.ZERO, size), Color("#183739"))
-	_quad(SOIL, [c + Vector3(-18, -.48, -16), c + Vector3(18, -.48, -16),
-		c + Vector3(18, -.48, 16), c + Vector3(-18, -.48, 16)], Color("#8fa177"))
-	# A garden outside the footprint, never cluttering the playable interior.
-	for i in range(4):
-		var garden_z := -7.1 + float(i) * 4.6
-		_art(HIBISCUS if i % 2 == 0 else BANANA,
-			c + Vector3(-8.0 - float(i % 2) * 2.4, -.32, garden_z),
-			1.45 if i % 2 == 0 else 3.0, true, Color("#b7c99d"))
-	for i in range(6):
-		var step_z := 4.75 + float(i) * .99
-		_hut_block(c + Vector3(0, -.22, step_z), 1.18, .38, .11, Color("#b59b75"))
+	# Software and native rooms use the same matte and compact doorstep.
+	# The screenshot must show the room, not a huge exterior garden/sky.
+	draw_rect(Rect2(Vector2.ZERO,size),Color("#152d2b"))
+	_hut_block(c+Vector3(0,-.22,4.62),1.18,.34,.11,Color("#9b795b"))
 
 	# Raised timber platform and open porch; these are true spatial polygons,
 	# not rectangular screen UI stickers pretending to be architecture.
@@ -439,8 +431,8 @@ func _draw_hut() -> void:
 	_hut_face([ne, se, se + Vector3(0, -.53, 0), ne + Vector3(0, -.53, 0)],
 		Color("#7c5738"), Color("#412e25"), 2.0)
 
-	# Woven rear walls remain fully visible. The camera-facing +X and +Z walls
-	# are intentionally absent, matching the native scene's cutaway meshes.
+	# Rear walls remain visible; shallow foreground lips mark the otherwise
+	# invisible full-height collision boundaries in the native cutaway.
 	_quad(HUT_WALL, [c + Vector3(-4.44, .01, -3.94), c + Vector3(4.44, .01, -3.94),
 		c + Vector3(4.44, 3.07, -3.94), c + Vector3(-4.44, 3.07, -3.94)],
 		Color("#e0b88a"))
@@ -451,7 +443,13 @@ func _draw_hut() -> void:
 	_quad(HUT_FLOOR, [nw + Vector3(0,.065,0), ne + Vector3(0,.065,0),
 		se + Vector3(0,.065,0), sw + Vector3(0,.065,0)], Color.WHITE)
 	_hut_line(c + Vector3(-4.42,.10,-3.9), c + Vector3(4.42,.10,-3.9), Color("#684a32"), 3.0)
-	_hut_line(c + Vector3(-4.42,.10,3.9), c + Vector3(4.42,.10,3.9), Color("#513a2b"), 4.0)
+	_hut_line(c + Vector3(-4.42,.10,3.9),c + Vector3(4.42,.10,3.9),Color("#513a2b"),4.0)
+	_hut_face([c+Vector3(-4.5,.03,-3.9),c+Vector3(-4.5,.03,4.0),
+		c+Vector3(-4.5,.86,4.0),c+Vector3(-4.5,.86,-3.9)],Color("#92744f"))
+	_hut_face([c+Vector3(-4.5,.03,4.0),c+Vector3(-1.2,.03,4.0),
+		c+Vector3(-1.2,.86,4.0),c+Vector3(-4.5,.86,4.0)],Color("#ad8660"))
+	_hut_face([c+Vector3(1.2,.03,4.0),c+Vector3(4.5,.03,4.0),
+		c+Vector3(4.5,.86,4.0),c+Vector3(1.2,.86,4.0)],Color("#ad8660"))
 
 	# Structural posts, rim joists and pitched gable in one consistent scale.
 	for x in [-4.44, 4.44]:

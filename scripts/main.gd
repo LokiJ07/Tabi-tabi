@@ -249,7 +249,7 @@ func _physics_process(delta: float) -> void:
 		var smooth: float = 1.0 if preferences.reduced_motion else clampf(delta * 4.5, 0.0, 1.0)
 		camera.global_position = camera.global_position.lerp(room_camera, smooth)
 		camera.look_at(room_center)
-		camera.size = lerpf(camera.size, 8.2, smooth)
+		camera.size = lerpf(camera.size, 7.9, smooth)
 	RiverBanca.animate(river_boat, elapsed, preferences.reduced_motion)
 	elapsed += delta
 	window_light_refresh += delta

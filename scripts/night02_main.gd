@@ -158,7 +158,10 @@ func _ready() -> void:
 	elif str(arrived.get("from", "")) == "night03":
 		player_pos = ConnectedWorld.ARRIVAL_MANGO_RIDGE
 		print("TABI_WORLD_ARRIVAL_MANGO_FROM_RIDGE")
-	dog_pos = player_pos + Vector2(-52, 31)
+	# Repair older saves which were written before the correct solid art
+	# footprints existed. This does NOT change evidence/story state.
+	player_pos = Walkability.repair_saved_position(2,player_pos)
+	dog_pos = Walkability.repair_saved_position(2,player_pos+Vector2(-52,31))
 	camera = Camera2D.new()
 	camera.name = "Night2IsometricCamera"
 	camera.enabled = true
@@ -214,7 +217,8 @@ func _process(delta: float) -> void:
 		candidate.x = clampf(candidate.x, MAP_LIMIT.position.x + 55, MAP_LIMIT.end.x - 55)
 		candidate.y = clampf(candidate.y, MAP_LIMIT.position.y + 65, MAP_LIMIT.end.y - 65)
 		player_pos = Walkability.slide(2,player_pos,candidate)
-		dog_pos = dog_pos.lerp(player_pos + Vector2(-48, 27), clampf(delta * 2.9, 0.0, 1.0))
+		var companion_goal := dog_pos.lerp(player_pos+Vector2(-48,27),clampf(delta*2.9,0.0,1.0))
+		dog_pos = Walkability.slide(2,dog_pos,companion_goal)
 	# The camera eases toward a nearby speaker without moving the player
 	# or rushing across the grove to an off-screen witness.
 	var desired_blend := 1.0 if dialogue_focus_enabled and dialogue.visible else 0.0
@@ -408,6 +412,9 @@ func _draw() -> void:
 	_polygon([trail_marker+Vector2(-67,-54),trail_marker+Vector2(69,-54),
 		trail_marker+Vector2(69,-15),trail_marker+Vector2(-67,-15)],Color("#bf9f6d"))
 	draw_line(trail_marker+Vector2(-67,-54),trail_marker+Vector2(69,-54),Color("#e5c98e"),4)
+	# Painters order is based on WORLD FEET: rear players render BEFORE
+	# solid scenery. This fixes standing visibly on roofs or mango leaves.
+	_draw_chapter_actors(true)
 	# A recognizable village refuge, and Mara's school with its own facade.
 	_building_at(Vector2(-600, -445), SCHOOL, "MARA • SCHOOL")
 	_building_at(Vector2(-610, 410), HOUSE, "SAFE SHELTER")
@@ -494,6 +501,15 @@ func _draw() -> void:
 		# Occluding branch remains in front of the knee, not behind the giant.
 		draw_line(TREE+Vector2(78,-185),TREE+Vector2(243,-195),Color("#33261f",.82),11,true)
 		draw_line(TREE+Vector2(87,-191),TREE+Vector2(241,-201),Color("#98714c",.44),3.5,true)
+	_draw_chapter_actors(false)
+	PostgameResidents.paint(self,"old_mango",particle_phase,prefs.reduced_motion,player_pos)
+	_draw_world_labels()
+	if story.outcome == "resolve":
+		draw_arc(TREE, 157, 0, TAU, 80, Color("#bcd79d",.58), 3.0)
+	elif story.outcome == "partial":
+		draw_arc(TREE, 157, 0, TAU, 80, Color("#e2b879",.58), 3.0)
+
+func _draw_chapter_actors(behind: bool) -> void:
 	var actors: Array[Dictionary] = []
 	if NightWindows.outdoor_actor_visible(2,light_stage,"DADO"):
 		actors.append({"at": Vector2(-661,-263), "texture": DADO, "width": 80.0, "height": 128.0})
@@ -505,6 +521,8 @@ func _draw() -> void:
 		return (a["at"] as Vector2).y < (b["at"] as Vector2).y)
 	for actor in actors:
 		var foot: Vector2 = actor["at"]
+		if Walkability.scenery_covers_actor(2,foot) != behind:
+			continue
 		var width: float = actor["width"]
 		var height: float = actor["height"]
 		var is_player: bool = actor["texture"] == HERO
@@ -516,12 +534,7 @@ func _draw() -> void:
 		else:
 			DimensionalArt.paint_grounded(self,actor["texture"],foot,
 				Vector2(width,height),Color.WHITE,.43)
-	PostgameResidents.paint(self,"old_mango",particle_phase,prefs.reduced_motion,player_pos)
-	_draw_world_labels()
-	if story.outcome == "resolve":
-		draw_arc(TREE, 157, 0, TAU, 80, Color("#bcd79d",.58), 3.0)
-	elif story.outcome == "partial":
-		draw_arc(TREE, 157, 0, TAU, 80, Color("#e2b879",.58), 3.0)
+
 
 func _draw_kapre_smoke() -> void:
 	# First nighttime manifestation: a cigar ember and drifting smoke.
@@ -887,10 +900,12 @@ func _build_ui() -> void:
 
 	options_panel = PanelContainer.new()
 	options_panel.name = "Night2Options"
-	options_panel.anchor_left = .10
-	options_panel.anchor_right = .90
-	options_panel.anchor_top = .055
-	options_panel.anchor_bottom = .945
+	# A pause menu with four actions should not consume almost the whole
+	# screen and leave a giant empty blue rectangle on landscape phones.
+	options_panel.anchor_left = .18
+	options_panel.anchor_right = .82
+	options_panel.anchor_top = .18
+	options_panel.anchor_bottom = .81
 	SharedHUD.style_modal_panel(options_panel)
 	layout.add_child(options_panel)
 	var opts := VBoxContainer.new()
