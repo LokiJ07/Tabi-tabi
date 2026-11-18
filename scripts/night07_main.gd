@@ -80,6 +80,7 @@ var held: Dictionary = {}
 var observe_held := false
 var elapsed := 0.0
 var walking := 0.0
+var walk_weight := 0.0
 var travel_in_progress := false
 var qa_visual_stage_override := -1 # Android debug-only camera scenes; never saved.
 
@@ -140,6 +141,8 @@ func _process(delta: float) -> void:
 	var axis := (Input.get_vector("ui_left","ui_right","ui_up","ui_down")+motion).limit_length()
 	if _modal() or travel_in_progress:
 		axis = Vector2.ZERO
+	walk_weight = lerpf(walk_weight,1.0 if axis.length()>.04 else 0.0,
+		1.0 if prefs.reduced_motion else clampf(delta*8.0,0.0,1.0))
 	if axis.length() > .04:
 		if not prefs.reduced_motion:
 			walking += delta * 9.0
@@ -261,11 +264,10 @@ func _draw() -> void:
 	if story.phase >= 4 and story.phase <= 5:
 		Depth.paint_grounded(self,MARA,Vector2(290,30),Vector2(103,145),Color.WHITE,.3)
 		Depth.paint_grounded(self,LOLA,Vector2(220,80),Vector2(103,140),Color.WHITE,.3)
-	var bob := 0.0 if prefs.reduced_motion else absf(sin(walking))*2.9
-	Depth.paint_grounded(self,BANTAY,bantay_pos+Vector2(0,18),
-		Vector2(100,106),Color.WHITE,.31,bob)
-	Depth.paint_grounded(self,HERO,player_pos+Vector2(0,9),
-		Vector2(108,143),Color.WHITE,.40,bob)
+	Depth.paint_animated_actor(self,BANTAY,bantay_pos+Vector2(0,18),
+		Vector2(100,106),walking,walk_weight,prefs.reduced_motion,Color.WHITE,.31,true)
+	Depth.paint_animated_actor(self,HERO,player_pos+Vector2(0,9),
+		Vector2(108,143),walking,walk_weight,prefs.reduced_motion,Color.WHITE,.40)
 	PostgameResidents.paint(self,"night07",elapsed,prefs.reduced_motion,player_pos)
 	draw_string(ThemeDB.fallback_font,ENTRY+Vector2(15,-113),
 		"RIVER TRAIL • RETURN",HORIZONTAL_ALIGNMENT_LEFT,365,20,Color("#efdda9"))
