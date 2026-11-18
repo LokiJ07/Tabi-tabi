@@ -1788,6 +1788,9 @@ func _refresh_options() -> void:
 
 
 func _apply_preferences() -> void:
+	# Shared Options toggles also need to affect the live Night 1 audio.
+	if living_sound != null and living_sound.has_method("set_audio_level"):
+		living_sound.set_audio_level(preferences.audio_level)
 	var scale: float = preferences.text_scale
 	var labels: Array[Label] = [info, objective, stage_label, alarm_label, interact_hint, dog_warning_label, dialogue_text, notebook_body, prep_summary, courage_label, focus_feedback]
 	var base_sizes: Array[int] = [24, 22, 20, 18, 21, 18, 25, 27, 26, 20, 18]

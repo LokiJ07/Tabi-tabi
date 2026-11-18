@@ -79,6 +79,26 @@ func _run() -> void:
 					check(float((chapter.get("prefs") as RefCounted).get("text_scale")) != before,
 						"title settings actually change persistent text size")
 					previous_sizes.append(float((chapter.get("prefs") as RefCounted).get("text_scale")))
+				for change in [
+					["PrefMotion","reduced_motion"],
+					["PrefContrast","high_contrast"],
+					["PrefHint","hint_level"],
+					["PrefAssist","story_assist"],
+					["PrefAudio","audio_level"]
+				]:
+					var preference_id: String = str(change[1])
+					var preference_button := panel.find_child(str(change[0]),true,false) as Button
+					var current_pref := chapter.get("prefs") as RefCounted
+					if preference_button != null and current_pref != null:
+						var old_value: Variant = current_pref.get(preference_id)
+						preference_button.pressed.emit()
+						check(current_pref.get(preference_id) != old_value,
+							"title %s setting actually changes gameplay preference" % preference_id)
+				var on_disk := Prefs.new()
+				check(on_disk.load_from() and on_disk.reduced_motion and on_disk.high_contrast
+					and on_disk.story_assist,
+					"full accessibility preferences persist in a single offline file")
+
 		chapter.queue_free()
 		await process_frame
 		if i == 1 and previous_sizes.size()>0:
