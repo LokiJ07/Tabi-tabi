@@ -33,6 +33,7 @@ const BarrioLighting = preload("res://scripts/visuals/barrio_lighting.gd")
 const NightWindows = preload("res://scripts/visuals/nighttime_windows.gd")
 const RiverBanca = preload("res://scripts/world/river_banca.gd")
 const PostgameBarrio = preload("res://scripts/world/postgame_barrio_3d.gd")
+const PostgameDialogue = preload("res://scripts/narrative/postgame_dialogue.gd")
 const BantayRoute = preload("res://scripts/ai/bantay_route.gd")
 const BantayAwareness = preload("res://scripts/ai/bantay_awareness.gd")
 const AimPad = preload("res://scripts/ui/aim_pad.gd")
@@ -1331,6 +1332,9 @@ func _interact() -> void:
 		return
 	if closest == "":
 		_show_dialogue("Move close to a resident or the old mooring to interact.")
+		return
+	if _postgame_is_active() and closest in ["LOLA","DADO","SABEL","MARA"]:
+		_show_dialogue(PostgameDialogue.conversation(closest,get_node("/root/PostgameClock").village_mood))
 		return
 	var dialogue_line: String = NightDialogue.response(closest, story, is_night)
 	match closest:
