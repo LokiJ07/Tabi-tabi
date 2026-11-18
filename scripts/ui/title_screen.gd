@@ -72,27 +72,27 @@ func _input(event: InputEvent) -> void:
 		if key.pressed and key.keycode == KEY_F9:
 			get_viewport().set_input_as_handled()
 			print("NIGHT7_QA_DEBUG_ENTRY")
-			get_tree().change_scene_to_packed(Night07Scene)
+			SceneTransit.change_to_packed(Night07Scene)
 			return
 		if key.pressed and key.keycode == KEY_F7:
 			get_viewport().set_input_as_handled()
 			print("NIGHT6_QA_DEBUG_ENTRY")
-			get_tree().change_scene_to_packed(Night06Scene)
+			SceneTransit.change_to_packed(Night06Scene)
 			return
 		if key.pressed and key.keycode == KEY_F8:
 			get_viewport().set_input_as_handled()
 			print("NIGHT5_QA_DEBUG_ENTRY")
-			get_tree().change_scene_to_packed(Night05Scene)
+			SceneTransit.change_to_packed(Night05Scene)
 			return
 		if key.pressed and key.keycode == KEY_F12:
 			get_viewport().set_input_as_handled()
 			print("NIGHT4_QA_DEBUG_ENTRY")
-			get_tree().change_scene_to_packed(Night04Scene)
+			SceneTransit.change_to_packed(Night04Scene)
 			return
 		if key.pressed and key.keycode == KEY_F11:
 			get_viewport().set_input_as_handled()
 			print("NIGHT3_QA_DEBUG_ENTRY")
-			get_tree().change_scene_to_packed(Night03Scene)
+			SceneTransit.change_to_packed(Night03Scene)
 			return
 		if key.pressed and key.keycode == KEY_F10:
 			var viewport := get_viewport()
@@ -101,7 +101,7 @@ func _input(event: InputEvent) -> void:
 			print("NIGHT2_QA_DEBUG_ENTRY")
 			# Freeing the title is deferred by scene change; never access its
 			# viewport after change_scene_to_packed() removes the current scene.
-			get_tree().change_scene_to_packed(Night02Scene)
+			SceneTransit.change_to_packed(Night02Scene)
 			return
 	# Debug-only QA gesture, a backup when Android's screenshot automation
 	# cannot reliably tap the real START GAME button. Support touch AND mouse
@@ -417,7 +417,7 @@ func _enter_night7() -> void:
 	if message != null:
 		message.text = "Opening Night 7: Balete Grounds..."
 	await get_tree().process_frame
-	get_tree().change_scene_to_packed(Night07Scene)
+	SceneTransit.change_to_packed(Night07Scene)
 
 func _enter_night6() -> void:
 	if not _night6_unlocked() and not OS.has_feature("debug"):
@@ -427,7 +427,7 @@ func _enter_night6() -> void:
 	if label != null:
 		label.text = "Opening Night 6: What the Water Took..."
 	await get_tree().process_frame
-	get_tree().change_scene_to_packed(Night06Scene)
+	SceneTransit.change_to_packed(Night06Scene)
 
 func _enter_night5() -> void:
 	if not _night5_unlocked() and not OS.has_feature("debug"):
@@ -437,7 +437,7 @@ func _enter_night5() -> void:
 	if label != null:
 		label.text = "Opening Night 5: Sigbin — The Abandoned Farm..."
 	await get_tree().process_frame
-	get_tree().change_scene_to_packed(Night05Scene)
+	SceneTransit.change_to_packed(Night05Scene)
 
 func _enter_night4() -> void:
 	if not _night4_unlocked() and not OS.has_feature("debug"):
@@ -447,7 +447,7 @@ func _enter_night4() -> void:
 	if lbl != null:
 		lbl.text = "Opening Night 4: The Manananggal at the Wake..."
 	await get_tree().process_frame
-	get_tree().change_scene_to_packed(Night04Scene)
+	SceneTransit.change_to_packed(Night04Scene)
 
 func _enter_night3() -> void:
 	if not _night3_unlocked() and not OS.has_feature("debug"):
@@ -457,7 +457,7 @@ func _enter_night3() -> void:
 	if loading_label != null:
 		loading_label.text = "Opening Night 3: Tikbalang — The False Trail..."
 	await get_tree().process_frame
-	get_tree().change_scene_to_packed(Night03Scene)
+	SceneTransit.change_to_packed(Night03Scene)
 
 
 func _enter_night2() -> void:
@@ -468,7 +468,7 @@ func _enter_night2() -> void:
 	if loading_label != null:
 		loading_label.text = "Opening Night 2: The Giant in the Mango Tree..."
 	await get_tree().process_frame
-	get_tree().change_scene_to_packed(Night02Scene)
+	SceneTransit.change_to_packed(Night02Scene)
 
 
 func _has_save() -> bool:
@@ -516,7 +516,7 @@ func _enter_game(fresh: bool) -> void:
 		_clear_campaign_saves()
 	loading_cover.show()
 	await get_tree().process_frame
-	get_tree().change_scene_to_packed(GameScene)
+	SceneTransit.change_to_packed(GameScene)
 
 func _build_loading() -> void:
 	loading_cover = ColorRect.new()
