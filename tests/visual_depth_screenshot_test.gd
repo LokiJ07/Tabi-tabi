@@ -63,6 +63,10 @@ func _run() -> void:
 		"ceiling supports must no longer cross Lola and the central aisle")
 	check(room.get_node_or_null("Perimeter roof support 0") != null,
 		"roof beams moved to perimeter, keeping a believable structure")
+	check(room.get_node_or_null("Writing desk top collision") is StaticBody3D,
+		"notebook table must have a real physical collision")
+	check(room.get_node_or_null("Breakfast table collision") is StaticBody3D,
+		"breakfast table cannot be ghosted through")
 	check(room.get_node_or_null("Hut exit safety gate collision") is StaticBody3D,
 		"the door remains solid and requires INTERACT")
 	room_world.queue_free()
