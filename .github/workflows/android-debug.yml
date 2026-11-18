@@ -123,6 +123,8 @@ jobs:
           run_test res://tests/night05_scene_test.gd
           run_test res://tests/night06_state_test.gd
           run_test res://tests/night06_scene_test.gd
+          run_test res://tests/night07_state_test.gd
+          run_test res://tests/night07_scene_test.gd
           run_test res://tests/connected_world_test.gd
           run_test res://tests/north_grove_art_test.gd
           run_test res://tests/connected_world_playthrough_test.gd
@@ -247,6 +249,12 @@ jobs:
             build/android-night6-river-memory-night.png
             build/android-night6-farm-return-trail.png
             build/android-night6-log.txt
+            build/android-night7-intro.png
+            build/android-night7-readiness-grounds.png
+            build/android-night7-community-gathering.png
+            build/android-night7-awakened-balete.png
+            build/android-night7-morning-path.png
+            build/android-night7-log.txt
             build/android-night1-notebook.png
             build/android-night1-notebook-scrolled.png
             build/android-night1-preparation.png

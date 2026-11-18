@@ -1,7 +1,7 @@
 extends RefCounted
 ## Tabi-tabi is ONE seven-night story with connected regions.
 ## Regions are streamed as Godot scenes for memory/performance, not separate games.
-## Nights 1–6 are connected playable scenes. Night 7 remains locked.
+## All seven nights are connected playable scenes with case-specific gates.
 const PATH := "user://tabi_connected_world.json"
 const REGIONS := [
 	"barrio_lawom", "old_mango", "night03", "night04",
@@ -13,7 +13,8 @@ const SCENES := {
 	"night03": "res://scenes/night03.tscn",
 	"night04": "res://scenes/night04.tscn",
 	"night05": "res://scenes/night05.tscn",
-	"night06": "res://scenes/night06.tscn"
+	"night06": "res://scenes/night06.tscn",
+	"night07": "res://scenes/night07.tscn"
 }
 const CONNECTIONS := {
 	"barrio_lawom": ["old_mango"],
@@ -41,7 +42,7 @@ const ARRIVAL_FARM := Vector2(-810.0,340.0)
 const TRAIL_FARM_WAKE := Vector2(-990.0,410.0)
 # Canonical physical continuation from the Sigbin farm to the next chapter.
 # Canonical Night 5 completion opens the real Night 6 chapter scene.
-# Only the yet-unbuilt Night 7 remains locked.
+# Night 7 becomes accessible only after a real Night 6 outcome.
 const TRAIL_FARM_NIGHT06 := Vector2(955.0,-470.0)
 const ARRIVAL_WAKE_FROM_FARM := Vector2(735.0,-95.0)
 const TRAVEL_RANGE_3D := 3.35
@@ -130,6 +131,11 @@ static func begin_travel(origin: String, destination: String, last_outcome: Stri
 		var finished: Dictionary = data.get("outcomes",{})
 		if last_outcome == "" or str(finished.get("night05","")) != last_outcome:
 			return false
+	# The Balete gate cannot accept a guessed outcome or QA-only preview.
+	if origin == "night06" and destination == "night07":
+		var final_ledger: Dictionary = data.get("outcomes",{})
+		if last_outcome == "" or str(final_ledger.get("night06","")) != last_outcome:
+			return false
 	data["current"] = destination
 	data["pending"] = {"from": origin, "to": destination}
 	var visited: Dictionary = data.get("visited", {})
@@ -161,7 +167,7 @@ static func note_outcome(night_number: int, value: String) -> bool:
 	return write(data)
 
 static func seven_night_chain_is_connected() -> bool:
-	# Pure graph check; future destinations remain UNIMPLEMENTED until built.
+	# Pure graph check of the complete seven-night story route.
 	var seen := {"barrio_lawom": true}
 	var pending: Array[String] = ["barrio_lawom"]
 	while not pending.is_empty():

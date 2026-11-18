@@ -25,12 +25,12 @@ func _run() -> void:
 	check(not World.adjacent("barrio_lawom","night07"), "no skipping to the finale")
 	check(World.scene_for("barrio_lawom") == "res://scenes/main.tscn", "Barrio uses real original game scene")
 	check(World.scene_for("old_mango") == "res://scenes/night02.tscn", "Kapre uses real chapter scene")
-	check(World.implemented("night03") and World.implemented("night04") and World.implemented("night05") and World.implemented("night06") and not World.implemented("night07"), "Nights 1–6 now playable, Night 7 still locked")
+	check(World.implemented("night03") and World.implemented("night04") and World.implemented("night05") and World.implemented("night06") and World.implemented("night07"), "all seven connected chapter scenes are implemented")
 	check(World.scene_for("night03") == "res://scenes/night03.tscn", "Tikbalang ridge is an actual playable scene")
 	check(World.scene_for("night04") == "res://scenes/night04.tscn", "Wake has an authentic playable scene")
 	check(World.scene_for("night05") == "res://scenes/night05.tscn", "Sigbin abandoned farm has a real playable scene")
 	check(not World.begin_travel("night04","night05","resolve"), "farm is locked without completed Night 4 ledger")
-	check(World.implemented("night06"),"Night 6 is a real connected scene")
+	check(World.implemented("night06") and World.implemented("night07"),"Nights 6–7 are real connected scenes")
 	check(World.TRAIL_FARM_NIGHT06 == Vector2(955.0,-470.0)
 		and World.adjacent("night05","night06")
 		and World.adjacent("night06","night05")
@@ -77,6 +77,17 @@ func _run() -> void:
 	check(World.begin_travel("night06","night05",""),"river has continuous return to farm")
 	check(World.consume_arrival("night05").get("from") == "night06","farm remembers river return")
 	check(World.note_outcome(6,"partial"),"Night 6 partial saved separately in canonical ledger")
+	check(not World.begin_travel("night06","night07","resolve"),
+		"wrong Night 6 outcome cannot bypass Balete gate")
+	check(World.begin_travel("night06","night07","partial"),
+		"honest partial Night 6 conclusion opens the final chapter")
+	check(World.consume_arrival("night07").get("from")=="night06",
+		"Balete arrival remembers physical river approach")
+	check(World.begin_travel("night07","night06",""),
+		"returning from Keeper grounds is safe and save-friendly")
+	check(World.consume_arrival("night06").get("from")=="night07",
+		"river recognizes genuine return path")
+	check(World.note_outcome(7,"good"),"seventh result stored beside prior six")
 	var all_three := World.read()
 	check(all_three["outcomes"].get("night01") == "partial" and all_three["outcomes"].get("night02") == "resolve" and all_three["outcomes"].get("night03") == "partial", "three chapter outcomes coexist without overwriting saves")
 	for path in [World.PATH,World.PATH+".bak",World.PATH+".tmp"]:
