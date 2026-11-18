@@ -61,7 +61,7 @@ func _run() -> void:
 		"new chapter fade ends with no black screen or locked controls")
 	# Reduced Motion must commit immediately. Scene change still uses Godot's
 	# native deferred instantiation, just as all pre-polish tests expected.
-	var before := service.completed_transfers
+	var before: int = int(service.completed_transfers)
 	check(service.change_to_file("res://scenes/night02.tscn",true) == OK,
 		"Reduced Motion transfers to an actual world region")
 	check(service.completed_transfers == before+1 and not service.busy,
