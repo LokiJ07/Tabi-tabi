@@ -7,6 +7,10 @@ const Night03Scene = preload("res://scenes/night03.tscn")
 const Night04Scene = preload("res://scenes/night04.tscn")
 const Night05Scene = preload("res://scenes/night05.tscn")
 const Night06Scene = preload("res://scenes/night06.tscn")
+const Night07Scene = preload("res://scenes/night07.tscn")
+const Night07Save = preload("res://scripts/core/night07_save.gd")
+const Night06State = preload("res://scripts/narrative/night06_state.gd")
+const ConnectedWorld = preload("res://scripts/core/connected_world.gd")
 const Night04State = preload("res://scripts/narrative/night04_state.gd")
 const Night05Save = preload("res://scripts/core/night05_save.gd")
 const Night05State = preload("res://scripts/narrative/night05_state.gd")
@@ -35,6 +39,7 @@ var night3_button: Button
 var night4_button: Button
 var night5_button: Button
 var night6_button: Button
+var night7_button: Button
 var settings_panel: PanelContainer
 var settings_backdrop: ColorRect
 var font_button: Button
@@ -64,6 +69,11 @@ func _input(event: InputEvent) -> void:
 	# without fabricating an unlocked Night 1 save. Production has no shortcut.
 	if OS.get_name() == "Android" and OS.has_feature("debug") and event is InputEventKey:
 		var key := event as InputEventKey
+		if key.pressed and key.keycode == KEY_F9:
+			get_viewport().set_input_as_handled()
+			print("NIGHT7_QA_DEBUG_ENTRY")
+			get_tree().change_scene_to_packed(Night07Scene)
+			return
 		if key.pressed and key.keycode == KEY_F7:
 			get_viewport().set_input_as_handled()
 			print("NIGHT6_QA_DEBUG_ENTRY")
@@ -269,7 +279,7 @@ func _build_menu() -> void:
 	menu.name = "MainMenu"
 	menu.anchor_left = 0.065
 	menu.anchor_right = 0.415
-	menu.anchor_top = 0.273
+	menu.anchor_top = 0.235
 	menu.anchor_bottom = 0.995
 	menu.add_theme_constant_override("separation", 8)
 	add_child(menu)
@@ -314,6 +324,13 @@ func _build_menu() -> void:
 		night6_button.text = "CONTINUE NIGHT 6  •  THE RIVER"
 	elif not night6_ready and OS.has_feature("debug"):
 		night6_button.text = "TEST NIGHT 6 (QA)"
+	night7_button = _button("NIGHT 7  •  ANCIENT KEEPER",menu,_enter_night7)
+	var night7_ready := _night7_unlocked()
+	night7_button.disabled = not night7_ready and not OS.has_feature("debug")
+	if Night07Save.exists() and night7_ready:
+		night7_button.text = "CONTINUE NIGHT 7  •  BALETE"
+	elif not night7_ready and OS.has_feature("debug"):
+		night7_button.text = "TEST NIGHT 7 (QA)"
 	# Chapter entries retain the same left column; compact type avoids clip.
 	menu.add_theme_constant_override("separation",3)
 	# Chapter labels can become much longer than the original six-button
@@ -323,14 +340,15 @@ func _build_menu() -> void:
 	night4_button.add_theme_font_size_override("font_size", roundi(21.0*prefs.text_scale))
 	night5_button.add_theme_font_size_override("font_size", roundi(21.0*prefs.text_scale))
 	night6_button.add_theme_font_size_override("font_size", roundi(20.0*prefs.text_scale))
+	night7_button.add_theme_font_size_override("font_size", roundi(19.0*prefs.text_scale))
 	_button("SETTINGS", menu, _open_settings)
 	_button("CREDITS", menu, _credits)
 	_button("EXIT", menu, func(): get_tree().quit())
 	for item in menu.get_children():
 		if item is Button:
-			(item as Button).custom_minimum_size.y = 48.0
+			(item as Button).custom_minimum_size.y = 40.0
 	var chapter := Label.new()
-	chapter.text = "SIX NIGHTS • ONE STORY • BALETE GROUNDS NEXT"
+	chapter.text = "SEVEN NIGHTS • ONE STORY • BALETE GROUNDS"
 	chapter.anchor_left = 0.54
 	chapter.anchor_right = 0.99
 	chapter.anchor_top = 0.958
@@ -370,6 +388,25 @@ func _night6_unlocked() -> bool:
 		return false
 	var farm := Night05State.new()
 	return Night05Save.read(farm) and farm.outcome != ""
+
+func _night7_unlocked() -> bool:
+	if not _night6_unlocked():
+		return false
+	var river := Night06State.new()
+	if not Night06Save.read(river) or river.outcome == "":
+		return false
+	var outcomes: Dictionary = ConnectedWorld.read().get("outcomes",{})
+	return str(outcomes.get("night06","")) == river.outcome
+
+func _enter_night7() -> void:
+	if not _night7_unlocked() and not OS.has_feature("debug"):
+		return
+	loading_cover.show()
+	var message := loading_cover.get_node_or_null("LoadingStatus") as Label
+	if message != null:
+		message.text = "Opening Night 7: Balete Grounds..."
+	await get_tree().process_frame
+	get_tree().change_scene_to_packed(Night07Scene)
 
 func _enter_night6() -> void:
 	if not _night6_unlocked() and not OS.has_feature("debug"):
