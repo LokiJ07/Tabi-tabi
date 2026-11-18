@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="440" viewBox="0 0 320 440"><title>Field farmer with salakot and woven basket</title><defs>
+<linearGradient id="skin" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#a9764d"/><stop offset="1" stop-color="#604538"/></linearGradient>
+<linearGradient id="cloth" x1="0" y1="0" x2=".9" y2="1"><stop stop-color="#dfd5b6"/><stop offset=".17" stop-color="#648b67"/><stop offset="1" stop-color="#27373d"/></linearGradient>
+</defs><ellipse cx="160" cy="408" rx="77" ry="13" fill="#172422" opacity=".29"/>
+<!-- two distinct grounded legs, thick hand-inked cuff outlines -->
+<path d="M117 307L150 311L145 386L112 391Z M176 313L210 308L210 390L176 390Z" fill="#4e5f4b" stroke="#353330" stroke-width="7"/>
+<path d="M107 383Q129 373 153 387L156 406L102 407Z M171 383Q197 372 220 388L224 406L165 407Z" fill="#624738" stroke="#342c28" stroke-width="7"/>
+<path d="M105 235Q125 219 153 224L185 228Q208 228 222 240L230 325Q164 340 97 322Z" fill="url(#cloth)" stroke="#3b3934" stroke-width="8"/>
+<path d="M106 241Q78 267 77 323Q76 341 93 339L132 261Z M222 244Q250 257 250 318Q245 338 229 339L194 264Z" fill="#648b67" stroke="#42362e" stroke-width="7"/>
+<path d="M99 315Q108 325 123 313M212 313Q226 327 244 317" fill="none" stroke="#cdb79b" stroke-width="5"/>
+<ellipse cx="91" cy="332" rx="17" ry="21" fill="url(#skin)" stroke="#765641" stroke-width="4"/>
+<ellipse cx="238" cy="330" rx="17" ry="22" fill="url(#skin)" stroke="#765641" stroke-width="4"/>
+<path d="M141 228L144 211L178 211L183 233Q166 252 141 228Z" fill="url(#skin)" stroke="#70503e" stroke-width="5"/>
+<ellipse cx="104" cy="173" rx="13" ry="22" fill="url(#skin)"/><ellipse cx="215" cy="173" rx="13" ry="22" fill="url(#skin)"/>
+<path d="M113 142Q116 108 161 105Q201 107 213 148L205 210Q179 244 154 240Q121 225 113 203Z" fill="url(#skin)" stroke="#72503e" stroke-width="7"/>
+<path d="M107 156Q101 98 151 96Q196 89 210 145L211 157Q172 124 114 163Z" fill="#342b29" stroke="#2b2523" stroke-width="7"/>
+<path d="M124 172Q137 167 147 173M174 171Q187 169 196 173" stroke="#392e27" stroke-width="6" fill="none"/><circle cx="136" cy="185" r="5" fill="#201c1a"/><circle cx="182" cy="184" r="5" fill="#201c1a"/>
+<path d="M160 185L157 208Q165 215 174 207" fill="none" stroke="#965e4b" stroke-width="3.2"/>
+<path d="M142 221Q160 229 181 219" fill="none" stroke="#74433f" stroke-width="4" stroke-linecap="round"/>
+<path d="M106 291Q160 310 218 293" fill="none" stroke="#ead8b1" stroke-width="4" opacity=".52"/>
+<path d="M112 267L216 267" stroke="#bfa27b" stroke-width="6" opacity=".7"/>
+<path d="M95 105Q118 54 165 56Q206 58 228 105Z" fill="#b39a68" stroke="#705638" stroke-width="7"/><path d="M56 112Q155 86 266 117Q228 151 74 140Z" fill="#d7bd85" stroke="#725a3e" stroke-width="7"/><path d="M92 123L227 123" stroke="#f0d8a5" stroke-width="3"/><ellipse cx="233" cy="330" rx="37" ry="27" fill="#bb9265" stroke="#785639" stroke-width="7"/><path d="M202 322L265 322M207 340L258 341M226 303L228 354M246 303L247 355" stroke="#d9bf93" stroke-width="4"/>
+</svg>
