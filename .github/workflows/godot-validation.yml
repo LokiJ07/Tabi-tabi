@@ -54,6 +54,8 @@ jobs:
         run: godot --headless --path . --script res://tests/preferences_test.gd
       - name: Movable joystick and solid world collision all nights
         run: godot --headless --path . --script res://tests/movement_world_collision_test.gd
+      - name: Real visual-depth regression from Android screenshots (shelter / Kapre / Lola)
+        run: godot --headless --path . --script res://tests/visual_depth_screenshot_test.gd
       - name: Courage and safe retry regression
         run: godot --headless --path . --script res://tests/night01_courage_test.gd
       - name: Morning outcome world consistency regression
