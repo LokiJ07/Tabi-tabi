@@ -12,6 +12,7 @@ const SharedHUD = preload("res://scripts/ui/shared_hud.gd")
 const Depth = preload("res://scripts/visuals/layered_25d.gd")
 const Landscape = preload("res://scripts/visuals/folklore_landscape_25d.gd")
 const AimPad = preload("res://scripts/ui/aim_pad.gd")
+const SpeakerPortrait = preload("res://scripts/ui/speaker_portrait.gd")
 const PostgameResidents = preload("res://scripts/world/postgame_residents.gd")
 const HERO: Texture2D = preload("res://assets/characters/apprentice.svg")
 const BANTAY: Texture2D = preload("res://assets/characters/bantay.svg")
@@ -65,6 +66,7 @@ var backdrop: ColorRect
 var dialogue: PanelContainer
 var dialogue_speaker: Label
 var dialogue_body: Label
+var dialogue_portrait: Control
 var choices: VBoxContainer
 var notes: PanelContainer
 var notes_text: Label
@@ -362,8 +364,17 @@ func _build_ui() -> void:
 	dialogue = _panel(backdrop,"Night7Dialogue",Vector4(.15,.11,.85,.89))
 	var ds := _stack(dialogue)
 	dialogue_speaker = _label(ds,"",26,Color("#efd69e"))
-	dialogue_body = _label(ds,"",23,Color("#e9eadf"))
-	dialogue_body.custom_minimum_size.y = 88
+	var speaker_row := HBoxContainer.new()
+	speaker_row.add_theme_constant_override("separation",14)
+	ds.add_child(speaker_row)
+	dialogue_portrait = SpeakerPortrait.new()
+	dialogue_portrait.name = "SharedSpeakerPortrait"
+	speaker_row.add_child(dialogue_portrait)
+	dialogue_portrait.custom_minimum_size = Vector2(160,168)
+	dialogue_portrait.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	dialogue_body = _label(speaker_row,"",23,Color("#e9eadf"))
+	dialogue_body.custom_minimum_size.y = 110
+	dialogue_body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	choices = VBoxContainer.new()
 	choices.add_theme_constant_override("separation",6)
 	ds.add_child(choices)
@@ -620,6 +631,8 @@ func _talk(speaker: String,line: String,actions: Array[Dictionary]) -> void:
 	notes.hide()
 	dialogue.show()
 	dialogue_speaker.text = speaker
+	if dialogue_portrait != null:
+		dialogue_portrait.set_speaker(speaker)
 	dialogue_body.text = line
 	for child in choices.get_children():
 		choices.remove_child(child)
