@@ -100,6 +100,7 @@ jobs:
           run_test res://tests/folk_actors_test.gd
           run_test res://tests/night01_cinematic_test.gd
           run_test res://tests/shared_dialogue_motion_test.gd
+          run_test res://tests/night04_night07_dialogue_transition_test.gd
           run_test res://tests/night01_camera_test.gd
           run_test res://tests/barrio_lighting_test.gd
           run_test res://tests/river_banca_test.gd
