@@ -529,11 +529,10 @@ func _draw() -> void:
 		DimensionalArt.paint_grounded(self,FARMER,at,
 			Vector2(100,158),Color(1,1,1,1.0-smoothstep(.80,1.0,t)
 				if _stage()>=2 else 1.0),.31)
-	var bob := 0.0 if prefs.reduced_motion else absf(sin(walk_phase))*3.2*walk_weight
-	DimensionalArt.paint_grounded(self,BANTAY,bantay_pos+Vector2(0,18),
-		Vector2(96,103),Color.WHITE,.33,bob)
-	DimensionalArt.paint_grounded(self,HERO,player_pos+Vector2(0,7),
-		Vector2(107,140),Color.WHITE,.38,bob)
+	DimensionalArt.paint_animated_actor(self,BANTAY,bantay_pos+Vector2(0,18),
+		Vector2(96,103),walk_phase,walk_weight,prefs.reduced_motion,Color.WHITE,.33,true)
+	DimensionalArt.paint_animated_actor(self,HERO,player_pos+Vector2(0,7),
+		Vector2(107,140),walk_phase,walk_weight,prefs.reduced_motion,Color.WHITE,.38)
 	PostgameResidents.paint(self,"night05",elapsed,prefs.reduced_motion,player_pos)
 	var font := ThemeDB.fallback_font
 	draw_string(font,RETURN_WAKE+Vector2(26,-90),"WAKE TRAIL • RETURN",HORIZONTAL_ALIGNMENT_LEFT,335,18,Color("#f3d8a6"))
