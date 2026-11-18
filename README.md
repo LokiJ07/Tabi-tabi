@@ -28,6 +28,7 @@ All seven are chapters of **one connected story** with the same Apprentice and B
 
 ### Final art, animation and mobile HUD polish (seven-night branch)
 
+- **Connected-world cinematic crossings:** all seven region-to-region roads and title/menu transitions use the same persistent twilight-navy fade curtain, destination name and soft incoming reveal. The curtain survives scene replacement and blocks accidental touch input, while Reduced Motion and headless tests retain immediate transitions. The unchanged story ledger still controls which road is legally open; this is visual continuity, not a level-select workaround. See `scripts/core/scene_transit.gd` and `tests/shared_scene_transit_test.gd`.
 - **Night 1's HUD remains canonical.** The right-hand HOLD OBSERVE control on Nights 2–7 now shows **OBSERVING...** in the same antique-gold pressed state as Night 1's FOCUS HELD control. Every left-hand D-pad and held action releases on finger drag-out or when a modal hides gameplay. All existing positions, action sizes and touch anchors remain unchanged.
 - The shared LOOK AROUND pad has a drawn two-axis guide and thumb indicator; its central deadzone resets the actual aim instead of leaving a previous direction stuck. Reduced Motion remains supported.
 - Nights 2–7 use one shared grounded actor motion painter for the apprentice and Bantay: consistent paired step contact shadows, subtle gait compression and a smooth return to both feet at idle, without changing collisions or rewriting any chapter's authored poses.
