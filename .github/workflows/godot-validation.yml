@@ -145,6 +145,8 @@ jobs:
         run: timeout --signal=TERM --kill-after=8s 150s godot --headless --audio-driver Dummy --path . --script res://tests/night06_scene_test.gd
       - name: Seven-night one-world graph and shared narrative integrity
         run: godot --headless --path . --script res://tests/connected_world_test.gd
+      - name: Postgame automatic 24-minute day-night cycle, save and travel gate
+        run: godot --headless --path . --script res://tests/postgame_clock_test.gd
       - name: Verify Northern Grove art, shared materials and non-blocking scenery
         run: godot --headless --path . --script res://tests/north_grove_art_test.gd
       - name: Walk from Barrio Lawom to Kapre and back with intact saves
