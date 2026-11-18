@@ -3,11 +3,9 @@ extends RefCounted
 ## All schedules use the same saved clock; NPCs do not reappear outdoors at night.
 ## These are ambient witnesses, not extra quest targets or duplicated rewards.
 const Depth = preload("res://scripts/visuals/layered_25d.gd")
-const VILLAGER: Texture2D = preload("res://assets/characters/resident.svg")
-const FARMER: Texture2D = preload("res://assets/night05/farmer_witness.svg")
-const DADO: Texture2D = preload("res://assets/characters/dado.svg")
-const MARA: Texture2D = preload("res://assets/characters/mara.svg")
-const SABEL: Texture2D = preload("res://assets/characters/sabel.svg")
+const FISHER: Texture2D = preload("res://assets/characters/post_fisher.svg")
+const MARKET: Texture2D = preload("res://assets/characters/post_market.svg")
+const TRAIL: Texture2D = preload("res://assets/characters/post_trail.svg")
 
 const ACTORS := {
 	"old_mango": [
@@ -124,15 +122,11 @@ static func paint(scene: Node2D, region: String, seconds: float, reduced_motion:
 				290, 16, Color("#f0dfa9"))
 
 static func _sprite_for(job: String, actor_id: String) -> Texture2D:
-	if job == "animals" or actor_id == "farm_helper":
-		return FARMER
-	if job == "fish":
-		return DADO
-	if job == "school":
-		return MARA
-	if actor_id == "wake_neighbour":
-		return SABEL
-	return VILLAGER
+	if job == "fish" or actor_id == "animal_keeper":
+		return FISHER
+	if job == "school" or job == "community" or actor_id == "farm_helper":
+		return MARKET
+	return TRAIL
 
 static func _paint_work(scene: Node2D, job: String, at: Vector2, period: String,
 		confidence: String, seconds: float, reduced_motion: bool) -> void:
