@@ -1126,7 +1126,7 @@ func _create_ui() -> void:
 	begin_night2_button.disabled = true
 	save_main_menu_button = unified["menu"]
 	quit_game_button = unified["quit"]
-		settings_panel.hide()
+	settings_panel.hide()
 	_build_navigation_confirmations(root)
 	_sync_modal_ui()
 

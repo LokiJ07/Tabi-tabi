@@ -776,7 +776,7 @@ func _build_ui() -> void:
 		"confirm_navigation": true
 	},_apply_shared_settings,"RiverOptions")
 	options = unified["panel"]
-		ending = _panel(backdrop,"RiverAftermath",Vector4(.16,.10,.84,.90))
+	ending = _panel(backdrop,"RiverAftermath",Vector4(.16,.10,.84,.90))
 	save_error = AcceptDialog.new()
 	save_error.dialog_text = "Offline save failed. Check storage before continuing."
 	hud.add_child(save_error)

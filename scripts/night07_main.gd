@@ -426,7 +426,7 @@ func _build_ui() -> void:
 		"confirm_navigation": true
 	},_apply_shared_settings,"Night7Options")
 	options = unified["panel"]
-		ending = _panel(backdrop,"Night7Epilogue",Vector4(.13,.10,.87,.90))
+	ending = _panel(backdrop,"Night7Epilogue",Vector4(.13,.10,.87,.90))
 	save_error = AcceptDialog.new()
 	save_error.dialog_text = "Unable to save offline. Please check available storage."
 	hud.add_child(save_error)

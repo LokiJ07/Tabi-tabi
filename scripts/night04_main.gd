@@ -627,7 +627,7 @@ func _build_ui() -> void:
 		"confirm_navigation": true
 	},_apply_shared_settings,"WakeOptions")
 	options = unified["panel"]
-		ending = _panel(modal_backdrop,"WakeAftermath",Vector4(.16,.12,.84,.88))
+	ending = _panel(modal_backdrop,"WakeAftermath",Vector4(.16,.12,.84,.88))
 	save_error = AcceptDialog.new()
 	save_error.dialog_text = "The offline record could not be saved. Check device storage."
 	hud.add_child(save_error)

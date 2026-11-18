@@ -563,7 +563,7 @@ func _build_settings() -> void:
 	font_button = unified["text"]
 	audio_button = unified["audio"]
 	motion_button = unified["motion"]
-		_refresh_settings()
+	_refresh_settings()
 	settings_backdrop.hide()
 
 func _refresh_settings() -> void:
