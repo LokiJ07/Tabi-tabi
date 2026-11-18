@@ -23,7 +23,7 @@ func _ready() -> void:
 	size = Vector2(DIAMETER,HEIGHT)
 	var grip := Label.new()
 	grip.name = "MoveGrip"
-	grip.text = "↔ DRAG TO MOVE"
+	grip.text = "↔ MOVE JOYSTICK"
 	grip.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	grip.position = Vector2(4,2)
 	grip.size = Vector2(DIAMETER-8,30)
