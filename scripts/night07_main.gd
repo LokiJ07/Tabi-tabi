@@ -79,6 +79,7 @@ var observe_held := false
 var elapsed := 0.0
 var walking := 0.0
 var travel_in_progress := false
+var qa_visual_stage_override := -1 # Android debug-only camera scenes; never saved.
 
 func _ready() -> void:
 	name = "TabiTabiNight7"
@@ -121,6 +122,8 @@ func _postgame_active() -> bool:
 func _stage() -> int:
 	if _postgame_active():
 		return get_node("/root/PostgameClock").light_stage()
+	if OS.has_feature("debug") and qa_visual_stage_override >= 0:
+		return qa_visual_stage_override
 	if story.phase <= 1:
 		return 1
 	if story.phase in [2,3,4]:
@@ -233,7 +236,7 @@ func _draw() -> void:
 		if story.phase == 2:
 			_mark_station(PREP_POS[key],key.replace("_"," ").to_upper(),
 				story.preparations.has(key),night)
-	if story.phase >= 3 and story.phase <= 4:
+	if (story.phase >= 3 and story.phase <= 4) or qa_visual_stage_override == 3:
 		for i in range(TRIAL_POS.size()):
 			var foot: Vector2 = TRIAL_POS[i]
 			var active: bool = i == story.trial_index
@@ -838,6 +841,39 @@ func _finish_epilogue() -> void:
 	print("NIGHT7_EPILOGUE_COMPLETE_AUTOCYCLE")
 
 func _unhandled_input(event: InputEvent) -> void:
+	# Android debug APK screenshot QA only; never mutates story or saves.
+	if OS.get_name() == "Android" and OS.has_feature("debug") and event is InputEventKey:
+		var key := event as InputEventKey
+		if key.pressed and not key.echo and key.keycode in [KEY_F3,KEY_F6,KEY_F9,KEY_F11]:
+			if dialogue.visible:
+				_close_dialogue()
+			notes.hide()
+			options.hide()
+			ending.hide()
+			match key.keycode:
+				KEY_F3:
+					player_pos = Vector2(-605,265)
+					qa_visual_stage_override = 1
+					print("NIGHT7_QA_ROAD_DUSK")
+				KEY_F6:
+					player_pos = VERDICT+Vector2(-45,130)
+					qa_visual_stage_override = 0
+					print("NIGHT7_QA_BALETE_DAY")
+				KEY_F9:
+					player_pos = TRIAL_POS[1]
+					qa_visual_stage_override = 3
+					print("NIGHT7_QA_KEEPER_NIGHT")
+				KEY_F11:
+					player_pos = MEMORIAL+Vector2(0,145)
+					qa_visual_stage_override = 0
+					print("NIGHT7_QA_MEMORIAL_DAWN")
+			bantay_pos = player_pos+Vector2(-46,28)
+			camera.position = player_pos
+			_sync_ui()
+			_refresh()
+			queue_redraw()
+			get_viewport().set_input_as_handled()
+			return
 	if event.is_action_pressed("ui_accept"):
 		if dialogue.visible:
 			_choice("close")
