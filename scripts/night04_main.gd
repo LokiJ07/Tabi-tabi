@@ -364,13 +364,13 @@ func _draw() -> void:
 	draw_polyline(PackedVector2Array([RETURN_RIDGE,Vector2(-680,310),
 		Vector2(-365,222),SAFE_COURT,Vector2(400,260)]),Color("#af9875"),83,true)
 	Landscape.trail_stones(self,RETURN_RIDGE,Vector2(-400,235),18,90,_stage()>=2)
+	_paint_chapter_people(true)
 	for at in [Vector2(-800,-400),Vector2(-850,-140),Vector2(-680,-595),
 		Vector2(690,-510),Vector2(800,-145),Vector2(812,500)]:
 		DimensionalArt.paint_grounded(self,LEAVES,at+Vector2(0,27),
 			Vector2(225,310),Color("#8da48b"),.31)
 	for rock_at in [Vector2(-670,90),Vector2(515,360),Vector2(760,290),Vector2(-395,380)]:
 		Landscape.rock(self,rock_at,36,_stage()<2)
-	_paint_chapter_people(true)
 	_house()
 	WakeVigil.paint_wake_furniture(self)
 	# Quiet vigil: raised candle table and coffee beside the gathering.

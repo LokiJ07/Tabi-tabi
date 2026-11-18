@@ -399,6 +399,7 @@ func _draw() -> void:
 	FarmArt.paint_crop_rows(self,_stage()>=2)
 	FarmArt.paint_squash_patch(self,Vector2(-650,140),_stage()>=2)
 	Landscape.trail_stones(self,RETURN_WAKE,Vector2(-355,341),17,80,_stage()>=2)
+	_paint_chapter_protagonists(true)
 	for at in [Vector2(-950,-445),Vector2(-835,-660),Vector2(775,-615),
 		Vector2(670,-520),FarmArt.LOWER_TREE]:
 		DimensionalArt.paint_grounded(self,TREE,at+Vector2(0,30),
@@ -406,7 +407,6 @@ func _draw() -> void:
 	for at in [Vector2(-850,-80),Vector2(1030,190),FarmArt.LOWER_BANANA]:
 		DimensionalArt.paint_grounded(self,BANANA,at,
 			Vector2(145,210),Color("#8fa884"),.26)
-	_paint_chapter_protagonists(true)
 	_paint_farmhouse()
 	FarmArt.paint_barn_ground_shadow(self,BARN_FOOT,_stage()>=2)
 	DimensionalArt.paint_grounded(self,BARN,BARN_FOOT,Vector2(780,574),

@@ -507,11 +507,11 @@ func _draw() -> void:
 	draw_colored_polygon(PackedVector2Array([
 		Vector2(790,520),Vector2(1110,485),Vector2(1330,550),
 		Vector2(1360,820),Vector2(780,830)]),Color("#536b58"))
+	_paint_chapter_people(true)
 	for foot in [Vector2(-1020,-245),Vector2(-880,-550),Vector2(1020,-340),Vector2(1150,180)]:
 		Depth.paint_grounded(self,TREE,foot,Vector2(233,268),Color("#c0c6a8"),.20)
 	for foot in [Vector2(-790,-270),Vector2(940,-130)]:
 		Depth.paint_grounded(self,BANANA,foot,Vector2(125,188),Color("#c6cda9"),.18)
-	_paint_chapter_people(true)
 	_draw_house(ARCHIVE+Vector2(0,-24),225,night,false)
 	_draw_house(SABEL_AT+Vector2(17,-20),172,night,true)
 	_draw_house(LOLA_AT+Vector2(40,-28),172,night,true)

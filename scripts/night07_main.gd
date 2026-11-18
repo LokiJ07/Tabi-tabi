@@ -227,11 +227,11 @@ func _draw() -> void:
 		if at.distance_to(KEEPER)<470:
 			continue
 		Landscape.rock(self,at,16.0+float(i%3)*8,not night)
+	_paint_chapter_protagonists(true)
 	for at in [Vector2(-880,-220),Vector2(-520,-420),Vector2(25,-430),
 		Vector2(1160,-180),Vector2(1010,480)]:
 		Depth.paint_grounded(self,SMALL_TREE,at,Vector2(250,290),Color("#c6d3b5"),.25)
 	# Physical safe path and ancestral tree occupy the same world coordinates.
-	_paint_chapter_protagonists(true)
 	Depth.paint_grounded(self,TREE,KEEPER+Vector2(-50,38),
 		Vector2(790,760),Color("#bac6b3") if night else Color.WHITE,.55)
 	# Wind catches small fireflies between the true Balete roots. Motion
