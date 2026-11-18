@@ -1053,7 +1053,7 @@ func _save_menu() -> void:
 	if not _auto_save():
 		save_error.popup_centered(Vector2i(600,180))
 		return
-	get_tree().change_scene_to_file("res://scenes/title.tscn")
+	SceneTransit.change_to_file("res://scenes/title.tscn")
 
 func _travel_to_river() -> void:
 	if travel_in_progress or story.outcome == "":
@@ -1065,7 +1065,7 @@ func _travel_to_river() -> void:
 	motion = Vector2.ZERO
 	observe_held = false
 	print("TABI_WORLD_TRAVEL_FARM_TO_RIVER")
-	get_tree().change_scene_to_file(World.scene_for("night06"))
+	SceneTransit.change_to_file(World.scene_for("night06"))
 
 func _return_to_wake() -> void:
 	if travel_in_progress:
@@ -1077,7 +1077,7 @@ func _return_to_wake() -> void:
 	motion = Vector2.ZERO
 	observe_held = false
 	print("TABI_WORLD_TRAVEL_FARM_TO_WAKE")
-	get_tree().change_scene_to_file(World.scene_for("night04"))
+	SceneTransit.change_to_file(World.scene_for("night04"))
 
 func _show_ending() -> void:
 	dialogue.hide()
