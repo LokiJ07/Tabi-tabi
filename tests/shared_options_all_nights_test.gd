@@ -108,6 +108,46 @@ func _run() -> void:
 					and on_disk.story_assist,
 					"full accessibility preferences persist in a single offline file")
 
+
+		# Structure alone was a false positive: the Title backdrop could show
+		# while the actual shared panel remained hidden. Open it like a player,
+		# verify that it truly renders AND disables gameplay input, then close.
+		if panel != null:
+			if i >= 2:
+				var intro := chapter.get("dialogue") as CanvasItem
+				if intro != null:
+					intro.hide()
+				if i <= 3:
+					var journal := chapter.get("notebook") as CanvasItem
+					var finale := chapter.get("ending_panel") as CanvasItem
+					if journal != null: journal.hide()
+					if finale != null: finale.hide()
+				else:
+					var journal := chapter.get("notes") as CanvasItem
+					var finale := chapter.get("ending") as CanvasItem
+					if journal != null: journal.hide()
+					if finale != null: finale.hide()
+			chapter.call("_open_settings" if i <= 1 else "_open_options")
+			await process_frame
+			check(panel.is_visible_in_tree(),
+				"chapter %d actual Options panel OPEN must be visibly drawn" % i)
+			if i > 0:
+				var movement: Control = chapter.get(
+					"gameplay_hud" if i == 1 else "gameplay_controls" if i in [2,3] else "controls") as Control
+				check(movement != null and not movement.is_visible_in_tree(),
+					"Night %d paused settings must HIDE movement, joystick and actions" % i)
+			var close := panel.find_child("CloseSettings",true,false) as Button
+			if close != null:
+				close.pressed.emit()
+				await process_frame
+				check(not panel.is_visible_in_tree(),
+					"chapter %d Back action must CLOSE the live Options overlay" % i)
+				if i > 0:
+					var movement: Control = chapter.get(
+						"gameplay_hud" if i == 1 else "gameplay_controls" if i in [2,3] else "controls") as Control
+					check(movement != null and movement.is_visible_in_tree(),
+						"Night %d Back must RESTORE player movement UI" % i)
+
 		chapter.queue_free()
 		await process_frame
 		if i == 1 and previous_sizes.size()>0:
