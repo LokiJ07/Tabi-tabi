@@ -529,11 +529,10 @@ func _draw() -> void:
 		DimensionalArt.paint_grounded(self,FARMER,at,
 			Vector2(100,158),Color(1,1,1,1.0-smoothstep(.80,1.0,t)
 				if _stage()>=2 else 1.0),.31)
-	var bob := 0.0 if prefs.reduced_motion else absf(sin(walk_phase))*3.2*walk_weight
-	DimensionalArt.paint_grounded(self,BANTAY,bantay_pos+Vector2(0,18),
-		Vector2(96,103),Color.WHITE,.33,bob)
-	DimensionalArt.paint_grounded(self,HERO,player_pos+Vector2(0,7),
-		Vector2(107,140),Color.WHITE,.38,bob)
+	DimensionalArt.paint_animated_actor(self,BANTAY,bantay_pos+Vector2(0,18),
+		Vector2(96,103),walk_phase,walk_weight,prefs.reduced_motion,Color.WHITE,.33,true)
+	DimensionalArt.paint_animated_actor(self,HERO,player_pos+Vector2(0,7),
+		Vector2(107,140),walk_phase,walk_weight,prefs.reduced_motion,Color.WHITE,.38)
 	PostgameResidents.paint(self,"night05",elapsed,prefs.reduced_motion,player_pos)
 	var font := ThemeDB.fallback_font
 	draw_string(font,RETURN_WAKE+Vector2(26,-90),"WAKE TRAIL • RETURN",HORIZONTAL_ALIGNMENT_LEFT,335,18,Color("#f3d8a6"))
@@ -897,10 +896,17 @@ func _talk(who: String,message: String,actions: Array) -> void:
 		child.queue_free()
 	for action in actions:
 		var id := str(action["action"])
-		_button(choices,str(action["label"]),func():_choose(id))
+		_button(choices,str(action["label"]),func():_press_dialogue_choice(id))
 	DialogueMotion.reveal(dialogue,prefs.reduced_motion)
 	DialogueMotion.reveal_text(dialogue_body,prefs.reduced_motion)
 	_sync_ui()
+
+func _press_dialogue_choice(action: String) -> void:
+	# Same tap-to-complete rule as the established Night 1 cinematic.
+	# A fast choice tap reveals the current line before a consequence runs.
+	if DialogueMotion.finish_text(dialogue_body):
+		return
+	_choose(action)
 
 func _close_dialogue() -> void:
 	DialogueMotion.conceal(dialogue,prefs.reduced_motion)
@@ -1047,7 +1053,7 @@ func _save_menu() -> void:
 	if not _auto_save():
 		save_error.popup_centered(Vector2i(600,180))
 		return
-	get_tree().change_scene_to_file("res://scenes/title.tscn")
+	get_node("/root/SceneTransit").call("change_to_file", "res://scenes/title.tscn")
 
 func _travel_to_river() -> void:
 	if travel_in_progress or story.outcome == "":
@@ -1059,7 +1065,7 @@ func _travel_to_river() -> void:
 	motion = Vector2.ZERO
 	observe_held = false
 	print("TABI_WORLD_TRAVEL_FARM_TO_RIVER")
-	get_tree().change_scene_to_file(World.scene_for("night06"))
+	get_node("/root/SceneTransit").call("change_to_file", World.scene_for("night06"))
 
 func _return_to_wake() -> void:
 	if travel_in_progress:
@@ -1071,7 +1077,7 @@ func _return_to_wake() -> void:
 	motion = Vector2.ZERO
 	observe_held = false
 	print("TABI_WORLD_TRAVEL_FARM_TO_WAKE")
-	get_tree().change_scene_to_file(World.scene_for("night04"))
+	get_node("/root/SceneTransit").call("change_to_file", World.scene_for("night04"))
 
 func _show_ending() -> void:
 	dialogue.hide()

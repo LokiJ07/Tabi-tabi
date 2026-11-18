@@ -474,11 +474,13 @@ func _draw() -> void:
 		var dimensions: Vector2 = actor["size"]
 		var is_player: bool = actor["tex"] == HERO
 		var is_dog: bool = actor["tex"] == BANTAY
-		var lift := 0.0
-		if not prefs.reduced_motion and (is_player or is_dog):
-			lift = absf(sin(walk_phase * (1.12 if is_dog else 1.0))) * (3.0 if is_player else 2.1) * walk_weight
-		DimensionalArt.paint_grounded(self, actor["tex"], where, dimensions,
-			Color.WHITE, .43, lift)
+		if is_player or is_dog:
+			DimensionalArt.paint_animated_actor(self,actor["tex"],where,
+				dimensions,walk_phase,walk_weight,prefs.reduced_motion,
+				Color.WHITE,.43,is_dog)
+		else:
+			DimensionalArt.paint_grounded(self,actor["tex"],where,dimensions,
+				Color.WHITE,.43)
 	PostgameResidents.paint(self,"night03",particles,prefs.reduced_motion,player_pos)
 	# In-world wayfinding signs are small, correctly oriented and non-obstructive.
 	var font := ThemeDB.fallback_font
@@ -1056,7 +1058,7 @@ func _save_menu() -> void:
 	if not _auto_save():
 		save_error.popup_centered(Vector2i(610,190))
 		return
-	get_tree().change_scene_to_file("res://scenes/title.tscn")
+	get_node("/root/SceneTransit").call("change_to_file", "res://scenes/title.tscn")
 
 func _to_wake() -> void:
 	if travel_in_progress or story.outcome == "":
@@ -1068,7 +1070,7 @@ func _to_wake() -> void:
 	motion = Vector2.ZERO
 	observe_held = false
 	print("TABI_WORLD_TRAVEL_RIDGE_TO_WAKE")
-	get_tree().change_scene_to_file(ConnectedWorld.scene_for("night04"))
+	get_node("/root/SceneTransit").call("change_to_file", ConnectedWorld.scene_for("night04"))
 
 func _return_to_mango() -> void:
 	if travel_in_progress:
@@ -1080,7 +1082,7 @@ func _return_to_mango() -> void:
 	motion = Vector2.ZERO
 	observe_held = false
 	print("TABI_WORLD_TRAVEL_RIDGE_TO_MANGO")
-	get_tree().change_scene_to_file(ConnectedWorld.scene_for("old_mango"))
+	get_node("/root/SceneTransit").call("change_to_file", ConnectedWorld.scene_for("old_mango"))
 
 func _show_ending() -> void:
 	ending_panel.show()

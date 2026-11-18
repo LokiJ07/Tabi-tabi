@@ -9,6 +9,7 @@ const RiverSave = preload("res://scripts/core/night06_save.gd")
 const World = preload("res://scripts/core/connected_world.gd")
 const Prefs = preload("res://scripts/core/preferences.gd")
 const SharedHUD = preload("res://scripts/ui/shared_hud.gd")
+const SharedDialogueMotion = preload("res://scripts/ui/shared_dialogue_motion.gd")
 const Depth = preload("res://scripts/visuals/layered_25d.gd")
 const Landscape = preload("res://scripts/visuals/folklore_landscape_25d.gd")
 const AimPad = preload("res://scripts/ui/aim_pad.gd")
@@ -80,6 +81,7 @@ var held: Dictionary = {}
 var observe_held := false
 var elapsed := 0.0
 var walking := 0.0
+var walk_weight := 0.0
 var travel_in_progress := false
 var qa_visual_stage_override := -1 # Android debug-only camera scenes; never saved.
 
@@ -140,6 +142,8 @@ func _process(delta: float) -> void:
 	var axis := (Input.get_vector("ui_left","ui_right","ui_up","ui_down")+motion).limit_length()
 	if _modal() or travel_in_progress:
 		axis = Vector2.ZERO
+	walk_weight = lerpf(walk_weight,1.0 if axis.length()>.04 else 0.0,
+		1.0 if prefs.reduced_motion else clampf(delta*8.0,0.0,1.0))
 	if axis.length() > .04:
 		if not prefs.reduced_motion:
 			walking += delta * 9.0
@@ -153,8 +157,16 @@ func _process(delta: float) -> void:
 			candidate.y = 595.0
 		player_pos = candidate
 	bantay_pos = bantay_pos.lerp(player_pos + Vector2(-51,32),clampf(delta*3.1,0,1))
-	camera.position = camera.position.lerp(player_pos + look*32.0,
-		1.0 if prefs.reduced_motion else clampf(delta*4.1,0,1))
+	# At the Keeper's covenant the original 760px Balete was cropped
+	# above the Android camera. Fit the canopy and apprentice in the world
+	# camera only; the Night 1 HUD remains fixed in physical screen space.
+	var grove_fit := clampf(1.0-(player_pos.distance_to(KEEPER)-170.0)/880.0,0.0,1.0)
+	var target_zoom := lerpf(1.02,.69,grove_fit)
+	var look_target := player_pos + look*32.0 + Vector2(0,-305.0*grove_fit)
+	camera.position = camera.position.lerp(look_target,
+		1.0 if prefs.reduced_motion else clampf(delta*3.9,0,1))
+	camera.zoom = camera.zoom.lerp(Vector2.ONE*target_zoom,
+		1.0 if prefs.reduced_motion else clampf(delta*3.3,0,1))
 	if story.phase == 3 and not _modal() and not _postgame_active():
 		var site: Vector2 = TRIAL_POS[mini(story.trial_index,2)]
 		if story.observe_tick(delta,player_pos.distance_to(site)<130.0,
@@ -217,6 +229,18 @@ func _draw() -> void:
 	# Physical safe path and ancestral tree occupy the same world coordinates.
 	Depth.paint_grounded(self,TREE,KEEPER+Vector2(-50,38),
 		Vector2(790,760),Color("#bac6b3") if night else Color.WHITE,.55)
+	# Wind catches small fireflies between the true Balete roots. Motion
+	# freezes with Reduced Motion; this is world art, never a HUD particle.
+	for i in range(16):
+		var seed := float(i)
+		var base := KEEPER+Vector2(-380.0+float(i%7)*110.0,
+			-580.0+float(i/7)*135.0)
+		var drift := Vector2.ZERO if prefs.reduced_motion else Vector2(
+			sin(elapsed*.41+seed*1.8)*10.0,
+			cos(elapsed*.55+seed*2.1)*8.0)
+		var firefly := base+drift
+		draw_circle(firefly,9.0,Color(.98,.81,.43,.09))
+		draw_circle(firefly,2.4,Color("#f4d797"))
 	# A second translucent canopy pass creates distant spiritual light without
 	# a monster-jump-scare or full-screen overlay.
 	if night and story.phase in [2,3,4]:
@@ -261,11 +285,10 @@ func _draw() -> void:
 	if story.phase >= 4 and story.phase <= 5:
 		Depth.paint_grounded(self,MARA,Vector2(290,30),Vector2(103,145),Color.WHITE,.3)
 		Depth.paint_grounded(self,LOLA,Vector2(220,80),Vector2(103,140),Color.WHITE,.3)
-	var bob := 0.0 if prefs.reduced_motion else absf(sin(walking))*2.9
-	Depth.paint_grounded(self,BANTAY,bantay_pos+Vector2(0,18),
-		Vector2(100,106),Color.WHITE,.31,bob)
-	Depth.paint_grounded(self,HERO,player_pos+Vector2(0,9),
-		Vector2(108,143),Color.WHITE,.40,bob)
+	Depth.paint_animated_actor(self,BANTAY,bantay_pos+Vector2(0,18),
+		Vector2(100,106),walking,walk_weight,prefs.reduced_motion,Color.WHITE,.31,true)
+	Depth.paint_animated_actor(self,HERO,player_pos+Vector2(0,9),
+		Vector2(108,143),walking,walk_weight,prefs.reduced_motion,Color.WHITE,.40)
 	PostgameResidents.paint(self,"night07",elapsed,prefs.reduced_motion,player_pos)
 	draw_string(ThemeDB.fallback_font,ENTRY+Vector2(15,-113),
 		"RIVER TRAIL • RETURN",HORIZONTAL_ALIGNMENT_LEFT,365,20,Color("#efdda9"))
@@ -639,12 +662,22 @@ func _talk(speaker: String,line: String,actions: Array[Dictionary]) -> void:
 		child.queue_free()
 	for option in actions:
 		var choice_id: String = str(option["action"])
-		_button(choices,str(option["label"]),func():_choice(choice_id))
+		_button(choices,str(option["label"]),func():_press_dialogue_choice(choice_id))
+	SharedDialogueMotion.reveal(dialogue,prefs.reduced_motion)
+	SharedDialogueMotion.reveal_text(dialogue_body,prefs.reduced_motion)
 	_sync_ui()
 
+func _press_dialogue_choice(action: String) -> void:
+	# A held finger cannot skip the Keeper's truth or consent statements.
+	# Story state remains synchronous; only presentation fades are animated.
+	if SharedDialogueMotion.finish_text(dialogue_body):
+		return
+	_choice(action)
+
 func _close_dialogue() -> void:
-	dialogue.hide()
+	SharedDialogueMotion.conceal(dialogue,prefs.reduced_motion)
 	_sync_ui()
+	SharedDialogueMotion.restore_gameplay(controls,prefs.reduced_motion)
 
 func _sync_ui() -> void:
 	if backdrop == null:
@@ -790,7 +823,7 @@ func _save_menu() -> void:
 	if not _save_story():
 		save_error.popup_centered(Vector2i(600,175))
 		return
-	get_tree().change_scene_to_file("res://scenes/title.tscn")
+	get_node("/root/SceneTransit").call("change_to_file", "res://scenes/title.tscn")
 
 func _return_river() -> void:
 	if travel_in_progress:
@@ -802,7 +835,7 @@ func _return_river() -> void:
 	motion = Vector2.ZERO
 	observe_held = false
 	print("TABI_WORLD_TRAVEL_BALETE_TO_RIVER")
-	get_tree().change_scene_to_file(World.scene_for("night06"))
+	get_node("/root/SceneTransit").call("change_to_file", World.scene_for("night06"))
 
 func _show_ending() -> void:
 	dialogue.hide()

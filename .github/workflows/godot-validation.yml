@@ -84,6 +84,8 @@ jobs:
         run: godot --headless --path . --script res://tests/night01_cinematic_test.gd
       - name: Shared Night 1-2 dialogue easing, portraits and camera transition regression
         run: godot --headless --path . --script res://tests/shared_dialogue_motion_test.gd
+      - name: Night 4 and 7 shared cinematic fades, choices, HUD recovery and reduced-motion
+        run: godot --headless --path . --script res://tests/night04_night07_dialogue_transition_test.gd
       - name: Cinematic camera actor focus, reversibility and facial acting
         run: godot --headless --path . --script res://tests/night01_camera_test.gd
       - name: Lightweight day and night ambience lighting
@@ -153,6 +155,12 @@ jobs:
         run: timeout --signal=TERM --kill-after=8s 150s godot --headless --audio-driver Dummy --path . --script res://tests/night07_connected_playthrough_test.gd
       - name: Restarting a new campaign resets all seven saves and the automatic world clock
         run: godot --headless --path . --script res://tests/night07_new_game_reset_test.gd
+      - name: Final art movement, HUD held-state, mobile aim and Balete camera parity
+        timeout-minutes: 3
+        run: timeout --signal=TERM --kill-after=8s 150s godot --headless --audio-driver Dummy --path . --script res://tests/final_polish_all_nights_test.gd
+      - name: All seven chapter cinematic transitions, tap safety and reduced-motion behavior
+        timeout-minutes: 3
+        run: timeout --signal=TERM --kill-after=8s 150s godot --headless --audio-driver Dummy --path . --script res://tests/shared_scene_transit_test.gd
       - name: Seven-night one-world graph and shared narrative integrity
         run: godot --headless --path . --script res://tests/connected_world_test.gd
       - name: Postgame automatic 24-minute day-night cycle, save and travel gate

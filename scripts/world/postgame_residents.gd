@@ -6,6 +6,10 @@ const Depth = preload("res://scripts/visuals/layered_25d.gd")
 const FISHER: Texture2D = preload("res://assets/characters/post_fisher.svg")
 const MARKET: Texture2D = preload("res://assets/characters/post_market.svg")
 const TRAIL: Texture2D = preload("res://assets/characters/post_trail.svg")
+const ARCHIVE: Texture2D = preload("res://assets/characters/post_archive.svg")
+const FARM: Texture2D = preload("res://assets/characters/post_farm.svg")
+const REPAIR: Texture2D = preload("res://assets/characters/post_repair.svg")
+const SCHOOL: Texture2D = preload("res://assets/characters/post_school.svg")
 
 const ACTORS := {
 	"old_mango": [
@@ -124,8 +128,12 @@ static func paint(scene: Node2D, region: String, seconds: float, reduced_motion:
 		if job == "trail": tint = Color("#ded7bd")
 		if job == "community": tint = Color("#f1dac8")
 		if job == "repair": tint = Color("#d6d9d0")
-		var bob := 0.0 if reduced_motion else absf(sin(seconds * .95 + at.x)) * 1.6
-		Depth.paint_grounded(scene, image, at, Vector2(95,132), tint, .34, bob)
+		# Different work shifts visibly breathe/step rather than sliding a
+		# static PNG around. Nighttime still removes them from public paths.
+		var motion_weight := .42 if period in ["morning","afternoon"] else .12
+		var stride_phase := seconds*2.2 + at.x*.037
+		Depth.paint_animated_actor(scene,image,at,Vector2(95,132),
+			stride_phase,motion_weight,reduced_motion,tint,.34)
 		if player_at.distance_to(at) < 158.0:
 			# Only a proximity cue; never add HUD panels or cover chapter controls.
 			scene.draw_string(ThemeDB.fallback_font, at + Vector2(-64,-157),
@@ -133,9 +141,19 @@ static func paint(scene: Node2D, region: String, seconds: float, reduced_motion:
 				290, 16, Color("#f0dfa9"))
 
 static func _sprite_for(job: String, actor_id: String) -> Texture2D:
-	if job == "fish" or actor_id == "animal_keeper":
+	# Four original profession-specific faces eliminate repeated market
+	# and fisher heads across school, river, wake and ancestral grove.
+	if actor_id == "archive_helper":
+		return ARCHIVE
+	if job == "school":
+		return SCHOOL
+	if job == "repair":
+		return REPAIR
+	if job in ["farm","animals"] or actor_id == "farm_helper":
+		return FARM
+	if job == "fish":
 		return FISHER
-	if job == "school" or job == "community" or actor_id == "farm_helper":
+	if job == "community":
 		return MARKET
 	return TRAIL
 
@@ -168,10 +186,12 @@ static func _paint_work(scene: Node2D, job: String, at: Vector2, period: String,
 		"repair", "trail":
 			scene.draw_line(at+Vector2(-57,19), at+Vector2(-57,-31), wood,5,true)
 			scene.draw_line(at+Vector2(-85,-31), at+Vector2(-30,-31),Color("#ccb28a"),7,true)
-			if not reduced_motion:
-				var hammer := at+Vector2(-23,-82+sin(seconds*2.0)*6)
-				scene.draw_line(hammer, hammer+Vector2(-14,27),Color("#8b6240"),3,true)
-				scene.draw_line(hammer+Vector2(-14,-3),hammer+Vector2(8,7),Color("#7e8581"),5,true)
+			# Work never stops looking alive: a real hand-held hammer traces
+			# a small swing, while Reduced Motion locks it safely in place.
+			var lift := 0.0 if reduced_motion else sin(seconds*2.3)*10.0
+			var hammer := at+Vector2(-23,-82+lift)
+			scene.draw_line(hammer,hammer+Vector2(-14,27),Color("#8b6240"),3,true)
+			scene.draw_line(hammer+Vector2(-14,-3),hammer+Vector2(8,7),Color("#7e8581"),5,true)
 		"school", "community":
 			scene.draw_rect(Rect2(at + Vector2(-67,-27), Vector2(48,32)), Color("#d3bf8c"))
 			scene.draw_rect(Rect2(at + Vector2(-67,-27), Vector2(48,32)), Color("#725740"),false,3)

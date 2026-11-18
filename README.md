@@ -26,6 +26,18 @@ All seven are chapters of **one connected story** with the same Apprentice and B
 - Night 4 original wake props, 3-layer hinged Manananggal wings, encounter camera bounds and safe indoor mourner transitions.
 - Night 5 farm has clear world signs, genuinely fenced pen and receiving paddock, a single livestock-only gate, a visibly marked safe observation spot, amber lantern routes, jointed backwards-walking Sigbin, and subtle offline audio synced to movement. Existing saved animals remain safe at the gate after reload.
 
+### Final art, animation and mobile HUD polish (seven-night branch)
+
+- **Connected-world cinematic crossings:** all seven region-to-region roads and title/menu transitions use the same persistent twilight-navy fade curtain, destination name and soft incoming reveal. The curtain survives scene replacement and blocks accidental touch input, while Reduced Motion and headless tests retain immediate transitions. The unchanged story ledger still controls which road is legally open; this is visual continuity, not a level-select workaround. See `scripts/core/scene_transit.gd` and `tests/shared_scene_transit_test.gd`.
+- **Night 1's HUD remains canonical.** The right-hand HOLD OBSERVE control on Nights 2–7 now shows **OBSERVING...** in the same antique-gold pressed state as Night 1's FOCUS HELD control. Every left-hand D-pad and held action releases on finger drag-out or when a modal hides gameplay. All existing positions, action sizes and touch anchors remain unchanged.
+- The shared LOOK AROUND pad has a drawn two-axis guide and thumb indicator; its central deadzone resets the actual aim instead of leaving a previous direction stuck. Reduced Motion remains supported.
+- Nights 2–7 use one shared grounded actor motion painter for the apprentice and Bantay: consistent paired step contact shadows, subtle gait compression and a smooth return to both feet at idle, without changing collisions or rewriting any chapter's authored poses.
+- Night 7's live Balete camera now fits more of the original tree canopy while retaining the walking apprentice and unmodified fixed-screen HUD; restrained fireflies add life to the root canopy.
+- The postgame settlement has **four independently illustrated identities** (archive, farming, repairs and school) in addition to existing fishing/market/trail workers. Morning tasks now use consistent small movements; Reduced Motion freezes decorative movement.
+- Night 1's postgame 3D village adds an actual slatted reed market canopy, animated drying nets and more distinct role-specific worker portraits. Visual-only assets never close public paths or grant fake story rewards.
+
+This is a **targeted in-engine asset and movement polish pass**, not yet a production-grade skeletal-animation remake. Do not mistake static concept sheets for actual frame-captured Android scenes. Every merge must pass new `tests/final_polish_all_nights_test.gd`, the complete old playthroughs, and APK + emulator smoke. Android handset feel, screen-size readability and detailed face quality still require human acceptance.
+
 ### Night 5 player route (no barn shortcuts)
 
 1. Speak to the farmer and inspect four clues **outside** the unsafe raised barn and fenced livestock pen. The goats and chickens are missing during the initial investigation, not inexplicably visible from the start.

@@ -9,6 +9,7 @@ const Night03Save = preload("res://scripts/core/night03_save.gd")
 const World = preload("res://scripts/core/connected_world.gd")
 const Preferences = preload("res://scripts/core/preferences.gd")
 const SharedHUD = preload("res://scripts/ui/shared_hud.gd")
+const SharedDialogueMotion = preload("res://scripts/ui/shared_dialogue_motion.gd")
 const PostgameResidents = preload("res://scripts/world/postgame_residents.gd")
 const DimensionalArt = preload("res://scripts/visuals/layered_25d.gd")
 const NightWindows = preload("res://scripts/visuals/nighttime_windows.gd")
@@ -476,13 +477,15 @@ func _draw() -> void:
 		var size2: Vector2 = actor["size"]
 		var is_hero: bool = actor["tex"] == HERO
 		var is_dog: bool = actor["tex"] == BANTAY
-		var bob := 0.0
-		if not prefs.reduced_motion and (is_hero or is_dog):
-			bob = absf(sin(walk_phase))*3.2*walk_weight
 		var transparency: float = float(actor.get("alpha",1.0))
 		if transparency > .005:
-			DimensionalArt.paint_grounded(self,actor["tex"],p,size2,
-				Color(1,1,1,transparency),.38*transparency,bob)
+			if is_hero or is_dog:
+				DimensionalArt.paint_animated_actor(self,actor["tex"],p,
+					size2,walk_phase,walk_weight,prefs.reduced_motion,
+					Color(1,1,1,transparency),.38*transparency,is_dog)
+			else:
+				DimensionalArt.paint_grounded(self,actor["tex"],p,size2,
+					Color(1,1,1,transparency),.38*transparency)
 	PostgameResidents.paint(self,"night04",elapsed,prefs.reduced_motion,player_pos)
 	var font := ThemeDB.fallback_font
 	draw_string(font,RETURN_RIDGE+Vector2(25,-90),"FLOOD RIDGE • RETURN",HORIZONTAL_ALIGNMENT_LEFT,320,18,Color("#e8cb94"))
@@ -834,15 +837,22 @@ func _talk(who: String,message: String,actions: Array) -> void:
 		child.queue_free()
 	for action in actions:
 		var id := str(action["action"])
-		_button(choices,str(action["label"]),func():_choose(id))
-	dialogue.modulate.a = 1.0 if prefs.reduced_motion else 0.0
-	if not prefs.reduced_motion:
-		create_tween().tween_property(dialogue,"modulate:a",1.0,.22)
+		_button(choices,str(action["label"]),func():_press_dialogue_choice(id))
+	SharedDialogueMotion.reveal(dialogue,prefs.reduced_motion)
+	SharedDialogueMotion.reveal_text(dialogue_body,prefs.reduced_motion)
 	_sync_ui()
 
+func _press_dialogue_choice(action: String) -> void:
+	# Identical to Nights 1–3: a quick touch finishes the current speaker
+	# line rather than accidentally advancing a consequence.
+	if SharedDialogueMotion.finish_text(dialogue_body):
+		return
+	_choose(action)
+
 func _close_dialogue() -> void:
-	dialogue.hide()
+	SharedDialogueMotion.conceal(dialogue,prefs.reduced_motion)
 	_sync_ui()
+	SharedDialogueMotion.restore_gameplay(controls,prefs.reduced_motion)
 
 func _sync_ui() -> void:
 	if modal_backdrop != null:
@@ -967,7 +977,7 @@ func _save_menu() -> void:
 	if not _auto_save():
 		save_error.popup_centered(Vector2i(600,180))
 		return
-	get_tree().change_scene_to_file("res://scenes/title.tscn")
+	get_node("/root/SceneTransit").call("change_to_file", "res://scenes/title.tscn")
 
 func _travel_to_farm() -> void:
 	if travel_in_progress or story.outcome == "":
@@ -979,7 +989,7 @@ func _travel_to_farm() -> void:
 	motion = Vector2.ZERO
 	observe_held = false
 	print("TABI_WORLD_TRAVEL_WAKE_TO_FARM")
-	get_tree().change_scene_to_file(World.scene_for("night05"))
+	get_node("/root/SceneTransit").call("change_to_file", World.scene_for("night05"))
 
 func _return_to_ridge() -> void:
 	if travel_in_progress:
@@ -991,7 +1001,7 @@ func _return_to_ridge() -> void:
 	motion = Vector2.ZERO
 	observe_held = false
 	print("TABI_WORLD_TRAVEL_WAKE_TO_RIDGE")
-	get_tree().change_scene_to_file(World.scene_for("night03"))
+	get_node("/root/SceneTransit").call("change_to_file", World.scene_for("night03"))
 
 func _show_ending() -> void:
 	dialogue.hide()

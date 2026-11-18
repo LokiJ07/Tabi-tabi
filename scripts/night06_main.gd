@@ -89,6 +89,7 @@ var held: Dictionary = {}
 var aim := Vector2.ZERO
 var observe_held := false
 var walk_time := 0.0
+var walk_weight := 0.0
 var clock := 0.0
 var travel_in_progress := false
 var qa_river_preview := false
@@ -178,6 +179,8 @@ func _process(delta: float) -> void:
 	unsafe_notice_cooldown = maxf(0.0,unsafe_notice_cooldown-delta)
 	var axis := (Input.get_vector("ui_left","ui_right","ui_up","ui_down")+move_axis).limit_length()
 	if _modal() or travel_in_progress: axis = Vector2.ZERO
+	walk_weight = lerpf(walk_weight,1.0 if axis.length()>.05 else 0.0,
+		1.0 if prefs.reduced_motion else clampf(delta*8.0,0.0,1.0))
 	if axis.length() > .05:
 		if not prefs.reduced_motion: walk_time += delta*9.0
 		var foot := player_pos
@@ -617,9 +620,10 @@ func _draw() -> void:
 		resident_foot = resident_foot.lerp(actor[3],fade)
 		Depth.paint_grounded(self,actor[0],resident_foot,actor[2],
 			Color(1,1,1,1.0-smoothstep(.77,1.0,fade)),.23)
-	var bob := 0.0 if prefs.reduced_motion else absf(sin(walk_time))*2.8
-	Depth.paint_grounded(self,BANTAY,bantay_pos,Vector2(95,102),Color.WHITE,.31,bob)
-	Depth.paint_grounded(self,HERO,player_pos,Vector2(108,142),Color.WHITE,.37,bob)
+	Depth.paint_animated_actor(self,BANTAY,bantay_pos,Vector2(95,102),
+		walk_time,walk_weight,prefs.reduced_motion,Color.WHITE,.31,true)
+	Depth.paint_animated_actor(self,HERO,player_pos,Vector2(108,142),
+		walk_time,walk_weight,prefs.reduced_motion,Color.WHITE,.37)
 	PostgameResidents.paint(self,"night06",clock,prefs.reduced_motion,player_pos)
 	# Nearby ground signs are concise and contextual, never overlaid across
 	# the touchscreen or blocking the player during exploration.
@@ -1078,10 +1082,17 @@ func _talk(who: String,message: String,actions: Array) -> void:
 		child.queue_free()
 	for action in actions:
 		var code: String = str(action["action"])
-		_button(choices,str(action["label"]),func():_choice(code))
+		_button(choices,str(action["label"]),func():_press_dialogue_choice(code))
 	DialogueMotion.reveal(dialogue,prefs.reduced_motion)
 	DialogueMotion.reveal_text(dialogue_body,prefs.reduced_motion)
 	_sync_ui()
+
+func _press_dialogue_choice(action: String) -> void:
+	# Same tap-to-complete rule as the established Night 1 cinematic.
+	# A fast choice tap reveals the current line before a consequence runs.
+	if DialogueMotion.finish_text(dialogue_body):
+		return
+	_choice(action)
 
 func _close_dialogue() -> void:
 	DialogueMotion.conceal(dialogue,prefs.reduced_motion)
@@ -1232,7 +1243,7 @@ func _save_menu() -> void:
 	if not _save_story():
 		save_error.popup_centered(Vector2i(600,175))
 		return
-	get_tree().change_scene_to_file("res://scenes/title.tscn")
+	get_node("/root/SceneTransit").call("change_to_file", "res://scenes/title.tscn")
 
 func _postgame_active() -> bool:
 	var clock_node := get_node_or_null("/root/PostgameClock")
@@ -1248,7 +1259,7 @@ func _travel_to_balete() -> void:
 	observe_held = false
 	move_axis = Vector2.ZERO
 	print("TABI_WORLD_TRAVEL_RIVER_TO_BALETE")
-	get_tree().change_scene_to_file(World.scene_for("night07"))
+	get_node("/root/SceneTransit").call("change_to_file", World.scene_for("night07"))
 
 func _return_farm() -> void:
 	if travel_in_progress: return
@@ -1256,7 +1267,7 @@ func _return_farm() -> void:
 		save_error.popup_centered(Vector2i(600,175))
 		return
 	travel_in_progress = true
-	get_tree().change_scene_to_file(World.scene_for("night05"))
+	get_node("/root/SceneTransit").call("change_to_file", World.scene_for("night05"))
 
 func _show_ending() -> void:
 	dialogue.hide()
