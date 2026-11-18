@@ -149,6 +149,24 @@ if ! adb shell pidof "$PKG"; then
   exit 1
 fi
 
+# A real screenshot must prove the fully populated Options overlay opened, not
+# merely that the Android game has not crashed. 2340x1080 landscape AVD.
+capture_real_options() {
+  local chapter="$1" original="$2" marker="$3"
+  local file="build/android-night${chapter}-options.png"
+  adb shell input tap 2205 58
+  sleep 2
+  if ! adb logcat -d -v brief | grep -q "$marker"; then
+    echo "ERROR: Night $chapter Options BUTTON did not invoke real game settings"
+    adb exec-out screencap -p > "$file" || true
+    exit 1
+  fi
+  adb exec-out screencap -p > "$file"
+  python3 .github/scripts/assert_options_visible.py "build/$original" "$file"
+  adb shell input keyevent 111  # Escape / Godot ui_cancel
+  sleep 1
+}
+
 # These are supplemental captures, not gameplay acceptance tests.
 adb shell input tap 2050 660 || true
 sleep 2
@@ -163,9 +181,7 @@ sleep 2
 adb exec-out screencap -p > build/android-night1-preparation.png || true
 adb shell input tap 1160 965 || true
 sleep 1
-adb shell input tap 1940 60 || true
-sleep 2
-adb exec-out screencap -p > build/android-night1-options.png || true
+capture_real_options 1 android-night1-launch.png NIGHT1_QA_OPTIONS_OPEN
 
 # Real QA screenshots from the running Night 1 game scene, captured by
 # debug-only F6/F7/F8 location keys (not generated illustrations).
@@ -287,6 +303,7 @@ if [ "${GITHUB_REF:-}" = "refs/heads/fix/visual-depth-room-occlusion-n1-n2" ] ||
   fi
   adb exec-out screencap -p > build/android-night2-return-trail.png
   python3 .github/scripts/assert_gameplay_visible.py build/android-night2-return-trail.png
+  capture_real_options 2 android-night2-return-trail.png NIGHT2_QA_OPTIONS_OPEN
   adb logcat -d -v brief | grep -Ei 'NIGHT2_QA|Godot|AndroidRuntime' | tail -n 160 > build/android-night2-log.txt || true
   echo "PASS: actual Kapre intro, witness area, shelter and mango tree run on Android"
 fi
@@ -330,6 +347,7 @@ if [ "${GITHUB_REF:-}" = "refs/heads/fix/visual-depth-room-occlusion-n1-n2" ] ||
     echo "ERROR: Night 3 daytime and nocturnal Tikbalang are identical"
     exit 1
   fi
+  capture_real_options 3 android-night3-watchpost-night.png NIGHT3_QA_OPTIONS_OPEN
   echo "PASS: actual Tikbalang Night 3 intro, bamboo ridge, safe lookout, night reveal and connected trail"
 fi
 
@@ -372,6 +390,7 @@ if [ "${GITHUB_REF:-}" = "refs/heads/fix/visual-depth-room-occlusion-n1-n2" ] ||
     echo "ERROR: Night 4 daytime and Manananggal night are identical"
     exit 1
   fi
+  capture_real_options 4 android-night4-wake-day.png NIGHT4_QA_OPTIONS_OPEN
   adb logcat -d -v brief | grep -Ei 'NIGHT4_QA|Godot|AndroidRuntime' | tail -n 180 > build/android-night4-log.txt || true
   echo "PASS: actual Night 4 wake, roof predator, courtyard and trail"
 fi
@@ -499,6 +518,7 @@ if [ "${GITHUB_REF:-}" = "refs/heads/fix/visual-depth-room-occlusion-n1-n2" ] ||
     exit 1
   fi
   adb logcat -d -v brief | grep -Ei 'NIGHT6_QA|Godot|AndroidRuntime' | tail -n 180 > build/android-night6-log.txt || true
+  capture_real_options 6 android-night6-archive-day.png NIGHT6_QA_OPTIONS_OPEN
   echo "PASS: real Night 6 river, archives, reconstruction board and living current"
 fi
 
@@ -533,6 +553,7 @@ if [ "${GITHUB_REF:-}" = "refs/heads/fix/visual-depth-room-occlusion-n1-n2" ] ||
     echo "ERROR: Balete day/night views are identical on emulator"
     exit 1
   fi
+  capture_real_options 7 android-night7-memorial-dawn.png NIGHT7_QA_OPTIONS_OPEN
   adb logcat -d -v brief | grep -Ei 'NIGHT7_QA|Godot|AndroidRuntime' | tail -n 160 > build/android-night7-log.txt || true
   echo "PASS: real Android Night 7 Balete, connected road and ancient Keeper rendered"
 fi
