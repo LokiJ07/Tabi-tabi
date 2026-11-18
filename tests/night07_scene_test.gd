@@ -79,7 +79,8 @@ func _run() -> void:
 	if game.dialogue.visible: game._choose("close")
 	game.player_pos=game.READINESS_BOARD
 	game._interact()
-	check(game.dialogue.visible,"physically reachable readiness notebook checkpoint")
+	check(game.dialogue.visible and not game.story.notebook_checked,
+		"approaching the readiness board cannot silently mark notebook reviewed")
 	game._choose("notes")
 	check(game.notebook.visible and game.story.notebook_checked,
 		"notebook shows evidence and privately flags read")

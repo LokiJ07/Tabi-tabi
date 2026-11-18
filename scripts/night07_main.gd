@@ -194,10 +194,16 @@ func _process(delta: float) -> void:
 		player_pos=candidate
 	bantay_pos=bantay_pos.lerp(player_pos+Vector2(-48,29),clampf(delta*3.7,0,1))
 	var target := player_pos+looking*42
+	var zoom: Vector2 = Vector2(1.02,1.02)
 	if story.phase in [3,5] or qa_view == 3:
 		target = player_pos.lerp(KEEPER,.19)+looking*36
+		zoom = Vector2(.88,.88)
+	# The enormous Keeper must appear with its face AND critical root footing
+	# inside the real Android landscape frame, never cut at the upper edge.
+	if story.phase == 5 or qa_view == 3:
+		target += Vector2(0,-105)
+		zoom = Vector2(.79,.79)
 	camera.position=camera.position.lerp(target,1.0 if prefs.reduced_motion else clampf(delta*4.5,0,1))
-	var zoom := Vector2(.88,.88) if story.phase in [3,5] or qa_view == 3 else Vector2(1.02,1.02)
 	camera.zoom=camera.zoom.lerp(zoom,1.0 if prefs.reduced_motion else clampf(delta*3.2,0,1))
 	if not _modal() and player_pos.distance_to(RIVER_TRAIL)<72:
 		_return_to_river()
@@ -275,7 +281,22 @@ func _paint_balete(at: Vector2,awakening: bool) -> void:
 		# Humanoid figure merges back into the mighty trunk at final trial;
 		# its scale communicates force without a targetable enemy HP bar.
 		var breathe:=0.0 if prefs.reduced_motion else sin(clock*.63)*5
-		draw_circle(at+Vector2(1,-305+breathe),44,Color("#8c9980"))
+		var face: Vector2=at+Vector2(1,-305+breathe)
+		draw_circle(face+Vector2(0,6),50,Color(.10,.18,.14,.13))
+		draw_colored_polygon(PackedVector2Array([
+			face+Vector2(-43,-18),face+Vector2(-28,-43),
+			face+Vector2(5,-49),face+Vector2(33,-30),
+			face+Vector2(45,9),face+Vector2(15,45),
+			face+Vector2(-25,39),face+Vector2(-47,8)]),Color("#83917a"))
+		draw_colored_polygon(PackedVector2Array([
+			face+Vector2(-42,-15),face+Vector2(-25,-43),
+			face+Vector2(-18,20),face+Vector2(-35,30)]),Color("#536950"))
+		draw_line(face+Vector2(-31,-25),face+Vector2(-10,-30),Color("#3c513e"),5,true)
+		draw_line(face+Vector2(11,-30),face+Vector2(33,-23),Color("#3c513e"),5,true)
+		draw_colored_polygon(PackedVector2Array([
+			face+Vector2(0,-17),face+Vector2(9,8),
+			face+Vector2(-3,15)]),Color("#a4a88a"))
+		draw_line(face+Vector2(-17,23),face+Vector2(12,26),Color("#455c46"),3.4,true)
 		draw_colored_polygon(PackedVector2Array([
 			at+Vector2(-48,-258+breathe),at+Vector2(39,-260+breathe),
 			at+Vector2(61,-161),at+Vector2(4,-131),
@@ -284,8 +305,16 @@ func _paint_balete(at: Vector2,awakening: bool) -> void:
 			Color("#82927a"),18,true)
 		draw_line(at+Vector2(39,-235),at+Vector2(115,-170),
 			Color("#82927a"),18,true)
-		draw_circle(at+Vector2(-16,-309+breathe),5,Color("#e4d49a"))
-		draw_circle(at+Vector2(19,-309+breathe),5,Color("#e4d49a"))
+		draw_circle(face+Vector2(-16,-7),5,Color("#f1d99b"))
+		draw_circle(face+Vector2(19,-7),5,Color("#f1d99b"))
+		draw_circle(face+Vector2(-16,-7),2,Color("#f6f0cb"))
+		draw_circle(face+Vector2(19,-7),2,Color("#f6f0cb"))
+		# Subtle bark grain rather than an untextured mannequin torso.
+		for grain in range(5):
+			var g:=float(grain)
+			draw_line(at+Vector2(-36+g*17,-237),
+				at+Vector2(-41+g*19,-164+sin(g*1.2)*7),
+				Color(.22,.34,.26,.34),2.0,true)
 
 func _paint_hut(foot: Vector2,w: float,lit: bool) -> void:
 	draw_circle(foot+Vector2(14,5),w*.48,Color(.02,.04,.03,.21))
@@ -748,8 +777,8 @@ func _interact() -> void:
 	_refresh()
 
 func _readiness_dialog() -> void:
-	story.review_notebook()
-	_save_story()
+	# Merely approaching the board is not a notebook review; require
+	# the actual reading action before confirming the final checkpoint.
 	var missing:=story.readiness_missing()
 	var details: String="Historical evidence and the consent decisions are in your notes. This is an explicit point of no surprise lockout; return to the river for unresolved details or begin the final trial."
 	if missing.size()>0:
@@ -1238,7 +1267,7 @@ func _unhandled_input(event: InputEvent) -> void:
 					print("NIGHT7_QA_AWAKENED_BALETE")
 				KEY_F11:
 					qa_view=4
-					player_pos=RIVER_TRAIL+Vector2(240,-138)
+					player_pos=RIVER_TRAIL+Vector2(240,-240)
 					print("NIGHT7_QA_MORNING_PATH")
 			camera.position=player_pos
 			_refresh()
