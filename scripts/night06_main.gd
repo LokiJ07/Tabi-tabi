@@ -11,6 +11,7 @@ const Prefs = preload("res://scripts/core/preferences.gd")
 const RiverSound = preload("res://scripts/audio/night06_ambience.gd")
 const SharedHUD = preload("res://scripts/ui/shared_hud.gd")
 const PostgameResidents = preload("res://scripts/world/postgame_residents.gd")
+const PostgameDialogue = preload("res://scripts/narrative/postgame_dialogue.gd")
 const DialogueMotion = preload("res://scripts/ui/shared_dialogue_motion.gd")
 const Depth = preload("res://scripts/visuals/layered_25d.gd")
 const Landscape = preload("res://scripts/visuals/folklore_landscape_25d.gd")
@@ -807,6 +808,11 @@ func _hold_move(dir: String,on: bool) -> void:
 
 func _nearby() -> String:
 	if player_pos.distance_to(RETURN_FARM)<125: return "return_farm"
+	if PostgameResidents._clock(self) != null:
+		var neighbours := {"MARA":MARA_AT,"DADO":DADO_AT,"SABEL":SABEL_AT,"LOLA":LOLA_AT}
+		for person in neighbours:
+			if player_pos.distance_to(neighbours[person]) < 122.0:
+				return "postgame:witness_" + str(person).to_lower()
 	if story.phase == 0:
 		if story.dado_choice == "unasked" and player_pos.distance_to(DADO_AT)<130:
 			return "dado"
@@ -839,6 +845,12 @@ func _nearby() -> String:
 func _interact() -> void:
 	if _modal() or travel_in_progress: return
 	var id := _nearby()
+	if id.begins_with("postgame:witness_"):
+		var role := id.trim_prefix("postgame:witness_").to_upper()
+		var free_clock := get_node("/root/PostgameClock")
+		_talk(role,PostgameDialogue.conversation(role,free_clock.village_mood),
+			[{"label":"SALAMAT • CONTINUE","action":"close"}])
+		return
 	if id.begins_with("postgame:"):
 		_talk(PostgameResidents.speaker(id),
 			PostgameResidents.talk(self,id),
