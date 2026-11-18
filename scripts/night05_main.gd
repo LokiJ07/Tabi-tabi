@@ -158,7 +158,9 @@ func _ready() -> void:
 	ambient.set_audio_level(prefs.audio_level)
 	_build_ui()
 	_refresh()
-	if story.outcome != "":
+	# In post-story Free Roam, revisit a completed chapter as a live map.
+	# Don't repeatedly block the connected road with its old ending popup.
+	if story.outcome != "" and not World.free_roam_unlocked():
 		_show_ending()
 	elif story.phase == 0 and story.clues.is_empty():
 		_talk("LOLA PASING • THE OLD PROMISE",

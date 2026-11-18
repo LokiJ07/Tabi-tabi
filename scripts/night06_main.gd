@@ -128,7 +128,9 @@ func _ready() -> void:
 	ambient.set_audio_level(prefs.audio_level)
 	_build_ui()
 	_refresh()
-	if story.outcome != "":
+	# In post-story Free Roam, revisit a completed chapter as a live map.
+	# Don't repeatedly block the connected road with its old ending popup.
+	if story.outcome != "" and not World.free_roam_unlocked():
 		_show_ending()
 	elif story.phase == 0 and story.clues.is_empty():
 		_talk("MARA • THE RIVER WITHOUT RAIN",
@@ -1076,7 +1078,7 @@ func _refresh() -> void:
 		4: objective.text = "Ask Sabel privately; hear Lola's explanation. Respect family choice."
 		5: objective.text = "Secure rope, lantern and marked stones before entering the dangerous river."
 		6: objective.text = "SAFE STONE %d/3: follow the marked route and HOLD OBSERVE." % [story.step_index+1]
-		7: objective.text = "RIVER RECORD • %s  •  Night 7 Balete trail remains locked." % story.outcome.to_upper() if story.outcome != "" else "Choose a recorded result. Night 7 preparations continue."
+		7: objective.text = "FREE ROAM • River records preserved • Follow the signed farm or Balete road." if World.free_roam_unlocked() else "RIVER RECORD • %s • Balete trail OPEN" % story.outcome.to_upper() if story.outcome != "" else "Choose a recorded result. Night 7 preparations continue."
 	if qa_river_preview:
 		objective.text = "RIVER ENVIRONMENT PREVIEW • Historical evidence remains unchanged."
 	_refresh_hint()
