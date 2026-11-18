@@ -27,6 +27,7 @@ const UI_DAYNIGHT: Texture2D = preload("res://assets/ui/daynight.svg")
 const Mangrove = preload("res://scripts/world/mangrove.gd")
 const CinematicCamera = preload("res://scripts/visuals/cinematic_camera.gd")
 const SharedHUD = preload("res://scripts/ui/shared_hud.gd")
+const SharedOptions = preload("res://scripts/ui/shared_options.gd")
 const SharedDialogueMotion = preload("res://scripts/ui/shared_dialogue_motion.gd")
 const SharedAtmosphere = preload("res://scripts/visuals/shared_immersive_atmosphere.gd")
 const BarrioLighting = preload("res://scripts/visuals/barrio_lighting.gd")
@@ -1105,97 +1106,27 @@ func _create_ui() -> void:
 	prep_panel.hide()
 	# Persistent accessibility options; deliberately not a second gameplay save.
 	SharedHUD.make_options_button(gameplay_hud, _open_settings, preferences.text_scale)
-	settings_panel = PanelContainer.new()
-	settings_panel.name = "SettingsPanel"
-	settings_panel.anchor_left = 0.10
-	settings_panel.anchor_right = 0.90
-	settings_panel.anchor_top = 0.055
-	settings_panel.anchor_bottom = 0.945
-	_style_modal(settings_panel)
-	root.add_child(settings_panel)
-	var settings_layout := VBoxContainer.new()
-	settings_layout.name = "SettingsLayout"
-	settings_layout.add_theme_constant_override("separation", 10)
-	settings_panel.add_child(settings_layout)
-	var settings_scroll := ScrollContainer.new()
-	settings_scroll.name = "SettingsScroll"
-	settings_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	settings_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	settings_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	settings_scroll.follow_focus = true
-	settings_layout.add_child(settings_scroll)
-	var options_stack := VBoxContainer.new()
-	options_stack.name = "OptionsContent"
-	options_stack.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	options_stack.add_theme_constant_override("separation", 13)
-	settings_scroll.add_child(options_stack)
-	var options_heading := Label.new()
-	options_heading.name = "OptionsHeading"
-	options_heading.text = "ACCESSIBILITY / GAME OPTIONS"
-	options_heading.add_theme_font_size_override("font_size", 23)
-	options_stack.add_child(options_heading)
-	pref_text_button = Button.new()
-	pref_text_button.custom_minimum_size = Vector2(360, 50)
-	pref_text_button.pressed.connect(_cycle_text_size)
-	_style_modal_button(pref_text_button)
-	options_stack.add_child(pref_text_button)
-	pref_motion_button = Button.new()
-	pref_motion_button.custom_minimum_size = Vector2(360, 50)
-	pref_motion_button.pressed.connect(_toggle_reduced_motion)
-	_style_modal_button(pref_motion_button)
-	options_stack.add_child(pref_motion_button)
-	pref_contrast_button = Button.new()
-	pref_contrast_button.custom_minimum_size = Vector2(360, 50)
-	pref_contrast_button.pressed.connect(_toggle_contrast)
-	_style_modal_button(pref_contrast_button)
-	options_stack.add_child(pref_contrast_button)
-	pref_hint_button = Button.new()
-	pref_hint_button.custom_minimum_size = Vector2(360, 50)
-	pref_hint_button.pressed.connect(_cycle_hint_level)
-	_style_modal_button(pref_hint_button)
-	options_stack.add_child(pref_hint_button)
-	pref_assist_button = Button.new()
-	pref_assist_button.custom_minimum_size = Vector2(360, 50)
-	pref_assist_button.pressed.connect(_toggle_story_assist)
-	_style_modal_button(pref_assist_button)
-	options_stack.add_child(pref_assist_button)
-	pref_audio_button = Button.new()
-	pref_audio_button.custom_minimum_size = Vector2(360, 50)
-	pref_audio_button.pressed.connect(_cycle_audio_level)
-	_style_modal_button(pref_audio_button)
-	options_stack.add_child(pref_audio_button)
-	# Important navigation stays fixed BELOW the scroll area, not buried in
-	# adjustable preferences. All actions require confirmation.
-	begin_night2_button = Button.new()
-	begin_night2_button.name = "BeginNight2Kapre"
-	begin_night2_button.text = "NEXT CHAPTER: NIGHT 2 • KAPRE"
-	begin_night2_button.custom_minimum_size = Vector2(320, 56)
+	var unified := SharedOptions.create(root,preferences,"NIGHT 1 • SANTELMO",{
+		"save": func(): _close_settings(); _save_story(),
+		"notes": func(): _close_settings(); _open_notebook(),
+		"next": _begin_night2,
+		"next_label": "NEXT CHAPTER: NIGHT 2 • KAPRE",
+		"menu": _request_main_menu,
+		"quit": _request_quit_game,
+		"back": _close_settings
+	},_apply_preferences,"SettingsPanel")
+	settings_panel = unified["panel"]
+	pref_text_button = unified["text"]
+	pref_motion_button = unified["motion"]
+	pref_contrast_button = unified["contrast"]
+	pref_hint_button = unified["hint"]
+	pref_assist_button = unified["assist"]
+	pref_audio_button = unified["audio"]
+	begin_night2_button = unified["next"]
 	begin_night2_button.disabled = true
-	begin_night2_button.pressed.connect(_begin_night2)
-	_style_modal_button(begin_night2_button, false, true)
-	settings_layout.add_child(begin_night2_button)
-	save_main_menu_button = Button.new()
-	save_main_menu_button.name = "SaveAndMainMenu"
-	save_main_menu_button.text = "SAVE & MAIN MENU"
-	save_main_menu_button.custom_minimum_size = Vector2(320, 56)
-	save_main_menu_button.pressed.connect(_request_main_menu)
-	_style_modal_button(save_main_menu_button, false, true)
-	settings_layout.add_child(save_main_menu_button)
-	quit_game_button = Button.new()
-	quit_game_button.name = "QuitGame"
-	quit_game_button.text = "QUIT GAME"
-	quit_game_button.custom_minimum_size = Vector2(320, 52)
-	quit_game_button.pressed.connect(_request_quit_game)
-	_style_modal_button(quit_game_button, false, true)
-	settings_layout.add_child(quit_game_button)
-	var exit_options := Button.new()
-	exit_options.text = "CLOSE OPTIONS"
-	exit_options.custom_minimum_size = Vector2(360, 50)
-	exit_options.pressed.connect(_close_settings)
-	exit_options.name = "CloseSettings"
-	_style_modal_button(exit_options, false, true)
-	settings_layout.add_child(exit_options)
-	settings_panel.hide()
+	save_main_menu_button = unified["menu"]
+	quit_game_button = unified["quit"]
+		settings_panel.hide()
 	_build_navigation_confirmations(root)
 	_sync_modal_ui()
 
@@ -1853,12 +1784,7 @@ func _close_settings() -> void:
 
 
 func _refresh_options() -> void:
-	pref_text_button.text = "TEXT SIZE: %d%%" % roundi(preferences.text_scale * 100.0)
-	pref_motion_button.text = "REDUCED MOTION: %s" % ("ON" if preferences.reduced_motion else "OFF")
-	pref_contrast_button.text = "HIGH-CONTRAST TEXT: %s" % ("ON" if preferences.high_contrast else "OFF")
-	pref_hint_button.text = "PUZZLE HINTS: " + str(preferences.HINT_LEVELS[preferences.hint_level])
-	pref_assist_button.text = "STORY ASSIST / NO-FAIL: " + ("ON" if preferences.story_assist else "OFF")
-	pref_audio_button.text = "AMBIENCE: " + (["OFF", "QUIET", "NORMAL"][preferences.audio_level])
+	SharedOptions.refresh(settings_panel,preferences)
 
 
 func _apply_preferences() -> void:
@@ -1886,7 +1812,7 @@ func _apply_preferences() -> void:
 		evidence_heading,
 		theory_heading,
 		prep_panel.get_node("PreparationLayout/PreparationScroll/EquipmentContent/PreparationHeading") as Label,
-		settings_panel.get_node("SettingsLayout/SettingsScroll/OptionsContent/OptionsHeading") as Label
+		settings_panel.get_node("SettingsLayout/Columns/SettingsScroll/OptionsContent/OptionsHeading") as Label
 	]
 	if dialogue_speaker != null:
 		dialogue_speaker.add_theme_font_size_override("font_size", roundi(30.0 * scale))
@@ -1904,7 +1830,7 @@ func _apply_preferences() -> void:
 	for footer in [
 		notebook_panel.get_node("NotebookLayout/CloseNotebook") as Button,
 		prep_panel.get_node("PreparationLayout/ClosePreparation") as Button,
-		settings_panel.get_node("SettingsLayout/CloseSettings") as Button,
+		settings_panel.get_node("SettingsLayout/Columns/ActionStack/CloseSettings") as Button,
 		save_main_menu_button,
 		begin_night2_button,
 		quit_game_button,
