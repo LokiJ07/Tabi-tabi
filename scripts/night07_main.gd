@@ -174,7 +174,7 @@ func _process(delta: float) -> void:
 
 func _draw() -> void:
 	var night := _stage() >= 2
-	var late := story.phase >= 5 or _postgame_active()
+	var late: bool = story.phase >= 5 or _postgame_active()
 	draw_rect(MAP.grow(260), Color("#152e35") if night else Color("#355a59"))
 	Landscape.parallax_ridges(self,MAP.grow(190),camera.position,7,_stage())
 	for i in range(26):
@@ -236,7 +236,7 @@ func _draw() -> void:
 	if story.phase >= 3 and story.phase <= 4:
 		for i in range(TRIAL_POS.size()):
 			var foot: Vector2 = TRIAL_POS[i]
-			var active := i == story.trial_index
+			var active: bool = i == story.trial_index
 			Landscape.rock(self,foot,91.0,not night)
 			draw_circle(foot+Vector2(0,-34),31.0,
 				Color(.95,.77,.42,.30 if active else .07))
