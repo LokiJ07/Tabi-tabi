@@ -156,8 +156,16 @@ func _process(delta: float) -> void:
 			candidate.y = 595.0
 		player_pos = candidate
 	bantay_pos = bantay_pos.lerp(player_pos + Vector2(-51,32),clampf(delta*3.1,0,1))
-	camera.position = camera.position.lerp(player_pos + look*32.0,
-		1.0 if prefs.reduced_motion else clampf(delta*4.1,0,1))
+	# At the Keeper's covenant the original 760px Balete was cropped
+	# above the Android camera. Fit the canopy and apprentice in the world
+	# camera only; the Night 1 HUD remains fixed in physical screen space.
+	var grove_fit := clampf(1.0-(player_pos.distance_to(KEEPER)-170.0)/880.0,0.0,1.0)
+	var target_zoom := lerpf(1.02,.69,grove_fit)
+	var look_target := player_pos + look*32.0 + Vector2(0,-305.0*grove_fit)
+	camera.position = camera.position.lerp(look_target,
+		1.0 if prefs.reduced_motion else clampf(delta*3.9,0,1))
+	camera.zoom = camera.zoom.lerp(Vector2.ONE*target_zoom,
+		1.0 if prefs.reduced_motion else clampf(delta*3.3,0,1))
 	if story.phase == 3 and not _modal() and not _postgame_active():
 		var site: Vector2 = TRIAL_POS[mini(story.trial_index,2)]
 		if story.observe_tick(delta,player_pos.distance_to(site)<130.0,
@@ -220,6 +228,18 @@ func _draw() -> void:
 	# Physical safe path and ancestral tree occupy the same world coordinates.
 	Depth.paint_grounded(self,TREE,KEEPER+Vector2(-50,38),
 		Vector2(790,760),Color("#bac6b3") if night else Color.WHITE,.55)
+	# Wind catches small fireflies between the true Balete roots. Motion
+	# freezes with Reduced Motion; this is world art, never a HUD particle.
+	for i in range(16):
+		var seed := float(i)
+		var base := KEEPER+Vector2(-380.0+float(i%7)*110.0,
+			-580.0+float(i/7)*135.0)
+		var drift := Vector2.ZERO if prefs.reduced_motion else Vector2(
+			sin(elapsed*.41+seed*1.8)*10.0,
+			cos(elapsed*.55+seed*2.1)*8.0)
+		var firefly := base+drift
+		draw_circle(firefly,9.0,Color(.98,.81,.43,.09))
+		draw_circle(firefly,2.4,Color("#f4d797"))
 	# A second translucent canopy pass creates distant spiritual light without
 	# a monster-jump-scare or full-screen overlay.
 	if night and story.phase in [2,3,4]:
