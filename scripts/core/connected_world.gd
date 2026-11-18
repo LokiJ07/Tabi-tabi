@@ -1,7 +1,9 @@
 extends RefCounted
+const FinalState = preload("res://scripts/narrative/night07_state.gd")
+const FinalSave = preload("res://scripts/core/night07_save.gd")
 ## Tabi-tabi is ONE seven-night story with connected regions.
 ## Regions are streamed as Godot scenes for memory/performance, not separate games.
-## Nights 1–6 are connected playable scenes. Night 7 remains locked.
+## All seven nights are connected playable scenes with case-specific gates.
 const PATH := "user://tabi_connected_world.json"
 const REGIONS := [
 	"barrio_lawom", "old_mango", "night03", "night04",
@@ -13,7 +15,8 @@ const SCENES := {
 	"night03": "res://scenes/night03.tscn",
 	"night04": "res://scenes/night04.tscn",
 	"night05": "res://scenes/night05.tscn",
-	"night06": "res://scenes/night06.tscn"
+	"night06": "res://scenes/night06.tscn",
+	"night07": "res://scenes/night07.tscn"
 }
 const CONNECTIONS := {
 	"barrio_lawom": ["old_mango"],
@@ -41,7 +44,7 @@ const ARRIVAL_FARM := Vector2(-810.0,340.0)
 const TRAIL_FARM_WAKE := Vector2(-990.0,410.0)
 # Canonical physical continuation from the Sigbin farm to the next chapter.
 # Canonical Night 5 completion opens the real Night 6 chapter scene.
-# Only the yet-unbuilt Night 7 remains locked.
+# Night 7 becomes accessible only after a real Night 6 outcome.
 const TRAIL_FARM_NIGHT06 := Vector2(955.0,-470.0)
 const ARRIVAL_WAKE_FROM_FARM := Vector2(735.0,-95.0)
 const TRAVEL_RANGE_3D := 3.35
@@ -98,37 +101,92 @@ static func write(data: Dictionary) -> bool:
 		return false
 	return true
 
+static func free_roam_unlocked() -> bool:
+	# The world flag alone is insufficient: a real completed Night 7 save
+	# must still exist, with the same ending recorded in the world ledger.
+	var record: Dictionary = read()
+	if record.get("free_roam",false) != true: return false
+	var ending := FinalState.new()
+	if not FinalSave.read(ending) or not ending.finished or ending.outcome == "":
+		return false
+	var outcomes: Dictionary = record.get("outcomes",{})
+	return str(outcomes.get("night07","")) == ending.outcome
+
+static func unlock_free_roam() -> bool:
+	# Only a genuinely saved, completed Night 7 can unlock the entire map.
+	# Also migrates existing post-ending saves without deleting earlier saves.
+	var ending := FinalState.new()
+	if not FinalSave.read(ending) or not ending.finished or ending.outcome == "":
+		return false
+	var record: Dictionary = read()
+	var outcomes: Dictionary = record.get("outcomes",{})
+	# Reopening the title must not rewrite/back up the full world JSON on
+	# every session when the unlock has already been safely persisted.
+	if record.get("free_roam",false) == true 			and str(outcomes.get("night07","")) == ending.outcome:
+		return true
+	outcomes["night07"] = ending.outcome
+	record["outcomes"] = outcomes
+	record["free_roam"] = true
+	var visited: Dictionary = record.get("visited",{})
+	visited["night07"] = true
+	record["visited"] = visited
+	return write(record)
+
+static func free_roam_resume_region() -> String:
+	if not free_roam_unlocked(): return ""
+	var region: String = str(read().get("current","night07"))
+	return region if implemented(region) else "night07"
+
+static func choose_free_roam_region(region: String) -> bool:
+	# Title-screen chapter choice is optional fast resume. While walking,
+	# only adjacent REAL physical paths can stream the next region.
+	if not free_roam_unlocked() or not implemented(region):
+		return false
+	var record := read()
+	record["current"] = region
+	record["pending"] = {}
+	var visited: Dictionary = record.get("visited",{})
+	visited[region] = true
+	record["visited"] = visited
+	return write(record)
+
 static func begin_travel(origin: String, destination: String, last_outcome: String) -> bool:
 	# Prevent menu-skipping future chapters and travel between unrelated regions.
 	if not adjacent(origin, destination) or not implemented(destination):
 		return false
-	if origin == "barrio_lawom" and destination == "old_mango" and last_outcome == "":
+	var exploring: bool = free_roam_unlocked()
+	if not exploring and origin == "barrio_lawom" and destination == "old_mango" and last_outcome == "":
 		return false
 	var data := read()
 	# Do not let a player enter Tikbalang's ridge using an arbitrary string
 	# or a preview-only scene. The completed Kapre outcome must already be
 	# in the canonical one-world ledger and match the independent Night 2 save.
-	if origin == "old_mango" and destination == "night03":
+	if not exploring and origin == "old_mango" and destination == "night03":
 		var ledger_outcomes: Dictionary = data.get("outcomes", {})
 		if last_outcome == "" or str(ledger_outcomes.get("night02","")) != last_outcome:
 			return false
 	# The wake cannot be entered on a preview-only or forged Night 3 result.
 	# Compare the current outcome with the shared connected-world case ledger.
-	if origin == "night03" and destination == "night04":
+	if not exploring and origin == "night03" and destination == "night04":
 		var outcomes: Dictionary = data.get("outcomes", {})
 		if last_outcome == "" or str(outcomes.get("night03","")) != last_outcome:
 			return false
 	# The Sigbin farm opens only from a canonically completed wake.
 	# A QA-only scene launch cannot forge a Night 4 outcome in the ledger.
-	if origin == "night04" and destination == "night05":
+	if not exploring and origin == "night04" and destination == "night05":
 		var outcomes: Dictionary = data.get("outcomes", {})
 		if last_outcome == "" or str(outcomes.get("night04","")) != last_outcome:
 			return false
 	# The player cannot enter Night 6 by visiting the road early or forging
 	# a result string. It must match the completed Night 5 world ledger.
-	if origin == "night05" and destination == "night06":
+	if not exploring and origin == "night05" and destination == "night06":
 		var finished: Dictionary = data.get("outcomes",{})
 		if last_outcome == "" or str(finished.get("night05","")) != last_outcome:
+			return false
+	# The Balete gate cannot accept a guessed outcome or QA-only preview.
+	if not exploring and origin == "night06" and destination == "night07":
+		var final_ledger: Dictionary = data.get("outcomes",{})
+		if last_outcome == "" or str(final_ledger.get("night06","")) != last_outcome:
 			return false
 	data["current"] = destination
 	data["pending"] = {"from": origin, "to": destination}
@@ -161,7 +219,7 @@ static func note_outcome(night_number: int, value: String) -> bool:
 	return write(data)
 
 static func seven_night_chain_is_connected() -> bool:
-	# Pure graph check; future destinations remain UNIMPLEMENTED until built.
+	# Pure graph check of the complete seven-night story route.
 	var seen := {"barrio_lawom": true}
 	var pending: Array[String] = ["barrio_lawom"]
 	while not pending.is_empty():

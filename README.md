@@ -12,8 +12,9 @@
 | **Night 4 — Manananggal: The Wake** | Wake-house compound | Investigation and caretaker protection; Aling Nena is the vulnerable target, NOT the creature. Four preparations, three group defenses, fair retries, original animated winged creature, and independent outcome/save |
 | **Night 5 — Sigbin: The Abandoned Farm** | Connected old farm, barn and livestock pen | Four tangible clues, nonviolent guardian deduction, marked observation point, five preparations, three connected lantern-shadow routes, actual fenced livestock pen and gate, animated rescue into a fenced safe holding area, meaningful outcomes and offline save |
 | **Night 6 — What the Water Took** | Uphill farm road to old flood crossing and river terrace | Four historical sources, ordered cancellation / rescue-route / rescuer-identity reconstructions, private Sabel and Lola testimony, three marked-stone river surges, separate offline save and safe aftermath |
+| **Night 7 — The Ancient Keeper's Trial** | Connected Balete Grounds, remembrance plaza and village sunrise | Explicit evidence-readiness checkpoint; privacy-safe public gathering and practical commitments; root-path and source-backed truth trials; awakened environmental defense; four endings and player-paced epilogue |
 
-All six are chapters of **one story** with the same Apprentice and Bantay and a connected-world ledger. Only Night 7 (Balete Grounds) remains unimplemented and locked.
+All seven are chapters of **one story** with Apprentice, Bantay and a connected-world ledger. Completing Night 6—any genuine recorded ending—opens the last physically connected path.
 
 ## Shared experience
 
@@ -40,7 +41,17 @@ The player may approach and prepare the gate from outside; they **cannot enter**
 
 The MAIN footpath **does not end at the animal gate or the far side of the farm**. It continues from the Night 4 wake, through the Night 5 observation area, branches off a narrow gate spur, winds north-east uphill between (but never through) the two farm enclosures, and reaches the visibly signed **NIGHT 6 TRAIL**. The road itself carries on beyond the sign into the hillside so it never resembles a cut-off texture. The receiving paddock has been placed far enough downhill to leave clearance for the road and raised wooden posts. Animal rescue uses a separate west-side receiving opening, not the public path.
 
-Night 6's farm checkpoint now unlocks after the **genuine Night 5 outcome** is stored in the connected-world ledger. The same uninterrupted footpath streams into the real Night 6 river-terrace scene and supports a save-safe return to the farm. The canonical coordinate remains `scripts/core/connected_world.gd` (`TRAIL_FARM_NIGHT06`). The unbuilt Night 7 remains locked.
+Night 6's farm checkpoint now unlocks after the **genuine Night 5 outcome** is stored in the connected-world ledger. The same uninterrupted footpath streams into the real Night 6 river-terrace scene and supports a save-safe return to the farm. The canonical coordinate remains `scripts/core/connected_world.gd` (`TRAIL_FARM_NIGHT06`). Night 7 unlocks only after a genuine Night 6 outcome; the road and return route are physically authored.
+
+### A resolved story with four different village futures
+
+**The seven nights are a single Great Flood mystery**, not seven unrelated battles: Santelmo and Mang Celso's mooring, Kapre's unsafe refuge tree, Tikbalang's false rescue trail, the threatened wake, Sigbin's fenced farm, the cancelled official second rescue at the river, and the limited Balete Keeper trial. The last chapter explains why the former captain's decision matters, how independent evidence links Sabel's missing husband to the separate returning rescue boat, why Lola kept the refuge limits quiet, and why the Keeper cannot absolve human choices. Every unverified claim remains marked as uncertain.
+
+The **four final community states are permanently different**: TRUE = peaceful and hopeful rebuilding; GOOD = quiet but incomplete; BITTERSWEET = sad and truthful but fractured; DARK = uneasy after deliberate denial, still repairable. The active ending changes dawn lighting, memorial/record boards and residents' dialogue across **all seven physical maps during Free Roam**. No automatic death, forced forgiveness, or public witness testimony. [Read the canonical seven-night conclusion and world moods](docs/SEVEN_NIGHT_STORY_FINALE_AND_WORLD_MOODS.md).
+
+### Post-story Free Roam — seven connected maps
+
+After completing the Night 7 morning epilogue, choose **COMPLETE STORY • EXPLORE ALL 7 MAPS**. A genuinely saved completed finale unlocks permanent offline Free Roam. Walk through the existing physical connected roads in either direction: **Barrio Lawom ↔ Old Mango ↔ Tikbalang Ridge ↔ The Wake ↔ Sigbin Farm ↔ River Crossing ↔ Balete Grounds**. Past chapter endings no longer repeatedly block the roads, and prior consequences and chapter saves remain intact. The title's **FREE ROAM • ALL 7 MAPS** option resumes the most recently visited region. Chapter selections from the title can optionally jump to a visited region once the ending is completed, but walking inside the game always requires adjacent paths. Starting a new seven-night story requires explicit confirmation and clears all prior chapter saves and exploration status.
 
 ### Night 6 player route (source-backed and nonfatal)
 
@@ -53,12 +64,12 @@ Night 6's farm checkpoint now unlocks after the **genuine Night 5 outcome** is s
 
 ## Test and release status
 
-Nights 1–6 form an **engineering QA baseline**, not a finished seven-night commercial release. Night 6 has headless real-scene/evidence-state tests and dedicated Android emulator capture, in addition to previous farm and Sigbin regression checks. Check the latest relevant Godot validation and Android emulator runs in GitHub Actions before calling a change release-ready.
+Nights 1–7 form an **engineering QA baseline**, not an approved public release. Night 6 has headless real-scene/evidence-state tests and dedicated Android emulator capture, in addition to previous farm and Sigbin regression checks. Check the latest relevant Godot validation and Android emulator runs in GitHub Actions before calling a change release-ready.
 
 Still needed for production: actual phone comfort/performance/heat, all outcomes played by humans, detailed art approval, and a stable signing key. CI-generated QA APKs use temporary signing, and uninstalling old builds can erase saves.
 
 ## Development direction
 
-Build each night on a separate PR, following Final Master Script & Development Plan v1.0 (14 November 2026). Do not change canon, previous outcomes, shared touch controls, or the established art/HUD system. Night 5 uses Sigbin's shadow logic, missing goats and a rescue of farm animals without turning the folklore witness into a generic enemy. Night 6 implementation is a connected and source-backed river history chapter, not a generic monster duel. Finish its visual, phone, accessibility and outcome sign-off before preparing Night 7.
+Build each night on a separate PR, following Final Master Script & Development Plan v1.0 (14 November 2026). Do not change canon, previous outcomes, shared touch controls, or the established art/HUD system. Night 5 uses Sigbin's shadow logic, missing goats and a rescue of farm animals without turning the folklore witness into a generic enemy. Night 6 implementation is a connected and source-backed river history chapter, not a generic monster duel. Night 7 follows with readiness, consent-safe gathering, environmental root/Truth trials and replayable four-ending epilogue. Public release still requires human playtests and real-phone compatibility.
 
 CI: https://github.com/LokiJ07/Tabi-tabi/actions

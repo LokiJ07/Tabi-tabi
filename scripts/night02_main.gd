@@ -4,6 +4,7 @@ extends Node2D
 ## on both emulator SwiftShader and actual Android without a fake overlay.
 ## All coordinates are shared by the art and real interaction zones.
 const Story = preload("res://scripts/narrative/night02_state.gd")
+const Postgame = preload("res://scripts/narrative/postgame_conclusion.gd")
 const Save = preload("res://scripts/core/night02_save.gd")
 const Night1State = preload("res://scripts/narrative/night01_state.gd")
 const Night1Save = preload("res://scripts/core/save_service.gd")
@@ -136,7 +137,14 @@ func _light_stage() -> int:
 func _kapre_revealed() -> bool:
 	return (story.phase == 3 and story.outcome == "") or debug_night_reveal
 
+var free_roam_mode := false
+
+const POSTGAME_MARKER := Vector2(-310,-120)
+var postgame_ending := ""
+
 func _ready() -> void:
+	free_roam_mode = ConnectedWorld.free_roam_unlocked()
+	postgame_ending = Postgame.saved_ending() if free_roam_mode else ""
 	name = "TabiTabiNight2"
 	set_meta("dimensional_art", DimensionalArt.STYLE_ID)
 	prefs.load_from()
@@ -167,9 +175,11 @@ func _ready() -> void:
 	ambient_sound.set_audio_level(prefs.audio_level)
 	_build_ui()
 	_rebuild_objective()
-	if story.outcome != "":
+	# In post-story Free Roam, revisit a completed chapter as a live map.
+	# Don't repeatedly block the connected road with its old ending popup.
+	if story.outcome != "" and not free_roam_mode:
 		_show_ending()
-	elif story.phase == 0 and story.clues.is_empty():
+	elif story.phase == 0 and story.clues.is_empty() and not free_roam_mode:
 		_show_dialogue("LOLA PASING",
 			"Night 2 — Ang Higante sa Daang Mangga.\n" +
 			"Lola: Ang kahoy buhi na sa mga kasaysayan sa baryo. Pero naa nay nangatumpag nga sanga. Ayaw pagpatuyang. Tan-awa una ang peligro.",
@@ -503,6 +513,9 @@ func _draw() -> void:
 			lift = absf(sin(walk_phase * (1.12 if is_dog else 1.0))) * (3.0 if is_player else 2.1) * walk_weight
 		DimensionalArt.paint_grounded(self, actor["texture"], foot,
 			Vector2(width,height), Color.WHITE, .43, lift)
+	if postgame_ending != "":
+		Postgame.paint_region_2d(self,MAP_LIMIT.grow(110),POSTGAME_MARKER,
+			postgame_ending,player_pos)
 	_draw_world_labels()
 	if story.outcome == "resolve":
 		draw_arc(TREE, 157, 0, TAU, 80, Color("#bcd79d",.58), 3.0)
@@ -989,6 +1002,8 @@ func _nearby() -> String:
 		return "return_barrio"
 	if player_pos.distance_to(ConnectedWorld.TRAIL_MANGO_RIDGE) < ConnectedWorld.TRAVEL_RANGE_2D:
 		return "ridge_gate"
+	if free_roam_mode and player_pos.distance_to(POSTGAME_MARKER)<128:
+		return "after_story"
 	if story.phase == 0:
 		for id in KEY_ORDER:
 			if not story.clues.has(id) and player_pos.distance_to(TARGETS[id]) < 105:
@@ -1084,6 +1099,11 @@ func _interact() -> void:
 		return
 	if target == "ridge_gate":
 		_enter_ridge()
+		return
+	if target == "after_story":
+		_show_dialogue("KAPRE GROVE • THE MORNING AFTER",
+			Postgame.region_after(postgame_ending,"old_mango",story.outcome),
+			[{"label":"KEEP EXPLORING THE CONNECTED GROVE","action":"close"}])
 		return
 	if target == "":
 		_show_dialogue("BANTAY", "Bantay sniffs the wind. Move closer to the highlighted clue or safe route marker.", [{"label":"CONTINUE", "action":"close"}])
@@ -1299,7 +1319,7 @@ func _auto_save() -> bool:
 func _enter_ridge() -> void:
 	if travel_in_progress:
 		return
-	if story.outcome == "":
+	if story.outcome == "" and not free_roam_mode:
 		_show_dialogue("BANTAY","Before the north ridge is safe to enter, finish the Kapre investigation and mark the dangerous mango approaches.",
 			[{"label":"FINISH NIGHT 2","action":"close"}])
 		return

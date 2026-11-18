@@ -6,6 +6,7 @@ const NightModel = preload("res://scripts/narrative/night01_state.gd")
 const NightDialogue = preload("res://scripts/narrative/night01_dialogue.gd")
 const NightJournal = preload("res://scripts/narrative/night01_journal.gd")
 const MorningAftermath = preload("res://scripts/world/night01_aftermath.gd")
+const Postgame = preload("res://scripts/narrative/postgame_conclusion.gd")
 const LolaHut = preload("res://scripts/world/lola_hut_interior.gd")
 const Nearby = preload("res://scripts/ui/nearby_interaction.gd")
 const SantelmoActor = preload("res://scripts/encounters/santelmo_actor.gd")
@@ -138,7 +139,11 @@ var window_light_refresh := 0.0
 var encounter_autosave_clock := 0.0
 
 
+var free_roam_mode := false
+var postgame_ending := ""
+
 func _ready() -> void:
+	free_roam_mode = ConnectedWorld.free_roam_unlocked()
 	preferences.load_from()
 	_create_world()
 	_create_ambient_walkers()
@@ -154,7 +159,10 @@ func _ready() -> void:
 	_restore_story()
 	NightWindows.sync_barrio_3d(self,is_night,elapsed,preferences.reduced_motion)
 	_apply_connected_world_arrival()
-	if story.outcome == "" and not story.prologue_ready():
+	if free_roam_mode:
+		postgame_ending = Postgame.saved_ending()
+		_install_postgame_barrio()
+	if story.outcome == "" and not story.prologue_ready() and not free_roam_mode:
 		_enter_lola_hut(true)
 	_update_objective()
 	# An observable *game scene* signal: a title/options screen must never
@@ -332,6 +340,53 @@ func _qa_show_world_view(destination: Vector3, night_view: bool, label: String) 
 	_refresh_choices()
 	_update_objective()
 	print("NIGHT1_QA_VIEW_" + label)
+
+
+func _install_postgame_barrio() -> void:
+	if not Postgame.valid(postgame_ending):
+		return
+	var sign := Node3D.new()
+	sign.name = "AFTERMATH_RECORD"
+	sign.position = Vector3(-4.5,0.2,-4.5)
+	add_child(sign)
+	interaction_nodes["AFTERMATH_RECORD"] = sign
+	var shade: Color = Postgame.notice_color(postgame_ending)
+	_box("Seven Night Record • wooden posts",Vector3(-4.5,.70,-4.5),
+		Vector3(2.45,1.4,.16),Color("#715a3f"),false)
+	_box("Seven Night Record • readable plaque",Vector3(-4.5,1.15,-4.38),
+		Vector3(2.3,.82,.09),Color("#ddc9a2"),false)
+	var label := Label3D.new()
+	label.name = "Seven Night Conclusion Sign"
+	label.text = "BARRIO LAWOM\n"+Postgame.mood(postgame_ending)
+	label.font_size = 40
+	label.pixel_size = .0034
+	label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	label.modulate = shade.lightened(.25)
+	label.position = Vector3(-4.5,1.25,-4.27)
+	add_child(label)
+	var world_env := get_node_or_null("Environment") as WorldEnvironment
+	if world_env != null and world_env.environment != null:
+		match postgame_ending:
+			"true":
+				sun.light_color = Color("#ffe4ad")
+				sun.light_energy = 1.18
+				world_env.environment.background_color = Color("#9abaae")
+				world_env.environment.ambient_light_color = Color("#d5d8ba")
+			"good":
+				sun.light_color = Color("#e0dcbf")
+				sun.light_energy = 1.0
+				world_env.environment.background_color = Color("#93aba9")
+				world_env.environment.ambient_light_color = Color("#b8c4bd")
+			"bittersweet":
+				sun.light_color = Color("#bfc4c8")
+				sun.light_energy = .87
+				world_env.environment.background_color = Color("#8398a5")
+				world_env.environment.ambient_light_color = Color("#a9b3bd")
+			"dark":
+				sun.light_color = Color("#a6a7b9")
+				sun.light_energy = .75
+				world_env.environment.background_color = Color("#657286")
+				world_env.environment.ambient_light_color = Color("#9ba3b0")
 
 
 func _create_world() -> void:
@@ -788,7 +843,7 @@ func _create_ui() -> void:
 	root.add_child(gameplay_hud)
 	# A vertical, wrapping status card prevents the objective, clue progress,
 	# Santelmo alarm, companion alerts and courage from occupying fixed Y slots.
-	var status := SharedHUD.create_status_card(gameplay_hud, "TABI-TABI  •  BARRIO LAWOM", preferences.text_scale)
+	var status := SharedHUD.create_status_card(gameplay_hud, "TABI-TABI  •  NIGHT 1 / SANTELMO", preferences.text_scale)
 	status_panel = status["panel"]
 	status_stack = status["stack"]
 	info = status["heading"]
@@ -1275,6 +1330,14 @@ func _interact() -> void:
 	if closest == "MANGO_TRAIL":
 		_enter_mango_trail()
 		return
+	if free_roam_mode and closest == "AFTERMATH_RECORD":
+		_show_dialogue("NARRATOR: "+Postgame.region_after(postgame_ending,
+			"barrio_lawom",story.outcome))
+		return
+	if free_roam_mode and ["LOLA","MARA","DADO","SABEL"].has(closest):
+		_show_dialogue(closest+": "+Postgame.character_from_save(closest.to_lower()),
+			closest)
+		return
 	if ["LOLA_HOME", "BLUE_NOTEBOOK", "WARM_CUP", "RIVER_PHOTO", "HUT_EXIT", "HUT_ENTRY"].has(closest):
 		_interact_lola_hut(closest)
 		return
@@ -1454,6 +1517,9 @@ func _close_dialogue() -> void:
 
 
 func _toggle_night() -> void:
+	if free_roam_mode:
+		_show_dialogue("The seven-night story is complete. The current morning reflects your ending: "+Postgame.mood(postgame_ending)+". Visit the final records and walk all seven connected roads.")
+		return
 	if in_lola_hut:
 		_show_dialogue("Finish breakfast and use Lola's door to return outside before starting the night.")
 		return
@@ -1488,7 +1554,9 @@ func _toggle_night() -> void:
 
 
 func _update_objective() -> void:
-	if in_lola_hut:
+	if free_roam_mode:
+		objective.text = "FREE ROAM • %s • Record near school; north trail to Mango." % Postgame.mood(postgame_ending)
+	elif in_lola_hut:
 		if not story.prologue_flags.has("blue_notebook"):
 			objective.text = "MORNING: Find the BLUE NOTEBOOK on Lola's writing desk."
 		elif not story.prologue_flags.has("warm_cup"):
@@ -1711,7 +1779,7 @@ func _save_before_navigation() -> bool:
 
 
 func _enter_mango_trail() -> void:
-	if story.outcome == "":
+	if story.outcome == "" and not free_roam_mode:
 		_show_dialogue("The old mango trail is visible, but the Santelmo investigation is not complete. Finish Night 1 before heading north with Bantay.")
 		return
 	if not _save_before_navigation():
@@ -1726,7 +1794,7 @@ func _enter_mango_trail() -> void:
 
 
 func _begin_night2() -> void:
-	if story.outcome == "":
+	if story.outcome == "" and not free_roam_mode:
 		_show_dialogue("Complete Night 1 before entering the old mango tree.")
 		return
 	if not _save_before_navigation():

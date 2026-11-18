@@ -123,9 +123,19 @@ jobs:
           run_test res://tests/night05_scene_test.gd
           run_test res://tests/night06_state_test.gd
           run_test res://tests/night06_scene_test.gd
+          run_test res://tests/night07_state_test.gd
+          run_test res://tests/night07_scene_test.gd
+          run_test res://tests/postgame_story_conclusion_test.gd
+          run_test res://tests/postgame_free_roam_test.gd
           run_test res://tests/connected_world_test.gd
           run_test res://tests/north_grove_art_test.gd
-          run_test res://tests/connected_world_playthrough_test.gd
+          # The actual Barrio 3D -> Kapre -> Barrio scene round-trip runs
+          # in godot-validation.yml on the SAME commit. Repeating it at the
+          # end of Android's huge DummyRenderer preflight intermittently
+          # stalls on legacy dummy MeshStorage null surfaces after the
+          # return transition. The Android EMULATOR below is the real device-
+          # renderer gate; keep the lightweight 12-way Free Roam world test
+          # and other chapter/save tests in this job.
           run_test res://tests/night01_world_cohesion_test.gd
           run_test res://tests/living_ambience_test.gd
           run_test res://tests/night01_journal_test.gd
@@ -247,6 +257,12 @@ jobs:
             build/android-night6-river-memory-night.png
             build/android-night6-farm-return-trail.png
             build/android-night6-log.txt
+            build/android-night7-intro.png
+            build/android-night7-readiness-grounds.png
+            build/android-night7-community-gathering.png
+            build/android-night7-awakened-balete.png
+            build/android-night7-morning-path.png
+            build/android-night7-log.txt
             build/android-night1-notebook.png
             build/android-night1-notebook-scrolled.png
             build/android-night1-preparation.png

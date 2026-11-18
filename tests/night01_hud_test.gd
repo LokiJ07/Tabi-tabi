@@ -21,6 +21,9 @@ func _run() -> void:
 		game.atmosphere_fx.configure(1,2,.80,true)
 		check(is_equal_approx(game.atmosphere_fx.tension,.80) and game.atmosphere_fx.reduced_motion, "Night 1 sensory FX honors accessibility")
 	check(is_equal_approx(game.status_panel.anchor_right, .37), "Night 1 status card is compact common width")
+	var chapter_label := game.status_panel.get_node_or_null("StatusRows/VillageHeading") as Label
+	check(chapter_label != null and chapter_label.text.contains("NIGHT 1 / SANTELMO"),
+		"all seven chapters use the same in-game NIGHT # / title heading grammar")
 	game._open_notebook()
 	check(game._is_reading_ui(), "notebook pauses walking")
 	check(game.notebook_panel.get_node_or_null("NotebookLayout/NotebookScroll") != null, "notebook supports overflowing clues")

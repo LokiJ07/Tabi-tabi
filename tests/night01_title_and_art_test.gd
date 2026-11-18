@@ -2,6 +2,7 @@ extends SceneTree
 ## Title is a functional offline scene, not a marketing illustration.
 const TitleScene = preload("res://scenes/title.tscn")
 const GameScene = preload("res://scenes/main.tscn")
+const World = preload("res://scripts/core/connected_world.gd")
 const Polish = preload("res://scripts/world/environment_polish.gd")
 var failures := 0
 
@@ -24,7 +25,8 @@ func _run() -> void:
 		var art := title.get_node_or_null("IllustratedTitleScene/" + detail) as TextureRect
 		check(art != null and art.texture != null, "main menu uses same imported game art: " + detail)
 	check(title.get_node_or_null("LoadingScreen") != null, "scene has a blocking loading state")
-	check(title.continue_button.disabled == not title._has_save(), "continue enabled only for existing save")
+	check(title.continue_button.disabled == not (title._has_save() or World.free_roam_unlocked()),
+		"continue enabled for a story save or completed postgame world")
 	title._open_settings()
 	check(title.settings_backdrop.visible, "settings opens from title")
 	var old_scale: float = title.prefs.text_scale
@@ -64,6 +66,15 @@ func _run() -> void:
 	await process_frame
 	check(game.status_panel.offset_bottom >= 145.0, "quest status reflows at large font")
 	check(game.interact_hint.offset_bottom >= 89.0, "nearby hint has two-line room")
+	# Free Roam from the finalized seven-night story adds a real grounded
+	# bulletin board and world lighting, not a separate HUD or menu mockup.
+	game.free_roam_mode = true
+	game.postgame_ending = "true"
+	game._install_postgame_barrio()
+	check(game.interaction_nodes.has("AFTERMATH_RECORD"),
+		"finished village contains physical seven-night recap marker")
+	check(game.get_node_or_null("Seven Night Conclusion Sign") is Label3D,
+		"Night 1 shows ending mood on real 3D village record board")
 	game.queue_free()
 	print("Night 1 actual art, title and accessibility checks: ", "PASS" if failures == 0 else str(failures) + " failures")
 	quit(0 if failures == 0 else 1)

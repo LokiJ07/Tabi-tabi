@@ -2,6 +2,7 @@ extends Node2D
 ## Tabi-tabi Night 5: Sigbin of the Abandoned Farm.
 ## Continuous from Night 4, genuine investigation and nonviolent animal rescue.
 const Story = preload("res://scripts/narrative/night05_state.gd")
+const Postgame = preload("res://scripts/narrative/postgame_conclusion.gd")
 const Save = preload("res://scripts/core/night05_save.gd")
 const Night04State = preload("res://scripts/narrative/night04_state.gd")
 const Night04Save = preload("res://scripts/core/night04_save.gd")
@@ -117,7 +118,14 @@ var save_error: AcceptDialog
 var modal_backdrop: ColorRect
 var observation_meter: ProgressBar
 
+var free_roam_mode := false
+
+const POSTGAME_MARKER := Vector2(-95,350)
+var postgame_ending := ""
+
 func _ready() -> void:
+	free_roam_mode = World.free_roam_unlocked()
+	postgame_ending = Postgame.saved_ending() if free_roam_mode else ""
 	name = "TabiTabiNight5"
 	set_meta("dimensional_art",DimensionalArt.STYLE_ID)
 	set_meta("art_contract",FarmArt.STYLE_ID)
@@ -158,9 +166,11 @@ func _ready() -> void:
 	ambient.set_audio_level(prefs.audio_level)
 	_build_ui()
 	_refresh()
-	if story.outcome != "":
+	# In post-story Free Roam, revisit a completed chapter as a live map.
+	# Don't repeatedly block the connected road with its old ending popup.
+	if story.outcome != "" and not free_roam_mode:
 		_show_ending()
-	elif story.phase == 0 and story.clues.is_empty():
+	elif story.phase == 0 and story.clues.is_empty() and not free_roam_mode:
 		_talk("LOLA PASING • THE OLD PROMISE",
 			"Night 5 — The Abandoned Farm. Two goats vanished, but nobody found blood or a broken fence. Ang saad nga wala mausab mahimo usab nga peligro. Look, then decide what truly happened.",
 			[{"label":"INSPECT THE FARM SAFELY","action":"close"}])
@@ -210,7 +220,7 @@ func _process(delta: float) -> void:
 		# The future chapter's marked checkpoint is locked while its
 		# scene is absent; the road itself remains continuously visible.
 		player_pos = FarmArt.keep_player_before_locked_trail(
-			previous_foot,player_pos,FUTURE_TRAIL,not World.implemented("night06") or story.outcome == "")
+			previous_foot,player_pos,FUTURE_TRAIL,not World.implemented("night06") or (story.outcome == "" and not free_roam_mode))
 	bantay_pos = bantay_pos.lerp(player_pos+Vector2(-49,28),clampf(delta*3.2,0,1))
 	var framing_target := player_pos+aim*64.0
 	if story.phase == 3 or debug_farm_preview:
@@ -223,7 +233,7 @@ func _process(delta: float) -> void:
 		1.0 if prefs.reduced_motion else clampf(delta*4.5,0,1))
 	camera.position = camera.position.lerp(framing_target,
 		1.0 if prefs.reduced_motion else clampf(delta*4.5,0,1))
-	if not _modal() and not travel_in_progress and story.outcome != "" and player_pos.distance_to(FUTURE_TRAIL)<78:
+	if not _modal() and not travel_in_progress and (story.outcome != "" or free_roam_mode) and player_pos.distance_to(FUTURE_TRAIL)<78:
 		_travel_to_river()
 		return
 	if not _modal() and not travel_in_progress and player_pos.distance_to(RETURN_WAKE)<58:
@@ -364,6 +374,13 @@ func _paint_farmhouse() -> void:
 	draw_rect(Rect2(at+Vector2(6,-8),Vector2(58,95)),Color("#765f47"),false,5.0)
 	# Interior glow is drawn once AFTER the darkness grade in _draw().
 
+func _gate_sign_visible() -> bool:
+	return player_pos.distance_to(SAFE_GATE) < 410.0
+
+func _holding_sign_visible() -> bool:
+	var paddock_center: Vector2 = FarmArt.HOLDING.position+FarmArt.HOLDING.size*.5
+	return player_pos.distance_to(paddock_center) < 550.0
+
 func _draw() -> void:
 	draw_rect(MAP.grow(190),Color("#253a32"))
 	Landscape.parallax_ridges(self,MAP.grow(180),camera.position,4,_stage())
@@ -452,18 +469,24 @@ func _draw() -> void:
 		if FarmArt.animals_revealed(story.phase,debug_farm_preview)
 		else "MISSING HERD • FOLLOW TRACKS",
 		Vector2(375,-93),286.0,_stage()>=2)
-	FarmArt.paint_farm_sign(self,
-		FarmArt.gate_label(story.phase,story.preparations.has("safe_gate")),
-		Vector2(698,83),196.0,_stage()>=2)
-	FarmArt.paint_farm_sign(self,"SAFE HOLDING → %d/3" % story.rescued_groups,
-		FarmArt.HOLDING_SIGN_AT,227.0,_stage()>=2)
+	# World signs may not cover Night 1's fixed right-side touch stack.
+	# Only reveal the gate label when its actual physical pen is nearby.
+	if _gate_sign_visible():
+		FarmArt.paint_farm_sign(self,
+			FarmArt.gate_label(story.phase,story.preparations.has("safe_gate")),
+			FarmArt.GATE_SIGN_AT,196.0,_stage()>=2)
+	# Receiving paddock is well east of the farm investigation. Its score
+	# used to sit behind LOOK AROUND even while the player was far away.
+	if _holding_sign_visible():
+		FarmArt.paint_farm_sign(self,"SAFE HOLDING → %d/3" % story.rescued_groups,
+			FarmArt.HOLDING_SIGN_AT,227.0,_stage()>=2)
 	if story.phase in [1,2,3]:
 		FarmArt.paint_farm_sign(self,"OBSERVE HERE",
 			SAFE_PERIMETER+Vector2(-250,-120),174.0,_stage()>=2)
 	# The main road visibly continues beyond this chapter's actual exit.
 	# A locked rope makes the missing next scene explicit, not a cut road.
 	FarmArt.paint_night06_trail_checkpoint(self,FUTURE_TRAIL,
-		not World.implemented("night06") or story.outcome == "",_stage()>=2)
+		not World.implemented("night06") or (story.outcome == "" and not free_roam_mode),_stage()>=2)
 	# Documented regional signs appear as an IN-WORLD animal rather than
 	# a static enemy: backward steps, two hinged ears, and cautious concealment.
 	if _stage() >= 2 or debug_farm_preview:
@@ -521,11 +544,14 @@ func _draw() -> void:
 		Vector2(96,103),Color.WHITE,.33,bob)
 	DimensionalArt.paint_grounded(self,HERO,player_pos+Vector2(0,7),
 		Vector2(107,140),Color.WHITE,.38,bob)
+	if postgame_ending != "":
+		Postgame.paint_region_2d(self,MAP.grow(100),POSTGAME_MARKER,
+			postgame_ending,player_pos)
 	var font := ThemeDB.fallback_font
 	draw_string(font,RETURN_WAKE+Vector2(26,-90),"WAKE TRAIL • RETURN",HORIZONTAL_ALIGNMENT_LEFT,335,18,Color("#f3d8a6"))
 	draw_string(font,BARN_FOOT+Vector2(-141,62),"OLD BARN • UNSAFE TO ENTER",HORIZONTAL_ALIGNMENT_LEFT,430,18,Color("#efd8a3"))
 	draw_string(font,FUTURE_TRAIL+Vector2(-200,-45),
-		"HILL TRAIL • NIGHT 6 RIVER" if World.implemented("night06") and story.outcome != "" else "HILL TRAIL • FINISH FARM FIRST",
+		"HILL TRAIL • NIGHT 6 RIVER" if World.implemented("night06") and (story.outcome != "" or free_roam_mode) else "HILL TRAIL • FINISH FARM FIRST",
 		HORIZONTAL_ALIGNMENT_LEFT,410,17,Color("#e0c58f"))
 
 func _fit_status_card() -> void:
@@ -711,7 +737,9 @@ func _nearby() -> String:
 	if player_pos.distance_to(RETURN_WAKE)<125:
 		return "return_wake"
 	if player_pos.distance_to(FUTURE_TRAIL)<125:
-		return "trail_locked"
+		return "river_trail" if story.outcome != "" or free_roam_mode else "trail_locked"
+	if free_roam_mode and player_pos.distance_to(POSTGAME_MARKER)<130:
+		return "after_story"
 	if player_pos.distance_to(Vector2(350,-95))<110:
 		return "unsafe_barn"
 	if story.phase == 0:
@@ -740,8 +768,12 @@ func _interact() -> void:
 	var id := _nearby()
 	if id == "return_wake":
 		_return_to_wake()
-	elif id == "trail_locked":
-		if story.outcome != "" and World.implemented("night06"):
+	elif id == "after_story":
+		_talk("THE FARM • AFTER THE SEVEN NIGHTS",
+			Postgame.region_after(postgame_ending,"night05",story.outcome),
+			[{"label":"VISIT THE REMAINING SAFE ROADS","action":"close"}])
+	elif id == "trail_locked" or id == "river_trail":
+		if (story.outcome != "" or free_roam_mode) and World.implemented("night06"):
 			_travel_to_river()
 		else:
 			_talk("BANTAY • COMPLETE THE FARM FIRST",
@@ -1028,7 +1060,7 @@ func _save_menu() -> void:
 	get_tree().change_scene_to_file("res://scenes/title.tscn")
 
 func _travel_to_river() -> void:
-	if travel_in_progress or story.outcome == "":
+	if travel_in_progress or (story.outcome == "" and not free_roam_mode):
 		return
 	if not _auto_save() or not World.begin_travel("night05","night06",story.outcome):
 		save_error.popup_centered(Vector2i(600,180))

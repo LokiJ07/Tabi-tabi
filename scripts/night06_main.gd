@@ -3,6 +3,7 @@ extends Node2D
 ## Authored connected river chapter. Historical reconstructions are source-backed
 ## hypotheses; environmental memory neither summons souls nor reveals facts.
 const Story = preload("res://scripts/narrative/night06_state.gd")
+const Postgame = preload("res://scripts/narrative/postgame_conclusion.gd")
 const Save = preload("res://scripts/core/night06_save.gd")
 const Night05State = preload("res://scripts/narrative/night05_state.gd")
 const Night05Save = preload("res://scripts/core/night05_save.gd")
@@ -29,6 +30,7 @@ const ROOF: Texture2D = preload("res://assets/world/nipa_thatch_roof.svg")
 const SOIL: Texture2D = preload("res://assets/world/soil_ground.svg")
 const MAP := Rect2(-1160,-815,2470,1630)
 const RETURN_FARM := Vector2(-1040,-480)
+const NIGHT07_GATE := Vector2(977,404)
 const ARCHIVE := Vector2(-580,-277)
 const TABLE := Vector2(-170,-90)
 const MARA_AT := Vector2(-628,-255)
@@ -92,7 +94,14 @@ var travel_in_progress := false
 var qa_river_preview := false
 var unsafe_notice_cooldown := 0.0
 
+var free_roam_mode := false
+
+const POSTGAME_MARKER := Vector2(-340,92)
+var postgame_ending := ""
+
 func _ready() -> void:
+	free_roam_mode = World.free_roam_unlocked()
+	postgame_ending = Postgame.saved_ending() if free_roam_mode else ""
 	name = "TabiTabiNight6"
 	set_meta("dimensional_art",SCENE_STYLE)
 	set_meta("canon","what-the-water-took-v1")
@@ -109,6 +118,9 @@ func _ready() -> void:
 	var arrival: Dictionary = World.consume_arrival("night06")
 	if str(arrival.get("from","")) == "night05":
 		player_pos = Story.START
+	elif str(arrival.get("from","")) == "night07":
+		player_pos = NIGHT07_GATE+Vector2(-112,36)
+		print("TABI_WORLD_ARRIVAL_RIVER_FROM_BALETE")
 	camera = Camera2D.new()
 	camera.name = "Night06RiverCamera"
 	camera.position = player_pos
@@ -124,9 +136,11 @@ func _ready() -> void:
 	ambient.set_audio_level(prefs.audio_level)
 	_build_ui()
 	_refresh()
-	if story.outcome != "":
+	# In post-story Free Roam, revisit a completed chapter as a live map.
+	# Don't repeatedly block the connected road with its old ending popup.
+	if story.outcome != "" and not free_roam_mode:
 		_show_ending()
-	elif story.phase == 0 and story.clues.is_empty():
+	elif story.phase == 0 and story.clues.is_empty() and not free_roam_mode:
 		_talk("MARA • THE RIVER WITHOUT RAIN",
 			"The old crossing is rising without rainfall. Twenty-eight years ago, the records of a second rescue stopped making sense. We will read the physical sources before judging anyone.",
 			[{"label":"FOLLOW THE ARCHIVE ROAD","action":"close"}])
@@ -192,6 +206,9 @@ func _process(delta: float) -> void:
 	camera.position = camera.position.lerp(target,1.0 if prefs.reduced_motion else clampf(delta*4.6,0,1))
 	var target_zoom := Vector2(.84,.84) if story.phase == 6 or qa_river_preview else Vector2(1.02,1.02)
 	camera.zoom = camera.zoom.lerp(target_zoom,1.0 if prefs.reduced_motion else clampf(delta*3.4,0,1))
+	if not _modal() and (story.outcome != "" or free_roam_mode) and World.implemented("night07") 			and player_pos.distance_to(NIGHT07_GATE)<78:
+		_travel_to_balete()
+		return
 	if not _modal() and player_pos.distance_to(RETURN_FARM)<64:
 		_return_farm()
 		return
@@ -406,16 +423,17 @@ func _paint_hill_checkpoint(night: bool) -> void:
 		draw_circle(at+Vector2(5,8),21,Color(.03,.04,.03,.26))
 		draw_line(at,at+Vector2(-1,-72),Color("#81684b"),12,true)
 		draw_circle(at+Vector2(-1,-75),10,Color("#bca17a"))
-	draw_line(Vector2(884,354),Vector2(1000,332),Color("#b8a37c"),5.0,true)
-	draw_line(Vector2(884,359),Vector2(1000,337),
-		Color("#655346"),2.5,true)
+	if (story.outcome == "" and not free_roam_mode) or not World.implemented("night07"):
+		draw_line(Vector2(884,354),Vector2(1000,332),Color("#b8a37c"),5.0,true)
+		draw_line(Vector2(884,359),Vector2(1000,337),
+			Color("#655346"),2.5,true)
 	if story.outcome != "":
 		draw_rect(Rect2(942,257,202,54),Color(.09,.20,.20,.90))
 		draw_rect(Rect2(942,257,202,54),Color("#bfa87c"),false,2)
 		draw_string(ThemeDB.fallback_font,Vector2(953,278),
 			"BALETE GROUNDS",HORIZONTAL_ALIGNMENT_LEFT,185,15,Color("#f0e4bd"))
 		draw_string(ThemeDB.fallback_font,Vector2(953,297),
-			"NIGHT 7 • CLOSED",HORIZONTAL_ALIGNMENT_LEFT,185,13,Color("#e1b99b"))
+			"NIGHT 7 • OPEN" if World.implemented("night07") else "NIGHT 7 • CLOSED",HORIZONTAL_ALIGNMENT_LEFT,185,13,Color("#e1b99b"))
 	if night:
 		draw_circle(Vector2(980,350),37,Color(.90,.68,.36,.04))
 
@@ -601,6 +619,9 @@ func _draw() -> void:
 	var bob := 0.0 if prefs.reduced_motion else absf(sin(walk_time))*2.8
 	Depth.paint_grounded(self,BANTAY,bantay_pos,Vector2(95,102),Color.WHITE,.31,bob)
 	Depth.paint_grounded(self,HERO,player_pos,Vector2(108,142),Color.WHITE,.37,bob)
+	if postgame_ending != "":
+		Postgame.paint_region_2d(self,MAP.grow(120),POSTGAME_MARKER,
+			postgame_ending,player_pos)
 	# Nearby ground signs are concise and contextual, never overlaid across
 	# the touchscreen or blocking the player during exploration.
 	if player_pos.distance_to(RETURN_FARM)<270:
@@ -612,9 +633,9 @@ func _draw() -> void:
 	if story.phase >= 5 and player_pos.distance_to(Vector2(190,210))<170:
 		draw_string(ThemeDB.fallback_font,Vector2(80,128),
 			"OLD CROSSING",HORIZONTAL_ALIGNMENT_LEFT,220,16,Color("#f3e6be"))
-	if story.outcome != "" and player_pos.distance_to(Vector2(800,530))<280:
+	if (story.outcome != "" or free_roam_mode) and player_pos.distance_to(Vector2(800,530))<280:
 		draw_string(ThemeDB.fallback_font,Vector2(825,476),
-			"NIGHT 7 • NOT YET OPEN",HORIZONTAL_ALIGNMENT_LEFT,310,15,Color("#f2d89e"))
+			"NIGHT 7 • OPEN",HORIZONTAL_ALIGNMENT_LEFT,310,15,Color("#f2d89e"))
 
 func _fit_status_card() -> void:
 	if status_panel == null or status_stack == null or not is_inside_tree(): return
@@ -792,6 +813,8 @@ func _hold_move(dir: String,on: bool) -> void:
 		float(int(held.get("down",false))-int(held.get("up",false)))).limit_length()
 
 func _nearby() -> String:
+	if (story.outcome != "" or free_roam_mode) and World.implemented("night07") 			and player_pos.distance_to(NIGHT07_GATE)<135: return "balete_gate"
+	if free_roam_mode and player_pos.distance_to(POSTGAME_MARKER)<130: return "after_story"
 	if player_pos.distance_to(RETURN_FARM)<125: return "return_farm"
 	if story.phase == 0:
 		if story.dado_choice == "unasked" and player_pos.distance_to(DADO_AT)<130:
@@ -824,6 +847,12 @@ func _interact() -> void:
 	var id := _nearby()
 	if id == "return_farm":
 		_return_farm()
+	elif id == "after_story":
+		_talk("THE RIVER • THE FINAL HISTORICAL RECORD",
+			Postgame.region_after(postgame_ending,"night06",story.outcome),
+			[{"label":"FOLLOW THE RIVER ROAD","action":"close"}])
+	elif id == "balete_gate":
+		_travel_to_balete()
 	elif id == "dado":
 		_talk("TATAY DADO • WITNESS CONSENT",
 			"I heard the order to stop the second rescue. I was afraid to speak; Mara was only a child then. Can you keep my name out of the public record?",
@@ -1065,7 +1094,7 @@ func _refresh() -> void:
 		4: objective.text = "Ask Sabel privately; hear Lola's explanation. Respect family choice."
 		5: objective.text = "Secure rope, lantern and marked stones before entering the dangerous river."
 		6: objective.text = "SAFE STONE %d/3: follow the marked route and HOLD OBSERVE." % [story.step_index+1]
-		7: objective.text = "RIVER RECORD • %s  •  Night 7 Balete trail remains locked." % story.outcome.to_upper() if story.outcome != "" else "Choose a recorded result. Night 7 preparations continue."
+		7: objective.text = "FREE ROAM • River records preserved • Follow the signed farm or Balete road." if World.free_roam_unlocked() else "RIVER RECORD • %s • Balete trail OPEN" % story.outcome.to_upper() if story.outcome != "" else "Choose a recorded result. Night 7 preparations continue."
 	if qa_river_preview:
 		objective.text = "RIVER ENVIRONMENT PREVIEW • Historical evidence remains unchanged."
 	_refresh_hint()
@@ -1109,8 +1138,8 @@ func _refresh_hint() -> void:
 			goal = STEPS[story.step_index]
 			destination = "SAFE STONE • HOLD OBSERVE"
 		7:
-			goal = RETURN_FARM
-			destination = "FARM RETURN / FIELD RECORD"
+			goal = NIGHT07_GATE if story.outcome != "" else RETURN_FARM
+			destination = "BALETE FINAL TRIAL" if story.outcome != "" else "FARM RETURN"
 	waypoint.text = "%s  •  %d STEPS" % [destination,roundi(player_pos.distance_to(goal)/12)]
 
 func _open_notes() -> void:
@@ -1186,6 +1215,18 @@ func _save_menu() -> void:
 		return
 	get_tree().change_scene_to_file("res://scenes/title.tscn")
 
+func _travel_to_balete() -> void:
+	if travel_in_progress or (story.outcome == "" and not free_roam_mode):
+		return
+	if not _save_story() or not World.begin_travel("night06","night07",story.outcome):
+		save_error.popup_centered(Vector2i(600,175))
+		return
+	travel_in_progress = true
+	observe_held = false
+	move_axis = Vector2.ZERO
+	print("TABI_WORLD_TRAVEL_RIVER_TO_BALETE")
+	get_tree().change_scene_to_file(World.scene_for("night07"))
+
 func _return_farm() -> void:
 	if travel_in_progress: return
 	if not _save_story() or not World.begin_travel("night06","night05",story.outcome):
@@ -1212,6 +1253,8 @@ func _show_ending() -> void:
 	_label(box,summary,23,Color("#ede9d7"))
 	_label(box,"SABEL'S CHOICE: %s  •  FIVE PRIOR NIGHTS PRESERVED" % story.sabel_public_choice.to_upper(),20,Color("#b2d3c0"))
 	_button(box,"REVIEW THE EVIDENCE",func():ending.hide();_open_notes())
+	if World.implemented("night07"):
+		_button(box,"CONTINUE NIGHT 7 • BALETE GROUNDS",_travel_to_balete)
 	_button(box,"RETURN TO SIGBIN FARM (SAVE)",_return_farm)
 	_button(box,"SAVE & MAIN MENU",_save_menu)
 	_sync_ui()
