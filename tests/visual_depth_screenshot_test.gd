@@ -81,8 +81,10 @@ func _run() -> void:
 		"Android mango screenshot must not be inside the trunk")
 	check(not Walk.is_blocked(2,game.QA_RETURN_POINT),
 		"return trail camera must never place player inside a refuge wall")
-	check(game.options_panel.anchor_top >= .15 and game.options_panel.anchor_bottom<=.82,
-		"Night 2 pause panel is compact without empty fullscreen filler")
+	check(game.options_panel.anchor_left >= .10 and game.options_panel.anchor_right <= .90,
+		"Night 2 pause panel keeps consistent landscape margins")
+	check(game.options_panel.find_child("Columns",true,false) is HBoxContainer,
+		"Night 2 pause panel uses filled, two-column accessibility + actions instead of blank filler")
 	game.queue_free()
 	print("Night 1-2 screenshot-derived world visual depth: ",
 		"PASS" if failures==0 else str(failures)+" failures")
