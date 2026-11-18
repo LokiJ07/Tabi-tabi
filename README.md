@@ -51,6 +51,16 @@ Night 6's farm checkpoint now unlocks after the **genuine Night 5 outcome** is s
 5. Secure the rope anchor, lantern beacon and marked stones; use the **same Night 1 touch HUD** with HOLD OBSERVE at three different river surges. Retrying never loses lives or earlier evidence.
 6. Record a truthful Resolve, Contain or Partial/Retreat outcome. The Night 7 Balete route is still intentionally locked.
 
+## Post-finale automatic day/night (prepared for Night 7)
+
+Only **after the full Night 7 epilogue** is completed and all seven actual chapter outcomes are saved does post-game free roam unlock. The shared `PostgameClock` autoload then advances one full in-game day every **24 minutes of active runtime** and saves the clock into the connected-world ledger (every 15 seconds and on app pause). Re-entering streamed regions keeps the same time rather than restarting each region at day or night.
+
+- Pre-finale Nights 1–7 keep their authored story lighting and quests. A Night 1 standalone resolution does **not** unlock free-roam time.
+- After the finale, Night 1's DAY / NIGHT control becomes a disabled AUTO CYCLE status; the day/night logic is automatically shared by the Barrio and Nights 2–6 scenes through their existing art and sound stage handlers.
+- Completed players may walk adjacent implemented routes without replaying each chapter's original progression gate; the connected paths and save outcomes are never rewritten.
+- **Night 7 is not yet built on main.** When its playable final epilogue is added, its definitive completion path must call `ConnectedWorld.note_outcome(7, final_outcome)`, then `ConnectedWorld.finish_epilogue()`, then `PostgameClock.refresh()` before free roam starts. Do not call these from intermediate trials or retries. Night 7 itself must also consume the shared clock when free-roaming.
+- The automatic clock is infrastructure for the future epilogue, **not** a claim that Night 7, outcome-dependent NPC schedules, final settlement art, or complete postgame free roam is already implemented.
+
 ## Test and release status
 
 Nights 1–6 form an **engineering QA baseline**, not a finished seven-night commercial release. Night 6 has headless real-scene/evidence-state tests and dedicated Android emulator capture, in addition to previous farm and Sigbin regression checks. Check the latest relevant Godot validation and Android emulator runs in GitHub Actions before calling a change release-ready.
