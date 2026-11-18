@@ -495,7 +495,7 @@ func _paint_chapter_actors(behind: bool) -> void:
 		return (a["at"] as Vector2).y < (b["at"] as Vector2).y)
 	for actor in actors:
 		var where: Vector2 = actor["at"]
-		if Walkability.scenery_covers_actor(3,foot) != behind:
+		if Walkability.scenery_covers_actor(3,where) != behind:
 			continue
 		var dimensions: Vector2 = actor["size"]
 		var is_player: bool = actor["tex"] == HERO

@@ -630,6 +630,7 @@ func _draw() -> void:
 			"NIGHT 7 • BALETE TRAIL OPEN" if World.implemented("night07") and story.outcome != "" else "NIGHT 7 • FINISH RIVER FIRST",HORIZONTAL_ALIGNMENT_LEFT,365,15,Color("#f2d89e"))
 
 func _paint_chapter_people(behind: bool) -> void:
+	var night := _stage() >= 2
 	for actor in [
 		[MARA,MARA_AT,Vector2(98,153),ARCHIVE+Vector2(-28,-70)],
 		[DADO,DADO_AT,Vector2(101,159),ARCHIVE+Vector2(14,-70)],

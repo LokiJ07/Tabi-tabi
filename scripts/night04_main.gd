@@ -485,7 +485,7 @@ func _paint_chapter_people(behind: bool) -> void:
 		return (a["at"] as Vector2).y < (b["at"] as Vector2).y)
 	for actor in people:
 		var p: Vector2 = actor["at"]
-		if Walkability.scenery_covers_actor(4,foot) != behind:
+		if Walkability.scenery_covers_actor(4,p) != behind:
 			continue
 		var size2: Vector2 = actor["size"]
 		var is_hero: bool = actor["tex"] == HERO
