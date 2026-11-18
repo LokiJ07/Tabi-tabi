@@ -23,9 +23,13 @@ func _run() -> void:
 	var avatar := Node2D.new()
 	avatar.name = "VillageProbe"
 	root.add_child(avatar)
-	var clock := Clock.new()
-	clock.name = "PostgameClock"
-	root.add_child(clock)
+	var clock := root.get_node_or_null("PostgameClock")
+	var created_clock := clock == null
+	if created_clock:
+		clock = Clock.new()
+		clock.name = "PostgameClock"
+		root.add_child(clock)
+	clock.refresh()
 	check(Workers.nearby(avatar,"night06",Vector2(-350,188)) == "", "uncompleted story has no postgame residents")
 	var outcomes: Dictionary = {}
 	for i in range(1,8):
@@ -70,7 +74,8 @@ func _run() -> void:
 	check(not (built.get_node("dock_fisher") as Node3D).visible, "NPC retreats indoors at night")
 	village.queue_free()
 	avatar.queue_free()
-	clock.queue_free()
+	if created_clock:
+		clock.queue_free()
 	for path in [World.PATH, World.PATH + ".bak", World.PATH + ".tmp"]:
 		if FileAccess.file_exists(path):
 			DirAccess.remove_absolute(ProjectSettings.globalize_path(path))
@@ -79,5 +84,7 @@ func _run() -> void:
 		if saved != null:
 			saved.store_buffer(old[path])
 			saved.close()
+	if not created_clock:
+		clock.refresh()
 	print("Living village and five-region occupations: ","PASS" if failures == 0 else str(failures) + " failures")
 	quit(0 if failures == 0 else 1)
