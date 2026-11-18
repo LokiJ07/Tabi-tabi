@@ -559,7 +559,7 @@ func _build_ui() -> void:
 	gameplay_controls.add_child(observation_bar)
 	SharedHUD.create_movement_joystick(gameplay_controls,prefs,
 		func(axis: Vector2): motion = axis)
-		var look := AimPad.new()
+	var look := AimPad.new()
 	look.name = "Night3LookPad"
 	look.prompt_text = "LOOK AROUND"
 	look.anchor_left = 1.0

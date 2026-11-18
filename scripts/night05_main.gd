@@ -584,7 +584,7 @@ func _build_ui() -> void:
 	interaction_hint = SharedHUD.make_nearby_prompt(controls,prefs.text_scale)
 	SharedHUD.create_movement_joystick(controls,prefs,
 		func(axis: Vector2): motion = axis)
-		for title in SharedHUD.ACTION_POSITIONS:
+	for title in SharedHUD.ACTION_POSITIONS:
 		var at: Vector2 = SharedHUD.ACTION_POSITIONS[title]
 		var size2 := Vector2(180,60)
 		match title:

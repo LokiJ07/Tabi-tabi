@@ -325,7 +325,7 @@ func _build_ui() -> void:
 	interaction_hint = SharedHUD.make_nearby_prompt(controls,prefs.text_scale)
 	SharedHUD.create_movement_joystick(controls,prefs,
 		func(axis: Vector2): motion = axis)
-		for action in SharedHUD.ACTION_POSITIONS:
+	for action in SharedHUD.ACTION_POSITIONS:
 		var at: Vector2 = SharedHUD.ACTION_POSITIONS[action]
 		match action:
 			"FIELD NOTES":

@@ -767,7 +767,7 @@ func _build_ui() -> void:
 	# and 1280x720 responsive anchors. Only the two chapter actions differ.
 	SharedHUD.create_movement_joystick(gameplay_controls,prefs,
 		func(axis: Vector2): motion = axis)
-		var look := AimPad.new()
+	var look := AimPad.new()
 	look.name = "Night2LookPad"
 	look.prompt_text = "LOOK AROUND"
 	look.anchor_left = 1.0
