@@ -43,6 +43,10 @@ The MAIN footpath **does not end at the animal gate or the far side of the farm*
 
 Night 6's farm checkpoint now unlocks after the **genuine Night 5 outcome** is stored in the connected-world ledger. The same uninterrupted footpath streams into the real Night 6 river-terrace scene and supports a save-safe return to the farm. The canonical coordinate remains `scripts/core/connected_world.gd` (`TRAIL_FARM_NIGHT06`). Night 7 unlocks only after a genuine Night 6 outcome; the road and return route are physically authored.
 
+### Post-story Free Roam — seven connected maps
+
+After completing the Night 7 morning epilogue, choose **COMPLETE STORY • EXPLORE ALL 7 MAPS**. A genuinely saved completed finale unlocks permanent offline Free Roam. Walk through the existing physical connected roads in either direction: **Barrio Lawom ↔ Old Mango ↔ Tikbalang Ridge ↔ The Wake ↔ Sigbin Farm ↔ River Crossing ↔ Balete Grounds**. Past chapter endings no longer repeatedly block the roads, and prior consequences and chapter saves remain intact. The title's **FREE ROAM • ALL 7 MAPS** option resumes the most recently visited region. Chapter selections from the title can optionally jump to a visited region once the ending is completed, but walking inside the game always requires adjacent paths. Starting a new seven-night story requires explicit confirmation and clears all prior chapter saves and exploration status.
+
 ### Night 6 player route (source-backed and nonfatal)
 
 1. Collect the cancelled launch order, water gauge, evacuation register and alternative-route log. Dado may decline to testify.

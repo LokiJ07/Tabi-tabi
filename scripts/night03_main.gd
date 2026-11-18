@@ -140,7 +140,7 @@ func _ready() -> void:
 	# Don't repeatedly block the connected road with its old ending popup.
 	if story.outcome != "" and not free_roam_mode:
 		_show_ending()
-	elif story.phase == 0 and story.clues.is_empty():
+	elif story.phase == 0 and story.clues.is_empty() and not free_roam_mode:
 		_show_dialogue("LOLA PASING",
 			"The old mango path leads to the high ridge. Dado never finished telling me who moved the rescue signs during the Great Flood.\n\nAyaw sunod-sunod sa mga suga. Ang makita nimo, isulat. Bantay will keep to the safest ground.",
 			[{"label":"FOLLOW THE REAL RESCUE TRAIL","action":"close"}])

@@ -125,6 +125,7 @@ jobs:
           run_test res://tests/night06_scene_test.gd
           run_test res://tests/night07_state_test.gd
           run_test res://tests/night07_scene_test.gd
+          run_test res://tests/postgame_free_roam_test.gd
           run_test res://tests/connected_world_test.gd
           run_test res://tests/north_grove_art_test.gd
           run_test res://tests/connected_world_playthrough_test.gd

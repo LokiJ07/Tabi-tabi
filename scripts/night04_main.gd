@@ -142,7 +142,7 @@ func _ready() -> void:
 	# Don't repeatedly block the connected road with its old ending popup.
 	if story.outcome != "" and not free_roam_mode:
 		_show_ending()
-	elif story.phase == 0 and story.clues.is_empty():
+	elif story.phase == 0 and story.clues.is_empty() and not free_roam_mode:
 		_talk("LOLA PASING","Night 4 — The Wake. Ang kasubo sa pamilya dili ebidensya sa dautan. Attend the mourners, listen before judging, and protect the people who are left alone.",
 			[{"label":"MANGITA SA TINUOD NGA EBIDENSYA","action":"close"}])
 	print("NIGHT4_QA_SCENE_READY")

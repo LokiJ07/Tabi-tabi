@@ -165,7 +165,7 @@ func _ready() -> void:
 	# Don't repeatedly block the connected road with its old ending popup.
 	if story.outcome != "" and not free_roam_mode:
 		_show_ending()
-	elif story.phase == 0 and story.clues.is_empty():
+	elif story.phase == 0 and story.clues.is_empty() and not free_roam_mode:
 		_talk("LOLA PASING • THE OLD PROMISE",
 			"Night 5 — The Abandoned Farm. Two goats vanished, but nobody found blood or a broken fence. Ang saad nga wala mausab mahimo usab nga peligro. Look, then decide what truly happened.",
 			[{"label":"INSPECT THE FARM SAFELY","action":"close"}])

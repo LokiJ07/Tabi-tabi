@@ -33,3 +33,7 @@ This is a **pre-final engineering checkpoint, not a public release sign-off**. R
 ## Status
 
 All code changes are applied on the Night 7 feature branch, not main. The final merge/release decision remains separate from this pre-final audit.
+
+## Finalization feature: persistent Free Roam after Night 7
+
+Complete the playable morning epilogue and explicitly choose COMPLETE STORY to unlock permanent FREE ROAM. Title menu changes CONTINUE to FREE ROAM - ALL 7 MAPS and resumes the last visited region. Walk from Balete Grounds back through River, Farm, Wake, Ridge, Mango and Barrio Lawom, and return along the six physically linked roads. Completed chapters reload in their living aftermath without blocking ending modals, and original story outcomes and saves stay independent. The authentic Night 7 finished save is required for the seven-map unlock; starting a new story deletes all chapter files and ledger only after an explicit warning. A dedicated post-game test covers all 12 directions, title resume, save preservation and scene access. Real-phone ergonomics, performance and APK update signing remain outstanding.

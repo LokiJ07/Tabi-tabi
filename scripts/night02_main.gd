@@ -174,7 +174,7 @@ func _ready() -> void:
 	# Don't repeatedly block the connected road with its old ending popup.
 	if story.outcome != "" and not free_roam_mode:
 		_show_ending()
-	elif story.phase == 0 and story.clues.is_empty():
+	elif story.phase == 0 and story.clues.is_empty() and not free_roam_mode:
 		_show_dialogue("LOLA PASING",
 			"Night 2 — Ang Higante sa Daang Mangga.\n" +
 			"Lola: Ang kahoy buhi na sa mga kasaysayan sa baryo. Pero naa nay nangatumpag nga sanga. Ayaw pagpatuyang. Tan-awa una ang peligro.",

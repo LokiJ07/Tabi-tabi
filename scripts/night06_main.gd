@@ -135,7 +135,7 @@ func _ready() -> void:
 	# Don't repeatedly block the connected road with its old ending popup.
 	if story.outcome != "" and not free_roam_mode:
 		_show_ending()
-	elif story.phase == 0 and story.clues.is_empty():
+	elif story.phase == 0 and story.clues.is_empty() and not free_roam_mode:
 		_talk("MARA • THE RIVER WITHOUT RAIN",
 			"The old crossing is rising without rainfall. Twenty-eight years ago, the records of a second rescue stopped making sense. We will read the physical sources before judging anyone.",
 			[{"label":"FOLLOW THE ARCHIVE ROAD","action":"close"}])
