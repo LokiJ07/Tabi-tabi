@@ -6,6 +6,10 @@ const Depth = preload("res://scripts/visuals/layered_25d.gd")
 const FISHER: Texture2D = preload("res://assets/characters/post_fisher.svg")
 const MARKET: Texture2D = preload("res://assets/characters/post_market.svg")
 const TRAIL: Texture2D = preload("res://assets/characters/post_trail.svg")
+const ARCHIVE: Texture2D = preload("res://assets/characters/post_archive.svg")
+const FARM: Texture2D = preload("res://assets/characters/post_farm.svg")
+const REPAIR: Texture2D = preload("res://assets/characters/post_repair.svg")
+const SCHOOL: Texture2D = preload("res://assets/characters/post_school.svg")
 
 const ACTORS := {
 	"old_mango": [
@@ -137,9 +141,19 @@ static func paint(scene: Node2D, region: String, seconds: float, reduced_motion:
 				290, 16, Color("#f0dfa9"))
 
 static func _sprite_for(job: String, actor_id: String) -> Texture2D:
-	if job == "fish" or actor_id == "animal_keeper":
+	# Four original profession-specific faces eliminate repeated market
+	# and fisher heads across school, river, wake and ancestral grove.
+	if actor_id == "archive_helper":
+		return ARCHIVE
+	if job == "school":
+		return SCHOOL
+	if job == "repair":
+		return REPAIR
+	if job in ["farm","animals"] or actor_id == "farm_helper":
+		return FARM
+	if job == "fish":
 		return FISHER
-	if job == "school" or job == "community" or actor_id == "farm_helper":
+	if job == "community":
 		return MARKET
 	return TRAIL
 
