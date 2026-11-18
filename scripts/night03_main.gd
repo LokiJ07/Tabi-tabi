@@ -474,11 +474,13 @@ func _draw() -> void:
 		var dimensions: Vector2 = actor["size"]
 		var is_player: bool = actor["tex"] == HERO
 		var is_dog: bool = actor["tex"] == BANTAY
-		var lift := 0.0
-		if not prefs.reduced_motion and (is_player or is_dog):
-			lift = absf(sin(walk_phase * (1.12 if is_dog else 1.0))) * (3.0 if is_player else 2.1) * walk_weight
-		DimensionalArt.paint_grounded(self, actor["tex"], where, dimensions,
-			Color.WHITE, .43, lift)
+		if is_player or is_dog:
+			DimensionalArt.paint_animated_actor(self,actor["tex"],where,
+				dimensions,walk_phase,walk_weight,prefs.reduced_motion,
+				Color.WHITE,.43,is_dog)
+		else:
+			DimensionalArt.paint_grounded(self,actor["tex"],where,dimensions,
+				Color.WHITE,.43)
 	PostgameResidents.paint(self,"night03",particles,prefs.reduced_motion,player_pos)
 	# In-world wayfinding signs are small, correctly oriented and non-obstructive.
 	var font := ThemeDB.fallback_font
