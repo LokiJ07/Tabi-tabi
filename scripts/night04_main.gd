@@ -9,6 +9,7 @@ const Night03Save = preload("res://scripts/core/night03_save.gd")
 const World = preload("res://scripts/core/connected_world.gd")
 const Preferences = preload("res://scripts/core/preferences.gd")
 const SharedHUD = preload("res://scripts/ui/shared_hud.gd")
+const SharedDialogueMotion = preload("res://scripts/ui/shared_dialogue_motion.gd")
 const PostgameResidents = preload("res://scripts/world/postgame_residents.gd")
 const DimensionalArt = preload("res://scripts/visuals/layered_25d.gd")
 const NightWindows = preload("res://scripts/visuals/nighttime_windows.gd")
@@ -836,15 +837,22 @@ func _talk(who: String,message: String,actions: Array) -> void:
 		child.queue_free()
 	for action in actions:
 		var id := str(action["action"])
-		_button(choices,str(action["label"]),func():_choose(id))
-	dialogue.modulate.a = 1.0 if prefs.reduced_motion else 0.0
-	if not prefs.reduced_motion:
-		create_tween().tween_property(dialogue,"modulate:a",1.0,.22)
+		_button(choices,str(action["label"]),func():_press_dialogue_choice(id))
+	SharedDialogueMotion.reveal(dialogue,prefs.reduced_motion)
+	SharedDialogueMotion.reveal_text(dialogue_body,prefs.reduced_motion)
 	_sync_ui()
 
+func _press_dialogue_choice(action: String) -> void:
+	# Identical to Nights 1–3: a quick touch finishes the current speaker
+	# line rather than accidentally advancing a consequence.
+	if SharedDialogueMotion.finish_text(dialogue_body):
+		return
+	_choose(action)
+
 func _close_dialogue() -> void:
-	dialogue.hide()
+	SharedDialogueMotion.conceal(dialogue,prefs.reduced_motion)
 	_sync_ui()
+	SharedDialogueMotion.restore_gameplay(controls,prefs.reduced_motion)
 
 func _sync_ui() -> void:
 	if modal_backdrop != null:
