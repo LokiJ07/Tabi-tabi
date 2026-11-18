@@ -808,7 +808,8 @@ func _hold_move(dir: String,on: bool) -> void:
 
 func _nearby() -> String:
 	if player_pos.distance_to(RETURN_FARM)<125: return "return_farm"
-	if PostgameResidents._clock(self) != null:
+	var living_clock := PostgameResidents._clock(self)
+	if living_clock != null and living_clock.light_stage() < 2:
 		var neighbours := {"MARA":MARA_AT,"DADO":DADO_AT,"SABEL":SABEL_AT,"LOLA":LOLA_AT}
 		for person in neighbours:
 			if player_pos.distance_to(neighbours[person]) < 122.0:
