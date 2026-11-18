@@ -251,6 +251,9 @@ jobs:
             build/android-night6-river-memory-night.png
             build/android-night6-farm-return-trail.png
             build/android-night6-log.txt
+            build/android-night7-*.png
+            build/android-night7-log.txt
+            build/android-postgame-synthetic-*.png
             build/android-night1-notebook.png
             build/android-night1-notebook-scrolled.png
             build/android-night1-preparation.png
