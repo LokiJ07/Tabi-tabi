@@ -143,8 +143,9 @@ func _ready() -> void:
 	print("NIGHT4_QA_SCENE_READY")
 
 func _stage() -> int:
-	if PostgameClock.is_active():
-		return PostgameClock.light_stage()
+	var free_roam_clock := get_node_or_null("/root/PostgameClock")
+	if free_roam_clock != null and free_roam_clock.is_active():
+		return free_roam_clock.light_stage()
 	if debug_wake_preview:
 		return 3
 	if story.phase <= 0 or story.phase == 5:
