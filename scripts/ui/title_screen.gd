@@ -69,6 +69,12 @@ func _input(event: InputEvent) -> void:
 	# without fabricating an unlocked Night 1 save. Production has no shortcut.
 	if OS.get_name() == "Android" and OS.has_feature("debug") and event is InputEventKey:
 		var key := event as InputEventKey
+		if key.pressed and key.keycode in [KEY_F3, KEY_F4]:
+			# QA GALLERY ONLY: synthetic completed-save scene. These captures are
+			# explicitly labeled fixtures, never proof a human finished the story.
+			_qa_postgame_gallery_preview(.32 if key.keycode == KEY_F3 else .9)
+			get_viewport().set_input_as_handled()
+			return
 		if key.pressed and key.keycode == KEY_F9:
 			get_viewport().set_input_as_handled()
 			print("NIGHT7_QA_DEBUG_ENTRY")
@@ -130,6 +136,27 @@ func _input(event: InputEvent) -> void:
 		_enter_game(true)
 		get_viewport().set_input_as_handled()
 
+
+func _qa_postgame_gallery_preview(time_fraction: float) -> void:
+	if OS.get_name() != "Android" or not OS.has_feature("debug"):
+		return
+	var ledger: Dictionary = ConnectedWorld.read()
+	var outcomes: Dictionary = {}
+	for night in range(1,8):
+		outcomes["night%02d" % night] = "resolve" if night < 7 else "renewal"
+	ledger["outcomes"] = outcomes
+	ledger["epilogue_complete"] = true
+	ledger["postgame_time"] = time_fraction
+	ledger["current"] = "barrio_lawom"
+	ledger["pending"] = {}
+	if not ConnectedWorld.write(ledger):
+		printerr("POSTGAME_QA_FIXTURE_SAVE_FAILED")
+		return
+	var world_clock := get_node_or_null("/root/PostgameClock")
+	if world_clock != null:
+		world_clock.refresh()
+	print("POSTGAME_QA_SYNTHETIC_DAY_SCENE_READY" if time_fraction < .5 else "POSTGAME_QA_SYNTHETIC_NIGHT_SCENE_READY")
+	get_tree().change_scene_to_packed(GameScene)
 
 func _draw() -> void:
 	if size.x <= 0 or size.y <= 0:
