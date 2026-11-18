@@ -245,11 +245,11 @@ func _physics_process(delta: float) -> void:
 	# and 2 rear walls stay composed. Story close-ups are unaffected.
 	if in_lola_hut and not camera_director.is_framing():
 		var room_center: Vector3 = LolaHut.CENTER + Vector3(0, 0.65, 0)
-		var room_camera: Vector3 = room_center + Vector3(12, 17, 12)
+		var room_camera: Vector3 = room_center + Vector3(8.0, 11.5, 8.0)
 		var smooth: float = 1.0 if preferences.reduced_motion else clampf(delta * 4.5, 0.0, 1.0)
 		camera.global_position = camera.global_position.lerp(room_camera, smooth)
 		camera.look_at(room_center)
-		camera.size = lerpf(camera.size, 14.7, smooth)
+		camera.size = lerpf(camera.size, 10.4, smooth)
 	RiverBanca.animate(river_boat, elapsed, preferences.reduced_motion)
 	elapsed += delta
 	window_light_refresh += delta
@@ -824,10 +824,8 @@ func _create_ui() -> void:
 	info = status["heading"]
 	objective = status["objective"]
 	status_stack.minimum_size_changed.connect(func(): call_deferred("_fit_status_card"))
-	_make_button(gameplay_hud, "◀", Vector2(20, 575), Vector2(70, 65), func(): _set_button_axis("left", true), func(): _set_button_axis("left", false))
-	_make_button(gameplay_hud, "▶", Vector2(170, 575), Vector2(70, 65), func(): _set_button_axis("right", true), func(): _set_button_axis("right", false))
-	_make_button(gameplay_hud, "▲", Vector2(95, 505), Vector2(70, 65), func(): _set_button_axis("up", true), func(): _set_button_axis("up", false))
-	_make_button(gameplay_hud, "▼", Vector2(95, 645), Vector2(70, 65), func(): _set_button_axis("down", true), func(): _set_button_axis("down", false))
+	SharedHUD.create_movement_joystick(gameplay_hud,preferences,
+		func(axis: Vector2): touch_axes = axis)
 	var aim_pad := AimPad.new()
 	aim_pad.anchor_left = 1.0
 	aim_pad.anchor_right = 1.0

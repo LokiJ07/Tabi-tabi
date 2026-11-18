@@ -12,6 +12,7 @@ const ICON_DAYNIGHT: Texture2D = preload("res://assets/ui/daynight.svg")
 const ICON_RETREAT: Texture2D = preload("res://assets/ui/retreat.svg")
 const STATUS_WIDTH := .37
 const HOLD_LABEL := "OBSERVING..."
+const MovementJoystick = preload("res://scripts/ui/movement_joystick.gd")
 const HOLD_COLOR := Color("#665123")
 const HOLD_BORDER := Color("#ffda70")
 
@@ -127,6 +128,14 @@ static func set_hold_feedback(button: Button, held: bool) -> void:
 		button.add_theme_color_override("font_color",Color("#fff5d7"))
 	else:
 		button.add_theme_color_override("font_color",Color("#f8e8c7"))
+
+static func create_movement_joystick(parent: Control, settings: RefCounted, on_axis: Callable) -> Control:
+	var joystick := MovementJoystick.new()
+	joystick.configure(settings)
+	joystick.axis_changed.connect(on_axis)
+	parent.add_child(joystick)
+	return joystick
+
 
 static func make_options_button(parent: Control, callback: Callable, text_scale: float = 1.0) -> Button:
 	var button := Button.new()
