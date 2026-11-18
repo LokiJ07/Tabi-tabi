@@ -111,7 +111,8 @@ func _run() -> void:
 	var good=_prepare_all()
 	check(good.commit("good"),"temporary peace ending is explicit")
 	var bittersweet=_prepare_all()
-	check(bittersweet.commit("bittersweet"),"fractured cooperation ending is separate")
+	check(bittersweet.commit("bittersweet") and bittersweet.community_fractured,
+		"fractured cooperation ending is explicit, persisted and distinct from a promise already met")
 	check(State.new().from_dict(good.to_dict()) and State.new().from_dict(bittersweet.to_dict()),
 		"other endings reload without separate Lola death rule")
 	for path in [Save.PATH,Save.PATH+".bak",Save.PATH+".tmp"]:

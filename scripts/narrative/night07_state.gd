@@ -49,6 +49,7 @@ var danger := 0.0
 var encounter_failed := false
 var mistakes := 0
 var denial_warning_seen := false
+var community_fractured := false
 var outcome := ""
 var ending_record: Dictionary = {}
 var epilogue_spoken: Dictionary = {}
@@ -253,6 +254,7 @@ func commit(result: String) -> bool:
 	if not offer_outcomes().has(result): return false
 	if result == "dark" and not denial_warning_seen: return false
 	outcome = result
+	community_fractured = result == "bittersweet"
 	phase = 7
 	encounter_failed = false
 	danger = 0.0
@@ -264,6 +266,7 @@ func commit(result: String) -> bool:
 		"privacy":sabel_privacy,
 		"lola_living":lola_is_living,
 		"lola_account":lola_reflected,
+		"community_cooperation_fractured":community_fractured,
 		"villagers_return_safely":true,
 		"keeper_is_limited":true
 	}
@@ -302,7 +305,8 @@ func to_dict() -> Dictionary:
 		"keeper_seen":keeper_seen,"path_index":path_index,"truth_index":truth_index,
 		"awake_index":awake_index,"observation":observation,"warning_ready":warning_ready,
 		"danger":danger,"encounter_failed":encounter_failed,"mistakes":mistakes,
-		"denial_warning_seen":denial_warning_seen,"outcome":outcome,
+		"denial_warning_seen":denial_warning_seen,"community_fractured":community_fractured,
+		"outcome":outcome,
 		"ending_record":ending_record.duplicate(true),
 		"epilogue_spoken":epilogue_spoken.duplicate(true),"finished":finished}
 
@@ -342,7 +346,7 @@ func from_dict(data: Dictionary) -> bool:
 	if planned.has("family_memorial") and not bool(data.get("sabel_choice_respected",false)): return false
 	if ending == "true" and (known.size() != 3 or planned.size() != 3): return false
 	if ending == "dark" and not bool(data.get("denial_warning_seen",false)): return false
-	if ending == "bittersweet" and known.size() < 2: return false
+	if ending == "bittersweet" and (known.size() < 2 or not bool(data.get("community_fractured",false))): return false
 	previous_facts = facts
 	presented = known
 	commitments = planned
@@ -364,6 +368,7 @@ func from_dict(data: Dictionary) -> bool:
 	encounter_failed = bool(data.get("encounter_failed",false)) if p in [3,5] else false
 	mistakes = maxi(0,int(data.get("mistakes",0)))
 	denial_warning_seen = bool(data.get("denial_warning_seen",false))
+	community_fractured = bool(data.get("community_fractured",false))
 	outcome = ending
 	ending_record = data["ending_record"].duplicate(true)
 	epilogue_spoken = data["epilogue_spoken"].duplicate(true)

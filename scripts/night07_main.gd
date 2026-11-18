@@ -8,6 +8,7 @@ const Night06State = preload("res://scripts/narrative/night06_state.gd")
 const Night06Save = preload("res://scripts/core/night06_save.gd")
 const World = preload("res://scripts/core/connected_world.gd")
 const Prefs = preload("res://scripts/core/preferences.gd")
+const BaleteSound = preload("res://scripts/audio/night07_ambience.gd")
 const SharedHUD = preload("res://scripts/ui/shared_hud.gd")
 const Depth = preload("res://scripts/visuals/layered_25d.gd")
 const Landscape = preload("res://scripts/visuals/folklore_landscape_25d.gd")
@@ -68,6 +69,7 @@ var prefs = Prefs.new()
 var player_pos := Story.START
 var bantay_pos := Story.START+Vector2(-42,26)
 var camera: Camera2D
+var ambient
 var clock := 0.0
 var walk := 0.0
 var qa_view := 0 # Visual-only Android debug camera; canonical model not edited.
@@ -129,6 +131,10 @@ func _ready() -> void:
 	camera.position_smoothing_enabled = not prefs.reduced_motion
 	camera.position_smoothing_speed = 4.6
 	add_child(camera)
+	ambient = BaleteSound.new()
+	ambient.name = "BaleteOriginalEnvironmentSound"
+	add_child(ambient)
+	ambient.set_audio_level(prefs.audio_level)
 	_build_ui()
 	_refresh()
 	if story.phase == 7:
@@ -164,6 +170,9 @@ func _safe_segment(p: Vector2) -> bool:
 func _process(delta: float) -> void:
 	if not prefs.reduced_motion: clock += delta
 	unsafe_cooldown = maxf(0.0,unsafe_cooldown-delta)
+	if ambient!=null:
+		ambient.set_stage(_stage())
+		ambient.set_danger(story.danger)
 	var axis := (Input.get_vector("ui_left","ui_right","ui_up","ui_down")+moving).limit_length()
 	if _modal() or travel_in_progress: axis = Vector2.ZERO
 	if axis.length()>.06:
@@ -299,15 +308,51 @@ func _paint_hut(foot: Vector2,w: float,lit: bool) -> void:
 			foot+Vector2(-w*.02,-w*.92+float(i)*w*.09),
 			Color(.85,.77,.61,.35),1.8,true)
 
+func _paint_groundlife() -> void:
+	# River valley foothills: broad, irregular moss and leaf-litter islands,
+	# short grass and fallen twigs, not a flat color or tile/square pattern.
+	# Fixed deterministic placements preserve the same landmarks and fps
+	# while the camera moves; all drawn BELOW the walkable paths and HUD.
+	for patch in range(126):
+		var n := float(patch)
+		var col := float(patch % 14)
+		var row := float(patch / 14)
+		var foot := Vector2(-1130+col*176+sin(n*1.61)*46,
+			-745+row*177+cos(n*.97)*35)
+		var w := 49.0+float(patch%5)*17.0
+		var h := 19.0+float(patch%4)*8.0
+		var moss := Color("#4e7159") if patch%4==0 else Color("#64806a") if patch%4==1 else Color("#405e51") if patch%4==2 else Color("#76846c")
+		draw_colored_polygon(PackedVector2Array([
+			foot+Vector2(-w*.62,-h*.2),foot+Vector2(-w*.24,-h*.59),
+			foot+Vector2(w*.34,-h*.47),foot+Vector2(w*.69,-h*.10),
+			foot+Vector2(w*.40,h*.57),foot+Vector2(-w*.44,h*.42)]),
+			moss.darkened(.15) if _stage()>=2 else moss)
+		# Real organic stems cut through the flat ground at the tuft base.
+		for blade in range(3):
+			var origin := foot+Vector2(float(blade-1)*16,4)
+			var bend := sin(n*.91+float(blade))*6.0
+			draw_line(origin,origin+Vector2(bend,-12.0-float(blade%2)*7),
+				Color("#8f9a6a") if patch%2==0 else Color("#567963"),2.2,true)
+	for drift in range(49):
+		var n := float(drift)
+		var at := Vector2(-1080+float(drift%11)*221+sin(n*2.13)*36,
+			-580+float(drift/11)*335+cos(n*.81)*48)
+		var delta := Vector2(26+float(drift%3)*16,-11.0+sin(n*.71)*7)
+		draw_line(at,at+delta,Color("#7b7554"),3.7,true)
+		draw_line(at+delta*.48,at+delta*.48+Vector2(9,-15),
+			Color("#aa9e73"),2.3,true)
+
+
 func _draw() -> void:
 	var night:=_stage()>=2
 	var morning: bool = story.phase == 7 or qa_view == 4
 	draw_rect(MAP.grow(450),Color("#2c4940"))
 	Landscape.parallax_ridges(self,MAP.grow(280),camera.position,7,3 if night else 0)
-	for band in range(26):
-		var tone: Color=Color("#38554d").lerp(Color("#687b61"),float(band)/25.0)
-		draw_rect(Rect2(-2700,-1140+float(band)*84,5100,86),tone)
+	for band in range(22):
+		var tone: Color=Color("#38554d").lerp(Color("#687b61"),float(band)/21.0)
+		draw_rect(Rect2(-2700,-330+float(band)*78,5100,80),tone)
 	draw_texture_rect(SOIL,Rect2(-2600,-1100,4900,2200),false,Color(1,1,1,.15))
+	_paint_groundlife()
 	var road: PackedVector2Array=PackedVector2Array([
 		RIVER_TRAIL,Vector2(-879,267),READINESS_BOARD,
 		Vector2(-618,88),MEETING,Vector2(-311,-132),
@@ -784,7 +829,10 @@ func _epilogue(id: String) -> void:
 		"river":
 			line="The river is quieter; the waterline markers remain as public reminders that safety takes maintenance and honest decisions."
 		"memorial":
-			line="The community's memorial plan has begun, with families' consent." if story.commitments.has("family_memorial") else "The memorial still has no approved plan; its unfinished notice remains beside the public records."
+			if story.community_fractured:
+				line="A memorial plan exists, but the people responsible have fractured their cooperation. The work is unfinished despite what was promised."
+			else:
+				line="The community's memorial plan has begun, with families' consent." if story.commitments.has("family_memorial") else "The memorial still has no approved plan; its unfinished notice remains beside the public records."
 		"bantay":
 			line="Bantay stays beside the Apprentice, in every ending. Life continues even when a promise remains unfinished."
 	_save_story()
@@ -1000,6 +1048,14 @@ func _refresh() -> void:
 		5: objective.text="AWAKENED ROOTS %d/3 • guard the village and traverse safely." % [story.awake_index+1]
 		6: objective.text="Choose an evidence-credible ending. The dark choice requires deliberate confirmation."
 		7: objective.text="THE MORNING AFTER • %s • Walk freely; finish when you choose." % story.outcome.to_upper()
+	if qa_view!=0:
+		var qa_titles: Array[String] = [
+			"","MORNING • READINESS VISUAL QA",
+			"DUSK • REMEMBRANCE VISUAL QA",
+			"MIDNIGHT • AWAKENED BALETE VISUAL QA",
+			"DAWN • MORNING PATH VISUAL QA"]
+		subtitle.text=qa_titles[clampi(qa_view,0,4)]
+		objective.text="ENVIRONMENT PREVIEW • QA CAMERA ONLY • Saved story state unchanged."
 	_refresh_hint()
 	call_deferred("_fit_status")
 
