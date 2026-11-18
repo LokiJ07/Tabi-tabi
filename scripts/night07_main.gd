@@ -530,7 +530,10 @@ func _draw() -> void:
 	# A visible roped threshold is closed until the explicit readiness/gathering gate.
 	for edge in [GATE+Vector2(-44,20),GATE+Vector2(44,-14)]:
 		draw_line(edge,edge+Vector2(0,-84),Color("#725d49"),11,true)
-	if story.phase < 2:
+	if not _keeper_gate_open():
+		# The rope stays PHYSICALLY visible until the Keeper introduces
+		# the path trial. Phase 2 was previously collision-locked but had
+		# already erased this rope, creating an invisible wall.
 		draw_line(GATE+Vector2(-44,-50),GATE+Vector2(44,-81),
 			Color("#dec098"),6,true)
 	# Giant Balete is dominant and fixed to the authored glade ground.
@@ -596,9 +599,10 @@ func _draw() -> void:
 	if player_pos.distance_to(RIVER_TRAIL)<240:
 		draw_string(ThemeDB.fallback_font,RIVER_TRAIL+Vector2(-33,-72),
 			"RIVER RETURN",HORIZONTAL_ALIGNMENT_CENTER,190,16,Color("#f0e1b9"))
-	if player_pos.distance_to(GATE)<240 and story.phase<2:
+	if player_pos.distance_to(GATE)<240 and not _keeper_gate_open():
 		draw_string(ThemeDB.fallback_font,GATE+Vector2(-93,-110),
-			"FINAL TRIAL • PREPARE FIRST",HORIZONTAL_ALIGNMENT_CENTER,235,16,Color("#ecd7a4"))
+			"KEEPER GATE • INTERACT" if story.phase==2 else "FINAL TRIAL • PREPARE FIRST",
+			HORIZONTAL_ALIGNMENT_CENTER,260,16,Color("#ecd7a4"))
 	if story.phase in [2,3,4,5,6] and player_pos.distance_to(KEEPER)<300:
 		draw_string(ThemeDB.fallback_font,KEEPER+Vector2(-124,103),
 			"ANCIENT KEEPER • FICTIONAL GUARDIAN",HORIZONTAL_ALIGNMENT_CENTER,320,16,Color("#e4dbc1"))
