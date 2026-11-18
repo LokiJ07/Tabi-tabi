@@ -69,6 +69,14 @@ func _run() -> void:
 	var game = Night2Scene.instantiate()
 	root.add_child(game)
 	await process_frame
+	check(not Walk.is_blocked(2,game.QA_SHELTER_POINT),
+		"Android shelter screenshot must start outside the solid home")
+	check(not Walk.scenery_covers_actor(2,game.QA_MANGO_POINT),
+		"Android mango screenshot must stand on visible ground, not the canopy")
+	check(not Walk.is_blocked(2,game.QA_MANGO_POINT),
+		"Android mango screenshot must not be inside the trunk")
+	check(not Walk.is_blocked(2,game.QA_RETURN_POINT),
+		"return trail camera must never place player inside a refuge wall")
 	check(game.options_panel.anchor_top >= .15 and game.options_panel.anchor_bottom<=.82,
 		"Night 2 pause panel is compact without empty fullscreen filler")
 	game.queue_free()
