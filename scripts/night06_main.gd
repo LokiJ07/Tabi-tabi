@@ -1243,7 +1243,7 @@ func _save_menu() -> void:
 	if not _save_story():
 		save_error.popup_centered(Vector2i(600,175))
 		return
-	SceneTransit.change_to_file("res://scenes/title.tscn")
+	get_node("/root/SceneTransit").call("change_to_file", "res://scenes/title.tscn")
 
 func _postgame_active() -> bool:
 	var clock_node := get_node_or_null("/root/PostgameClock")
@@ -1259,7 +1259,7 @@ func _travel_to_balete() -> void:
 	observe_held = false
 	move_axis = Vector2.ZERO
 	print("TABI_WORLD_TRAVEL_RIVER_TO_BALETE")
-	SceneTransit.change_to_file(World.scene_for("night07"))
+	get_node("/root/SceneTransit").call("change_to_file", World.scene_for("night07"))
 
 func _return_farm() -> void:
 	if travel_in_progress: return
@@ -1267,7 +1267,7 @@ func _return_farm() -> void:
 		save_error.popup_centered(Vector2i(600,175))
 		return
 	travel_in_progress = true
-	SceneTransit.change_to_file(World.scene_for("night05"))
+	get_node("/root/SceneTransit").call("change_to_file", World.scene_for("night05"))
 
 func _show_ending() -> void:
 	dialogue.hide()
