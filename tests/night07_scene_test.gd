@@ -70,8 +70,10 @@ func _run() -> void:
 		"Night 7 LOOK anchor unchanged from Night 1")
 	check(World.implemented("night07") and World.seven_night_chain_is_connected(),
 		"all seven nights are real connected regions")
+	game.story.phase=3
 	check(game._safe_segment(game.PATH_STONES[0]) and not game._safe_segment(Vector2(-790,630)),
 		"moving roots have mapped safe corridor and unsafe outside")
+	game.story.phase=0
 	check(game.story.phase==0 and game.story.night06_outcome=="partial",
 		"real source data seeds honest readiness; no fake six-resolve demand")
 	if game.dialogue.visible: game._choose("close")
