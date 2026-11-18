@@ -32,6 +32,13 @@ func _run() -> void:
 	var repaired := Walk.repair_saved_position(2,Vector2(-610,410))
 	check(not Walk.is_blocked(2,repaired) and repaired.distance_to(Vector2(-610,410))<330,
 		"legacy save inside shelter recovers next to the same house")
+	var route := Walk.mango_road_centerline()
+	for segment in range(route.size()-1):
+		var a: Vector2 = route[segment]
+		var b: Vector2 = route[segment+1]
+		var closest := a+(b-a)*clampf((Vector2(245,-120)-a).dot(b-a)/maxf((b-a).length_squared(),1.0),0.0,1.0)
+		check(closest.distance_to(Vector2(245,-120)) > 110.0,
+			"main dirt road must detour around the trunk, not run through it")
 	var tree_fix := Walk.repair_saved_position(2,Vector2(245,-120))
 	check(not Walk.is_blocked(2,tree_fix),"legacy save inside mango trunk recovers")
 	var start := Vector2(-800,400)
