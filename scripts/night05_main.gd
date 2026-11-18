@@ -452,9 +452,12 @@ func _draw() -> void:
 		if FarmArt.animals_revealed(story.phase,debug_farm_preview)
 		else "MISSING HERD • FOLLOW TRACKS",
 		Vector2(375,-93),286.0,_stage()>=2)
-	FarmArt.paint_farm_sign(self,
-		FarmArt.gate_label(story.phase,story.preparations.has("safe_gate")),
-		Vector2(445,83),196.0,_stage()>=2)
+	# World signs may not cover Night 1's fixed right-side touch stack.
+	# Only reveal the gate label when its actual physical pen is nearby.
+	if player_pos.distance_to(SAFE_GATE) < 410.0:
+		FarmArt.paint_farm_sign(self,
+			FarmArt.gate_label(story.phase,story.preparations.has("safe_gate")),
+			FarmArt.GATE_SIGN_AT,196.0,_stage()>=2)
 	FarmArt.paint_farm_sign(self,"SAFE HOLDING → %d/3" % story.rescued_groups,
 		FarmArt.HOLDING_SIGN_AT,227.0,_stage()>=2)
 	if story.phase in [1,2,3]:

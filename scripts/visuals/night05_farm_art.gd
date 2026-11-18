@@ -16,6 +16,8 @@ const MAIN_ROAD_END := Vector2(570.0,318.0)
 const LOWER_TREE := Vector2(270.0,705.0)
 const LOWER_BANANA := Vector2(530.0,705.0)
 const HOLDING_SIGN_AT := Vector2(430.0,423.0)
+# Centered above the west animal gate; far enough from fixed action buttons.
+const GATE_SIGN_AT := Vector2(445.0,83.0)
 const GATE_LEFT := 500.0
 const GATE_RIGHT := 610.0
 
