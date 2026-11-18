@@ -279,7 +279,7 @@ func _build_menu() -> void:
 	menu.name = "MainMenu"
 	menu.anchor_left = 0.065
 	menu.anchor_right = 0.415
-	menu.anchor_top = 0.235
+	menu.anchor_top = 0.245
 	menu.anchor_bottom = 0.995
 	menu.add_theme_constant_override("separation", 8)
 	add_child(menu)
@@ -324,7 +324,18 @@ func _build_menu() -> void:
 		night6_button.text = "CONTINUE NIGHT 6  •  THE RIVER"
 	elif not night6_ready and OS.has_feature("debug"):
 		night6_button.text = "TEST NIGHT 6 (QA)"
-	night7_button = _button("NIGHT 7  •  ANCIENT KEEPER",menu,_enter_night7)
+	night7_button = _button("NIGHT 7  •  ANCIENT KEEPER",self,_enter_night7)
+	# Keep 11 legacy title actions in their accessible 48px mobile list.
+	# Night 7 lives in its own wide highlighted space on the scenic right side.
+	night7_button.anchor_left = .55
+	night7_button.anchor_right = .94
+	night7_button.anchor_top = .84
+	night7_button.anchor_bottom = .93
+	night7_button.offset_left = 0
+	night7_button.offset_right = 0
+	night7_button.offset_top = 0
+	night7_button.offset_bottom = 0
+	night7_button.custom_minimum_size = Vector2(0,55)
 	var night7_ready := _night7_unlocked()
 	night7_button.disabled = not night7_ready and not OS.has_feature("debug")
 	if Night07Save.exists() and night7_ready:
@@ -332,7 +343,7 @@ func _build_menu() -> void:
 	elif not night7_ready and OS.has_feature("debug"):
 		night7_button.text = "TEST NIGHT 7 (QA)"
 	# Chapter entries retain the same left column; compact type avoids clip.
-	menu.add_theme_constant_override("separation",3)
+	menu.add_theme_constant_override("separation",0)
 	# Chapter labels can become much longer than the original six-button
 	# title layout. Keep EVERY visible label inside its unchanged left column.
 	night2_button.add_theme_font_size_override("font_size", roundi(23.0*prefs.text_scale))
@@ -346,7 +357,7 @@ func _build_menu() -> void:
 	_button("EXIT", menu, func(): get_tree().quit())
 	for item in menu.get_children():
 		if item is Button:
-			(item as Button).custom_minimum_size.y = 40.0
+			(item as Button).custom_minimum_size.y = 48.0
 	var chapter := Label.new()
 	chapter.text = "SEVEN NIGHTS • ONE STORY • BALETE GROUNDS"
 	chapter.anchor_left = 0.54
