@@ -4,6 +4,9 @@ extends RefCounted
 ## duplicates chapter rewards, or blocks the continuous public road.
 const Folk = preload("res://scripts/visuals/folk_actors.gd")
 const Banca = preload("res://scripts/world/river_banca.gd")
+const FISHER: Texture2D = preload("res://assets/characters/post_fisher.svg")
+const MARKET: Texture2D = preload("res://assets/characters/post_market.svg")
+const TRAIL: Texture2D = preload("res://assets/characters/post_trail.svg")
 const RootName := "PostgameBarrioLife"
 const SETTLEMENT_ACTORS := [
 	{"id":"dock_fisher","home":Vector3(4.6,0,-2.4),"work":Vector3(-6.3,0.1,10.2),"rest":Vector3(-5.5,0,-1.0),"shirt":Color("#4a8690")},
@@ -55,6 +58,14 @@ static func ensure(world: Node3D) -> Node3D:
 		var data: Dictionary = SETTLEMENT_ACTORS[i]
 		var actor: Node3D = Folk.person(str(data["id"]),data["shirt"],Color("#6d4c38"))
 		actor.name = str(data["id"])
+		var selected: Texture2D = FISHER if i == 0 else MARKET if i == 1 else TRAIL
+		var face := actor.get_node_or_null("IllustratedSprite") as Sprite3D
+		if face != null:
+			face.texture = selected
+		var depth_face := actor.get_node_or_null("DimensionalBackPlane") as Sprite3D
+		if depth_face != null:
+			depth_face.texture = selected
+		actor.set_meta("visual_asset",selected.resource_path)
 		actor.position = data["work"]
 		actor.set_meta("postgame_job",data["id"])
 		root.add_child(actor)
