@@ -10,6 +10,7 @@ const Night02State = preload("res://scripts/narrative/night02_state.gd")
 const ConnectedWorld = preload("res://scripts/core/connected_world.gd")
 const Preferences = preload("res://scripts/core/preferences.gd")
 const SharedHUD = preload("res://scripts/ui/shared_hud.gd")
+const PostgameResidents = preload("res://scripts/world/postgame_residents.gd")
 const SharedMotion = preload("res://scripts/ui/shared_dialogue_motion.gd")
 const SharedAtmosphere = preload("res://scripts/visuals/shared_immersive_atmosphere.gd")
 const DimensionalArt = preload("res://scripts/visuals/layered_25d.gd")
@@ -469,6 +470,7 @@ func _draw() -> void:
 			lift = absf(sin(walk_phase * (1.12 if is_dog else 1.0))) * (3.0 if is_player else 2.1) * walk_weight
 		DimensionalArt.paint_grounded(self, actor["tex"], where, dimensions,
 			Color.WHITE, .43, lift)
+	PostgameResidents.paint(self,"night03",particles,prefs.reduced_motion,player_pos)
 	# In-world wayfinding signs are small, correctly oriented and non-obstructive.
 	var font := ThemeDB.fallback_font
 	draw_string(font,ConnectedWorld.TRAIL_RIDGE+Vector2(-125,90),
@@ -812,12 +814,20 @@ func _nearby() -> String:
 	elif story.phase == 4:
 		if player_pos.distance_to(RIDGE_GATE) < 255.0:
 			return "tikbalang"
+	var postgame_neighbor := PostgameResidents.nearby(self,"night03",player_pos)
+	if postgame_neighbor != "":
+		return postgame_neighbor
 	return ""
 
 func _interact() -> void:
 	if _modal_open() or travel_in_progress:
 		return
 	var target := _nearby()
+	if target.begins_with("postgame:"):
+		_show_dialogue(PostgameResidents.speaker(target),
+			PostgameResidents.talk(self,target),
+			[{"label":"SALAMAT • CONTINUE","action":"close"}])
+		return
 	if target == "return_mango":
 		_return_to_mango()
 		return
