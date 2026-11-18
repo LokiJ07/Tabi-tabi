@@ -29,10 +29,9 @@ func _run() -> void:
 	hud_parent.name = "HUDPolishProbe"
 	hud_parent.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	root.add_child(hud_parent)
-	var released := false
-	var observed := false
+	var pressed_signals: Dictionary = {"down":false,"up":false}
 	var focus := HUD.make_gameplay_button(hud_parent,"HOLD OBSERVE",Vector2(1050,490),
-		Vector2(180,60),func(): observed=true,func(): released=true)
+		Vector2(180,60),func(): pressed_signals["down"]=true,func(): pressed_signals["up"]=true)
 	check(focus.get_meta("hud_component","") == "night1-shared",
 		"same authorized seven-night HUD component")
 	check(focus.anchor_left == 1.0 and focus.offset_left == -230.0
@@ -41,11 +40,11 @@ func _run() -> void:
 	check(focus.text == "HOLD OBSERVE" and not focus.get_meta("hold_visual_active",true),
 		"hold action defaults to visible inactive state")
 	focus.button_down.emit()
-	check(observed and focus.text == HUD.HOLD_LABEL
+	check(bool(pressed_signals["down"]) and focus.text == HUD.HOLD_LABEL
 		and focus.get_meta("hold_visual_active",false),
 		"actual press visibly displays OBSERVING")
 	focus.button_up.emit()
-	check(released and focus.text == "HOLD OBSERVE"
+	check(bool(pressed_signals["up"]) and focus.text == "HOLD OBSERVE"
 		and not focus.get_meta("hold_visual_active",true),
 		"releasing a hold returns original text and state")
 	focus.button_down.emit()
@@ -58,13 +57,13 @@ func _run() -> void:
 	var aim := Aim.new()
 	hud_parent.add_child(aim)
 	aim.size = Vector2(175,165)
-	var last_direction := Vector2(5,5)
-	aim.aim_changed.connect(func(v: Vector2): last_direction=v)
+	var captured: Dictionary = {"aim":Vector2(5,5)}
+	aim.aim_changed.connect(func(v: Vector2): captured["aim"]=v)
 	aim._send_aim(Vector2(160,80))
-	check(last_direction.x > .3 and aim.thumb.length() > .2,
+	check((captured["aim"] as Vector2).x > .3 and aim.thumb.length() > .2,
 		"LOOK pad thumb follows actual input position")
 	aim._send_aim(Vector2(87.5,82.5))
-	check(last_direction == Vector2.ZERO and aim.thumb == Vector2.ZERO,
+	check(captured["aim"] == Vector2.ZERO and aim.thumb == Vector2.ZERO,
 		"LOOK pad deadzone sends neutral aim, preventing stale flashlight direction")
 	var portraits := [
 		Actors._sprite_for("school","school_helper"),
