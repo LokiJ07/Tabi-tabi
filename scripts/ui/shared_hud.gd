@@ -11,6 +11,9 @@ const ICON_INTERACT: Texture2D = preload("res://assets/ui/interact.svg")
 const ICON_DAYNIGHT: Texture2D = preload("res://assets/ui/daynight.svg")
 const ICON_RETREAT: Texture2D = preload("res://assets/ui/retreat.svg")
 const STATUS_WIDTH := .37
+const HOLD_LABEL := "OBSERVING..."
+const HOLD_COLOR := Color("#3c6755")
+const HOLD_BORDER := Color("#ffe092")
 
 static func create_status_card(parent: Control, chapter_heading: String, text_scale: float = 1.0) -> Dictionary:
 	var panel := PanelContainer.new()
@@ -83,8 +86,39 @@ static func make_gameplay_button(parent: Control, title: String, pos: Vector2, d
 		button.add_theme_constant_override("h_separation", 3 if title.length() >= 12 else 4)
 	button.set_meta("hud_component", "night1-shared")
 	button.set_meta("hud_reference_pos", pos)
+	# Night 1 focus already owns its contextual FOCUS HELD state. Later nights
+	# use a unified OBSERVING indicator with a real hold-to-release lifecycle.
+	if title == "HOLD OBSERVE":
+		button.set_meta("hud_hold_action", "observe")
+		button.button_down.connect(func(): set_hold_feedback(button,true))
+		button.button_up.connect(func(): set_hold_feedback(button,false))
+		button.mouse_exited.connect(func(): set_hold_feedback(button,false))
+		parent.visibility_changed.connect(func():
+			if not parent.is_visible_in_tree():
+				set_hold_feedback(button,false))
 	parent.add_child(button)
 	return button
+
+static func set_hold_feedback(button: Button, held: bool) -> void:
+	if button == null or not is_instance_valid(button):
+		return
+	# A concrete, accessible state indicator instead of relying on an almost
+	# invisible darkening. Keep the original touch rect, icon and anchors.
+	button.text = HOLD_LABEL if held else "HOLD OBSERVE"
+	button.set_meta("hold_visual_active",held)
+	button.tooltip_text = "Release to stop observing" if held else "Press and hold to observe"
+	var style := StyleBoxFlat.new()
+	style.bg_color = HOLD_COLOR if held else Color("#082b37")
+	style.border_color = HOLD_BORDER if held else Color("#c69b55")
+	style.set_border_width_all(3 if held else 2)
+	style.set_corner_radius_all(9)
+	style.shadow_color = Color(.0,.0,.0,.30)
+	style.shadow_size = 3
+	button.add_theme_stylebox_override("normal",style)
+	if held:
+		button.add_theme_color_override("font_color",Color("#fff5d7"))
+	else:
+		button.add_theme_color_override("font_color",Color("#f8e8c7"))
 
 static func make_options_button(parent: Control, callback: Callable, text_scale: float = 1.0) -> Button:
 	var button := Button.new()
@@ -109,8 +143,20 @@ static func make_nearby_prompt(parent: Control, text_scale: float = 1.0) -> Labe
 	prompt.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	prompt.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	prompt.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	prompt.add_theme_font_size_override("font_size", roundi(21.0*text_scale))
-	prompt.add_theme_color_override("font_color", Color(.98,.86,.60))
+	prompt.add_theme_font_size_override("font_size", roundi(19.0*text_scale))
+	prompt.add_theme_color_override("font_color", Color("#ffe5ad"))
+	# Floating wayfinding is a readable chip, not loose text on bright soil.
+	var cue := StyleBoxFlat.new()
+	cue.bg_color = Color(.035,.105,.133,.86)
+	cue.border_color = Color("#aa905c")
+	cue.set_border_width_all(1)
+	cue.set_corner_radius_all(8)
+	cue.content_margin_left = 8
+	cue.content_margin_right = 8
+	cue.content_margin_top = 4
+	cue.content_margin_bottom = 4
+	prompt.add_theme_stylebox_override("normal",cue)
+	prompt.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	parent.add_child(prompt)
 	return prompt
 
@@ -179,6 +225,10 @@ static func style_game_button(button: Button, font_size: int = 19, touch: bool =
 	normal.set_corner_radius_all(13 if touch else 8)
 	normal.content_margin_left = 11
 	normal.content_margin_right = 11
+	normal.content_margin_top = 5
+	normal.content_margin_bottom = 5
+	normal.shadow_color = Color(.0,.0,.0,.27)
+	normal.shadow_size = 3
 	var hover := normal.duplicate() as StyleBoxFlat
 	hover.bg_color = Color("#154758")
 	hover.border_color = Color("#f5ce7a")
@@ -186,6 +236,8 @@ static func style_game_button(button: Button, font_size: int = 19, touch: bool =
 	pressed.bg_color = Color("#365442")
 	pressed.border_color = Color("#ffd47a")
 	pressed.set_border_width_all(3)
+	pressed.shadow_color = Color(.0,.0,.0,.08)
+	pressed.shadow_size = 1
 	var focus := normal.duplicate() as StyleBoxFlat
 	focus.bg_color = Color.TRANSPARENT
 	focus.border_color = Color("#ffde92")
@@ -194,6 +246,11 @@ static func style_game_button(button: Button, font_size: int = 19, touch: bool =
 	button.add_theme_stylebox_override("pressed", pressed)
 	button.add_theme_stylebox_override("hover_pressed", pressed)
 	button.add_theme_stylebox_override("focus", focus)
+	var disabled_style := normal.duplicate() as StyleBoxFlat
+	disabled_style.bg_color = Color("#192f36")
+	disabled_style.border_color = Color("#68777a")
+	button.add_theme_stylebox_override("disabled",disabled_style)
+	button.add_theme_color_override("font_disabled_color",Color("#b4c2ba"))
 	button.add_theme_color_override("font_color", Color("#f8e8c7"))
 	button.add_theme_color_override("font_hover_color", Color.WHITE)
 	button.add_theme_color_override("font_pressed_color", Color("#fff4d1"))
