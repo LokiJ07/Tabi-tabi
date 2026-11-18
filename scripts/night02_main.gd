@@ -511,11 +511,13 @@ func _draw() -> void:
 		var height: float = actor["height"]
 		var is_player: bool = actor["texture"] == HERO
 		var is_dog: bool = actor["texture"] == BANTAY
-		var lift := 0.0
-		if not prefs.reduced_motion and (is_player or is_dog):
-			lift = absf(sin(walk_phase * (1.12 if is_dog else 1.0))) * (3.0 if is_player else 2.1) * walk_weight
-		DimensionalArt.paint_grounded(self, actor["texture"], foot,
-			Vector2(width,height), Color.WHITE, .43, lift)
+		if is_player or is_dog:
+			DimensionalArt.paint_animated_actor(self,actor["texture"],foot,
+				Vector2(width,height),walk_phase,walk_weight,prefs.reduced_motion,
+				Color.WHITE,.43,is_dog)
+		else:
+			DimensionalArt.paint_grounded(self,actor["texture"],foot,
+				Vector2(width,height),Color.WHITE,.43)
 	PostgameResidents.paint(self,"old_mango",particle_phase,prefs.reduced_motion,player_pos)
 	_draw_world_labels()
 	if story.outcome == "resolve":
