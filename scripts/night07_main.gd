@@ -252,27 +252,80 @@ func _paint_balete(at: Vector2,awakening: bool) -> void:
 	draw_colored_polygon(PackedVector2Array([
 		at+Vector2(-131,-266),at+Vector2(-67,-501),
 		at+Vector2(-35,-495),at+Vector2(-74,-234)]),Color("#927a56"))
-	# Roots physically run into ground at nearby waypoints, not through HUD.
+	# Balete buttress roots originate at the FOOT of the trunk, not in
+	# the Keeper's shoulders. Curved multi-segment courses avoid the former
+	# unnaturally straight wheel-spokes over the player's ground.
 	for i in range(9):
-		var t:=float(i)/8.0
-		var end:=ground+Vector2((t-.5)*1000,130+sin(float(i)*1.4)*75)
-		var offset:=0.0 if prefs.reduced_motion else sin(clock*.54+float(i)*1.3)*15.0
-		var ridge:=at+Vector2((t-.5)*190+offset,-136)
+		var t: float = (float(i)-4.0)/4.0
+		var sway: float = 0.0 if prefs.reduced_motion else sin(clock*.23+float(i)*.75)*2.5
+		var base: Vector2 = ground+Vector2(t*73.0,-9.0)
+		var first: Vector2 = ground+Vector2(t*139.0+sway,27.0+float(i%3)*11.0)
+		var second: Vector2 = ground+Vector2(t*238.0+sin(float(i)*2.1)*26.0,
+			71.0+float(i%2)*28.0)
+		var end: Vector2 = ground+Vector2(t*(310.0+float(i%3)*44.0),
+			112.0+sin(float(i)*1.72)*45.0)
+		var course := PackedVector2Array([base,first,second,end])
+		draw_polyline(course,Color("#283d33"),41.0-float(i%3)*5.0,true)
+		draw_polyline(course,Color("#60705a"),24.0-float(i%3)*3.5,true)
+		draw_line(first+Vector2(1,-7),second+Vector2(-2,-7),
+			Color("#9b9876",.58),4.0,true)
+		# Short forked rootlets, not extra radial beams.
+		var sprout: Vector2 = second.lerp(end,.58)
 		draw_polyline(PackedVector2Array([
-			at+Vector2((t-.5)*180,-339),ridge,
-			ridge.lerp(end,.54)+Vector2(-14,-48),end]),Color("#3f4d40"),26.0,true)
-		draw_line(ridge+Vector2(3,0),end+Vector2(-4,-8),
-			Color(.60,.64,.48,.30),4.0,true)
-	for layer in range(3):
-		for i in range(18):
-			var rad:=float(i)*TAU/18
-			var spread:=330.0-float(layer)*49
-			var leaf:=at+Vector2(cos(rad)*spread,-520+sin(rad)*137+float(layer)*58)
-			var shift:=0.0 if prefs.reduced_motion else sin(clock*.35+float(i))*5.0
-			draw_circle(leaf+Vector2(shift,0),92-float(layer)*12,
-				Color("#233e35") if _stage()>=2 else Color("#40634d"))
-			draw_circle(leaf+Vector2(shift-10,-17),68-float(layer)*8,
-				Color(.30,.44,.32,.48))
+			second,sprout+Vector2((1.0 if i%2==0 else -1.0)*33.0,5),
+			sprout+Vector2((1.0 if i%2==0 else -1.0)*62.0,27)]),
+			Color("#394c3d"),9.0,true)
+	# Angular bark ridges and lichen patches make the trunk a physical
+	# hundreds-year-old tree rather than a smooth upright mannequin.
+	for grain in range(19):
+		var g: float = float(grain)
+		var x: float = -97.0+float(grain%10)*21.0
+		var top: float = -455.0+float(grain/10)*142.0
+		var a: Vector2 = at+Vector2(x,top)
+		var b: Vector2 = a+Vector2(sin(g*1.31)*15.0,73.0+float(grain%4)*13.0)
+		draw_line(a,b,Color("#293e32",.63),5.0,true)
+		draw_line(a+Vector2(4,0),b+Vector2(2,0),
+			Color("#a8a080",.39),2.0,true)
+	for clump in range(13):
+		var n: float = float(clump)
+		var patch: Vector2 = at+Vector2(-111.0+float(clump%7)*36.0,
+			-413.0+float(clump/7)*142.0+sin(n)*17.0)
+		draw_circle(patch,7.0+float(clump%3)*4.0,
+			Color("#69856a",.43))
+	# Overlapping leaf masses with lit edges, asymmetric silhouettes and
+	# hanging adventitious roots, characteristic of a mature Balete.
+	for layer in range(4):
+		for i in range(19):
+			var rad: float = float(i)*TAU/19.0
+			var spread: float = 336.0-float(layer)*49.0
+			var foot: Vector2 = at+Vector2(
+				cos(rad)*spread+sin(float(i)*2.83)*23.0,
+				-531.0+sin(rad)*149.0+float(layer)*53.0)
+			var shift: float = 0.0 if prefs.reduced_motion else sin(clock*.31+float(i)) * 3.2
+			var size: float = 74.0-float(layer)*8.0+float(i%4)*4.0
+			draw_circle(foot+Vector2(shift,5),size+8.0,
+				Color("#192f2b") if _stage()>=2 else Color("#2e5041"))
+			draw_circle(foot+Vector2(shift-9,-13),size*.79,
+				Color("#3b5946") if _stage()>=2 else Color("#597655"))
+			for leaf_id in range(3):
+				var n: float = float(leaf_id)
+				draw_colored_polygon(PackedVector2Array([
+					foot+Vector2(shift-15+n*17,-12),
+					foot+Vector2(shift-9+n*17,-29),
+					foot+Vector2(shift+5+n*17,-14),
+					foot+Vector2(shift-2+n*17,1)]),
+					Color("#708668",.47) if _stage()>=2 else Color("#849a70",.67))
+	for aerial in range(13):
+		var n: float = float(aerial)
+		var x: float = -302.0+n*50.0+sin(n*1.77)*12.0
+		var top: Vector2 = at+Vector2(x,-527.0+cos(n*.71)*49.0)
+		var end: Vector2 = top+Vector2(sin(n*1.8)*18.0,
+			157.0+float(aerial%4)*39.0)
+		draw_polyline(PackedVector2Array([
+			top,top.lerp(end,.35)+Vector2(9,3),
+			top.lerp(end,.68)+Vector2(-5,-7),end]),
+			Color("#7c8a66",.77),3.5+float(aerial%3)*.7,true)
+		draw_circle(end,3.6,Color("#a39c71",.70))
 	if awakening:
 		for k in range(8):
 			var an := float(k)*TAU/8
@@ -297,14 +350,29 @@ func _paint_balete(at: Vector2,awakening: bool) -> void:
 			face+Vector2(0,-17),face+Vector2(9,8),
 			face+Vector2(-3,15)]),Color("#a4a88a"))
 		draw_line(face+Vector2(-17,23),face+Vector2(12,26),Color("#455c46"),3.4,true)
+		# The Keeper is a living outline carved into the trunk, not a
+		# separately floating stick-bodied human. Deep carved ribs merge with
+		# the tree buttress and retain the folklore creature's silhouette.
 		draw_colored_polygon(PackedVector2Array([
-			at+Vector2(-48,-258+breathe),at+Vector2(39,-260+breathe),
-			at+Vector2(61,-161),at+Vector2(4,-131),
-			at+Vector2(-60,-173)]),Color("#65765f"))
-		draw_line(at+Vector2(-45,-234),at+Vector2(-122,-167),
-			Color("#82927a"),18,true)
-		draw_line(at+Vector2(39,-235),at+Vector2(115,-170),
-			Color("#82927a"),18,true)
+			at+Vector2(-61,-267+breathe),at+Vector2(54,-263+breathe),
+			at+Vector2(87,-197),at+Vector2(65,-101),
+			at+Vector2(-3,-59),at+Vector2(-80,-105),
+			at+Vector2(-96,-207)]),Color("#50634e",.92))
+		for rib in range(7):
+			var rr: float = float(rib)
+			var begin: Vector2 = at+Vector2(-58.0+rr*18.0,-248.0+breathe)
+			var end: Vector2 = ground+Vector2(-85.0+rr*28.0,-24.0)
+			draw_polyline(PackedVector2Array([
+				begin,begin.lerp(end,.43)+Vector2(sin(rr*1.9)*10.0,-6.0),end]),
+				Color("#7b8a6c",.76),6.0,true)
+		draw_line(at+Vector2(-53,-239),at+Vector2(-113,-161),
+			Color("#485f4a"),26,true)
+		draw_line(at+Vector2(51,-231),at+Vector2(111,-163),
+			Color("#485f4a"),27,true)
+		draw_line(at+Vector2(-60,-227),at+Vector2(-91,-187),
+			Color("#9e9c78",.45),4,true)
+		draw_line(at+Vector2(53,-225),at+Vector2(93,-185),
+			Color("#9e9c78",.45),4,true)
 		draw_circle(face+Vector2(-16,-7),5,Color("#f1d99b"))
 		draw_circle(face+Vector2(19,-7),5,Color("#f1d99b"))
 		draw_circle(face+Vector2(-16,-7),2,Color("#f6f0cb"))
@@ -471,9 +539,24 @@ func _draw() -> void:
 			draw_arc(c,radius,PI*.15+half,PI*.86+half,24,
 				Color(.86,.70,.43,.10),3,true)
 	if night:
-		draw_rect(MAP.grow(450),Color(.015,.026,.066,.31))
+		draw_rect(MAP.grow(450),Color(.015,.026,.066,.25))
 		Landscape.mist(self,KEEPER+Vector2(10,87),640,clock,
 			not prefs.reduced_motion,true)
+		# Warm firefly edge light reveals the Keeper's grounded carved face
+		# and path; a dark unlit silhouette alone was unreadable on Android.
+		if story.phase in [2,3,4,5,6] or qa_view == 3:
+			var eyes: Vector2 = KEEPER+Vector2(1,-312)
+			draw_circle(eyes+Vector2(-16,-7),13,
+				Color("#e2c87e",.14))
+			draw_circle(eyes+Vector2(19,-7),13,
+				Color("#e2c87e",.14))
+			for i in range(6):
+				var n: float = float(i)
+				var at: Vector2 = KEEPER+Vector2(
+					sin(n*2.34)*164,-219+cos(n*1.23)*174)
+				var pulse: float = .0 if prefs.reduced_motion else sin(clock*.57+n)*2.4
+				draw_circle(at+Vector2(0,pulse),3.5+float(i%2),
+					Color("#efdb93",.40))
 	if morning:
 		draw_rect(MAP.grow(450),Color(.78,.70,.46,.06))
 	# Physical silhouettes stay visible as the day advances, withdrawing from
