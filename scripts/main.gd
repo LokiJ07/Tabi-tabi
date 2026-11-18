@@ -1274,6 +1274,9 @@ func _set_button_axis(direction: String, active: bool) -> void:
 func _nearby_target() -> String:
 	var locations: Dictionary = {}
 	for key in interaction_nodes:
+		# Residents are indoors at night in postgame, never invisible talk targets.
+		if _postgame_is_active() and is_night and key in ["LOLA","DADO","SABEL","MARA"]:
+			continue
 		var actor: Node3D = interaction_nodes[key]
 		locations[key] = actor.global_position
 	if postgame_barrio != null and not is_night:
