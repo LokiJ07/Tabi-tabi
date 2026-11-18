@@ -90,6 +90,7 @@ static func make_gameplay_button(parent: Control, title: String, pos: Vector2, d
 	# use a unified OBSERVING indicator with a real hold-to-release lifecycle.
 	if title == "HOLD OBSERVE":
 		button.set_meta("hud_hold_action", "observe")
+		button.set_meta("hold_visual_active",false)
 		button.button_down.connect(func(): set_hold_feedback(button,true))
 		button.button_up.connect(func(): set_hold_feedback(button,false))
 		button.mouse_exited.connect(func(): set_hold_feedback(button,false))
