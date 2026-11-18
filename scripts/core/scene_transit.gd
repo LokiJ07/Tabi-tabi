@@ -3,6 +3,7 @@ extends CanvasLayer
 ## Root-persistent screen curtain survives Godot's scene replacement so the
 ## OLD world fades out and the NEW world fades in. No story/save state here.
 ## Headless CI and Reduced Motion retain synchronous scene calls.
+const Prefs = preload("res://scripts/core/preferences.gd")
 const FADE_OUT_SECONDS := 0.25
 const FADE_IN_SECONDS := 0.34
 const LOCATION_NAMES := {
@@ -92,7 +93,13 @@ func change_to_packed(packed: PackedScene, reduced_motion: bool = false) -> Erro
 	return OK
 
 func _skip_animation(reduced_motion: bool) -> bool:
-	return reduced_motion or DisplayServer.get_name() == "headless" or not is_inside_tree()
+	if reduced_motion or DisplayServer.get_name() == "headless" or not is_inside_tree():
+		return true
+	# Any chapter (including QA/title) must honor the saved accessibility
+	# setting without needing a different transition implementation.
+	var prefs = Prefs.new()
+	prefs.load_from()
+	return prefs.reduced_motion
 
 func _animate_file(path: String) -> void:
 	busy = true
