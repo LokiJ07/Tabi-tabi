@@ -1,7 +1,7 @@
 extends RefCounted
 ## Tabi-tabi is ONE seven-night story with connected regions.
 ## Regions are streamed as Godot scenes for memory/performance, not separate games.
-## Nights 1–6 are connected playable scenes. Night 7 remains locked.
+## Seven connected playable regions; epilogue switches to live world time.
 const PATH := "user://tabi_connected_world.json"
 const REGIONS := [
 	"barrio_lawom", "old_mango", "night03", "night04",
@@ -13,7 +13,8 @@ const SCENES := {
 	"night03": "res://scenes/night03.tscn",
 	"night04": "res://scenes/night04.tscn",
 	"night05": "res://scenes/night05.tscn",
-	"night06": "res://scenes/night06.tscn"
+	"night06": "res://scenes/night06.tscn",
+	"night07": "res://scenes/night07.tscn"
 }
 const CONNECTIONS := {
 	"barrio_lawom": ["old_mango"],
@@ -44,6 +45,10 @@ const TRAIL_FARM_WAKE := Vector2(-990.0,410.0)
 # Only the yet-unbuilt Night 7 remains locked.
 const TRAIL_FARM_NIGHT06 := Vector2(955.0,-470.0)
 const ARRIVAL_WAKE_FROM_FARM := Vector2(735.0,-95.0)
+const TRAIL_RIVER_BALETE := Vector2(1088,375)
+const ARRIVAL_RIVER_BALETE := Vector2(1010,395)
+const TRAIL_BALETE_RIVER := Vector2(-970,490)
+const ARRIVAL_BALETE := Vector2(-915,400)
 const TRAVEL_RANGE_3D := 3.35
 const TRAVEL_RANGE_2D := 118.0
 
@@ -156,6 +161,16 @@ static func begin_travel(origin: String, destination: String, last_outcome: Stri
 	if not postgame and origin == "night05" and destination == "night06":
 		var finished: Dictionary = data.get("outcomes",{})
 		if last_outcome == "" or str(finished.get("night05","")) != last_outcome:
+			return false
+	# Night 7 cannot be entered from the river before a genuine saved Night 6
+	# outcome and matching cross-region ledger; debug menu previews are not canon.
+	if not postgame and origin == "night06" and destination == "night07":
+		var recorded: Dictionary = data.get("outcomes",{})
+		if last_outcome == "" or str(recorded.get("night06","")) != last_outcome:
+			return false
+		var prior_save = load("res://scripts/core/night06_save.gd")
+		var prior_model = load("res://scripts/narrative/night06_state.gd").new()
+		if not prior_save.read(prior_model) or str(prior_model.outcome) != last_outcome:
 			return false
 	data["current"] = destination
 	data["pending"] = {"from": origin, "to": destination}

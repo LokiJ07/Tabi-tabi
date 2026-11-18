@@ -111,6 +111,9 @@ func _ready() -> void:
 	var arrival: Dictionary = World.consume_arrival("night06")
 	if str(arrival.get("from","")) == "night05":
 		player_pos = Story.START
+	elif str(arrival.get("from","")) == "night07":
+		player_pos = World.ARRIVAL_RIVER_BALETE
+		print("TABI_WORLD_ARRIVAL_RIVER_FROM_BALETE")
 	camera = Camera2D.new()
 	camera.name = "Night06RiverCamera"
 	camera.position = player_pos
@@ -182,10 +185,11 @@ func _process(delta: float) -> void:
 		var candidate := player_pos+world_axis*PLAYER_SPEED*delta
 		candidate.x = clampf(candidate.x,MAP.position.x+55,MAP.end.x-55)
 		candidate.y = clampf(candidate.y,MAP.position.y+70,MAP.end.y-55)
-		# The uphill road is still physically connected, but Night 7 has
-		# no playable scene and cannot be entered from this region.
-		if candidate.x > 890 and candidate.y > 318 and candidate.y < 570:
-			candidate.x = minf(candidate.x,887.0)
+		# Actual adjacent Night 7 is now a walkable road. The crossing remains
+		# gated until a genuine Night 6 outcome is saved (never by fake UI).
+		if story.outcome == "" and not _postgame_active():
+			if candidate.x > 890 and candidate.y > 318 and candidate.y < 570:
+				candidate.x = minf(candidate.x,887.0)
 		if candidate.y > 240 and story.phase < 6:
 			candidate.y = 238.0
 		if story.phase == 6 and candidate.y > 240:
@@ -420,16 +424,17 @@ func _paint_hill_checkpoint(night: bool) -> void:
 		draw_circle(at+Vector2(5,8),21,Color(.03,.04,.03,.26))
 		draw_line(at,at+Vector2(-1,-72),Color("#81684b"),12,true)
 		draw_circle(at+Vector2(-1,-75),10,Color("#bca17a"))
-	draw_line(Vector2(884,354),Vector2(1000,332),Color("#b8a37c"),5.0,true)
-	draw_line(Vector2(884,359),Vector2(1000,337),
-		Color("#655346"),2.5,true)
+	if story.outcome == "" and not _postgame_active():
+		draw_line(Vector2(884,354),Vector2(1000,332),Color("#b8a37c"),5.0,true)
+		draw_line(Vector2(884,359),Vector2(1000,337),
+			Color("#655346"),2.5,true)
 	if story.outcome != "":
 		draw_rect(Rect2(942,257,202,54),Color(.09,.20,.20,.90))
 		draw_rect(Rect2(942,257,202,54),Color("#bfa87c"),false,2)
 		draw_string(ThemeDB.fallback_font,Vector2(953,278),
 			"BALETE GROUNDS",HORIZONTAL_ALIGNMENT_LEFT,185,15,Color("#f0e4bd"))
 		draw_string(ThemeDB.fallback_font,Vector2(953,297),
-			"NIGHT 7 • CLOSED",HORIZONTAL_ALIGNMENT_LEFT,185,13,Color("#e1b99b"))
+			"NIGHT 7 • OPEN",HORIZONTAL_ALIGNMENT_LEFT,185,13,Color("#e1b99b"))
 	if night:
 		draw_circle(Vector2(980,350),37,Color(.90,.68,.36,.04))
 
@@ -629,7 +634,7 @@ func _draw() -> void:
 			"OLD CROSSING",HORIZONTAL_ALIGNMENT_LEFT,220,16,Color("#f3e6be"))
 	if story.outcome != "" and player_pos.distance_to(Vector2(800,530))<280:
 		draw_string(ThemeDB.fallback_font,Vector2(825,476),
-			"NIGHT 7 • NOT YET OPEN",HORIZONTAL_ALIGNMENT_LEFT,310,15,Color("#f2d89e"))
+			"NIGHT 7 • BALETE TRAIL OPEN" if World.implemented("night07") and story.outcome != "" else "NIGHT 7 • FINISH RIVER FIRST",HORIZONTAL_ALIGNMENT_LEFT,365,15,Color("#f2d89e"))
 
 func _fit_status_card() -> void:
 	if status_panel == null or status_stack == null or not is_inside_tree(): return
@@ -808,6 +813,8 @@ func _hold_move(dir: String,on: bool) -> void:
 
 func _nearby() -> String:
 	if player_pos.distance_to(RETURN_FARM)<125: return "return_farm"
+	if player_pos.distance_to(World.TRAIL_RIVER_BALETE)<World.TRAVEL_RANGE_2D:
+		return "balete_gate" if story.outcome != "" or _postgame_active() else "balete_locked"
 	var living_clock := PostgameResidents._clock(self)
 	if living_clock != null and living_clock.light_stage() < 2:
 		var neighbours := {"MARA":MARA_AT,"DADO":DADO_AT,"SABEL":SABEL_AT,"LOLA":LOLA_AT}
@@ -859,6 +866,12 @@ func _interact() -> void:
 		return
 	if id == "return_farm":
 		_return_farm()
+	elif id == "balete_gate":
+		_travel_to_balete()
+	elif id == "balete_locked":
+		_talk("BANTAY • NIGHT 7 TRAIL",
+			"The Balete Grounds are connected to this hill road. Finish and save the River's Unfinished Memory before entering the final trial.",
+			[{"label":"RETURN TO THE RIVER RECORD","action":"close"}])
 	elif id == "dado":
 		_talk("TATAY DADO • WITNESS CONSENT",
 			"I heard the order to stop the second rescue. I was afraid to speak; Mara was only a child then. Can you keep my name out of the public record?",
@@ -1100,7 +1113,7 @@ func _refresh() -> void:
 		4: objective.text = "Ask Sabel privately; hear Lola's explanation. Respect family choice."
 		5: objective.text = "Secure rope, lantern and marked stones before entering the dangerous river."
 		6: objective.text = "SAFE STONE %d/3: follow the marked route and HOLD OBSERVE." % [story.step_index+1]
-		7: objective.text = "RIVER RECORD • %s  •  Night 7 Balete trail remains locked." % story.outcome.to_upper() if story.outcome != "" else "Choose a recorded result. Night 7 preparations continue."
+		7: objective.text = "RIVER RECORD • %s • FOLLOW THE OPEN BALETE TRAIL" % story.outcome.to_upper() if story.outcome != "" else "Choose a recorded result to open the final Balete path."
 	if qa_river_preview:
 		objective.text = "RIVER ENVIRONMENT PREVIEW • Historical evidence remains unchanged."
 	_refresh_hint()
@@ -1221,6 +1234,22 @@ func _save_menu() -> void:
 		return
 	get_tree().change_scene_to_file("res://scenes/title.tscn")
 
+func _postgame_active() -> bool:
+	var clock_node := get_node_or_null("/root/PostgameClock")
+	return clock_node != null and clock_node.is_active()
+
+func _travel_to_balete() -> void:
+	if travel_in_progress or (story.outcome == "" and not _postgame_active()):
+		return
+	if not _save_story() or not World.begin_travel("night06","night07",story.outcome):
+		save_error.popup_centered(Vector2i(600,175))
+		return
+	travel_in_progress = true
+	observe_held = false
+	move_axis = Vector2.ZERO
+	print("TABI_WORLD_TRAVEL_RIVER_TO_BALETE")
+	get_tree().change_scene_to_file(World.scene_for("night07"))
+
 func _return_farm() -> void:
 	if travel_in_progress: return
 	if not _save_story() or not World.begin_travel("night06","night05",story.outcome):
@@ -1247,6 +1276,7 @@ func _show_ending() -> void:
 	_label(box,summary,23,Color("#ede9d7"))
 	_label(box,"SABEL'S CHOICE: %s  •  FIVE PRIOR NIGHTS PRESERVED" % story.sabel_public_choice.to_upper(),20,Color("#b2d3c0"))
 	_button(box,"REVIEW THE EVIDENCE",func():ending.hide();_open_notes())
+	_button(box,"ENTER NIGHT 7 • BALETE GROUNDS (SAVE)",_travel_to_balete)
 	_button(box,"RETURN TO SIGBIN FARM (SAVE)",_return_farm)
 	_button(box,"SAVE & MAIN MENU",_save_menu)
 	_sync_ui()

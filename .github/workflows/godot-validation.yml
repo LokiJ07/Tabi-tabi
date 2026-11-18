@@ -143,6 +143,16 @@ jobs:
       - name: Night 6 live river chapter, Night 1 HUD and complete playthrough
         timeout-minutes: 3
         run: timeout --signal=TERM --kill-after=8s 150s godot --headless --audio-driver Dummy --path . --script res://tests/night06_scene_test.gd
+      - name: Night 7 final Keeper trial, survivor consent and independent save state
+        run: godot --headless --path . --script res://tests/night07_state_test.gd
+      - name: Night 7 real Balete scene, shared HUD, finale and playable epilogue
+        timeout-minutes: 3
+        run: timeout --signal=TERM --kill-after=8s 150s godot --headless --audio-driver Dummy --path . --script res://tests/night07_scene_test.gd
+      - name: Night 6 to Night 7 full connected round-trip, privacy and saved ledger
+        timeout-minutes: 3
+        run: timeout --signal=TERM --kill-after=8s 150s godot --headless --audio-driver Dummy --path . --script res://tests/night07_connected_playthrough_test.gd
+      - name: Restarting a new campaign resets all seven saves and the automatic world clock
+        run: godot --headless --path . --script res://tests/night07_new_game_reset_test.gd
       - name: Seven-night one-world graph and shared narrative integrity
         run: godot --headless --path . --script res://tests/connected_world_test.gd
       - name: Postgame automatic 24-minute day-night cycle, save and travel gate

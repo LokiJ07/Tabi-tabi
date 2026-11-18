@@ -56,8 +56,8 @@ func _run() -> void:
 		is_equal_approx(look.offset_top,-205.0) and
 		is_equal_approx(look.offset_bottom,-40.0),
 		"Night 6 LOOK touch area exactly matches Nights 1–5")
-	check(World.implemented("night06") and not World.implemented("night07"),
-		"real River scene implemented but Balete remains locked")
+	check(World.implemented("night06") and World.implemented("night07"),
+		"real River and real Balete scenes are connected; story gate still applies")
 	check(is_equal_approx(game._flood_rise(),2.0),
 		"river starts high but substantially below the midnight surge")
 	game.story.phase = 2

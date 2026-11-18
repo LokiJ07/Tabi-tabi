@@ -7,6 +7,10 @@ const Night03Scene = preload("res://scenes/night03.tscn")
 const Night04Scene = preload("res://scenes/night04.tscn")
 const Night05Scene = preload("res://scenes/night05.tscn")
 const Night06Scene = preload("res://scenes/night06.tscn")
+const Night07Scene = preload("res://scenes/night07.tscn")
+const Night07Save = preload("res://scripts/core/night07_save.gd")
+const Night06State = preload("res://scripts/narrative/night06_state.gd")
+const ConnectedWorld = preload("res://scripts/core/connected_world.gd")
 const Night04State = preload("res://scripts/narrative/night04_state.gd")
 const Night05Save = preload("res://scripts/core/night05_save.gd")
 const Night05State = preload("res://scripts/narrative/night05_state.gd")
@@ -35,6 +39,7 @@ var night3_button: Button
 var night4_button: Button
 var night5_button: Button
 var night6_button: Button
+var night7_button: Button
 var settings_panel: PanelContainer
 var settings_backdrop: ColorRect
 var font_button: Button
@@ -64,6 +69,11 @@ func _input(event: InputEvent) -> void:
 	# without fabricating an unlocked Night 1 save. Production has no shortcut.
 	if OS.get_name() == "Android" and OS.has_feature("debug") and event is InputEventKey:
 		var key := event as InputEventKey
+		if key.pressed and key.keycode == KEY_F9:
+			get_viewport().set_input_as_handled()
+			print("NIGHT7_QA_DEBUG_ENTRY")
+			get_tree().change_scene_to_packed(Night07Scene)
+			return
 		if key.pressed and key.keycode == KEY_F7:
 			get_viewport().set_input_as_handled()
 			print("NIGHT6_QA_DEBUG_ENTRY")
@@ -269,7 +279,7 @@ func _build_menu() -> void:
 	menu.name = "MainMenu"
 	menu.anchor_left = 0.065
 	menu.anchor_right = 0.415
-	menu.anchor_top = 0.273
+	menu.anchor_top = 0.245
 	menu.anchor_bottom = 0.995
 	menu.add_theme_constant_override("separation", 8)
 	add_child(menu)
@@ -314,8 +324,26 @@ func _build_menu() -> void:
 		night6_button.text = "CONTINUE NIGHT 6  •  THE RIVER"
 	elif not night6_ready and OS.has_feature("debug"):
 		night6_button.text = "TEST NIGHT 6 (QA)"
+	night7_button = _button("NIGHT 7  •  ANCIENT KEEPER",self,_enter_night7)
+	# Keep 11 legacy title actions in their accessible 48px mobile list.
+	# Night 7 lives in its own wide highlighted space on the scenic right side.
+	night7_button.anchor_left = .55
+	night7_button.anchor_right = .94
+	night7_button.anchor_top = .84
+	night7_button.anchor_bottom = .93
+	night7_button.offset_left = 0
+	night7_button.offset_right = 0
+	night7_button.offset_top = 0
+	night7_button.offset_bottom = 0
+	night7_button.custom_minimum_size = Vector2(0,55)
+	var night7_ready := _night7_unlocked()
+	night7_button.disabled = not night7_ready and not OS.has_feature("debug")
+	if Night07Save.exists() and night7_ready:
+		night7_button.text = "CONTINUE NIGHT 7  •  BALETE"
+	elif not night7_ready and OS.has_feature("debug"):
+		night7_button.text = "TEST NIGHT 7 (QA)"
 	# Chapter entries retain the same left column; compact type avoids clip.
-	menu.add_theme_constant_override("separation",3)
+	menu.add_theme_constant_override("separation",0)
 	# Chapter labels can become much longer than the original six-button
 	# title layout. Keep EVERY visible label inside its unchanged left column.
 	night2_button.add_theme_font_size_override("font_size", roundi(23.0*prefs.text_scale))
@@ -323,6 +351,7 @@ func _build_menu() -> void:
 	night4_button.add_theme_font_size_override("font_size", roundi(21.0*prefs.text_scale))
 	night5_button.add_theme_font_size_override("font_size", roundi(21.0*prefs.text_scale))
 	night6_button.add_theme_font_size_override("font_size", roundi(20.0*prefs.text_scale))
+	night7_button.add_theme_font_size_override("font_size", roundi(19.0*prefs.text_scale))
 	_button("SETTINGS", menu, _open_settings)
 	_button("CREDITS", menu, _credits)
 	_button("EXIT", menu, func(): get_tree().quit())
@@ -330,7 +359,7 @@ func _build_menu() -> void:
 		if item is Button:
 			(item as Button).custom_minimum_size.y = 48.0
 	var chapter := Label.new()
-	chapter.text = "SIX NIGHTS • ONE STORY • BALETE GROUNDS NEXT"
+	chapter.text = "SEVEN NIGHTS • ONE STORY • BALETE GROUNDS"
 	chapter.anchor_left = 0.54
 	chapter.anchor_right = 0.99
 	chapter.anchor_top = 0.958
@@ -370,6 +399,25 @@ func _night6_unlocked() -> bool:
 		return false
 	var farm := Night05State.new()
 	return Night05Save.read(farm) and farm.outcome != ""
+
+func _night7_unlocked() -> bool:
+	if not _night6_unlocked():
+		return false
+	var river := Night06State.new()
+	if not Night06Save.read(river) or river.outcome == "":
+		return false
+	var outcomes: Dictionary = ConnectedWorld.read().get("outcomes",{})
+	return str(outcomes.get("night06","")) == river.outcome
+
+func _enter_night7() -> void:
+	if not _night7_unlocked() and not OS.has_feature("debug"):
+		return
+	loading_cover.show()
+	var message := loading_cover.get_node_or_null("LoadingStatus") as Label
+	if message != null:
+		message.text = "Opening Night 7: Balete Grounds..."
+	await get_tree().process_frame
+	get_tree().change_scene_to_packed(Night07Scene)
 
 func _enter_night6() -> void:
 	if not _night6_unlocked() and not OS.has_feature("debug"):
@@ -426,25 +474,46 @@ func _enter_night2() -> void:
 func _has_save() -> bool:
 	return FileAccess.file_exists(Save.PATH) or FileAccess.file_exists(Save.PATH + ".bak")
 
+func _has_any_story_progress() -> bool:
+	for path in _campaign_save_paths():
+		if FileAccess.file_exists(path) or FileAccess.file_exists(path+".bak"):
+			return true
+	return false
+
+func _campaign_save_paths() -> Array[String]:
+	return [Save.PATH,Night02Save.PATH,Night03Save.PATH,Night04Save.PATH,
+		Night05Save.PATH,Night06Save.PATH,Night07Save.PATH,ConnectedWorld.PATH]
+
+func _clear_campaign_saves() -> void:
+	# Starting a new story must clear the old finale and old postgame clock,
+	# otherwise the new Night 1 would incorrectly spawn in free-roam daylight.
+	# Preferences are never touched. Confirmation explicitly warns the player.
+	for base in _campaign_save_paths():
+		for suffix in ["",".bak",".tmp"]:
+			var path: String = base + suffix
+			if FileAccess.file_exists(path):
+				DirAccess.remove_absolute(ProjectSettings.globalize_path(path))
+	var world_clock := get_node_or_null("/root/PostgameClock")
+	if world_clock != null:
+		world_clock.refresh()
+
 func _start_game() -> void:
-	if _has_save():
+	if _has_any_story_progress():
 		new_game_dialog.popup_centered(Vector2i(650, 220))
 	else:
 		_enter_game(true)
 
 func _build_confirmation() -> void:
 	new_game_dialog = ConfirmationDialog.new()
-	new_game_dialog.title = "Begin a new Night 1?"
-	new_game_dialog.dialog_text = "Starting over will replace your current Night 1 save. Continue?"
+	new_game_dialog.title = "Begin a new seven-night story?"
+	new_game_dialog.dialog_text = "Starting over resets all seven chapter saves, the final epilogue and free roam. This cannot be undone. Start a new story?"
 	new_game_dialog.ok_button_text = "START NEW GAME"
 	new_game_dialog.confirmed.connect(func(): _enter_game(true))
 	add_child(new_game_dialog)
 
 func _enter_game(fresh: bool) -> void:
 	if fresh:
-		for path in [Save.PATH, Save.PATH + ".bak", Save.PATH + ".tmp"]:
-			if FileAccess.file_exists(path):
-				DirAccess.remove_absolute(ProjectSettings.globalize_path(path))
+		_clear_campaign_saves()
 	loading_cover.show()
 	await get_tree().process_frame
 	get_tree().change_scene_to_packed(GameScene)
