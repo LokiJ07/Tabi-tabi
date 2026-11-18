@@ -14,6 +14,7 @@ const Night05State = preload("res://scripts/narrative/night05_state.gd")
 const Night06Save = preload("res://scripts/core/night06_save.gd")
 const Night06State = preload("res://scripts/narrative/night06_state.gd")
 const Night07Save = preload("res://scripts/core/night07_save.gd")
+const World = preload("res://scripts/core/connected_world.gd")
 const Night03State = preload("res://scripts/narrative/night03_state.gd")
 const Night04Save = preload("res://scripts/core/night04_save.gd")
 const Night02State = preload("res://scripts/narrative/night02_state.gd")
@@ -53,6 +54,8 @@ var qa_last_tap_ms := 0
 
 func _ready() -> void:
 	prefs.load_from()
+	# Upgrade old completed saves into post-game exploration non-destructively.
+	World.unlock_free_roam()
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	resized.connect(queue_redraw)
 	_build_scenic_art()
@@ -283,8 +286,11 @@ func _build_menu() -> void:
 	menu.add_theme_constant_override("separation", 8)
 	add_child(menu)
 	_button("START GAME", menu, _start_game)
-	continue_button = _button("CONTINUE", menu, func(): _enter_game(false))
-	continue_button.disabled = not _has_save()
+	continue_button = _button("CONTINUE", menu, _continue_story_or_explore)
+	continue_button.disabled = not _has_save() and not World.free_roam_unlocked()
+	if World.free_roam_unlocked():
+		continue_button.text = "FREE ROAM  •  ALL 7 MAPS"
+		continue_button.add_theme_font_size_override("font_size",roundi(21.0*prefs.text_scale))
 	night2_button = _button("NIGHT 2  •  KAPRE", menu, _enter_night2)
 	var night2_ready: bool = _night2_unlocked()
 	# This is a DEVELOPMENT QA APK: allow direct Kapre testing even if
@@ -370,6 +376,25 @@ func _build_menu() -> void:
 	chapter.add_theme_color_override("font_color", Color("#f7d58c"))
 	add_child(chapter)
 
+func _continue_story_or_explore() -> void:
+	if World.free_roam_unlocked():
+		var region: String = World.free_roam_resume_region()
+		if region == "":
+			return
+		loading_cover.show()
+		var status := loading_cover.get_node_or_null("LoadingStatus") as Label
+		if status != null:
+			status.text = "Exploring the connected world • "+region.replace("_"," ").to_upper()+"..."
+		await get_tree().process_frame
+		get_tree().change_scene_to_file(World.scene_for(region))
+		return
+	_enter_game(false)
+
+func _resume_free_roam_at(region: String) -> bool:
+	# Direct chapter menu selections are optional post-game resume points.
+	# They do not bypass story gating before the ending is finished.
+	return not World.free_roam_unlocked() or World.choose_free_roam_region(region)
+
 func _night2_unlocked() -> bool:
 	# Any canonically completed Night 1 outcome can move forward. Night 2
 	# never overwrites the existing Santelmo save, even after SAFE RETREAT.
@@ -411,6 +436,8 @@ func _night7_unlocked() -> bool:
 func _enter_night7() -> void:
 	if not _night7_unlocked() and not OS.has_feature("debug"):
 		return
+	if not _resume_free_roam_at("night07"):
+		return
 	loading_cover.show()
 	var label := loading_cover.get_node_or_null("LoadingStatus") as Label
 	if label != null:
@@ -420,6 +447,8 @@ func _enter_night7() -> void:
 
 func _enter_night6() -> void:
 	if not _night6_unlocked() and not OS.has_feature("debug"):
+		return
+	if not _resume_free_roam_at("night06"):
 		return
 	loading_cover.show()
 	var label := loading_cover.get_node_or_null("LoadingStatus") as Label
@@ -431,6 +460,8 @@ func _enter_night6() -> void:
 func _enter_night5() -> void:
 	if not _night5_unlocked() and not OS.has_feature("debug"):
 		return
+	if not _resume_free_roam_at("night05"):
+		return
 	loading_cover.show()
 	var label := loading_cover.get_node_or_null("LoadingStatus") as Label
 	if label != null:
@@ -440,6 +471,8 @@ func _enter_night5() -> void:
 
 func _enter_night4() -> void:
 	if not _night4_unlocked() and not OS.has_feature("debug"):
+		return
+	if not _resume_free_roam_at("night04"):
 		return
 	loading_cover.show()
 	var lbl := loading_cover.get_node_or_null("LoadingStatus") as Label
@@ -451,6 +484,8 @@ func _enter_night4() -> void:
 func _enter_night3() -> void:
 	if not _night3_unlocked() and not OS.has_feature("debug"):
 		return
+	if not _resume_free_roam_at("night03"):
+		return
 	loading_cover.show()
 	var loading_label := loading_cover.get_node_or_null("LoadingStatus") as Label
 	if loading_label != null:
@@ -461,6 +496,8 @@ func _enter_night3() -> void:
 
 func _enter_night2() -> void:
 	if not _night2_unlocked() and not OS.has_feature("debug"):
+		return
+	if not _resume_free_roam_at("old_mango"):
 		return
 	loading_cover.show()
 	var loading_label := loading_cover.get_node_or_null("LoadingStatus") as Label
@@ -482,16 +519,24 @@ func _start_game() -> void:
 func _build_confirmation() -> void:
 	new_game_dialog = ConfirmationDialog.new()
 	new_game_dialog.title = "Begin a new Night 1?"
-	new_game_dialog.dialog_text = "Starting over will replace your current Night 1 save. Continue?"
+	new_game_dialog.dialog_text = "New story deletes all seven chapter saves, all endings and unlocked Free Roam. Continue? Back up your saves first."
 	new_game_dialog.ok_button_text = "START NEW GAME"
 	new_game_dialog.confirmed.connect(func(): _enter_game(true))
 	add_child(new_game_dialog)
 
 func _enter_game(fresh: bool) -> void:
 	if fresh:
-		for path in [Save.PATH, Save.PATH + ".bak", Save.PATH + ".tmp"]:
-			if FileAccess.file_exists(path):
-				DirAccess.remove_absolute(ProjectSettings.globalize_path(path))
+		# New Story is deliberately separate from CONTINUE FREE ROAM.
+		# Clear all chapters and the world ledger together so unlocked
+		# post-game regions never leak into a newly started story.
+		for save_path in [
+			Save.PATH,Night02Save.PATH,Night03Save.PATH,Night04Save.PATH,
+			Night05Save.PATH,Night06Save.PATH,Night07Save.PATH,World.PATH
+		]:
+			for suffix in ["",".bak",".tmp"]:
+				var path: String = save_path+suffix
+				if FileAccess.file_exists(path):
+					DirAccess.remove_absolute(ProjectSettings.globalize_path(path))
 	loading_cover.show()
 	await get_tree().process_frame
 	get_tree().change_scene_to_packed(GameScene)
