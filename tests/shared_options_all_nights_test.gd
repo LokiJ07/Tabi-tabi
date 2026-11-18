@@ -31,6 +31,15 @@ func _run() -> void:
 		if file != null:
 			settings_text = file.get_as_text()
 			file.close()
+	# Save *both* the primary and fallback preference file, otherwise the
+	# next CI test can read a stale .bak written by the settings button.
+	var had_backup := FileAccess.file_exists(Prefs.PATH+".bak")
+	var backup_text := ""
+	if had_backup:
+		var saved_backup := FileAccess.open(Prefs.PATH+".bak",FileAccess.READ)
+		if saved_backup != null:
+			backup_text = saved_backup.get_as_text()
+			saved_backup.close()
 	var previous_sizes := []
 	for i in range(SCENES.size()):
 		var item: Array = SCENES[i]
@@ -113,6 +122,13 @@ func _run() -> void:
 	else:
 		DirAccess.remove_absolute(ProjectSettings.globalize_path(Prefs.PATH))
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(Prefs.PATH+".tmp"))
+	if had_backup:
+		var restore_backup := FileAccess.open(Prefs.PATH+".bak",FileAccess.WRITE)
+		if restore_backup != null:
+			restore_backup.store_string(backup_text)
+			restore_backup.close()
+	else:
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(Prefs.PATH+".bak"))
 	print("Menu consistency and common settings (title + Night 1-7): ",
 		"PASS" if failures==0 else str(failures)+" failures")
 	quit(0 if failures==0 else 1)

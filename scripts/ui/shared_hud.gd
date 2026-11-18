@@ -78,6 +78,9 @@ static func make_gameplay_button(parent: Control, title: String, pos: Vector2, d
 			if not parent.is_visible_in_tree():
 				up.call())
 	style_game_button(button, 18 if dimensions.x < 95.0 and title.length() > 2 else 23, dimensions.x < 95.0, text_scale)
+	# The tiny RETRY button must fit even at 140% text preference.
+	if title == "RETRY" and dimensions.x < 95.0:
+		button.add_theme_font_size_override("font_size",18)
 	match title:
 		"PREPARE": button.icon = ICON_PREPARE
 		"FIELD NOTES": button.icon = ICON_NOTES
