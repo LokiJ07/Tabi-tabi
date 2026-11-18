@@ -74,11 +74,11 @@ func _run() -> void:
 				# This is the same pref object saved and read across all chapters.
 				var button := panel.find_child("PrefText",true,false) as Button
 				if button != null:
-					var before: float = float(chapter.prefs.text_scale)
+					var before: float = float((chapter.get("prefs") as RefCounted).get("text_scale"))
 					button.pressed.emit()
-					check(float(chapter.prefs.text_scale) != before,
+					check(float((chapter.get("prefs") as RefCounted).get("text_scale")) != before,
 						"title settings actually change persistent text size")
-					previous_sizes.append(float(chapter.prefs.text_scale))
+					previous_sizes.append(float((chapter.get("prefs") as RefCounted).get("text_scale")))
 		chapter.queue_free()
 		await process_frame
 		if i == 1 and previous_sizes.size()>0:
