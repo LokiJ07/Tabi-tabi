@@ -127,6 +127,7 @@ var lamp_heading := Vector3.FORWARD
 var alarm_label: Label
 var move_buttons: Dictionary = {}
 var is_night := false
+var daynight_button: Button
 var talked_to_lola := false
 var talked_to_dado := false
 var encountered_light := false
@@ -152,6 +153,12 @@ func _ready() -> void:
 	_create_ui()
 	_apply_preferences()
 	_restore_story()
+	if PostgameClock.is_active() and daynight_button != null:
+		daynight_button.text = "AUTO CYCLE"
+		daynight_button.disabled = true
+		daynight_button.tooltip_text = "After the finale, day and night advance automatically."
+		daynight_button.set_meta("postgame_clock", "automatic")
+		# Do not use Night 1's manual time button during free roam.
 	NightWindows.sync_barrio_3d(self,is_night,elapsed,preferences.reduced_motion)
 	_apply_connected_world_arrival()
 	if story.outcome == "" and not story.prologue_ready():
@@ -163,6 +170,17 @@ func _ready() -> void:
 
 
 func _physics_process(delta: float) -> void:
+	# The complete seven-night epilogue replaces the old time switch with
+	# one shared continuous clock; unfinished chapters stay story-controlled.
+	if PostgameClock.is_active():
+		var world_night: bool = PostgameClock.is_night()
+		if is_night != world_night:
+			is_night = world_night
+			living_sound.set_night(is_night)
+			BarrioLighting.apply(sun, get_node_or_null("Environment") as WorldEnvironment, lantern, is_night)
+			NightWindows.sync_barrio_3d(self,is_night,elapsed,preferences.reduced_motion)
+			if santelmo != null:
+				santelmo.visible = false
 	if player == null:
 		return
 	var axis := Input.get_vector("ui_left", "ui_right", "ui_up", "ui_down")
@@ -228,7 +246,7 @@ func _physics_process(delta: float) -> void:
 	if window_light_refresh >= .38:
 		window_light_refresh = 0.0
 		NightWindows.sync_barrio_3d(self,is_night,elapsed,preferences.reduced_motion)
-	if is_night and santelmo != null:
+	if is_night and santelmo != null and story.outcome == "":
 		# Keep world and encounter animations progressing in the background,
 		# but never drain courage while the player is reading a modal.
 		light_alarm = santelmo.update_behavior(delta, player.global_position, lamp_heading, focus_held)
@@ -814,7 +832,7 @@ func _create_ui() -> void:
 	focus_button.name = "FocusHoldButton"
 	_update_focus_ui()
 	_make_button(gameplay_hud, "INTERACT", Vector2(1050, 565), Vector2(180, 60), _interact, func(): pass)
-	_make_button(gameplay_hud, "DAY / NIGHT", Vector2(1050, 640), Vector2(180, 56), _toggle_night, func(): pass)
+	daynight_button = _make_button(gameplay_hud, "DAY / NIGHT", Vector2(1050, 640), Vector2(180, 56), _toggle_night, func(): pass)
 	_make_button(gameplay_hud, "FIELD NOTES", Vector2(1050, 415), Vector2(180, 56), _open_notebook, func(): pass)
 	_make_button(gameplay_hud, "PREPARE", Vector2(1050, 276), Vector2(180, 56), _open_prep, func(): pass)
 	_make_button(gameplay_hud, "SAVE", Vector2(1050, 345), Vector2(85, 52), _save_story, func(): pass)
@@ -1454,6 +1472,8 @@ func _close_dialogue() -> void:
 
 
 func _toggle_night() -> void:
+	if PostgameClock.is_active():
+		return # Free-roam time is automatic and cannot be manually overridden.
 	if in_lola_hut:
 		_show_dialogue("Finish breakfast and use Lola's door to return outside before starting the night.")
 		return
