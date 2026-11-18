@@ -367,6 +367,10 @@ func _paint_farmhouse() -> void:
 func _gate_sign_visible() -> bool:
 	return player_pos.distance_to(SAFE_GATE) < 410.0
 
+func _holding_sign_visible() -> bool:
+	var paddock_center: Vector2 = FarmArt.HOLDING.position+FarmArt.HOLDING.size*.5
+	return player_pos.distance_to(paddock_center) < 550.0
+
 func _draw() -> void:
 	draw_rect(MAP.grow(190),Color("#253a32"))
 	Landscape.parallax_ridges(self,MAP.grow(180),camera.position,4,_stage())
@@ -461,8 +465,11 @@ func _draw() -> void:
 		FarmArt.paint_farm_sign(self,
 			FarmArt.gate_label(story.phase,story.preparations.has("safe_gate")),
 			FarmArt.GATE_SIGN_AT,196.0,_stage()>=2)
-	FarmArt.paint_farm_sign(self,"SAFE HOLDING → %d/3" % story.rescued_groups,
-		FarmArt.HOLDING_SIGN_AT,227.0,_stage()>=2)
+	# Receiving paddock is well east of the farm investigation. Its score
+	# used to sit behind LOOK AROUND even while the player was far away.
+	if _holding_sign_visible():
+		FarmArt.paint_farm_sign(self,"SAFE HOLDING → %d/3" % story.rescued_groups,
+			FarmArt.HOLDING_SIGN_AT,227.0,_stage()>=2)
 	if story.phase in [1,2,3]:
 		FarmArt.paint_farm_sign(self,"OBSERVE HERE",
 			SAFE_PERIMETER+Vector2(-250,-120),174.0,_stage()>=2)
