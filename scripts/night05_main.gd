@@ -167,6 +167,8 @@ func _ready() -> void:
 	print("NIGHT5_QA_SCENE_READY")
 
 func _stage() -> int:
+	if PostgameClock.is_active():
+		return PostgameClock.light_stage()
 	if debug_farm_preview:
 		return 3
 	if story.phase in [0,4,5]:
