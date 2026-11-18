@@ -896,10 +896,17 @@ func _talk(who: String,message: String,actions: Array) -> void:
 		child.queue_free()
 	for action in actions:
 		var id := str(action["action"])
-		_button(choices,str(action["label"]),func():_choose(id))
+		_button(choices,str(action["label"]),func():_press_dialogue_choice(id))
 	DialogueMotion.reveal(dialogue,prefs.reduced_motion)
 	DialogueMotion.reveal_text(dialogue_body,prefs.reduced_motion)
 	_sync_ui()
+
+func _press_dialogue_choice(action: String) -> void:
+	# Same tap-to-complete rule as the established Night 1 cinematic.
+	# A fast choice tap reveals the current line before a consequence runs.
+	if DialogueMotion.finish_text(dialogue_body):
+		return
+	_choose(action)
 
 func _close_dialogue() -> void:
 	DialogueMotion.conceal(dialogue,prefs.reduced_motion)
