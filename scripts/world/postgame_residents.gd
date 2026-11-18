@@ -28,6 +28,10 @@ const ACTORS := {
 		{"id":"river_fisher","job":"fish","at":Vector2(-350,188),"rest":Vector2(-620,-155),"home":Vector2(-580,-155)},
 		{"id":"archive_helper","job":"community","at":Vector2(-710,-70),"rest":Vector2(-480,-240),"home":Vector2(-605,-250)},
 		{"id":"river_repairer","job":"repair","at":Vector2(415,120),"rest":Vector2(342,-165),"home":Vector2(360,-230)}
+	],
+	"night07": [
+		{"id":"balete_steward","job":"trail","at":Vector2(330,156),"rest":Vector2(-128,116),"home":Vector2(-620,335)},
+		{"id":"memorial_caretaker","job":"community","at":Vector2(90,-38),"rest":Vector2(-320,138),"home":Vector2(-670,269)}
 	]
 }
 const CONVERSATION := {
@@ -41,7 +45,9 @@ const CONVERSATION := {
 	"farm_helper":"The farm paths are clear now. We still avoid the unstable old barn.",
 	"river_fisher":"I cast my net at sunrise. The river feeds our families again, but we still watch the weather.",
 	"archive_helper":"The flood record stays open so the next generation can learn, without exposing private witnesses.",
-	"river_repairer":"The new rope and landing boards help everyone cross safely. We remember who never returned."
+	"river_repairer":"The new rope and landing boards help everyone cross safely. We remember who never returned.",
+	"balete_steward":"The ancient tree's roots are protected. I keep the trail open without damaging the grove.",
+	"memorial_caretaker":"The memory stone honours those lost. We never reveal a family's private names without permission."
 }
 
 static func _clock(scene: Node) -> Node:
