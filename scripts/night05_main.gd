@@ -8,6 +8,7 @@ const Night04Save = preload("res://scripts/core/night04_save.gd")
 const World = preload("res://scripts/core/connected_world.gd")
 const Preferences = preload("res://scripts/core/preferences.gd")
 const SharedHUD = preload("res://scripts/ui/shared_hud.gd")
+const PostgameResidents = preload("res://scripts/world/postgame_residents.gd")
 const DialogueMotion = preload("res://scripts/ui/shared_dialogue_motion.gd")
 const DimensionalArt = preload("res://scripts/visuals/layered_25d.gd")
 const NightWindows = preload("res://scripts/visuals/nighttime_windows.gd")
@@ -158,7 +159,8 @@ func _ready() -> void:
 	ambient.set_audio_level(prefs.audio_level)
 	_build_ui()
 	_refresh()
-	if story.outcome != "":
+	var postgame_ready := get_node_or_null("/root/PostgameClock")
+	if story.outcome != "" and not (postgame_ready != null and postgame_ready.is_active()):
 		_show_ending()
 	elif story.phase == 0 and story.clues.is_empty():
 		_talk("LOLA PASING • THE OLD PROMISE",
@@ -167,6 +169,9 @@ func _ready() -> void:
 	print("NIGHT5_QA_SCENE_READY")
 
 func _stage() -> int:
+	var free_roam_clock := get_node_or_null("/root/PostgameClock")
+	if free_roam_clock != null and free_roam_clock.is_active():
+		return free_roam_clock.light_stage()
 	if debug_farm_preview:
 		return 3
 	if story.phase in [0,4,5]:
@@ -177,6 +182,14 @@ func _modal() -> bool:
 	return dialogue.visible or notes.visible or options.visible or ending.visible
 
 func _process(delta: float) -> void:
+	var village_clock := get_node_or_null("/root/PostgameClock")
+	if village_clock != null and village_clock.is_active() and objective != null:
+		var free_roam_status := "FREE ROAM • OLD FARM • LIVESTOCK & CROPS\n%s  |  %s" % [
+			village_clock.clock_label(),
+			"RESTORED" if village_clock.village_mood == "restored" else "REBUILDING"
+		]
+		if objective.text != free_roam_status:
+			objective.text = free_roam_status
 	elapsed += delta if not prefs.reduced_motion else 0.0
 	var stage_now := _stage()
 	if stage_now >= 2:
@@ -521,6 +534,7 @@ func _draw() -> void:
 		Vector2(96,103),Color.WHITE,.33,bob)
 	DimensionalArt.paint_grounded(self,HERO,player_pos+Vector2(0,7),
 		Vector2(107,140),Color.WHITE,.38,bob)
+	PostgameResidents.paint(self,"night05",elapsed,prefs.reduced_motion,player_pos)
 	var font := ThemeDB.fallback_font
 	draw_string(font,RETURN_WAKE+Vector2(26,-90),"WAKE TRAIL • RETURN",HORIZONTAL_ALIGNMENT_LEFT,335,18,Color("#f3d8a6"))
 	draw_string(font,BARN_FOOT+Vector2(-141,62),"OLD BARN • UNSAFE TO ENTER",HORIZONTAL_ALIGNMENT_LEFT,430,18,Color("#efd8a3"))
@@ -732,12 +746,20 @@ func _nearby() -> String:
 	elif story.phase == 3:
 		if player_pos.distance_to(SAFE_PERIMETER)<235:
 			return "watch"
+	var postgame_neighbor := PostgameResidents.nearby(self,"night05",player_pos)
+	if postgame_neighbor != "":
+		return postgame_neighbor
 	return ""
 
 func _interact() -> void:
 	if _modal() or travel_in_progress:
 		return
 	var id := _nearby()
+	if id.begins_with("postgame:"):
+		_talk(PostgameResidents.speaker(id),
+			PostgameResidents.talk(self,id),
+			[{"label":"SALAMAT • CONTINUE","action":"close"}])
+		return
 	if id == "return_wake":
 		_return_to_wake()
 	elif id == "trail_locked":

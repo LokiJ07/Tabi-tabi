@@ -10,6 +10,8 @@ const World = preload("res://scripts/core/connected_world.gd")
 const Prefs = preload("res://scripts/core/preferences.gd")
 const RiverSound = preload("res://scripts/audio/night06_ambience.gd")
 const SharedHUD = preload("res://scripts/ui/shared_hud.gd")
+const PostgameResidents = preload("res://scripts/world/postgame_residents.gd")
+const PostgameDialogue = preload("res://scripts/narrative/postgame_dialogue.gd")
 const DialogueMotion = preload("res://scripts/ui/shared_dialogue_motion.gd")
 const Depth = preload("res://scripts/visuals/layered_25d.gd")
 const Landscape = preload("res://scripts/visuals/folklore_landscape_25d.gd")
@@ -124,7 +126,8 @@ func _ready() -> void:
 	ambient.set_audio_level(prefs.audio_level)
 	_build_ui()
 	_refresh()
-	if story.outcome != "":
+	var postgame_ready := get_node_or_null("/root/PostgameClock")
+	if story.outcome != "" and not (postgame_ready != null and postgame_ready.is_active()):
 		_show_ending()
 	elif story.phase == 0 and story.clues.is_empty():
 		_talk("MARA • THE RIVER WITHOUT RAIN",
@@ -133,6 +136,9 @@ func _ready() -> void:
 	print("NIGHT6_QA_SCENE_READY")
 
 func _stage() -> int:
+	var free_roam_clock := get_node_or_null("/root/PostgameClock")
+	if free_roam_clock != null and free_roam_clock.is_active():
+		return free_roam_clock.light_stage()
 	if qa_river_preview or story.phase in [5,6]: return 3
 	if story.phase == 7: return 0
 	return 1 if story.phase in [3,4] else 0
@@ -150,6 +156,14 @@ func _safe_corridor(p: Vector2) -> bool:
 	return false
 
 func _process(delta: float) -> void:
+	var village_clock := get_node_or_null("/root/PostgameClock")
+	if village_clock != null and village_clock.is_active() and objective != null:
+		var free_roam_status := "FREE ROAM • RIVER CROSSING • FISHING & REPAIRS\n%s  |  %s" % [
+			village_clock.clock_label(),
+			"RESTORED" if village_clock.village_mood == "restored" else "REBUILDING"
+		]
+		if objective.text != free_roam_status:
+			objective.text = free_roam_status
 	clock += delta if not prefs.reduced_motion else 0.0
 	if _stage() >= 2:
 		indoor_seconds = minf(3.3,indoor_seconds+delta)
@@ -601,6 +615,7 @@ func _draw() -> void:
 	var bob := 0.0 if prefs.reduced_motion else absf(sin(walk_time))*2.8
 	Depth.paint_grounded(self,BANTAY,bantay_pos,Vector2(95,102),Color.WHITE,.31,bob)
 	Depth.paint_grounded(self,HERO,player_pos,Vector2(108,142),Color.WHITE,.37,bob)
+	PostgameResidents.paint(self,"night06",clock,prefs.reduced_motion,player_pos)
 	# Nearby ground signs are concise and contextual, never overlaid across
 	# the touchscreen or blocking the player during exploration.
 	if player_pos.distance_to(RETURN_FARM)<270:
@@ -793,6 +808,12 @@ func _hold_move(dir: String,on: bool) -> void:
 
 func _nearby() -> String:
 	if player_pos.distance_to(RETURN_FARM)<125: return "return_farm"
+	var living_clock := PostgameResidents._clock(self)
+	if living_clock != null and living_clock.light_stage() < 2:
+		var neighbours := {"MARA":MARA_AT,"DADO":DADO_AT,"SABEL":SABEL_AT,"LOLA":LOLA_AT}
+		for person in neighbours:
+			if player_pos.distance_to(neighbours[person]) < 122.0:
+				return "postgame:witness_" + str(person).to_lower()
 	if story.phase == 0:
 		if story.dado_choice == "unasked" and player_pos.distance_to(DADO_AT)<130:
 			return "dado"
@@ -817,11 +838,25 @@ func _nearby() -> String:
 		if player_pos.distance_to(PREP_POS["lantern_beacon"])<195: return "begin_river"
 	elif story.phase == 6 and player_pos.distance_to(STEPS[story.step_index])<130:
 		return "watch"
+	var postgame_neighbor := PostgameResidents.nearby(self,"night06",player_pos)
+	if postgame_neighbor != "":
+		return postgame_neighbor
 	return ""
 
 func _interact() -> void:
 	if _modal() or travel_in_progress: return
 	var id := _nearby()
+	if id.begins_with("postgame:witness_"):
+		var role := id.trim_prefix("postgame:witness_").to_upper()
+		var free_clock := get_node("/root/PostgameClock")
+		_talk(role,PostgameDialogue.conversation(role,free_clock.village_mood),
+			[{"label":"SALAMAT • CONTINUE","action":"close"}])
+		return
+	if id.begins_with("postgame:"):
+		_talk(PostgameResidents.speaker(id),
+			PostgameResidents.talk(self,id),
+			[{"label":"SALAMAT • CONTINUE","action":"close"}])
+		return
 	if id == "return_farm":
 		_return_farm()
 	elif id == "dado":

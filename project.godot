@@ -9,6 +9,9 @@ config/icon="res://assets/branding/tabi_tabi_icon.svg"
 config/features=PackedStringArray("4.3", "GL Compatibility")
 config/description="Barrio Lawom — Night 1 vertical slice"
 
+[autoload]
+PostgameClock="*res://scripts/core/postgame_clock.gd"
+
 [display]
 window/size/viewport_width=1280
 window/size/viewport_height=720

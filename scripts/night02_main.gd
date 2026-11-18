@@ -11,6 +11,7 @@ const Preferences = preload("res://scripts/core/preferences.gd")
 const Night02Ambience = preload("res://scripts/audio/night02_ambience.gd")
 const ConnectedWorld = preload("res://scripts/core/connected_world.gd")
 const SharedHUD = preload("res://scripts/ui/shared_hud.gd")
+const PostgameResidents = preload("res://scripts/world/postgame_residents.gd")
 const SharedDialogueMotion = preload("res://scripts/ui/shared_dialogue_motion.gd")
 const AimPad = preload("res://scripts/ui/aim_pad.gd")
 const SpeakerPortrait = preload("res://scripts/ui/speaker_portrait.gd")
@@ -119,6 +120,9 @@ var travel_in_progress := false
 # Folklore-aware stages: investigation by day, safety at dusk,
 # ember-and-smoke observation at night, then a full nocturnal reveal.
 func _light_stage() -> int:
+	var free_roam_clock := get_node_or_null("/root/PostgameClock")
+	if free_roam_clock != null and free_roam_clock.is_active():
+		return free_roam_clock.light_stage()
 	if debug_night_reveal:
 		return 3
 	if debug_dusk_preview:
@@ -167,7 +171,8 @@ func _ready() -> void:
 	ambient_sound.set_audio_level(prefs.audio_level)
 	_build_ui()
 	_rebuild_objective()
-	if story.outcome != "":
+	var postgame_ready := get_node_or_null("/root/PostgameClock")
+	if story.outcome != "" and not (postgame_ready != null and postgame_ready.is_active()):
 		_show_ending()
 	elif story.phase == 0 and story.clues.is_empty():
 		_show_dialogue("LOLA PASING",
@@ -178,6 +183,14 @@ func _ready() -> void:
 	queue_redraw()
 
 func _process(delta: float) -> void:
+	var village_clock := get_node_or_null("/root/PostgameClock")
+	if village_clock != null and village_clock.is_active() and objective != null:
+		var free_roam_status := "FREE ROAM • MANGO GROVE • PATHS & SCHOOL\n%s  |  %s" % [
+			village_clock.clock_label(),
+			"RESTORED" if village_clock.village_mood == "restored" else "REBUILDING"
+		]
+		if objective.text != free_roam_status:
+			objective.text = free_roam_status
 	elapsed += delta
 	if not prefs.reduced_motion:
 		particle_phase += delta
@@ -503,6 +516,7 @@ func _draw() -> void:
 			lift = absf(sin(walk_phase * (1.12 if is_dog else 1.0))) * (3.0 if is_player else 2.1) * walk_weight
 		DimensionalArt.paint_grounded(self, actor["texture"], foot,
 			Vector2(width,height), Color.WHITE, .43, lift)
+	PostgameResidents.paint(self,"old_mango",particle_phase,prefs.reduced_motion,player_pos)
 	_draw_world_labels()
 	if story.outcome == "resolve":
 		draw_arc(TREE, 157, 0, TAU, 80, Color("#bcd79d",.58), 3.0)
@@ -1003,6 +1017,9 @@ func _nearby() -> String:
 	elif story.phase == 3:
 		if player_pos.distance_to(TREE) < 315:
 			return "kapre"
+	var postgame_neighbor := PostgameResidents.nearby(self,"old_mango",player_pos)
+	if postgame_neighbor != "":
+		return postgame_neighbor
 	return ""
 
 func _next_target() -> Dictionary:
@@ -1079,6 +1096,11 @@ func _interact() -> void:
 	if notebook.visible or options_panel.visible or ending_panel.visible:
 		return
 	var target := _nearby()
+	if target.begins_with("postgame:"):
+		_show_dialogue(PostgameResidents.speaker(target),
+			PostgameResidents.talk(self,target),
+			[{"label":"SALAMAT • CONTINUE","action":"close"}])
+		return
 	if target == "return_barrio":
 		_return_to_barrio()
 		return

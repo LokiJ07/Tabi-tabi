@@ -51,6 +51,24 @@ Night 6's farm checkpoint now unlocks after the **genuine Night 5 outcome** is s
 5. Secure the rope anchor, lantern beacon and marked stones; use the **same Night 1 touch HUD** with HOLD OBSERVE at three different river surges. Retrying never loses lives or earlier evidence.
 6. Record a truthful Resolve, Contain or Partial/Retreat outcome. The Night 7 Balete route is still intentionally locked.
 
+## Post-finale automatic day/night (prepared for Night 7)
+
+Only **after the full Night 7 epilogue** is completed and all seven actual chapter outcomes are saved does post-game free roam unlock. The shared `PostgameClock` autoload then advances one full in-game day every **24 minutes of active runtime** and saves the clock into the connected-world ledger (every 15 seconds and on app pause). Re-entering streamed regions keeps the same time rather than restarting each region at day or night.
+
+- Pre-finale Nights 1–7 keep their authored story lighting and quests. A Night 1 standalone resolution does **not** unlock free-roam time.
+- After the finale, Night 1's DAY / NIGHT control becomes a disabled AUTO CYCLE status; the day/night logic is automatically shared by the Barrio and Nights 2–6 scenes through their existing art and sound stage handlers.
+- Completed players may walk adjacent implemented routes without replaying each chapter's original progression gate; the connected paths and save outcomes are never rewritten.
+### Living world layer (feature PR)
+
+After the final epilogue, the currently implemented areas gain a repeatable 24-minute world schedule. This is *not* used during scripted investigations. Newly illustrated 2.5D workers perform visible jobs and can be approached for fresh dialogue in every existing connected area: mango-grove trail and school stewardship (Night 2), waymark and bamboo upkeep (Night 3), wake-house community care and repairs (Night 4), crops and livestock work outside the unsafe barn (Night 5), and the riverside/archival repairs or fishing, depending on ending safety (Night 6). Night 1 has a second animated river banca, real dock nets/baskets, market garden produce, working residents, and named Dado/Sabel/Mara/Lola daytime routines. Workers withdraw by night and the real residential windows glow. Three new illustrated resident sprites avoid reusing the principal witness faces for ambient workers.
+
+Postgame revisits no longer reopen old ending popups. All Night 1–6 touch action placements remain unchanged. Named witnesses' postgame dialogue respects Dado's choice to decline testimony and Sabel's public-remembrance consent from the Night 6 save. A partial/retreat/contain outcome keeps the settlement in a *healing* state: the river boat remains moored, dangerous crossing work stays cautious, and unfinished repair jobs remain visible. Visual props are non-colliding and cannot cut the public path.
+
+Test coverage: `tests/postgame_clock_test.gd` and `tests/postgame_residents_test.gd` plus the existing multi-night regressions. **QA status depends on the latest GitHub Actions commit.** Neither these tests nor illustration assets prove phone performance, seven-night finale completion, or visual approval without emulator/handset review.
+
+- **Night 7 is not yet built on main.** When its playable final epilogue is added, its definitive completion path must call `ConnectedWorld.note_outcome(7, final_outcome)`, then `ConnectedWorld.finish_epilogue()`, then `PostgameClock.refresh()` before free roam starts. Do not call these from intermediate trials or retries. Night 7 itself must also consume the shared clock when free-roaming.
+- The automatic clock is infrastructure for the future epilogue, **not** a claim that Night 7, outcome-dependent NPC schedules, final settlement art, or complete postgame free roam is already implemented.
+
 ## Test and release status
 
 Nights 1–6 form an **engineering QA baseline**, not a finished seven-night commercial release. Night 6 has headless real-scene/evidence-state tests and dedicated Android emulator capture, in addition to previous farm and Sigbin regression checks. Check the latest relevant Godot validation and Android emulator runs in GitHub Actions before calling a change release-ready.

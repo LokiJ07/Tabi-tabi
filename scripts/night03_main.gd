@@ -10,6 +10,7 @@ const Night02State = preload("res://scripts/narrative/night02_state.gd")
 const ConnectedWorld = preload("res://scripts/core/connected_world.gd")
 const Preferences = preload("res://scripts/core/preferences.gd")
 const SharedHUD = preload("res://scripts/ui/shared_hud.gd")
+const PostgameResidents = preload("res://scripts/world/postgame_residents.gd")
 const SharedMotion = preload("res://scripts/ui/shared_dialogue_motion.gd")
 const SharedAtmosphere = preload("res://scripts/visuals/shared_immersive_atmosphere.gd")
 const DimensionalArt = preload("res://scripts/visuals/layered_25d.gd")
@@ -133,7 +134,8 @@ func _ready() -> void:
 	ambient.set_audio_level(prefs.audio_level)
 	_build_ui()
 	_refresh_objective()
-	if story.outcome != "":
+	var postgame_ready := get_node_or_null("/root/PostgameClock")
+	if story.outcome != "" and not (postgame_ready != null and postgame_ready.is_active()):
 		_show_ending()
 	elif story.phase == 0 and story.clues.is_empty():
 		_show_dialogue("LOLA PASING",
@@ -142,6 +144,9 @@ func _ready() -> void:
 	print("NIGHT3_QA_SCENE_READY")
 
 func _stage() -> int:
+	var free_roam_clock := get_node_or_null("/root/PostgameClock")
+	if free_roam_clock != null and free_roam_clock.is_active():
+		return free_roam_clock.light_stage()
 	if debug_night_preview:
 		return 3
 	if story.phase <= 0 or story.phase >= 5:
@@ -153,6 +158,14 @@ func _stage() -> int:
 	return 3
 
 func _process(delta: float) -> void:
+	var village_clock := get_node_or_null("/root/PostgameClock")
+	if village_clock != null and village_clock.is_active() and objective != null:
+		var free_roam_status := "FREE ROAM • FLOOD RIDGE • SAFE WAYMARKS\n%s  |  %s" % [
+			village_clock.clock_label(),
+			"RESTORED" if village_clock.village_mood == "restored" else "REBUILDING"
+		]
+		if objective.text != free_roam_status:
+			objective.text = free_roam_status
 	elapsed += delta
 	if not prefs.reduced_motion:
 		particles += delta
@@ -466,6 +479,7 @@ func _draw() -> void:
 			lift = absf(sin(walk_phase * (1.12 if is_dog else 1.0))) * (3.0 if is_player else 2.1) * walk_weight
 		DimensionalArt.paint_grounded(self, actor["tex"], where, dimensions,
 			Color.WHITE, .43, lift)
+	PostgameResidents.paint(self,"night03",particles,prefs.reduced_motion,player_pos)
 	# In-world wayfinding signs are small, correctly oriented and non-obstructive.
 	var font := ThemeDB.fallback_font
 	draw_string(font,ConnectedWorld.TRAIL_RIDGE+Vector2(-125,90),
@@ -809,12 +823,20 @@ func _nearby() -> String:
 	elif story.phase == 4:
 		if player_pos.distance_to(RIDGE_GATE) < 255.0:
 			return "tikbalang"
+	var postgame_neighbor := PostgameResidents.nearby(self,"night03",player_pos)
+	if postgame_neighbor != "":
+		return postgame_neighbor
 	return ""
 
 func _interact() -> void:
 	if _modal_open() or travel_in_progress:
 		return
 	var target := _nearby()
+	if target.begins_with("postgame:"):
+		_show_dialogue(PostgameResidents.speaker(target),
+			PostgameResidents.talk(self,target),
+			[{"label":"SALAMAT • CONTINUE","action":"close"}])
+		return
 	if target == "return_mango":
 		_return_to_mango()
 		return

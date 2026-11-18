@@ -32,6 +32,8 @@ const SharedAtmosphere = preload("res://scripts/visuals/shared_immersive_atmosph
 const BarrioLighting = preload("res://scripts/visuals/barrio_lighting.gd")
 const NightWindows = preload("res://scripts/visuals/nighttime_windows.gd")
 const RiverBanca = preload("res://scripts/world/river_banca.gd")
+const PostgameBarrio = preload("res://scripts/world/postgame_barrio_3d.gd")
+const PostgameDialogue = preload("res://scripts/narrative/postgame_dialogue.gd")
 const BantayRoute = preload("res://scripts/ai/bantay_route.gd")
 const BantayAwareness = preload("res://scripts/ai/bantay_awareness.gd")
 const AimPad = preload("res://scripts/ui/aim_pad.gd")
@@ -127,12 +129,14 @@ var lamp_heading := Vector3.FORWARD
 var alarm_label: Label
 var move_buttons: Dictionary = {}
 var is_night := false
+var daynight_button: Button
 var talked_to_lola := false
 var talked_to_dado := false
 var encountered_light := false
 var in_lola_hut := false
 var santelmo
 var ambient_walkers: Array[Node3D] = []
+var postgame_barrio: Node3D
 var elapsed := 0.0
 var window_light_refresh := 0.0
 var encounter_autosave_clock := 0.0
@@ -152,6 +156,14 @@ func _ready() -> void:
 	_create_ui()
 	_apply_preferences()
 	_restore_story()
+	if _postgame_is_active():
+		postgame_barrio = PostgameBarrio.ensure(self)
+	if _postgame_is_active() and daynight_button != null:
+		daynight_button.text = "AUTO CYCLE"
+		daynight_button.disabled = true
+		daynight_button.tooltip_text = "After the finale, day and night advance automatically."
+		daynight_button.set_meta("postgame_clock", "automatic")
+		# Do not use Night 1's manual time button during free roam.
 	NightWindows.sync_barrio_3d(self,is_night,elapsed,preferences.reduced_motion)
 	_apply_connected_world_arrival()
 	if story.outcome == "" and not story.prologue_ready():
@@ -163,6 +175,21 @@ func _ready() -> void:
 
 
 func _physics_process(delta: float) -> void:
+	# The complete seven-night epilogue replaces the old time switch with
+	# one shared continuous clock; unfinished chapters stay story-controlled.
+	if _postgame_is_active():
+		var world_night: bool = get_node("/root/PostgameClock").is_night()
+		if is_night != world_night:
+			is_night = world_night
+			living_sound.set_night(is_night)
+			BarrioLighting.apply(sun, get_node_or_null("Environment") as WorldEnvironment, lantern, is_night)
+			NightWindows.sync_barrio_3d(self,is_night,elapsed,preferences.reduced_motion)
+			if santelmo != null:
+				santelmo.visible = false
+	if postgame_barrio != null:
+		var village_clock := get_node_or_null("/root/PostgameClock")
+		if village_clock != null and village_clock.is_active():
+			PostgameBarrio.update(postgame_barrio,village_clock.fraction(),elapsed,preferences.reduced_motion,village_clock.village_mood)
 	if player == null:
 		return
 	var axis := Input.get_vector("ui_left", "ui_right", "ui_up", "ui_down")
@@ -191,6 +218,7 @@ func _physics_process(delta: float) -> void:
 		lantern.global_rotation.y = atan2(-lamp_heading.x, -lamp_heading.z)
 	_update_bantay(delta)
 	_update_dog_warnings(delta)
+	_sync_postgame_named_witnesses()
 	_update_interact_hint()
 	FolkActors.animate_person(apprentice_visual, elapsed, desired.length() > 0.1)
 	var speaking_role := ""
@@ -228,7 +256,9 @@ func _physics_process(delta: float) -> void:
 	if window_light_refresh >= .38:
 		window_light_refresh = 0.0
 		NightWindows.sync_barrio_3d(self,is_night,elapsed,preferences.reduced_motion)
-	if is_night and santelmo != null:
+		if _postgame_is_active():
+			_update_objective()
+	if is_night and santelmo != null and story.outcome == "":
 		# Keep world and encounter animations progressing in the background,
 		# but never drain courage while the player is reading a modal.
 		light_alarm = santelmo.update_behavior(delta, player.global_position, lamp_heading, focus_held)
@@ -814,7 +844,7 @@ func _create_ui() -> void:
 	focus_button.name = "FocusHoldButton"
 	_update_focus_ui()
 	_make_button(gameplay_hud, "INTERACT", Vector2(1050, 565), Vector2(180, 60), _interact, func(): pass)
-	_make_button(gameplay_hud, "DAY / NIGHT", Vector2(1050, 640), Vector2(180, 56), _toggle_night, func(): pass)
+	daynight_button = _make_button(gameplay_hud, "DAY / NIGHT", Vector2(1050, 640), Vector2(180, 56), _toggle_night, func(): pass)
 	_make_button(gameplay_hud, "FIELD NOTES", Vector2(1050, 415), Vector2(180, 56), _open_notebook, func(): pass)
 	_make_button(gameplay_hud, "PREPARE", Vector2(1050, 276), Vector2(180, 56), _open_prep, func(): pass)
 	_make_button(gameplay_hud, "SAVE", Vector2(1050, 345), Vector2(85, 52), _save_story, func(): pass)
@@ -1244,8 +1274,16 @@ func _set_button_axis(direction: String, active: bool) -> void:
 func _nearby_target() -> String:
 	var locations: Dictionary = {}
 	for key in interaction_nodes:
+		# Residents are indoors at night in postgame, never invisible talk targets.
+		if _postgame_is_active() and is_night and key in ["LOLA","DADO","SABEL","MARA"]:
+			continue
 		var actor: Node3D = interaction_nodes[key]
 		locations[key] = actor.global_position
+	if postgame_barrio != null and not is_night:
+		for id in ["dock_fisher","market_vendor","garden_farmer","trail_caretaker"]:
+			var worker := postgame_barrio.get_node_or_null(id) as Node3D
+			if worker != null and worker.visible:
+				locations["POSTGAME_" + id.to_upper()] = worker.global_position
 	return Nearby.closest(player.global_position, locations)
 
 
@@ -1255,7 +1293,11 @@ func _update_interact_hint() -> void:
 	if dialogue.visible or notebook_panel.visible or prep_panel.visible or settings_panel.visible:
 		interact_hint.text = ""
 		return
-	interact_hint.text = Nearby.caption(_nearby_target())
+	var closest_target := _nearby_target()
+	if closest_target.begins_with("POSTGAME_"):
+		interact_hint.text = "INTERACT • " + closest_target.trim_prefix("POSTGAME_").replace("_"," ")
+	else:
+		interact_hint.text = Nearby.caption(closest_target)
 
 
 func _interact() -> void:
@@ -1272,6 +1314,19 @@ func _interact() -> void:
 		_advance_dialogue()
 		return
 	var closest: String = _nearby_target()
+	if closest.begins_with("POSTGAME_"):
+		var role: String = closest.trim_prefix("POSTGAME_")
+		var lines := {
+			"DOCK_FISHER":"I bring the banca out again at dawn. The river still demands care, but we can earn our living.",
+			"MARKET_VENDOR":"Fresh vegetables and fish are back in our market. Some families still need help rebuilding.",
+			"GARDEN_FARMER":"We plant again, and the children can safely follow the village path.",
+			"TRAIL_CARETAKER":"The mango trail is connected and properly marked. I check the road before sunset."
+		}
+		if role == "DOCK_FISHER" and _postgame_is_active() and get_node("/root/PostgameClock").village_mood == "healing":
+			_show_dialogue("The river remains under watch. We mend the nets and keep the banca close until the crossing is safer.")
+		else:
+			_show_dialogue(str(lines.get(role,"The village is changing, a day at a time.")))
+		return
 	if closest == "MANGO_TRAIL":
 		_enter_mango_trail()
 		return
@@ -1280,6 +1335,9 @@ func _interact() -> void:
 		return
 	if closest == "":
 		_show_dialogue("Move close to a resident or the old mooring to interact.")
+		return
+	if _postgame_is_active() and closest in ["LOLA","DADO","SABEL","MARA"]:
+		_show_dialogue(PostgameDialogue.conversation(closest,get_node("/root/PostgameClock").village_mood))
 		return
 	var dialogue_line: String = NightDialogue.response(closest, story, is_night)
 	match closest:
@@ -1453,7 +1511,40 @@ func _close_dialogue() -> void:
 	_sync_modal_ui()
 
 
+func _sync_postgame_named_witnesses() -> void:
+	# Dado returns to the actual dock, Sabel to her stall, Mara to school;
+	# named witnesses keep their original identity and conversation records.
+	# Changing the marker moves the visible character and interact point together.
+	if not _postgame_is_active():
+		return
+	var shared_clock := get_node("/root/PostgameClock")
+	var hour: float = shared_clock.fraction() * 24.0
+	var locations := {
+		"DADO": [Vector3(-6.6,.1,9.7),Vector3(-5.2,.1,6.8),Vector3(-6.0,.1,8.6)],
+		"SABEL": [Vector3(9.0,.1,-5.6),Vector3(3.1,.1,-5.1),Vector3(8.5,.1,-5.1)],
+		"MARA": [Vector3(-2.6,.1,-8.8),Vector3(-.5,.1,-6.7),Vector3(-2.2,.1,-8.1)],
+		"LOLA": [Vector3(4.1,.1,7.0),Vector3(5.2,.1,6.1),Vector3(4.0,.1,7.0)]
+	}
+	for role in locations:
+		var marker := interaction_nodes.get(role) as Node3D
+		if marker == null:
+			continue
+		var phases: Array = locations[role]
+		var destination: Vector3 = phases[0] if hour < 11.0 else phases[1] if hour < 14.0 else phases[2]
+		if hour >= 18.5 or hour < 5.5:
+			destination = phases[2]
+		var easing := .32 if preferences.reduced_motion else .09
+		marker.position = marker.position.lerp(destination, easing)
+
+
+func _postgame_is_active() -> bool:
+	var clock := get_node_or_null("/root/PostgameClock")
+	return clock != null and clock.is_active()
+
+
 func _toggle_night() -> void:
+	if _postgame_is_active():
+		return # Free-roam time is automatic and cannot be manually overridden.
 	if in_lola_hut:
 		_show_dialogue("Finish breakfast and use Lola's door to return outside before starting the night.")
 		return
@@ -1488,6 +1579,13 @@ func _toggle_night() -> void:
 
 
 func _update_objective() -> void:
+	if _postgame_is_active() and objective != null:
+		var village_clock := get_node("/root/PostgameClock")
+		objective.text = "BARRIO LAWOM • FREE ROAM  %s\n%s • Villagers follow their daily work." % [
+			village_clock.clock_label(),
+			"THE VILLAGE REBUILDS" if village_clock.village_mood == "healing" else "A PEACEFUL VILLAGE"
+		]
+		return
 	if in_lola_hut:
 		if not story.prologue_flags.has("blue_notebook"):
 			objective.text = "MORNING: Find the BLUE NOTEBOOK on Lola's writing desk."
