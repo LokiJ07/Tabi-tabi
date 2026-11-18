@@ -1058,7 +1058,7 @@ func _save_menu() -> void:
 	if not _auto_save():
 		save_error.popup_centered(Vector2i(610,190))
 		return
-	SceneTransit.change_to_file("res://scenes/title.tscn")
+	get_node("/root/SceneTransit").call("change_to_file", "res://scenes/title.tscn")
 
 func _to_wake() -> void:
 	if travel_in_progress or story.outcome == "":
@@ -1070,7 +1070,7 @@ func _to_wake() -> void:
 	motion = Vector2.ZERO
 	observe_held = false
 	print("TABI_WORLD_TRAVEL_RIDGE_TO_WAKE")
-	SceneTransit.change_to_file(ConnectedWorld.scene_for("night04"))
+	get_node("/root/SceneTransit").call("change_to_file", ConnectedWorld.scene_for("night04"))
 
 func _return_to_mango() -> void:
 	if travel_in_progress:
@@ -1082,7 +1082,7 @@ func _return_to_mango() -> void:
 	motion = Vector2.ZERO
 	observe_held = false
 	print("TABI_WORLD_TRAVEL_RIDGE_TO_MANGO")
-	SceneTransit.change_to_file(ConnectedWorld.scene_for("old_mango"))
+	get_node("/root/SceneTransit").call("change_to_file", ConnectedWorld.scene_for("old_mango"))
 
 func _show_ending() -> void:
 	ending_panel.show()
