@@ -22,6 +22,8 @@ func _run() -> void:
 	await process_frame
 	check(stick.name == "MovementJoystick" and stick.position.x > 60.0,
 		"left movement input is inset, not stuck at edge")
+	check((stick.get_node("MoveGrip") as Label).text.contains("JOYSTICK"),
+		"top grip explicitly says it repositions the joystick")
 	stick._set_axis_from_local(stick.CENTER+Vector2(50,0))
 	check((captured["axis"] as Vector2).x > .70 and absf((captured["axis"] as Vector2).y) < .01,
 		"analog thumb direction drives movement")
