@@ -476,13 +476,15 @@ func _draw() -> void:
 		var size2: Vector2 = actor["size"]
 		var is_hero: bool = actor["tex"] == HERO
 		var is_dog: bool = actor["tex"] == BANTAY
-		var bob := 0.0
-		if not prefs.reduced_motion and (is_hero or is_dog):
-			bob = absf(sin(walk_phase))*3.2*walk_weight
 		var transparency: float = float(actor.get("alpha",1.0))
 		if transparency > .005:
-			DimensionalArt.paint_grounded(self,actor["tex"],p,size2,
-				Color(1,1,1,transparency),.38*transparency,bob)
+			if is_hero or is_dog:
+				DimensionalArt.paint_animated_actor(self,actor["tex"],p,
+					size2,walk_phase,walk_weight,prefs.reduced_motion,
+					Color(1,1,1,transparency),.38*transparency,is_dog)
+			else:
+				DimensionalArt.paint_grounded(self,actor["tex"],p,size2,
+					Color(1,1,1,transparency),.38*transparency)
 	PostgameResidents.paint(self,"night04",elapsed,prefs.reduced_motion,player_pos)
 	var font := ThemeDB.fallback_font
 	draw_string(font,RETURN_RIDGE+Vector2(25,-90),"FLOOD RIDGE • RETURN",HORIZONTAL_ALIGNMENT_LEFT,320,18,Color("#e8cb94"))
