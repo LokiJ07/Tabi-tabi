@@ -101,6 +101,8 @@ func _ready() -> void:
 	if str(arrival.get("from","")) == "night06":
 		player_pos = Story.START
 		print("TABI_WORLD_ARRIVAL_BALETE_FROM_RIVER")
+	# Recover legacy saves from inside decorative walls and trunks.
+	player_pos = Walkability.repair_saved_position(7,player_pos)
 	bantay_pos = player_pos + Vector2(-48,28)
 	camera = Camera2D.new()
 	camera.name = "Night07BaleteCamera"
@@ -157,7 +159,8 @@ func _process(delta: float) -> void:
 		if candidate.y > 595 and candidate.x > -650:
 			candidate.y = 595.0
 		player_pos = Walkability.slide(7,player_pos,candidate)
-	bantay_pos = bantay_pos.lerp(player_pos + Vector2(-51,32),clampf(delta*3.1,0,1))
+	var dog_goal := bantay_pos.lerp(player_pos + Vector2(-51,32),clampf(delta*3.1,0,1))
+	bantay_pos = Walkability.slide(7,bantay_pos,dog_goal)
 	# At the Keeper's covenant the original 760px Balete was cropped
 	# above the Android camera. Fit the canopy and apprentice in the world
 	# camera only; the Night 1 HUD remains fixed in physical screen space.
@@ -228,6 +231,7 @@ func _draw() -> void:
 		Vector2(1160,-180),Vector2(1010,480)]:
 		Depth.paint_grounded(self,SMALL_TREE,at,Vector2(250,290),Color("#c6d3b5"),.25)
 	# Physical safe path and ancestral tree occupy the same world coordinates.
+	_paint_chapter_protagonists(true)
 	Depth.paint_grounded(self,TREE,KEEPER+Vector2(-50,38),
 		Vector2(790,760),Color("#bac6b3") if night else Color.WHITE,.55)
 	# Wind catches small fireflies between the true Balete roots. Motion
@@ -286,15 +290,21 @@ func _draw() -> void:
 	if story.phase >= 4 and story.phase <= 5:
 		Depth.paint_grounded(self,MARA,Vector2(290,30),Vector2(103,145),Color.WHITE,.3)
 		Depth.paint_grounded(self,LOLA,Vector2(220,80),Vector2(103,140),Color.WHITE,.3)
-	Depth.paint_animated_actor(self,BANTAY,bantay_pos+Vector2(0,18),
-		Vector2(100,106),walking,walk_weight,prefs.reduced_motion,Color.WHITE,.31,true)
-	Depth.paint_animated_actor(self,HERO,player_pos+Vector2(0,9),
-		Vector2(108,143),walking,walk_weight,prefs.reduced_motion,Color.WHITE,.40)
+	_paint_chapter_protagonists(false)
 	PostgameResidents.paint(self,"night07",elapsed,prefs.reduced_motion,player_pos)
 	draw_string(ThemeDB.fallback_font,ENTRY+Vector2(15,-113),
 		"RIVER TRAIL • RETURN",HORIZONTAL_ALIGNMENT_LEFT,365,20,Color("#efdda9"))
 	draw_string(ThemeDB.fallback_font,KEEPER+Vector2(-270,-820),
 		"THE ANCIENT BALETE",HORIZONTAL_ALIGNMENT_LEFT,520,27,Color("#e9ddb1"))
+
+func _paint_chapter_protagonists(behind: bool) -> void:
+	if Walkability.scenery_covers_actor(7,bantay_pos) == behind:
+		Depth.paint_animated_actor(self,BANTAY,bantay_pos+Vector2(0,18),
+			Vector2(100,106),walking,walk_weight,prefs.reduced_motion,Color.WHITE,.31,true)
+	if Walkability.scenery_covers_actor(7,player_pos) == behind:
+		Depth.paint_animated_actor(self,HERO,player_pos+Vector2(0,9),
+			Vector2(108,143),walking,walk_weight,prefs.reduced_motion,Color.WHITE,.40)
+
 
 func _mark_station(foot: Vector2,word: String,checked: bool,dark: bool) -> void:
 	var ink := Color("#a0cbb1") if checked else Color("#e6c88f")

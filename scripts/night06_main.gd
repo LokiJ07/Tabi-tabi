@@ -116,6 +116,8 @@ func _ready() -> void:
 	elif str(arrival.get("from","")) == "night07":
 		player_pos = World.ARRIVAL_RIVER_BALETE
 		print("TABI_WORLD_ARRIVAL_RIVER_FROM_BALETE")
+	# Recover legacy saves from inside decorative walls and trunks.
+	player_pos = Walkability.repair_saved_position(6,player_pos)
 	camera = Camera2D.new()
 	camera.name = "Night06RiverCamera"
 	camera.position = player_pos
@@ -207,7 +209,8 @@ func _process(delta: float) -> void:
 		elif story.phase == 7 and story.outcome == "" and candidate.y > 575:
 			candidate.y = 575
 		player_pos = Walkability.slide(6,foot,candidate)
-	bantay_pos = bantay_pos.lerp(player_pos+Vector2(-53,28),clampf(delta*3.5,0.0,1.0))
+	var dog_goal := bantay_pos.lerp(player_pos+Vector2(-53,28),clampf(delta*3.5,0.0,1.0))
+	bantay_pos = Walkability.slide(6,bantay_pos,dog_goal)
 	var target := player_pos+aim*48.0
 	if story.phase == 6 or qa_river_preview:
 		target = player_pos.lerp(Vector2(475,300),.16)+aim*34.0
@@ -508,6 +511,7 @@ func _draw() -> void:
 		Depth.paint_grounded(self,TREE,foot,Vector2(233,268),Color("#c0c6a8"),.20)
 	for foot in [Vector2(-790,-270),Vector2(940,-130)]:
 		Depth.paint_grounded(self,BANANA,foot,Vector2(125,188),Color("#c6cda9"),.18)
+	_paint_chapter_people(true)
 	_draw_house(ARCHIVE+Vector2(0,-24),225,night,false)
 	_draw_house(SABEL_AT+Vector2(17,-20),172,night,true)
 	_draw_house(LOLA_AT+Vector2(40,-28),172,night,true)
@@ -608,23 +612,7 @@ func _draw() -> void:
 	# Nightly villagers actually withdraw indoors instead of staying in the
 	# empty street when the river becomes dangerous. Last few frames fade at
 	# their own doorway, while warm house windows remain visibly inhabited.
-	for actor in [
-		[MARA,MARA_AT,Vector2(98,153),ARCHIVE+Vector2(-28,-70)],
-		[DADO,DADO_AT,Vector2(101,159),ARCHIVE+Vector2(14,-70)],
-		[SABEL,SABEL_AT,Vector2(99,157),SABEL_AT+Vector2(40,-60)],
-		[LOLA,LOLA_AT,Vector2(103,155),LOLA_AT+Vector2(53,-65)]
-	]:
-		var fade: float = clampf(indoor_seconds/3.3,0.0,1.0) if night else 0.0
-		if fade >= 1.0:
-			continue
-		var resident_foot: Vector2 = actor[1]
-		resident_foot = resident_foot.lerp(actor[3],fade)
-		Depth.paint_grounded(self,actor[0],resident_foot,actor[2],
-			Color(1,1,1,1.0-smoothstep(.77,1.0,fade)),.23)
-	Depth.paint_animated_actor(self,BANTAY,bantay_pos,Vector2(95,102),
-		walk_time,walk_weight,prefs.reduced_motion,Color.WHITE,.31,true)
-	Depth.paint_animated_actor(self,HERO,player_pos,Vector2(108,142),
-		walk_time,walk_weight,prefs.reduced_motion,Color.WHITE,.37)
+	_paint_chapter_people(false)
 	PostgameResidents.paint(self,"night06",clock,prefs.reduced_motion,player_pos)
 	# Nearby ground signs are concise and contextual, never overlaid across
 	# the touchscreen or blocking the player during exploration.
@@ -640,6 +628,29 @@ func _draw() -> void:
 	if story.outcome != "" and player_pos.distance_to(Vector2(800,530))<280:
 		draw_string(ThemeDB.fallback_font,Vector2(825,476),
 			"NIGHT 7 • BALETE TRAIL OPEN" if World.implemented("night07") and story.outcome != "" else "NIGHT 7 • FINISH RIVER FIRST",HORIZONTAL_ALIGNMENT_LEFT,365,15,Color("#f2d89e"))
+
+func _paint_chapter_people(behind: bool) -> void:
+	for actor in [
+		[MARA,MARA_AT,Vector2(98,153),ARCHIVE+Vector2(-28,-70)],
+		[DADO,DADO_AT,Vector2(101,159),ARCHIVE+Vector2(14,-70)],
+		[SABEL,SABEL_AT,Vector2(99,157),SABEL_AT+Vector2(40,-60)],
+		[LOLA,LOLA_AT,Vector2(103,155),LOLA_AT+Vector2(53,-65)]
+	]:
+		var fade: float = clampf(indoor_seconds/3.3,0.0,1.0) if night else 0.0
+		if fade >= 1.0:
+			continue
+		var resident_foot: Vector2 = actor[1]
+		resident_foot = resident_foot.lerp(actor[3],fade)
+		if Walkability.scenery_covers_actor(6,resident_foot) != behind:
+			continue
+		Depth.paint_grounded(self,actor[0],resident_foot,actor[2],
+			Color(1,1,1,1.0-smoothstep(.77,1.0,fade)),.23)
+	if Walkability.scenery_covers_actor(6,bantay_pos) == behind:
+		Depth.paint_animated_actor(self,BANTAY,bantay_pos,Vector2(95,102),
+			walk_time,walk_weight,prefs.reduced_motion,Color.WHITE,.31,true)
+	if Walkability.scenery_covers_actor(6,player_pos) == behind:
+		Depth.paint_animated_actor(self,HERO,player_pos,Vector2(108,142),
+			walk_time,walk_weight,prefs.reduced_motion,Color.WHITE,.37)
 
 func _fit_status_card() -> void:
 	if status_panel == null or status_stack == null or not is_inside_tree(): return

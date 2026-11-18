@@ -145,6 +145,8 @@ func _ready() -> void:
 		player_pos = FUTURE_TRAIL+Vector2(-100,87)
 		print("TABI_WORLD_ARRIVAL_FARM_FROM_RIVER")
 		print("TABI_WORLD_ARRIVAL_FARM_FROM_WAKE")
+	# Recover legacy saves from inside decorative walls and trunks.
+	player_pos = Walkability.repair_saved_position(5,player_pos)
 	bantay_pos = player_pos+Vector2(-45,31)
 	camera = Camera2D.new()
 	camera.name = "Night05FarmCamera"
@@ -223,7 +225,8 @@ func _process(delta: float) -> void:
 		# scene is absent; the road itself remains continuously visible.
 		player_pos = FarmArt.keep_player_before_locked_trail(
 			previous_foot,player_pos,FUTURE_TRAIL,not World.implemented("night06") or story.outcome == "")
-	bantay_pos = bantay_pos.lerp(player_pos+Vector2(-49,28),clampf(delta*3.2,0,1))
+	var dog_goal := bantay_pos.lerp(player_pos+Vector2(-49,28),clampf(delta*3.2,0,1))
+	bantay_pos = Walkability.slide(5,bantay_pos,dog_goal)
 	var framing_target := player_pos+aim*64.0
 	if story.phase == 3 or debug_farm_preview:
 		# Grounded Sigbin is the subject; the roof shadow is only a clue.
@@ -403,6 +406,7 @@ func _draw() -> void:
 	for at in [Vector2(-850,-80),Vector2(1030,190),FarmArt.LOWER_BANANA]:
 		DimensionalArt.paint_grounded(self,BANANA,at,
 			Vector2(145,210),Color("#8fa884"),.26)
+	_paint_chapter_protagonists(true)
 	_paint_farmhouse()
 	FarmArt.paint_barn_ground_shadow(self,BARN_FOOT,_stage()>=2)
 	DimensionalArt.paint_grounded(self,BARN,BARN_FOOT,Vector2(780,574),
@@ -528,10 +532,7 @@ func _draw() -> void:
 		DimensionalArt.paint_grounded(self,FARMER,at,
 			Vector2(100,158),Color(1,1,1,1.0-smoothstep(.80,1.0,t)
 				if _stage()>=2 else 1.0),.31)
-	DimensionalArt.paint_animated_actor(self,BANTAY,bantay_pos+Vector2(0,18),
-		Vector2(96,103),walk_phase,walk_weight,prefs.reduced_motion,Color.WHITE,.33,true)
-	DimensionalArt.paint_animated_actor(self,HERO,player_pos+Vector2(0,7),
-		Vector2(107,140),walk_phase,walk_weight,prefs.reduced_motion,Color.WHITE,.38)
+	_paint_chapter_protagonists(false)
 	PostgameResidents.paint(self,"night05",elapsed,prefs.reduced_motion,player_pos)
 	var font := ThemeDB.fallback_font
 	draw_string(font,RETURN_WAKE+Vector2(26,-90),"WAKE TRAIL • RETURN",HORIZONTAL_ALIGNMENT_LEFT,335,18,Color("#f3d8a6"))
@@ -539,6 +540,23 @@ func _draw() -> void:
 	draw_string(font,FUTURE_TRAIL+Vector2(-200,-45),
 		"HILL TRAIL • NIGHT 6 RIVER" if World.implemented("night06") and story.outcome != "" else "HILL TRAIL • FINISH FARM FIRST",
 		HORIZONTAL_ALIGNMENT_LEFT,410,17,Color("#e0c58f"))
+
+func _paint_chapter_protagonists(behind: bool) -> void:
+	if Walkability.scenery_covers_actor(5,bantay_pos):
+		if behind:
+			DimensionalArt.paint_animated_actor(self,BANTAY,bantay_pos+Vector2(0,18),
+				Vector2(96,103),walk_phase,walk_weight,prefs.reduced_motion,Color.WHITE,.33,true)
+	elif not behind:
+		DimensionalArt.paint_animated_actor(self,BANTAY,bantay_pos+Vector2(0,18),
+			Vector2(96,103),walk_phase,walk_weight,prefs.reduced_motion,Color.WHITE,.33,true)
+	if Walkability.scenery_covers_actor(5,player_pos):
+		if behind:
+			DimensionalArt.paint_animated_actor(self,HERO,player_pos+Vector2(0,7),
+				Vector2(107,140),walk_phase,walk_weight,prefs.reduced_motion,Color.WHITE,.38)
+	elif not behind:
+		DimensionalArt.paint_animated_actor(self,HERO,player_pos+Vector2(0,7),
+			Vector2(107,140),walk_phase,walk_weight,prefs.reduced_motion,Color.WHITE,.38)
+
 
 func _fit_status_card() -> void:
 	# Same dynamic status height as Night 1–3: objectives must never overflow.

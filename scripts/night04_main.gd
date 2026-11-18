@@ -123,6 +123,8 @@ func _ready() -> void:
 	elif str(arrival.get("from","")) == "night05":
 		player_pos = FARM_TRAIL+Vector2(-80,90)
 		print("TABI_WORLD_ARRIVAL_WAKE_FROM_FARM")
+	# Recover legacy saves from inside decorative walls and trunks.
+	player_pos = Walkability.repair_saved_position(4,player_pos)
 	bantay_pos = player_pos+Vector2(-44,29)
 	camera = Camera2D.new()
 	camera.name = "Night04WakeCamera"
@@ -202,7 +204,8 @@ func _process(delta: float) -> void:
 		candidate.x = clampf(candidate.x,MAP.position.x+65,MAP.end.x-65)
 		candidate.y = clampf(candidate.y,MAP.position.y+75,MAP.end.y-75)
 		player_pos = Walkability.slide(4,player_pos,candidate)
-	bantay_pos = bantay_pos.lerp(player_pos+Vector2(-49,29),clampf(delta*3.2,0,1))
+	var dog_goal := bantay_pos.lerp(player_pos+Vector2(-49,29),clampf(delta*3.2,0,1))
+	bantay_pos = Walkability.slide(4,bantay_pos,dog_goal)
 	# A tall, airborne Manananggal must be framed together with the
 	# apprentice during a real attack, not cropped at the top of the phone.
 	# This is the world camera only; Night 1 shared touch HUD never moves.
@@ -367,6 +370,7 @@ func _draw() -> void:
 			Vector2(225,310),Color("#8da48b"),.31)
 	for rock_at in [Vector2(-670,90),Vector2(515,360),Vector2(760,290),Vector2(-395,380)]:
 		Landscape.rock(self,rock_at,36,_stage()<2)
+	_paint_chapter_people(true)
 	_house()
 	WakeVigil.paint_wake_furniture(self)
 	# Quiet vigil: raised candle table and coffee beside the gathering.
@@ -452,6 +456,14 @@ func _draw() -> void:
 			from+drift+Vector2(-5,110),elapsed,prefs.reduced_motion,Color("#d1d5cb"))
 	# Human cast is rendered above the warmth. Story dialogue and evidence
 	# still work when residents have moved inside, not been deleted.
+	_paint_chapter_people(false)
+	PostgameResidents.paint(self,"night04",elapsed,prefs.reduced_motion,player_pos)
+	var font := ThemeDB.fallback_font
+	draw_string(font,RETURN_RIDGE+Vector2(25,-90),"FLOOD RIDGE • RETURN",HORIZONTAL_ALIGNMENT_LEFT,320,18,Color("#e8cb94"))
+	draw_string(font,WAKE_HOUSE+Vector2(-160,206),"THE WAKE • LAMAY",HORIZONTAL_ALIGNMENT_LEFT,350,20,Color("#f7d79d"))
+	draw_string(font,Vector2(630,-140),"THE FARM TRAIL • "+("OPEN" if story.outcome != "" else "LOCKED"),HORIZONTAL_ALIGNMENT_LEFT,355,18,Color("#e3ca97"))
+
+func _paint_chapter_people(behind: bool) -> void:
 	var people: Array[Dictionary] = []
 	var civilians: Array[Dictionary] = [
 		{"role":"NENA","at":Vector2(-420,-180),"tex":NENA,"size":Vector2(107,140)},
@@ -473,6 +485,8 @@ func _draw() -> void:
 		return (a["at"] as Vector2).y < (b["at"] as Vector2).y)
 	for actor in people:
 		var p: Vector2 = actor["at"]
+		if Walkability.scenery_covers_actor(4,foot) != behind:
+			continue
 		var size2: Vector2 = actor["size"]
 		var is_hero: bool = actor["tex"] == HERO
 		var is_dog: bool = actor["tex"] == BANTAY
@@ -485,11 +499,6 @@ func _draw() -> void:
 			else:
 				DimensionalArt.paint_grounded(self,actor["tex"],p,size2,
 					Color(1,1,1,transparency),.38*transparency)
-	PostgameResidents.paint(self,"night04",elapsed,prefs.reduced_motion,player_pos)
-	var font := ThemeDB.fallback_font
-	draw_string(font,RETURN_RIDGE+Vector2(25,-90),"FLOOD RIDGE • RETURN",HORIZONTAL_ALIGNMENT_LEFT,320,18,Color("#e8cb94"))
-	draw_string(font,WAKE_HOUSE+Vector2(-160,206),"THE WAKE • LAMAY",HORIZONTAL_ALIGNMENT_LEFT,350,20,Color("#f7d79d"))
-	draw_string(font,Vector2(630,-140),"THE FARM TRAIL • "+("OPEN" if story.outcome != "" else "LOCKED"),HORIZONTAL_ALIGNMENT_LEFT,355,18,Color("#e3ca97"))
 
 func _fit_status_card() -> void:
 	# Same dynamic status height as Night 1–3: objectives must never overflow.

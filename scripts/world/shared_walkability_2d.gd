@@ -20,11 +20,34 @@ const CIRCLES := {
 		[Vector2(-520,-420),38.0],[Vector2(25,-430),38.0],
 		[Vector2(1160,-180),38.0],[Vector2(1010,480),38.0]]
 }
+# Scene geometry belongs to ground corners. Large roofs/foliage are NOT
+# collision areas: only physical walls, supporting posts, and tree roots.
+const PROJECTED_HOUSES := {
+	4: [[Vector2(-215,-80),Vector2(295,-30),Vector2(405,-320),Vector2(-105,-375)]],
+	5: [[Vector2(-912,-256),Vector2(-669,-225),Vector2(-663,-100),Vector2(-912,-132)]]
+}
+const GROVE_TREES := {
+	3: [[Vector2(-845,-349),.95],[Vector2(-755,-530),1.10],
+		[Vector2(-540,-548),.75],[Vector2(-20,-523),.88],
+		[Vector2(425,-505),1.12],[Vector2(820,-591),.95],
+		[Vector2(875,181),.85],[Vector2(760,609),1.08],
+		[Vector2(-700,710),.98],[Vector2(-480,548),.78]],
+	4: [[Vector2(-800,-400),1.0],[Vector2(-850,-140),1.0],
+		[Vector2(-680,-595),1.0],[Vector2(690,-510),1.0],
+		[Vector2(800,-145),1.0],[Vector2(812,500),1.0]],
+	5: [[Vector2(-950,-445),1.0],[Vector2(-835,-660),1.0],
+		[Vector2(775,-615),1.0],[Vector2(670,-520),1.0]],
+	6: [[Vector2(-1020,-245),1.0],[Vector2(-880,-550),1.0],
+		[Vector2(1020,-340),1.0],[Vector2(1150,180),1.0]],
+	7: [[Vector2(-880,-220),1.0],[Vector2(-520,-420),1.0],
+		[Vector2(25,-430),1.0],[Vector2(1160,-180),1.0],
+		[Vector2(1010,480),1.0]]
+}
 const BUILDINGS := {
 	2: [],
 	3: [],
-	4: [Rect2(-185,-365,566,283)],
-	5: [Rect2(-228,-607,775,520),Rect2(-925,-289,343,170)],
+	4: [],
+	5: [Rect2(-228,-607,775,520)],
 	6: [Rect2(-678,-393,216,86),Rect2(295,-372,166,90),Rect2(-209,-424,170,85)],
 	7: []
 }
@@ -73,9 +96,40 @@ static func repair_saved_position(chapter: int, at: Vector2) -> Vector2:
 				return candidate
 	return at
 
+static func _within_painted_tree(chapter: int, foot: Vector2) -> bool:
+	# Foreground tree only hides an actor BEHIND its real trunk.
+	for item in GROVE_TREES.get(chapter,[]):
+		var trunk: Vector2 = item[0]
+		var scale: float = float(item[1])
+		if absf(foot.x-trunk.x) < 120.0*scale \
+				and foot.y > trunk.y-300.0*scale \
+				and foot.y < trunk.y+12.0:
+			return true
+	return false
+
+static func _within_roof(foot: Vector2, at: Vector2, half_width: float,
+		roof_height: float, feet_y: float) -> bool:
+	return absf(foot.x-at.x)<half_width \
+		and foot.y>at.y-roof_height and foot.y<feet_y
+
 static func scenery_covers_actor(chapter: int, foot: Vector2) -> bool:
 	# Occlusion means a grounded actor is BEHIND an illustrated volume.
 	# It has NOTHING to do with colliding against the tall leaf canopy.
+	if _within_painted_tree(chapter,foot):
+		return true
+	if chapter == 3:
+		return _within_roof(foot,Vector2(-145,-230),183.0,315.0,-235.0)
+	if chapter == 4:
+		return _within_roof(foot,Vector2(75,-185),360.0,650.0,-80.0)
+	if chapter == 5:
+		return _within_roof(foot,Vector2(165,-73),375.0,560.0,-95.0) \
+			or _within_roof(foot,Vector2(-795,-220),193.0,205.0,-120.0)
+	if chapter == 6:
+		return _within_roof(foot,Vector2(-580,-301),126.0,320.0,-316.0) \
+			or _within_roof(foot,Vector2(379,-278),100.0,230.0,-290.0) \
+			or _within_roof(foot,Vector2(-120,-340),100.0,230.0,-352.0)
+	if chapter == 7:
+		return _within_roof(foot,Vector2(515,-242),340.0,735.0,-265.0)
 	if chapter != 2:
 		return false
 	for at in [Vector2(-600,-445),Vector2(-610,410)]:
@@ -88,6 +142,9 @@ static func scenery_covers_actor(chapter: int, foot: Vector2) -> bool:
 	return false
 
 static func is_blocked(chapter: int, foot: Vector2) -> bool:
+	for corners in PROJECTED_HOUSES.get(chapter, []):
+		if _point_in_footprint(foot,corners):
+			return true
 	if chapter == 2:
 		for corners in NIGHT2_HOUSE_FOOTPRINTS:
 			if _point_in_footprint(foot,corners):

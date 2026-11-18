@@ -119,6 +119,8 @@ func _ready() -> void:
 	elif str(arrival.get("from","")) == "night04":
 		player_pos = ConnectedWorld.ARRIVAL_RIDGE_WAKE
 		print("TABI_WORLD_ARRIVAL_RIDGE_FROM_WAKE")
+	# Recover legacy saves from inside decorative walls and trunks.
+	player_pos = Walkability.repair_saved_position(3,player_pos)
 	bantay_pos = player_pos + Vector2(-46,29)
 	camera = Camera2D.new()
 	camera.name = "Night03RidgeCamera"
@@ -188,7 +190,8 @@ func _process(delta: float) -> void:
 		if _in_unsafe_ravine(moved):
 			moved = player_pos
 		player_pos = Walkability.slide(3,player_pos,moved)
-	bantay_pos = bantay_pos.lerp(player_pos + Vector2(-49,29),clampf(delta*3.5,0.0,1.0))
+	var dog_goal := bantay_pos.lerp(player_pos + Vector2(-49,29),clampf(delta*3.5,0.0,1.0))
+	bantay_pos = Walkability.slide(3,bantay_pos,dog_goal)
 	var goal_blend := 1.0 if dialogue_focus and dialogue.visible else 0.0
 	camera_blend = lerpf(camera_blend,goal_blend,1.0 if prefs.reduced_motion else clampf(delta*3.8,0.0,1.0))
 	# The Tikbalang is tall enough that tracking the player's feet alone
@@ -358,6 +361,7 @@ func _draw() -> void:
 	for cliff_rock in [Vector2(-215,362),Vector2(180,514),Vector2(-65,655),
 		Vector2(345,-565),Vector2(515,-510),Vector2(720,-270)]:
 		Landscape.rock(self,cliff_rock,64.0,_stage()<2)
+	_paint_chapter_actors(true)
 	for pos in [Vector2(-890,-430),Vector2(-755,-630),Vector2(-520,-650),
 		Vector2(-20,-610),Vector2(410,-640),Vector2(760,-570),
 		Vector2(870,35),Vector2(690,520),Vector2(-420,625),
@@ -464,24 +468,7 @@ func _draw() -> void:
 			Color("#e0d6c6"), .50)
 	# Keep original shared protagonists readable against darkness. Their
 	# draw order is world-depth based and HUD/cinematic layers stay untouched.
-	var actors := [
-		{"at":bantay_pos+Vector2(0,19),"tex":BANTAY,"size":Vector2(95,104)},
-		{"at":player_pos+Vector2(0,8),"tex":HERO,"size":Vector2(106,141)}
-	]
-	actors.sort_custom(func(a: Dictionary,b: Dictionary)->bool:
-		return (a["at"] as Vector2).y < (b["at"] as Vector2).y)
-	for actor in actors:
-		var where: Vector2 = actor["at"]
-		var dimensions: Vector2 = actor["size"]
-		var is_player: bool = actor["tex"] == HERO
-		var is_dog: bool = actor["tex"] == BANTAY
-		if is_player or is_dog:
-			DimensionalArt.paint_animated_actor(self,actor["tex"],where,
-				dimensions,walk_phase,walk_weight,prefs.reduced_motion,
-				Color.WHITE,.43,is_dog)
-		else:
-			DimensionalArt.paint_grounded(self,actor["tex"],where,dimensions,
-				Color.WHITE,.43)
+	_paint_chapter_actors(false)
 	PostgameResidents.paint(self,"night03",particles,prefs.reduced_motion,player_pos)
 	# In-world wayfinding signs are small, correctly oriented and non-obstructive.
 	var font := ThemeDB.fallback_font
@@ -498,6 +485,28 @@ func _draw() -> void:
 	draw_string(font,Vector2(745,-342),
 		"THE WAKE • EAST TRAIL" if story.outcome != "" else "WAKE TRAIL • FINISH RIDGE FIRST",
 		HORIZONTAL_ALIGNMENT_LEFT,445,17,Color("#e1bd86"))
+
+func _paint_chapter_actors(behind: bool) -> void:
+	var actors := [
+		{"at":bantay_pos+Vector2(0,19),"tex":BANTAY,"size":Vector2(95,104)},
+		{"at":player_pos+Vector2(0,8),"tex":HERO,"size":Vector2(106,141)}
+	]
+	actors.sort_custom(func(a: Dictionary,b: Dictionary)->bool:
+		return (a["at"] as Vector2).y < (b["at"] as Vector2).y)
+	for actor in actors:
+		var where: Vector2 = actor["at"]
+		if Walkability.scenery_covers_actor(3,foot) != behind:
+			continue
+		var dimensions: Vector2 = actor["size"]
+		var is_player: bool = actor["tex"] == HERO
+		var is_dog: bool = actor["tex"] == BANTAY
+		if is_player or is_dog:
+			DimensionalArt.paint_animated_actor(self,actor["tex"],where,
+				dimensions,walk_phase,walk_weight,prefs.reduced_motion,
+				Color.WHITE,.43,is_dog)
+		else:
+			DimensionalArt.paint_grounded(self,actor["tex"],where,dimensions,
+				Color.WHITE,.43)
 
 func _build_ui() -> void:
 	var atmosphere_layer := CanvasLayer.new()
