@@ -52,6 +52,9 @@ func _run() -> void:
 	check(game._gate_sign_visible(),"gate sign appears beside the actual gate")
 	game.player_pos = game.RETURN_WAKE
 	check(not game._gate_sign_visible(),"distant gate sign stays hidden instead of covering touch UI")
+	check(not game._holding_sign_visible(),"faraway rescue scoreboard cannot cover LOOK pad")
+	game.player_pos = FarmArt.HOLDING.position+FarmArt.HOLDING.size*.5
+	check(game._holding_sign_visible(),"receiving area sign appears when player approaches")
 	game.player_pos = original_position
 	# Visual parity gate: Night 4/5 must retain Night 1 slots, not just a shared color scheme.
 	for slot in [
