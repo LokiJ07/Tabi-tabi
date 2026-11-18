@@ -7,6 +7,8 @@ const Banca = preload("res://scripts/world/river_banca.gd")
 const FISHER: Texture2D = preload("res://assets/characters/post_fisher.svg")
 const MARKET: Texture2D = preload("res://assets/characters/post_market.svg")
 const TRAIL: Texture2D = preload("res://assets/characters/post_trail.svg")
+const FARM: Texture2D = preload("res://assets/characters/post_farm.svg")
+const REPAIR: Texture2D = preload("res://assets/characters/post_repair.svg")
 const RootName := "PostgameBarrioLife"
 const SETTLEMENT_ACTORS := [
 	{"id":"dock_fisher","home":Vector3(4.6,0,-2.4),"work":Vector3(-6.3,0.1,10.2),"rest":Vector3(-5.5,0,-1.0),"shirt":Color("#4a8690")},
@@ -47,6 +49,17 @@ static func ensure(world: Node3D) -> Node3D:
 		mat.albedo_color = Color("#b9a25c") if i%2==0 else Color("#749156")
 		crop.material_override = mat
 		root.add_child(crop)
+	# Dimensional market awning: reed slats at different depths, not a flat
+	# painted rectangle pretending to be a complete three-dimensional stall.
+	for side in [-1.0,1.0]:
+		_box(root,"Market awning pole %s" % str(side),
+			Vector3(12.1+side*1.0,1.45,-7.3),Vector3(.11,2.8,.12),
+			Color("#866444"))
+	for row in range(6):
+		_box(root,"Market woven canopy %d" % row,
+			Vector3(12.1,2.89+float(row%2)*.055,-7.9+float(row)*.23),
+			Vector3(2.5,.065,.20),
+			Color("#bca276") if row%2==0 else Color("#8c7956"))
 	# Bamboo garden beds stay east of the travelled footpath, never across it.
 	for i in range(5):
 		_box(root,"Vegetable garden bed %d" % i,Vector3(12.5,.07,-1.0+float(i)*.65),
@@ -58,7 +71,7 @@ static func ensure(world: Node3D) -> Node3D:
 		var data: Dictionary = SETTLEMENT_ACTORS[i]
 		var actor: Node3D = Folk.person(str(data["id"]),data["shirt"],Color("#6d4c38"))
 		actor.name = str(data["id"])
-		var selected: Texture2D = FISHER if i == 0 else MARKET if i == 1 else TRAIL
+		var selected: Texture2D = FISHER if i == 0 else MARKET if i == 1 else FARM if i == 2 else REPAIR
 		var face := actor.get_node_or_null("IllustratedSprite") as Sprite3D
 		if face != null:
 			face.texture = selected
@@ -102,6 +115,16 @@ static func update(root: Node3D, fraction: float, elapsed: float,
 		actor.position = current + (Vector3(0,0,sin(elapsed*.48+float(i))*0.38) if not reduced_motion and work_shift else Vector3.ZERO)
 		Folk.animate_person(actor,elapsed+float(i)*1.8,work_shift)
 		actor.rotation.y = 0.0 if not work_shift else -2.6
+	# Gentle net sway and canopy response make the river and market feel
+	# occupied rather than entirely static; none of these meshes collide.
+	for i in range(4):
+		var line := root.get_node_or_null("Fish net hemp top %d" % i) as MeshInstance3D
+		if line != null:
+			line.rotation.z = 0.0 if reduced_motion else sin(elapsed*.48+float(i)*.65)*.085
+	for i in range(6):
+		var reed := root.get_node_or_null("Market woven canopy %d" % i) as MeshInstance3D
+		if reed != null:
+			reed.rotation.z = 0.0 if reduced_motion else sin(elapsed*.32+float(i)*.47)*.018
 	var boat := root.get_node_or_null("WorkingFishingBanca") as Node3D
 	if boat != null:
 		boat.visible = hour >= 5.5 and hour < 16.5
