@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="920" height="940" viewBox="0 0 920 940">
+<title>Ancient Balete Keeper — original layered Filipino strangler fig environment art</title>
+<defs>
+ <linearGradient id="bark" x1="0" y1="0" x2="1" y2=".65"><stop stop-color="#211c1a"/><stop offset=".33" stop-color="#554638"/><stop offset=".63" stop-color="#77624a"/><stop offset="1" stop-color="#252a27"/></linearGradient>
+ <linearGradient id="root" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#a18158"/><stop offset=".46" stop-color="#5e4d3e"/><stop offset="1" stop-color="#242c29"/></linearGradient>
+ <radialGradient id="leaf"><stop stop-color="#5f8060"/><stop offset=".57" stop-color="#2b5146"/><stop offset="1" stop-color="#192c2e"/></radialGradient>
+ <radialGradient id="glow"><stop stop-color="#e8c788" stop-opacity=".82"/><stop offset=".27" stop-color="#cca966" stop-opacity=".22"/><stop offset="1" stop-color="#c9a978" stop-opacity="0"/></radialGradient>
+ <filter id="blur"><feGaussianBlur stdDeviation="7"/></filter>
+</defs>
+<ellipse cx="460" cy="883" rx="365" ry="42" fill="#0c1d1d" opacity=".43"/>
+<!-- Balanced extensive canopy: shaded volumes, not a flat round lollipop -->
+<g fill="url(#leaf)" stroke="#172a2a" stroke-width="20">
+ <path d="M52 371Q23 245 181 182Q191 80 332 94Q393 27 520 95Q653 36 732 137Q865 138 877 285Q946 383 821 462Q722 534 609 454Q477 523 332 464Q189 527 86 445Z"/>
+ <ellipse cx="246" cy="270" rx="174" ry="141"/><ellipse cx="479" cy="192" rx="238" ry="152"/>
+ <ellipse cx="722" cy="285" rx="159" ry="163"/>
+</g>
+<g opacity=".42" fill="none" stroke="#879268" stroke-width="6">
+ <path d="M120 281Q239 169 366 223M350 172Q454 119 577 183M594 271Q710 206 815 277"/>
+ <path d="M132 373Q208 324 292 349M570 368Q662 344 787 374"/>
+</g>
+<!-- Main multi-column trunk -->
+<path d="M386 288Q383 397 360 506L335 700Q278 768 195 867Q287 875 355 813Q407 760 421 724Q436 825 439 885L486 885Q475 798 494 713Q556 797 651 872L739 867Q638 795 571 683Q532 553 548 424Q555 333 528 277Z"
+ fill="url(#bark)" stroke="#241e1d" stroke-width="19" stroke-linejoin="round"/>
+<path d="M414 310Q440 413 414 543Q385 678 394 777M474 310Q492 456 468 565Q460 694 470 819M506 354Q510 534 530 659Q552 761 641 838" fill="none" stroke="#b29165" stroke-width="13" opacity=".46"/>
+<path d="M387 403Q350 476 312 542M528 428Q590 477 647 512" fill="none" stroke="#514434" stroke-width="38" stroke-linecap="round"/>
+<!-- Outer roots spread at different depth planes -->
+<g stroke="#2c2924" stroke-width="15" fill="url(#root)" stroke-linejoin="round">
+ <path d="M386 650Q332 732 256 759Q215 798 97 811Q156 837 235 818Q295 820 355 768Q386 755 412 725Z"/>
+ <path d="M420 693Q390 769 330 820Q278 858 233 876Q317 891 389 848Q432 821 446 763Z"/>
+ <path d="M494 677Q538 751 628 787Q706 815 836 831Q782 860 675 847Q557 824 483 763Z"/>
+ <path d="M530 580Q614 660 667 716Q713 764 793 770Q715 802 632 766Q574 740 515 672Z"/>
+ <path d="M445 715Q435 795 441 890L498 890Q494 805 476 720Z"/>
+ </g>
+<!-- Aerial hanging roots and vines -->
+<g fill="none" stroke="#74684b" stroke-linecap="round">
+ <path d="M269 276Q247 467 273 618Q277 716 251 754" stroke-width="13"/>
+ <path d="M626 222Q618 361 640 518Q665 616 648 676" stroke-width="9"/>
+ <path d="M719 331Q703 462 712 582Q711 624 723 665" stroke-width="7"/>
+ <path d="M202 341Q183 458 197 595" stroke-width="8"/>
+</g>
+<path d="M426 597Q451 577 478 596M434 634Q455 646 480 632" fill="none" stroke="#d8bc88" stroke-width="5" opacity=".45"/>
+<ellipse cx="441" cy="603" rx="12" ry="8" fill="#c3af78" opacity=".27"/>
+<ellipse cx="475" cy="603" rx="12" ry="8" fill="#c3af78" opacity=".27"/>
+<g fill="url(#glow)">
+ <circle cx="199" cy="313" r="49"/><circle cx="689" cy="352" r="54"/><circle cx="527" cy="188" r="42"/>
+ <circle cx="348" cy="408" r="30"/><circle cx="765" cy="432" r="36"/>
+</g>
+<!-- No gore, no ghostly human faces -->
+</svg>
