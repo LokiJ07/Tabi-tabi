@@ -1,8 +1,10 @@
 extends SceneTree
-## Cinematic dialogue and modal-input transition parity across the two
-## final chapter scripts that previously popped panels without easing.
+## Cinematic dialogue and modal-input transition parity across all late
+## chapters. Night 5/6 now prevent rushed NPC dialogue choices too.
 ## No quest state changes, cross-region save data or synthetic ending required.
 const Night04 = preload("res://scenes/night04.tscn")
+const Night05 = preload("res://scenes/night05.tscn")
+const Night06 = preload("res://scenes/night06.tscn")
 const Night07 = preload("res://scenes/night07.tscn")
 
 var failed := 0
@@ -10,7 +12,7 @@ var failed := 0
 func check(condition: bool, why: String) -> void:
 	if not condition:
 		failed += 1
-		printerr("Night 4/7 cinematic transition regression: "+why)
+		printerr("Nights 4–7 cinematic transition regression: "+why)
 
 func _initialize() -> void:
 	call_deferred("_run")
@@ -60,12 +62,24 @@ func _run() -> void:
 	_test_dialogue(wake,"Night 4 Wake")
 	wake.queue_free()
 	await process_frame
+	var farm = Night05.instantiate()
+	root.add_child(farm)
+	await process_frame
+	_test_dialogue(farm,"Night 5 Farm")
+	farm.queue_free()
+	await process_frame
+	var river = Night06.instantiate()
+	root.add_child(river)
+	await process_frame
+	_test_dialogue(river,"Night 6 River")
+	river.queue_free()
+	await process_frame
 	var balete = Night07.instantiate()
 	root.add_child(balete)
 	await process_frame
 	_test_dialogue(balete,"Night 7 Balete")
 	balete.queue_free()
 	await process_frame
-	print("Night 4 and Night 7 dialogue cinematic parity: ",
+	print("Nights 4–7 dialogue cinematic parity: ",
 		"PASS" if failed == 0 else str(failed)+" failures")
 	quit(0 if failed == 0 else 1)
