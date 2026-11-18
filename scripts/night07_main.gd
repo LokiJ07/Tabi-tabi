@@ -859,6 +859,11 @@ func _interact() -> void:
 				[{"label":"OPEN NOTEBOOK","id":"notes"},{"label":"KEEP WORKING","id":"close"}])
 	elif id=="keeper_intro":
 		if story.reveal_keeper():
+			# The interaction radius extends around the root gate. Begin the
+			# scripted reveal on the actual marked threshold, otherwise a
+			# player talking from the side could spawn outside the newly
+			# enforced safe corridor and become unable to move.
+			player_pos = GATE
 			_save_story()
 			_talk("ANCIENT KEEPER • THE COVENANT",
 				"Nangayo kamo og lugar diin makalingkawas. Unsa man ang inyong gibuhat sa mga wala nakaabot? Dili ko makapili sa inyong pulong, ug dili ko makapugos sa pagpasaylo. I can witness actions, not know your hidden records.",
