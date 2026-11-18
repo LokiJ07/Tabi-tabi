@@ -474,25 +474,46 @@ func _enter_night2() -> void:
 func _has_save() -> bool:
 	return FileAccess.file_exists(Save.PATH) or FileAccess.file_exists(Save.PATH + ".bak")
 
+func _has_any_story_progress() -> bool:
+	for path in _campaign_save_paths():
+		if FileAccess.file_exists(path) or FileAccess.file_exists(path+".bak"):
+			return true
+	return false
+
+func _campaign_save_paths() -> Array[String]:
+	return [Save.PATH,Night02Save.PATH,Night03Save.PATH,Night04Save.PATH,
+		Night05Save.PATH,Night06Save.PATH,Night07Save.PATH,ConnectedWorld.PATH]
+
+func _clear_campaign_saves() -> void:
+	# Starting a new story must clear the old finale and old postgame clock,
+	# otherwise the new Night 1 would incorrectly spawn in free-roam daylight.
+	# Preferences are never touched. Confirmation explicitly warns the player.
+	for base in _campaign_save_paths():
+		for suffix in ["",".bak",".tmp"]:
+			var path: String = base + suffix
+			if FileAccess.file_exists(path):
+				DirAccess.remove_absolute(ProjectSettings.globalize_path(path))
+	var world_clock := get_node_or_null("/root/PostgameClock")
+	if world_clock != null:
+		world_clock.refresh()
+
 func _start_game() -> void:
-	if _has_save():
+	if _has_any_story_progress():
 		new_game_dialog.popup_centered(Vector2i(650, 220))
 	else:
 		_enter_game(true)
 
 func _build_confirmation() -> void:
 	new_game_dialog = ConfirmationDialog.new()
-	new_game_dialog.title = "Begin a new Night 1?"
-	new_game_dialog.dialog_text = "Starting over will replace your current Night 1 save. Continue?"
+	new_game_dialog.title = "Begin a new seven-night story?"
+	new_game_dialog.dialog_text = "Starting over resets all seven chapter saves, the final epilogue and free roam. This cannot be undone. Start a new story?"
 	new_game_dialog.ok_button_text = "START NEW GAME"
 	new_game_dialog.confirmed.connect(func(): _enter_game(true))
 	add_child(new_game_dialog)
 
 func _enter_game(fresh: bool) -> void:
 	if fresh:
-		for path in [Save.PATH, Save.PATH + ".bak", Save.PATH + ".tmp"]:
-			if FileAccess.file_exists(path):
-				DirAccess.remove_absolute(ProjectSettings.globalize_path(path))
+		_clear_campaign_saves()
 	loading_cover.show()
 	await get_tree().process_frame
 	get_tree().change_scene_to_packed(GameScene)
