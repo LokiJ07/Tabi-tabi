@@ -369,15 +369,18 @@ func _draw() -> void:
 		var height := 300.0 * scale_factor
 		DimensionalArt.paint_grounded(self, NORTH_FOREST, foot,
 			Vector2(width, height), Color.WHITE, .27)
-	# Great Flood washout — a continuous diagonal corridor with shallow
-	# eroded banks and dried floodwater scars.
-	_polygon([Vector2(-910,330),Vector2(810,-590),Vector2(950,-535),Vector2(-760,430)], Color("#5f5a45"))
-	_polygon([Vector2(-900,350),Vector2(780,-560),Vector2(860,-510),Vector2(-720,410)], Color("#8b7758"))
-	_polygon([Vector2(-900,373),Vector2(785,-540),Vector2(830,-502),Vector2(-720,438)], Color("#aa8d65"))
-	for i in range(15):
-		var x := -830 + float(i) * 116
-		var y := 347 - float(i) * 64
-		draw_line(Vector2(x, y), Vector2(x + 48, y - 26), Color(.90,.74,.54,.32), 2.0)
+	# The former straight washout ran BELOW the great mango's painted
+	# canopy and invited the player to appear on top of a flat tree sprite.
+	# A curved eroded road now respects the solid trunk and visible ground.
+	var road: Array[Vector2] = Walkability.mango_road_centerline()
+	_polyline(road,Color("#5f5a45"),139.0)
+	_polyline(road,Color("#8b7758"),105.0)
+	_polyline(road,Color("#aa8d65"),69.0)
+	for segment in range(road.size()-1):
+		for j in range(3):
+			var at: Vector2 = road[segment].lerp(road[segment+1],float(j+1)/4.0)
+			draw_line(at+Vector2(-13,4),at+Vector2(20,-5),
+				Color(.90,.74,.54,.32),2.0)
 	# Real walkable path linking the existing refuge detour to Barrio Lawom.
 	_polyline([Vector2(-765, 485), Vector2(-685, 460), Vector2(-570, 520),
 		Vector2(-420, 280)], Color("#5c624a"), 69)
