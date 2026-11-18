@@ -98,35 +98,62 @@ static func write(data: Dictionary) -> bool:
 		return false
 	return true
 
+static func is_postgame(ledger: Dictionary = {}) -> bool:
+	# An individual chapter ending is not a finished seven-night story.
+	var data: Dictionary = read() if ledger.is_empty() else ledger
+	if not bool(data.get("epilogue_complete", false)):
+		return false
+	var outcomes: Dictionary = data.get("outcomes", {})
+	for night in range(1, 8):
+		if str(outcomes.get("night%02d" % night, "")).strip_edges().is_empty():
+			return false
+	return true
+
+static func finish_epilogue() -> bool:
+	# Call only after the final Night 7 epilogue concludes, not after its
+	# trial, partial checkpoint, or a single chapter's morning aftermath.
+	if not implemented("night07"):
+		return false
+	var data := read()
+	var outcomes: Dictionary = data.get("outcomes", {})
+	for night in range(1, 8):
+		if str(outcomes.get("night%02d" % night, "")).strip_edges().is_empty():
+			return false
+	data["epilogue_complete"] = true
+	if not data.has("postgame_time"):
+		data["postgame_time"] = 0.29
+	return write(data)
+
 static func begin_travel(origin: String, destination: String, last_outcome: String) -> bool:
 	# Prevent menu-skipping future chapters and travel between unrelated regions.
 	if not adjacent(origin, destination) or not implemented(destination):
 		return false
-	if origin == "barrio_lawom" and destination == "old_mango" and last_outcome == "":
-		return false
 	var data := read()
+	var postgame := is_postgame(data)
+	if not postgame and origin == "barrio_lawom" and destination == "old_mango" and last_outcome == "":
+		return false
 	# Do not let a player enter Tikbalang's ridge using an arbitrary string
 	# or a preview-only scene. The completed Kapre outcome must already be
 	# in the canonical one-world ledger and match the independent Night 2 save.
-	if origin == "old_mango" and destination == "night03":
+	if not postgame and origin == "old_mango" and destination == "night03":
 		var ledger_outcomes: Dictionary = data.get("outcomes", {})
 		if last_outcome == "" or str(ledger_outcomes.get("night02","")) != last_outcome:
 			return false
 	# The wake cannot be entered on a preview-only or forged Night 3 result.
 	# Compare the current outcome with the shared connected-world case ledger.
-	if origin == "night03" and destination == "night04":
+	if not postgame and origin == "night03" and destination == "night04":
 		var outcomes: Dictionary = data.get("outcomes", {})
 		if last_outcome == "" or str(outcomes.get("night03","")) != last_outcome:
 			return false
 	# The Sigbin farm opens only from a canonically completed wake.
 	# A QA-only scene launch cannot forge a Night 4 outcome in the ledger.
-	if origin == "night04" and destination == "night05":
+	if not postgame and origin == "night04" and destination == "night05":
 		var outcomes: Dictionary = data.get("outcomes", {})
 		if last_outcome == "" or str(outcomes.get("night04","")) != last_outcome:
 			return false
 	# The player cannot enter Night 6 by visiting the road early or forging
 	# a result string. It must match the completed Night 5 world ledger.
-	if origin == "night05" and destination == "night06":
+	if not postgame and origin == "night05" and destination == "night06":
 		var finished: Dictionary = data.get("outcomes",{})
 		if last_outcome == "" or str(finished.get("night05","")) != last_outcome:
 			return false
@@ -135,7 +162,7 @@ static func begin_travel(origin: String, destination: String, last_outcome: Stri
 	var visited: Dictionary = data.get("visited", {})
 	visited[destination] = true
 	data["visited"] = visited
-	if origin == "barrio_lawom" and last_outcome != "":
+	if not postgame and origin == "barrio_lawom" and last_outcome != "":
 		var outcomes: Dictionary = data.get("outcomes", {})
 		outcomes["night01"] = last_outcome
 		data["outcomes"] = outcomes
