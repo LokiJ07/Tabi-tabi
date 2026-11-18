@@ -21,7 +21,12 @@ func refresh() -> void:
 	if _active:
 		var endings: Dictionary = ledger.get("outcomes", {})
 		var final_outcome: String = str(endings.get("night07", "")).to_lower()
-		village_mood = "restored" if final_outcome in ["resolve","reconcile","peaceful","renewal"] else "healing"
+		var fully_safe: bool = final_outcome in ["resolve","reconcile","peaceful","renewal"]
+		for night in range(1, 7):
+			var earlier := str(endings.get("night%02d" % night, "")).to_lower()
+			if earlier in ["partial","retreat","contain","drive_away"]:
+				fully_safe = false
+		village_mood = "restored" if fully_safe else "healing"
 		_fraction = fposmod(clampf(float(ledger.get("postgame_time", START_FRACTION)), 0.0, 1.0), 1.0)
 	_unsaved_seconds = 0.0
 
