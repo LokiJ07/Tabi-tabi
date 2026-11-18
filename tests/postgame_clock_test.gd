@@ -1,6 +1,6 @@
 extends SceneTree
 ## Post-game time starts only after a complete seven-night epilogue ledger.
-## Tests use a synthetic completed save; Night 7 itself is not yet built.
+## Synthetic completed save validates the real Night 7 epilogue unlock gate.
 const World = preload("res://scripts/core/connected_world.gd")
 const Clock = preload("res://scripts/core/postgame_clock.gd")
 var failures := 0
@@ -25,7 +25,7 @@ func _run() -> void:
 
 	clock.refresh()
 	check(not clock.is_active(), "new story does not activate free-roam clock")
-	check(not World.finish_epilogue(), "unbuilt Night 7 cannot end the story")
+	check(not World.finish_epilogue(), "empty story ledger cannot end the seven-night story")
 	var ledger := World.read()
 	ledger["epilogue_complete"] = true
 	ledger["outcomes"] = {"night01":"resolve"}
