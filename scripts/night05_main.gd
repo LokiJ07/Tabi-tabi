@@ -454,7 +454,7 @@ func _draw() -> void:
 		Vector2(375,-93),286.0,_stage()>=2)
 	FarmArt.paint_farm_sign(self,
 		FarmArt.gate_label(story.phase,story.preparations.has("safe_gate")),
-		Vector2(698,83),196.0,_stage()>=2)
+		Vector2(445,83),196.0,_stage()>=2)
 	FarmArt.paint_farm_sign(self,"SAFE HOLDING → %d/3" % story.rescued_groups,
 		FarmArt.HOLDING_SIGN_AT,227.0,_stage()>=2)
 	if story.phase in [1,2,3]:
