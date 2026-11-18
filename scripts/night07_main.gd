@@ -124,6 +124,11 @@ func _ready() -> void:
 	var arrival: Dictionary = World.consume_arrival("night07")
 	if str(arrival.get("from","")) == "night06":
 		player_pos = Story.START
+	# Existing pre-polish saves may place the Apprentice on a root that is
+	# no longer unlocked. Recover to the last safe stone without erasing
+	# evidence, trial progress, or the save itself.
+	if story.phase in [3,5] and not _safe_segment(player_pos):
+		player_pos = _safe_retry_foot()
 	camera = Camera2D.new()
 	camera.name = "BaleteFinalCamera"
 	camera.position = player_pos
@@ -158,6 +163,16 @@ func _active_stone() -> Vector2:
 	if story.phase == 5 and story.awake_index < 3: return AWAKENED_STONES[story.awake_index]
 	return GATE
 
+func _safe_retry_foot() -> Vector2:
+	if story.phase == 3:
+		return GATE if story.path_index == 0 else PATH_STONES[story.path_index-1]
+	if story.phase == 5:
+		return PATH_STONES[2] if story.awake_index == 0 else AWAKENED_STONES[story.awake_index-1]
+	return GATE
+
+func _keeper_gate_open() -> bool:
+	return story.phase >= 3
+
 func _safe_segment(p: Vector2) -> bool:
 	# Only corridors up to the current solved stone are safe. The older
 	# implementation inspected ALL future segments, letting a player walk
@@ -189,7 +204,7 @@ func _process(delta: float) -> void:
 		var candidate := player_pos+world_axis*SPEED*delta
 		candidate.x = clampf(candidate.x,MAP.position.x+65,MAP.end.x-65)
 		candidate.y = clampf(candidate.y,MAP.position.y+65,MAP.end.y-65)
-		if story.phase in [0,1] and candidate.x > 105:
+		if not _keeper_gate_open() and candidate.x > 105:
 			candidate.x = 105 # A visibly roped Keeper path, not a hidden warp.
 		if story.phase in [3,5]:
 			if not _safe_segment(candidate):
@@ -1033,7 +1048,7 @@ func _choose(id: String) -> void:
 				[{"label":"RETURN TO SOURCES","id":"close"}])
 	elif id=="retry_stone":
 		if story.retry_checkpoint():
-			player_pos=GATE if story.phase==3 and story.path_index==0 else PATH_STONES[maxi(0,story.path_index-1)] if story.phase==3 else PATH_STONES[2] if story.awake_index==0 else AWAKENED_STONES[story.awake_index-1]
+			player_pos=_safe_retry_foot()
 			_save_story()
 			_talk("BANTAY • RETRY WITHOUT LOST EVIDENCE",
 				"Earlier roots and every family record are preserved. Observe the current stone before choosing.",
