@@ -9,6 +9,7 @@ const RiverSave = preload("res://scripts/core/night06_save.gd")
 const World = preload("res://scripts/core/connected_world.gd")
 const Prefs = preload("res://scripts/core/preferences.gd")
 const SharedHUD = preload("res://scripts/ui/shared_hud.gd")
+const SharedDialogueMotion = preload("res://scripts/ui/shared_dialogue_motion.gd")
 const Depth = preload("res://scripts/visuals/layered_25d.gd")
 const Landscape = preload("res://scripts/visuals/folklore_landscape_25d.gd")
 const AimPad = preload("res://scripts/ui/aim_pad.gd")
@@ -661,12 +662,22 @@ func _talk(speaker: String,line: String,actions: Array[Dictionary]) -> void:
 		child.queue_free()
 	for option in actions:
 		var choice_id: String = str(option["action"])
-		_button(choices,str(option["label"]),func():_choice(choice_id))
+		_button(choices,str(option["label"]),func():_press_dialogue_choice(choice_id))
+	SharedDialogueMotion.reveal(dialogue,prefs.reduced_motion)
+	SharedDialogueMotion.reveal_text(dialogue_body,prefs.reduced_motion)
 	_sync_ui()
 
+func _press_dialogue_choice(action: String) -> void:
+	# A held finger cannot skip the Keeper's truth or consent statements.
+	# Story state remains synchronous; only presentation fades are animated.
+	if SharedDialogueMotion.finish_text(dialogue_body):
+		return
+	_choice(action)
+
 func _close_dialogue() -> void:
-	dialogue.hide()
+	SharedDialogueMotion.conceal(dialogue,prefs.reduced_motion)
 	_sync_ui()
+	SharedDialogueMotion.restore_gameplay(controls,prefs.reduced_motion)
 
 func _sync_ui() -> void:
 	if backdrop == null:
