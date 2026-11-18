@@ -510,6 +510,7 @@ func _draw() -> void:
 		draw_arc(TREE, 157, 0, TAU, 80, Color("#e2b879",.58), 3.0)
 
 func _draw_chapter_actors(behind: bool) -> void:
+	var light_stage := _light_stage()
 	var actors: Array[Dictionary] = []
 	if NightWindows.outdoor_actor_visible(2,light_stage,"DADO"):
 		actors.append({"at": Vector2(-661,-263), "texture": DADO, "width": 80.0, "height": 128.0})
