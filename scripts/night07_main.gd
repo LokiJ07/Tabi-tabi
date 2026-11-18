@@ -120,6 +120,9 @@ func _ready() -> void:
 		}
 		story.sabel_privacy = river.sabel_public_choice
 	Save.read(story)
+	if story.finished:
+		# Older final saves migrate into Free Roam automatically and safely.
+		World.unlock_free_roam()
 	player_pos = story.player_position
 	var arrival: Dictionary = World.consume_arrival("night07")
 	if str(arrival.get("from","")) == "night06":
@@ -142,7 +145,7 @@ func _ready() -> void:
 	ambient.set_audio_level(prefs.audio_level)
 	_build_ui()
 	_refresh()
-	if story.phase == 7:
+	if story.phase == 7 and not World.free_roam_unlocked():
 		_show_outcome()
 	elif story.phase == 0:
 		_talk("MARA • THE LAST MORNING",
@@ -1135,12 +1138,26 @@ func _choose(id: String) -> void:
 		_refresh()
 	elif id=="finish_confirm":
 		_talk("THE MORNING AFTER • YOUR OWN PACE",
-			"You can speak to neighbours and visit the river for as long as you wish. Finish only when you choose; the epilogue and its records remain available in your save.",
-			[{"label":"KEEP WALKING","id":"close"},
-			 {"label":"FINISH THE STORY & RETURN TO TITLE","id":"finish_story"}])
+			"Completing the seven-night story unlocks FREE ROAM. Afterward, walk the visible connections from Balete Grounds back through River, Farm, Wake, Ridge, Mango and Barrio Lawom. Your endings and NPC memories remain saved.",
+			[{"label":"KEEP EXPLORING THE MORNING","id":"close"},
+			 {"label":"COMPLETE STORY • EXPLORE ALL 7 MAPS","id":"explore_all"},
+			 {"label":"COMPLETE STORY • RETURN TO TITLE","id":"finish_story"}])
+	elif id=="explore_all":
+		if _complete_for_free_roam():
+			_talk("FREE ROAM UNLOCKED • SEVEN CONNECTED MAPS",
+				"Ang tanan nga lugar abli na. Walk west to the RIVER RETURN sign; pass the farm, wake, ridge and mango trails all the way to Barrio Lawom. Return through the same roads, or use FREE ROAM on the title menu. All seven endings, evidence and saves remain intact.",
+				[{"label":"EXPLORE BALETE GROUNDS","id":"close"},
+				 {"label":"SAVE AND GO TO TITLE","id":"free_roam_title"}])
+		else:
+			save_error.popup_centered(Vector2i(600,185))
+	elif id=="free_roam_title":
+		_save_menu()
+		return
 	elif id=="finish_story":
-		if story.finish_story() and _save_story():
+		if _complete_for_free_roam():
 			get_tree().change_scene_to_file("res://scenes/title.tscn")
+		else:
+			save_error.popup_centered(Vector2i(600,185))
 		return
 	_refresh()
 
@@ -1190,7 +1207,11 @@ func _refresh() -> void:
 		4: objective.text="Keeper truth trial • present evidence. Admit genuine gaps instead of inventing proof."
 		5: objective.text="AWAKENED ROOTS %d/3 • guard the village and traverse safely." % [story.awake_index+1]
 		6: objective.text="Choose an evidence-credible ending. The dark choice requires deliberate confirmation."
-		7: objective.text="THE MORNING AFTER • %s • Walk freely; finish when you choose." % story.outcome.to_upper()
+		7:
+			if World.free_roam_unlocked():
+				objective.text="FREE ROAM • ALL 7 MAPS OPEN • Follow the RIVER RETURN trail to explore the connected world."
+			else:
+				objective.text="THE MORNING AFTER • %s • Walk freely; finish when you choose." % story.outcome.to_upper()
 	if qa_view!=0:
 		var qa_titles: Array[String] = [
 			"","MORNING • READINESS VISUAL QA",
@@ -1288,6 +1309,16 @@ func _open_options() -> void:
 	if dialogue.visible or outcome_panel.visible: return
 	options.show()
 	_sync_ui()
+
+func _complete_for_free_roam() -> bool:
+	# A deliberate final epilogue choice creates the only canonical unlock.
+	# The persistent world switch is written AFTER the final save succeeds.
+	if not story.finish_story() or not _save_story():
+		return false
+	if not World.unlock_free_roam():
+		return false
+	_refresh()
+	return true
 
 func _save_story() -> bool:
 	story.player_position=player_pos
