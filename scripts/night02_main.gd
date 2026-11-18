@@ -119,6 +119,8 @@ var travel_in_progress := false
 # Folklore-aware stages: investigation by day, safety at dusk,
 # ember-and-smoke observation at night, then a full nocturnal reveal.
 func _light_stage() -> int:
+	if PostgameClock.is_active():
+		return PostgameClock.light_stage()
 	if debug_night_reveal:
 		return 3
 	if debug_dusk_preview:
