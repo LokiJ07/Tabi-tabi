@@ -500,6 +500,41 @@ if [ "${GITHUB_REF:-}" = "refs/heads/feature/night06-rivers-unfinished-memory" ]
   echo "PASS: real Night 6 river, archives, reconstruction board and living current"
 fi
 
+# Exact Night 7 QA branch: capture the actual Android-rendered Balete,
+# final root challenge and memorial in the live Godot scene. These are
+# DEBUG ONLY key positions and do not mutate the canonical story/save.
+if [ "${GITHUB_REF:-}" = "refs/heads/feature/night07-balete-finale" ]; then
+  adb shell am force-stop "$PKG" || true
+  adb shell monkey -p "$PKG" -c android.intent.category.LAUNCHER 1
+  sleep 8
+  adb shell input keyevent 139 # F9, actual Night 7 title QA entry
+  sleep 8
+  if ! adb logcat -d -v brief | grep -q "NIGHT7_QA_SCENE_READY"; then
+    echo "ERROR: Night 7 actual Balete scene did not launch on Android"
+    adb logcat -d -v brief | grep -Ei 'NIGHT7|SCRIPT ERROR|Godot|AndroidRuntime' | tail -n 100 || true
+    exit 1
+  fi
+  adb exec-out screencap -p > build/android-night7-intro.png
+  for item in "133 ROAD_DUSK connected-road" "136 BALETE_DAY balete-day" "139 KEEPER_NIGHT keeper-night" "141 MEMORIAL_DAWN memorial-dawn"; do
+    set -- $item
+    adb shell input keyevent "$1"
+    sleep 5
+    if ! adb logcat -d -v brief | grep -q "NIGHT7_QA_$2"; then
+      echo "ERROR: Night 7 live scene missing $2 view"
+      adb logcat -d -v brief | grep -Ei 'NIGHT7|SCRIPT ERROR|Godot' | tail -n 95 || true
+      exit 1
+    fi
+    adb exec-out screencap -p > "build/android-night7-$3.png"
+    python3 .github/scripts/assert_gameplay_visible.py "build/android-night7-$3.png"
+  done
+  if cmp -s build/android-night7-balete-day.png build/android-night7-keeper-night.png; then
+    echo "ERROR: Balete day/night views are identical on emulator"
+    exit 1
+  fi
+  adb logcat -d -v brief | grep -Ei 'NIGHT7_QA|Godot|AndroidRuntime' | tail -n 160 > build/android-night7-log.txt || true
+  echo "PASS: real Android Night 7 Balete, connected road and ancient Keeper rendered"
+fi
+
 adb logcat -d -s AndroidRuntime:E Godot:E GodotEngine:E > build/android-night1-launch-log.txt || true
 # An emulator "launch PASS" must never conceal a GDScript exception. Godot
 # software renderers can log shader link errors on SwiftShader (handled by the
