@@ -217,6 +217,7 @@ func _physics_process(delta: float) -> void:
 		lantern.global_rotation.y = atan2(-lamp_heading.x, -lamp_heading.z)
 	_update_bantay(delta)
 	_update_dog_warnings(delta)
+	_sync_postgame_named_witnesses()
 	_update_interact_hint()
 	FolkActors.animate_person(apprentice_visual, elapsed, desired.length() > 0.1)
 	var speaking_role := ""
@@ -1501,6 +1502,32 @@ func _close_dialogue() -> void:
 	dialogue_page = 0
 	_clear_touch_input()
 	_sync_modal_ui()
+
+
+func _sync_postgame_named_witnesses() -> void:
+	# Dado returns to the actual dock, Sabel to her stall, Mara to school;
+	# named witnesses keep their original identity and conversation records.
+	# Changing the marker moves the visible character and interact point together.
+	if not _postgame_is_active():
+		return
+	var shared_clock := get_node("/root/PostgameClock")
+	var hour: float = shared_clock.fraction() * 24.0
+	var locations := {
+		"DADO": [Vector3(-6.6,.1,9.7),Vector3(-5.2,.1,6.8),Vector3(-6.0,.1,8.6)],
+		"SABEL": [Vector3(9.0,.1,-5.6),Vector3(3.1,.1,-5.1),Vector3(8.5,.1,-5.1)],
+		"MARA": [Vector3(-2.6,.1,-8.8),Vector3(-.5,.1,-6.7),Vector3(-2.2,.1,-8.1)],
+		"LOLA": [Vector3(4.1,.1,7.0),Vector3(5.2,.1,6.1),Vector3(4.0,.1,7.0)]
+	}
+	for role in locations:
+		var marker := interaction_nodes.get(role) as Node3D
+		if marker == null:
+			continue
+		var phases: Array = locations[role]
+		var destination: Vector3 = phases[0] if hour < 11.0 else phases[1] if hour < 14.0 else phases[2]
+		if hour >= 18.5 or hour < 5.5:
+			destination = phases[2]
+		var easing := .32 if preferences.reduced_motion else .09
+		marker.position = marker.position.lerp(destination, easing)
 
 
 func _postgame_is_active() -> bool:
