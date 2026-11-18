@@ -11,6 +11,7 @@ config/description="Barrio Lawom — Night 1 vertical slice"
 
 [autoload]
 PostgameClock="*res://scripts/core/postgame_clock.gd"
+SceneTransit="*res://scripts/core/scene_transit.gd"
 
 [display]
 window/size/viewport_width=1280
