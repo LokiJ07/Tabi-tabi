@@ -133,6 +133,11 @@ func _run() -> void:
 		var game = (spec[0] as PackedScene).instantiate()
 		root.add_child(game)
 		await process_frame
+		# Positioning directly on a real scene exit triggers auto-streaming
+		# during the next _process frame. Freeze movement only for this
+		# read-only hitbox assertion; separately exercise travel through
+		# the actual World.begin_travel() path above.
+		game.set_process(false)
 		if str(spec[1])=="night07":
 			check(game.story.finished and not game.outcome_panel.visible,
 				"revisiting the finale starts open world, not blocking final outcome")
