@@ -125,7 +125,8 @@ func _ready() -> void:
 	ambient.set_audio_level(prefs.audio_level)
 	_build_ui()
 	_refresh()
-	if story.outcome != "":
+	var postgame_ready := get_node_or_null("/root/PostgameClock")
+	if story.outcome != "" and not (postgame_ready != null and postgame_ready.is_active()):
 		_show_ending()
 	elif story.phase == 0 and story.clues.is_empty():
 		_talk("MARA • THE RIVER WITHOUT RAIN",
@@ -154,6 +155,14 @@ func _safe_corridor(p: Vector2) -> bool:
 	return false
 
 func _process(delta: float) -> void:
+	var village_clock := get_node_or_null("/root/PostgameClock")
+	if village_clock != null and village_clock.is_active() and objective != null:
+		var free_roam_status := "FREE ROAM • RIVER CROSSING • FISHING & REPAIRS\n%s  |  %s" % [
+			village_clock.clock_label(),
+			"RESTORED" if village_clock.village_mood == "restored" else "REBUILDING"
+		]
+		if objective.text != free_roam_status:
+			objective.text = free_roam_status
 	clock += delta if not prefs.reduced_motion else 0.0
 	if _stage() >= 2:
 		indoor_seconds = minf(3.3,indoor_seconds+delta)
