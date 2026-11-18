@@ -788,7 +788,7 @@ func _create_ui() -> void:
 	root.add_child(gameplay_hud)
 	# A vertical, wrapping status card prevents the objective, clue progress,
 	# Santelmo alarm, companion alerts and courage from occupying fixed Y slots.
-	var status := SharedHUD.create_status_card(gameplay_hud, "TABI-TABI  •  BARRIO LAWOM", preferences.text_scale)
+	var status := SharedHUD.create_status_card(gameplay_hud, "TABI-TABI  •  NIGHT 1 / SANTELMO", preferences.text_scale)
 	status_panel = status["panel"]
 	status_stack = status["stack"]
 	info = status["heading"]
