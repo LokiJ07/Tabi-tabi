@@ -171,7 +171,8 @@ func _ready() -> void:
 	ambient_sound.set_audio_level(prefs.audio_level)
 	_build_ui()
 	_rebuild_objective()
-	if story.outcome != "":
+	var postgame_ready := get_node_or_null("/root/PostgameClock")
+	if story.outcome != "" and not (postgame_ready != null and postgame_ready.is_active()):
 		_show_ending()
 	elif story.phase == 0 and story.clues.is_empty():
 		_show_dialogue("LOLA PASING",
@@ -182,6 +183,14 @@ func _ready() -> void:
 	queue_redraw()
 
 func _process(delta: float) -> void:
+	var village_clock := get_node_or_null("/root/PostgameClock")
+	if village_clock != null and village_clock.is_active() and objective != null:
+		var free_roam_status := "FREE ROAM • MANGO GROVE • PATHS & SCHOOL\n%s  |  %s" % [
+			village_clock.clock_label(),
+			"RESTORED" if village_clock.village_mood == "restored" else "REBUILDING"
+		]
+		if objective.text != free_roam_status:
+			objective.text = free_roam_status
 	elapsed += delta
 	if not prefs.reduced_motion:
 		particle_phase += delta
