@@ -1820,7 +1820,7 @@ func _enter_mango_trail() -> void:
 		return
 	_clear_touch_input()
 	print("TABI_WORLD_TRAVEL_BARRIO_TO_MANGO")
-	get_tree().change_scene_to_packed(Night02Scene)
+	SceneTransit.change_to_packed(Night02Scene)
 
 
 func _begin_night2() -> void:
@@ -1832,13 +1832,13 @@ func _begin_night2() -> void:
 	if not ConnectedWorld.begin_travel("barrio_lawom", "old_mango", story.outcome):
 		navigation_error_dialog.popup_centered(Vector2i(620, 210))
 		return
-	get_tree().change_scene_to_packed(Night02Scene)
+	SceneTransit.change_to_packed(Night02Scene)
 
 
 func _save_and_return_to_menu() -> void:
 	if not _save_before_navigation():
 		return
-	get_tree().change_scene_to_file("res://scenes/title.tscn")
+	SceneTransit.change_to_file("res://scenes/title.tscn")
 
 
 func _save_and_quit_game() -> void:
