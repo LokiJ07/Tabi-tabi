@@ -69,6 +69,13 @@ static func make_gameplay_button(parent: Control, title: String, pos: Vector2, d
 	button.size = dimensions
 	button.button_down.connect(down)
 	button.button_up.connect(up)
+	# Dragging outside a touch button must never leave a MOVE or OBSERVE
+	# action held. This was inconsistent in the earlier farm/wake chapters.
+	if title in ["▲","▼","◀","▶","HOLD OBSERVE","HOLD FOCUS"]:
+		button.mouse_exited.connect(up)
+		parent.visibility_changed.connect(func():
+			if not parent.is_visible_in_tree():
+				up.call())
 	style_game_button(button, 18 if dimensions.x < 95.0 and title.length() > 2 else 23, dimensions.x < 95.0, text_scale)
 	match title:
 		"PREPARE": button.icon = ICON_PREPARE
