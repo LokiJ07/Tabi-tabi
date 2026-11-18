@@ -10,6 +10,7 @@ const World = preload("res://scripts/core/connected_world.gd")
 const Prefs = preload("res://scripts/core/preferences.gd")
 const RiverSound = preload("res://scripts/audio/night06_ambience.gd")
 const SharedHUD = preload("res://scripts/ui/shared_hud.gd")
+const Walkability = preload("res://scripts/world/shared_walkability_2d.gd")
 const PostgameResidents = preload("res://scripts/world/postgame_residents.gd")
 const PostgameDialogue = preload("res://scripts/narrative/postgame_dialogue.gd")
 const DialogueMotion = preload("res://scripts/ui/shared_dialogue_motion.gd")
@@ -205,7 +206,7 @@ func _process(delta: float) -> void:
 					_refresh()
 		elif story.phase == 7 and story.outcome == "" and candidate.y > 575:
 			candidate.y = 575
-		player_pos = candidate
+		player_pos = Walkability.slide(6,foot,candidate)
 	bantay_pos = bantay_pos.lerp(player_pos+Vector2(-53,28),clampf(delta*3.5,0.0,1.0))
 	var target := player_pos+aim*48.0
 	if story.phase == 6 or qa_river_preview:
@@ -678,14 +679,9 @@ func _build_ui() -> void:
 	waypoint.add_theme_color_override("font_color",Color("#b9d6c9"))
 	status_stack.add_child(waypoint)
 	interaction_hint = SharedHUD.make_nearby_prompt(controls,prefs.text_scale)
-	for dir in SharedHUD.MOVE_POSITIONS:
-		var at: Vector2 = SharedHUD.MOVE_POSITIONS[dir]
-		var symbol: String = str({"up":"▲","left":"◀","right":"▶","down":"▼"}.get(dir,"▲"))
-		var move := SharedHUD.make_gameplay_button(controls,symbol,at,Vector2(70,65),
-			func():_hold_move(dir,true),func():_hold_move(dir,false),prefs.text_scale)
-		move.name = "Move_"+dir
-		move.mouse_exited.connect(func():_hold_move(dir,false))
-	for title in SharedHUD.ACTION_POSITIONS:
+	SharedHUD.create_movement_joystick(controls,prefs,
+		func(axis: Vector2): move_axis = axis)
+		for title in SharedHUD.ACTION_POSITIONS:
 		var at: Vector2 = SharedHUD.ACTION_POSITIONS[title]
 		match title:
 			"FIELD NOTES":

@@ -88,5 +88,16 @@ static func build(parent: Node3D, at: Vector3, index: int = 0) -> Node3D:
 			Vector3(x, high + 0.26, z),
 			Vector3(x + 0.08, high - 0.28, z + 0.04),
 			0.045, Color("#89a65a"))
+	# Solid mangrove roots at ground level, not an impassable canopy.
+	var body := StaticBody3D.new()
+	body.name = "Mangrove root collision"
+	body.position = Vector3(0,.92,0)
+	var root_shape := CollisionShape3D.new()
+	var trunk_shape := CylinderShape3D.new()
+	trunk_shape.radius = .70
+	trunk_shape.height = 1.84
+	root_shape.shape = trunk_shape
+	body.add_child(root_shape)
+	tree.add_child(body)
 	tree.set_meta("shore_tree", "mangrove")
 	return tree

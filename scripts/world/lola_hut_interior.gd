@@ -47,6 +47,16 @@ static func build(world: Node3D) -> Dictionary:
 	for wall_name in ["Front woven wall left", "Front woven wall right", "Right woven wall"]:
 		var facing_wall := room.get_node(wall_name) as MeshInstance3D
 		facing_wall.visible = false
+	# Readable low cutaway wall outlines retain complete full-height collision.
+	_box(room, "Front cutaway wall left", Vector3(-2.85,.43,4.0),
+		Vector3(3.3,.86,.24),Color("#ad8660"),false)
+	_box(room, "Front cutaway wall right", Vector3(2.85,.43,4.0),
+		Vector3(3.3,.86,.24),Color("#ad8660"),false)
+	_box(room, "Right cutaway wall", Vector3(4.5,.43,0),
+		Vector3(.24,.86,8),Color("#92744f"),false)
+	# HUT_EXIT remains an interaction portal; there is no walk-through hole.
+	_box(room, "Hut exit safety gate", Vector3(0,.45,3.97),
+		Vector3(2.36,.9,.22),Color("#876446"),true)
 	# Cross-bamboo weave and roof beam silhouettes are seen from overhead
 	# without covering the playable room with a solid opaque roof.
 	for i in range(11):

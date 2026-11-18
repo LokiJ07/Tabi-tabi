@@ -9,6 +9,7 @@ const RiverSave = preload("res://scripts/core/night06_save.gd")
 const World = preload("res://scripts/core/connected_world.gd")
 const Prefs = preload("res://scripts/core/preferences.gd")
 const SharedHUD = preload("res://scripts/ui/shared_hud.gd")
+const Walkability = preload("res://scripts/world/shared_walkability_2d.gd")
 const SharedDialogueMotion = preload("res://scripts/ui/shared_dialogue_motion.gd")
 const Depth = preload("res://scripts/visuals/layered_25d.gd")
 const Landscape = preload("res://scripts/visuals/folklore_landscape_25d.gd")
@@ -155,7 +156,7 @@ func _process(delta: float) -> void:
 		# around the Balete is always wide enough to reach all quest stations.
 		if candidate.y > 595 and candidate.x > -650:
 			candidate.y = 595.0
-		player_pos = candidate
+		player_pos = Walkability.slide(7,player_pos,candidate)
 	bantay_pos = bantay_pos.lerp(player_pos + Vector2(-51,32),clampf(delta*3.1,0,1))
 	# At the Keeper's covenant the original 760px Balete was cropped
 	# above the Android camera. Fit the canopy and apprentice in the world
@@ -322,14 +323,9 @@ func _build_ui() -> void:
 	pressure = _label(status_stack,"",17,Color("#e2d2a5"))
 	waypoint = _label(status_stack,"",17,Color("#c3d5be"))
 	interaction_hint = SharedHUD.make_nearby_prompt(controls,prefs.text_scale)
-	for dir in SharedHUD.MOVE_POSITIONS:
-		var at: Vector2 = SharedHUD.MOVE_POSITIONS[dir]
-		var symbol: String = str({"up":"▲","left":"◀","right":"▶","down":"▼"}.get(dir))
-		var move := SharedHUD.make_gameplay_button(controls,symbol,at,Vector2(70,65),
-			func():_hold_move(dir,true),func():_hold_move(dir,false),prefs.text_scale)
-		move.name = "Move_"+dir
-		move.mouse_exited.connect(func():_hold_move(dir,false))
-	for action in SharedHUD.ACTION_POSITIONS:
+	SharedHUD.create_movement_joystick(controls,prefs,
+		func(axis: Vector2): motion = axis)
+		for action in SharedHUD.ACTION_POSITIONS:
 		var at: Vector2 = SharedHUD.ACTION_POSITIONS[action]
 		match action:
 			"FIELD NOTES":

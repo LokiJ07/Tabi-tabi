@@ -9,6 +9,8 @@ var high_contrast := false
 var story_assist := false
 var audio_level := 1
 var hint_level := 1
+var joystick_x := .195
+var joystick_y := .78
 
 func next_text_scale() -> void:
 	var idx := TEXT_SCALES.find(text_scale)
@@ -22,7 +24,7 @@ func next_hint_level() -> void:
 	hint_level = (hint_level + 1) % HINT_LEVELS.size()
 
 func to_dict() -> Dictionary:
-	return {"schema": 1, "text_scale": text_scale, "reduced_motion": reduced_motion, "high_contrast": high_contrast, "story_assist": story_assist, "audio_level": audio_level, "hint_level": hint_level}
+	return {"schema": 1, "text_scale": text_scale, "reduced_motion": reduced_motion, "high_contrast": high_contrast, "story_assist": story_assist, "audio_level": audio_level, "hint_level": hint_level, "joystick_x": joystick_x, "joystick_y": joystick_y}
 
 func from_dict(data: Variant) -> bool:
 	if typeof(data) != TYPE_DICTIONARY or int(data.get("schema", -1)) != 1:
@@ -34,6 +36,8 @@ func from_dict(data: Variant) -> bool:
 	story_assist = bool(data.get("story_assist", false))
 	audio_level = clampi(int(data.get("audio_level", 1)), 0, 2)
 	hint_level = clampi(int(data.get("hint_level", 1)), 0, 2)
+	joystick_x = clampf(float(data.get("joystick_x", .195)), .13, .45)
+	joystick_y = clampf(float(data.get("joystick_y", .78)), .50, .83)
 	return true
 
 func save_to(path: String = PATH) -> bool:

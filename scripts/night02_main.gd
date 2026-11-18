@@ -11,6 +11,7 @@ const Preferences = preload("res://scripts/core/preferences.gd")
 const Night02Ambience = preload("res://scripts/audio/night02_ambience.gd")
 const ConnectedWorld = preload("res://scripts/core/connected_world.gd")
 const SharedHUD = preload("res://scripts/ui/shared_hud.gd")
+const Walkability = preload("res://scripts/world/shared_walkability_2d.gd")
 const PostgameResidents = preload("res://scripts/world/postgame_residents.gd")
 const SharedDialogueMotion = preload("res://scripts/ui/shared_dialogue_motion.gd")
 const AimPad = preload("res://scripts/ui/aim_pad.gd")
@@ -209,13 +210,10 @@ func _process(delta: float) -> void:
 	if axis.length() > .02:
 		if not prefs.reduced_motion:
 			walk_phase += delta * 8.5
-		player_pos += walk * PLAYER_SPEED * delta
-		player_pos.x = clampf(player_pos.x, MAP_LIMIT.position.x + 55, MAP_LIMIT.end.x - 55)
-		player_pos.y = clampf(player_pos.y, MAP_LIMIT.position.y + 65, MAP_LIMIT.end.y - 65)
-		# The main trunk is a real obstacle, not a walk-through tree picture.
-		var tree_offset := player_pos - TREE
-		if tree_offset.length() < 70:
-			player_pos = TREE + tree_offset.normalized() * 70 if tree_offset.length() > .01 else TREE + Vector2(-70, 0)
+		var candidate := player_pos + walk * PLAYER_SPEED * delta
+		candidate.x = clampf(candidate.x, MAP_LIMIT.position.x + 55, MAP_LIMIT.end.x - 55)
+		candidate.y = clampf(candidate.y, MAP_LIMIT.position.y + 65, MAP_LIMIT.end.y - 65)
+		player_pos = Walkability.slide(2,player_pos,candidate)
 		dog_pos = dog_pos.lerp(player_pos + Vector2(-48, 27), clampf(delta * 2.9, 0.0, 1.0))
 	# The camera eases toward a nearby speaker without moving the player
 	# or rushing across the grove to an off-screen witness.
@@ -767,16 +765,9 @@ func _build_ui() -> void:
 	interaction_hint = SharedHUD.make_nearby_prompt(gameplay_controls, prefs.text_scale)
 	# Exactly the same Night 1 physical layout, icons, input affordances,
 	# and 1280x720 responsive anchors. Only the two chapter actions differ.
-	for item in [
-		["left","◀",Vector2(20,575)], ["right","▶",Vector2(170,575)],
-		["up","▲",Vector2(95,505)], ["down","▼",Vector2(95,645)]
-	]:
-		var dir_name: String = item[0]
-		var move := SharedHUD.make_gameplay_button(gameplay_controls,item[1],item[2],
-			Vector2(70,65),func(): _press_move(dir_name,true),func(): _press_move(dir_name,false),prefs.text_scale)
-		move.name = "Move_" + dir_name
-		move.mouse_exited.connect(func(): _press_move(dir_name,false))
-	var look := AimPad.new()
+	SharedHUD.create_movement_joystick(gameplay_controls,prefs,
+		func(axis: Vector2): motion = axis)
+		var look := AimPad.new()
 	look.name = "Night2LookPad"
 	look.prompt_text = "LOOK AROUND"
 	look.anchor_left = 1.0

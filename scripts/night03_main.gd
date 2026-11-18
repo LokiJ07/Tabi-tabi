@@ -10,6 +10,7 @@ const Night02State = preload("res://scripts/narrative/night02_state.gd")
 const ConnectedWorld = preload("res://scripts/core/connected_world.gd")
 const Preferences = preload("res://scripts/core/preferences.gd")
 const SharedHUD = preload("res://scripts/ui/shared_hud.gd")
+const Walkability = preload("res://scripts/world/shared_walkability_2d.gd")
 const PostgameResidents = preload("res://scripts/world/postgame_residents.gd")
 const SharedMotion = preload("res://scripts/ui/shared_dialogue_motion.gd")
 const SharedAtmosphere = preload("res://scripts/visuals/shared_immersive_atmosphere.gd")
@@ -186,7 +187,7 @@ func _process(delta: float) -> void:
 		# The ravine is real collision: the traveler must use the stone ford.
 		if _in_unsafe_ravine(moved):
 			moved = player_pos
-		player_pos = moved
+		player_pos = Walkability.slide(3,player_pos,moved)
 	bantay_pos = bantay_pos.lerp(player_pos + Vector2(-49,29),clampf(delta*3.5,0.0,1.0))
 	var goal_blend := 1.0 if dialogue_focus and dialogue.visible else 0.0
 	camera_blend = lerpf(camera_blend,goal_blend,1.0 if prefs.reduced_motion else clampf(delta*3.8,0.0,1.0))
@@ -556,16 +557,9 @@ func _build_ui() -> void:
 	observation_bar.show_percentage = false
 	observation_bar.visible = false
 	gameplay_controls.add_child(observation_bar)
-	for entry in [
-		["left","◀",Vector2(20,575)],["right","▶",Vector2(170,575)],
-		["up","▲",Vector2(95,505)],["down","▼",Vector2(95,645)]
-	]:
-		var key: String = str(entry[0])
-		var b := SharedHUD.make_gameplay_button(gameplay_controls,str(entry[1]),entry[2],
-			Vector2(70,65),func(): _hold_move(key,true),func(): _hold_move(key,false),prefs.text_scale)
-		b.name = "Move_"+key
-		b.mouse_exited.connect(func(): _hold_move(key,false))
-	var look := AimPad.new()
+	SharedHUD.create_movement_joystick(gameplay_controls,prefs,
+		func(axis: Vector2): motion = axis)
+		var look := AimPad.new()
 	look.name = "Night3LookPad"
 	look.prompt_text = "LOOK AROUND"
 	look.anchor_left = 1.0

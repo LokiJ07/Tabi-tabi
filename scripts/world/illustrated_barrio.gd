@@ -106,6 +106,11 @@ static func decorate(world: Node3D) -> Node3D:
 	for i in range(flower_positions.size()):
 		_sprite(root, "Illustrated garden hibiscus %02d" % i, FLOWERS, flower_positions[i], 0.0050, true, i % 2 == 0)
 
+	# Billboard crowns must have matching solid trunks at world ground height.
+	for at in upland:
+		_tree_footprint(root,Vector2(at.x,at.z),.55)
+	for at in banana_positions:
+		_tree_footprint(root,Vector2(at.x,at.z),.33)
 	_sprite(root, "Painted river lamp", LANTERN, Vector3(-4.0, 1.63, 9.0), 0.0068, true)
 	_sprite(root, "Painted marketplace lamp", LANTERN, Vector3(2.8, 1.63, -2.0), 0.0068, true)
 
@@ -114,6 +119,19 @@ static func decorate(world: Node3D) -> Node3D:
 	# Adding another full-size facade in front hid the true volume and made
 	# these buildings look like 2D posters glued on top of geometry.
 	return root
+
+static func _tree_footprint(parent: Node3D, at: Vector2, radius: float) -> void:
+	var trunk := StaticBody3D.new()
+	trunk.name = "Illustrated trunk collision"
+	trunk.position = Vector3(at.x,.92,at.y)
+	var shape := CollisionShape3D.new()
+	var cylinder := CylinderShape3D.new()
+	cylinder.radius = radius
+	cylinder.height = 1.84
+	shape.shape = cylinder
+	trunk.add_child(shape)
+	parent.add_child(trunk)
+
 
 static func _path_center(z: float) -> float:
 	return 0.54 * sin(z * 0.20) + 0.23 * sin(z * 0.54)

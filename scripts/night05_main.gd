@@ -8,6 +8,7 @@ const Night04Save = preload("res://scripts/core/night04_save.gd")
 const World = preload("res://scripts/core/connected_world.gd")
 const Preferences = preload("res://scripts/core/preferences.gd")
 const SharedHUD = preload("res://scripts/ui/shared_hud.gd")
+const Walkability = preload("res://scripts/world/shared_walkability_2d.gd")
 const PostgameResidents = preload("res://scripts/world/postgame_residents.gd")
 const DialogueMotion = preload("res://scripts/ui/shared_dialogue_motion.gd")
 const DimensionalArt = preload("res://scripts/visuals/layered_25d.gd")
@@ -211,12 +212,10 @@ func _process(delta: float) -> void:
 			walk_phase += delta*9.0
 		var walk := Vector2(axis.x+axis.y*.42,axis.y*.78-axis.x*.15).normalized()
 		var previous_foot := player_pos
-		player_pos += walk*PLAYER_SPEED*delta
-		player_pos.x = clampf(player_pos.x,MAP.position.x+65,MAP.end.x-65)
-		player_pos.y = clampf(player_pos.y,MAP.position.y+75,MAP.end.y-75)
-		# Never allow the player to walk into the decaying raised barn.
-		if player_pos.x > -232 and player_pos.x < 552 and player_pos.y > -612 and player_pos.y < -80:
-			player_pos.y = -64 if player_pos.y > -350 else -634
+		var candidate := player_pos+walk*PLAYER_SPEED*delta
+		candidate.x = clampf(candidate.x,MAP.position.x+65,MAP.end.x-65)
+		candidate.y = clampf(candidate.y,MAP.position.y+75,MAP.end.y-75)
+		player_pos = Walkability.slide(5,previous_foot,candidate)
 		# Player stays outside the actual kural. The gate is for livestock
 		# rescue; preparing the gate never opens an unsafe player shortcut.
 		player_pos = FarmArt.keep_player_outside_pen(previous_foot,player_pos)
@@ -583,12 +582,9 @@ func _build_ui() -> void:
 	waypoint.add_theme_color_override("font_color",Color("#b5d5cb"))
 	stack.add_child(waypoint)
 	interaction_hint = SharedHUD.make_nearby_prompt(controls,prefs.text_scale)
-	for dir in SharedHUD.MOVE_POSITIONS:
-		var at: Vector2 = SharedHUD.MOVE_POSITIONS[dir]
-		var short: String = str({"up":"▲","left":"◀","right":"▶","down":"▼"}.get(dir,"▲"))
-		SharedHUD.make_gameplay_button(controls,short,at,Vector2(70,65),
-			func(): _hold_move(dir,true),func(): _hold_move(dir,false),prefs.text_scale)
-	for title in SharedHUD.ACTION_POSITIONS:
+	SharedHUD.create_movement_joystick(controls,prefs,
+		func(axis: Vector2): motion = axis)
+		for title in SharedHUD.ACTION_POSITIONS:
 		var at: Vector2 = SharedHUD.ACTION_POSITIONS[title]
 		var size2 := Vector2(180,60)
 		match title:

@@ -45,10 +45,10 @@ func _run() -> void:
 	check(game.action_buttons.has("HOLD OBSERVE"), "continuous observation control")
 	check(game.action_buttons.has("FIELD NOTES"), "source-aware journal")
 	check(game.action_buttons.has("OPTIONS"), "pause, save and quit controls")
-	var move_up := game.get_node_or_null("Night2HUD/Night2Screen/GameplayControls/Move_up") as Button
-	check(move_up != null, "shared bottom-left movement UI")
-	if move_up != null:
-		check(is_equal_approx(move_up.anchor_left, 0.0) and is_equal_approx(move_up.offset_left, 95.0), "Night 2 arrow exactly matches Night 1 thumb position")
+	var move_stick := game.get_node_or_null("Night2HUD/Night2Screen/GameplayControls/MovementJoystick") as Control
+	check(move_stick != null, "shared movable analogue joystick")
+	if move_stick != null:
+		check(move_stick.position.x > 60.0 and move_stick.size.x >= 180.0, "Night 2 stick sits inward from edge")
 	var act := game.action_buttons.get("INTERACT") as Button
 	check(act != null and act.get_meta("shared_hud_version", 0) == 1, "interact uses common chapter HUD theme")
 	if act != null:
