@@ -483,6 +483,7 @@ if [ "${GITHUB_REF:-}" = "refs/heads/fix/visual-depth-room-occlusion-n1-n2" ] ||
     echo "ERROR: saved livestock crossing did not produce two distinct gameplay frames"
     exit 1
   fi
+  capture_real_options 5 android-night5-first-rescue-settled.png NIGHT5_QA_OPTIONS_OPEN
   adb logcat -d -v brief | grep -Ei 'NIGHT5_QA|Godot|AndroidRuntime' | tail -n 180 > build/android-night5-log.txt || true
   echo "PASS: actual Night 5 abandoned barn, safe livestock gate, Sigbin shadow reveal"
 fi
