@@ -247,9 +247,13 @@ func _process(delta: float) -> void:
 func _draw_house(foot: Vector2,width: float,night: bool,lit: bool) -> void:
 	var w := width
 	# Three real projected wall/roof planes; foot, door and shadow align.
-	# Buildings cast a thin ground footprint, never an enormous circular
-	# black disk behind actors and windows during daytime.
-	Depth.paint_contact_shadow(self,foot+Vector2(10,5),w*1.5,.23)
+	# Shadow follows the FOUR wall-foot vertices, not a dark oval as wide
+	# as the house. This also prevents black patches behind the villagers.
+	draw_colored_polygon(PackedVector2Array([
+		foot+Vector2(-w*.47,-w*.28),foot+Vector2(0,-w*.51),
+		foot+Vector2(w*.49,-w*.76),foot+Vector2(w*.52,-w*.71),
+		foot+Vector2(w*.02,-w*.45),foot+Vector2(-w*.42,-w*.22)
+	]),Color(.025,.061,.062,.14))
 	draw_colored_polygon(PackedVector2Array([
 		foot+Vector2(-w*.48,-w*.30),foot+Vector2(0,-w*.53),
 		foot+Vector2(0,-w*1.07),foot+Vector2(-w*.48,-w*.82)]),Color("#8a816b"))
