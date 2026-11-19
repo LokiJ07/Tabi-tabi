@@ -1,7 +1,7 @@
 name: Godot project validation
 on:
   push:
-    branches: [main, 'feature/**', 'fix/android-visual-polish-release-qa-20261119']
+    branches: [main, 'feature/**', 'fix/swiftshader-2d-viewport-and-seven-night-art-20261119']
   # Push CI already verifies feature branches. PR validation is reserved
   # for main-bound integrations, preventing duplicate runs on draft feature PRs.
   pull_request:
@@ -64,6 +64,8 @@ jobs:
         run: godot --headless --path . --script res://tests/world_water_depth_full_audit_test.gd
       - name: UI chip, labels and shadow footprint stabilization
         run: godot --headless --path . --script res://tests/visual_stabilization_test.gd
+      - name: SwiftShader 2D-only viewport with native 3D physics regression
+        run: godot --headless --path . --script res://tests/android_renderer_policy_test.gd
       - name: Courage and safe retry regression
         run: godot --headless --path . --script res://tests/night01_courage_test.gd
       - name: Morning outcome world consistency regression
