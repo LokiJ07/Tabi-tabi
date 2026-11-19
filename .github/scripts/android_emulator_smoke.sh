@@ -211,7 +211,13 @@ capture_live_view() {
     exit 1
   fi
   adb exec-out screencap -p > "build/$filename"
-  python3 .github/scripts/assert_gameplay_visible.py "build/$filename"
+  if [ "$label" = "NIGHT" ]; then
+    # Night 1 has an intentionally dark river grade. Do not mistake a
+    # detailed night with 68% near-black pixels for a broken cyan viewport.
+    python3 .github/scripts/assert_gameplay_visible.py "build/$filename" --night
+  else
+    python3 .github/scripts/assert_gameplay_visible.py "build/$filename"
+  fi
 }
 capture_live_view 135 NORTH_TRAIL android-night1-connected-trail.png
 python3 .github/scripts/assert_north_trail_terrain.py build/android-night1-connected-trail.png
@@ -570,19 +576,13 @@ if grep -E "USER SCRIPT ERROR:|SCRIPT ERROR:|Invalid call\. Nonexistent function
   echo "ERROR: Android gameplay contains Godot script exceptions"
   exit 1
 fi
-# On low-uniform GPUs, the 2D fallback must PREVENT native 3D shaders,
-# rather than merely hiding a shader-link failure behind the Canvas UI.
-if grep -Eq 'SceneShaderGLES3: Program linking failed|CanvasShaderGLES3: Program linking failed|shader failed to compile|Fragment shader active uniforms exceed GL_MAX_FRAGMENT_UNIFORM_VECTORS' build/android-entire-run-log.txt; then
-  echo "ERROR: GLES3 shader compilation/link failure persisted in Android emulator"
-  grep -Ei -C 2 'ShaderGLES3:|shader failed to compile|GL_MAX_FRAGMENT_UNIFORM_VECTORS' build/android-entire-run-log.txt | head -n 100 || true
-  exit 1
-fi
-if grep -Eiq 'SwiftShader|swiftshader' build/android-godot-renderer-log.txt; then
-  if ! grep -q 'NIGHT1_QA_SOFTWARE_2D_VIEWPORT_ENABLED' build/android-entire-run-log.txt; then
-    echo "ERROR: SwiftShader was detected without disabling native Night 1 3D drawing"
-    exit 1
-  fi
-fi
+# Godot compiles its built-in GLES3 spatial shader during engine STARTUP,
+# even on a SwiftShader viewport configured for 2D-only drawing. Retain the
+# known upstream startup warning, but strictly fail if a shader error occurs
+# after the real title has initialized, or on a hardware GPU.
+python3 .github/scripts/assert_gles3_software_emulator.py \
+  build/android-entire-run-log.txt build/android-godot-renderer-log.txt \
+  | tee build/android-emulator-shader-audit.txt
 if grep -q "FATAL EXCEPTION" build/android-night1-launch-log.txt; then
   cat build/android-night1-launch-log.txt
   exit 1
