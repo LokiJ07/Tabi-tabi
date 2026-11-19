@@ -41,8 +41,9 @@ func _run() -> void:
 	kapre.free()
 
 	var night06_src := FileAccess.get_file_as_string("res://scripts/night06_main.gd")
-	check(night06_src.contains("Depth.paint_contact_shadow(self,foot+Vector2(10,5)"),
-		"Night 6 large building disks replaced by terrain-level contact shadows")
+	check(night06_src.contains("Shadow follows the FOUR wall-foot vertices")
+		and night06_src.contains("draw_colored_polygon(PackedVector2Array(["),
+		"Night 6 building shadows stay beneath projected walls rather than making dark circles")
 	check(not night06_src.contains("draw_circle(foot+Vector2(10,5),w*.48"),
 		"Night 6 huge opaque circle behind villagers cannot regress")
 	for night in range(2,8):
