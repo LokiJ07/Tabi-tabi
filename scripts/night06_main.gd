@@ -118,7 +118,7 @@ func _ready() -> void:
 		player_pos = World.ARRIVAL_RIVER_BALETE
 		print("TABI_WORLD_ARRIVAL_RIVER_FROM_BALETE")
 	# Recover legacy saves from inside decorative walls and trunks.
-	player_pos = Walkability.repair_saved_position(6,player_pos)
+	player_pos = Walkability.repair_saved_position(6,player_pos,_flood_rise())
 	camera = Camera2D.new()
 	camera.name = "Night06RiverCamera"
 	camera.position = player_pos
@@ -155,13 +155,8 @@ func _modal() -> bool:
 	return dialogue.visible or notes.visible or options.visible or ending.visible
 
 func _safe_corridor(p: Vector2) -> bool:
-	if p.y <= 242.0: return true
-	for i in range(STEPS.size()):
-		if p.distance_to(STEPS[i]) < 114.0: return true
-		var begin: Vector2 = Vector2(185,185) if i == 0 else STEPS[i-1]
-		var projection := Geometry2D.get_closest_point_to_segment(p,begin,STEPS[i])
-		if p.distance_to(projection) < 104.0: return true
-	return false
+	# Dry land or the drawn stone route only. No story-phase water shortcut.
+	return not Walkability.river_blocked(6,p,_flood_rise())
 
 func _process(delta: float) -> void:
 	var village_clock := get_node_or_null("/root/PostgameClock")
@@ -209,9 +204,16 @@ func _process(delta: float) -> void:
 					_refresh()
 		elif story.phase == 7 and story.outcome == "" and candidate.y > 575:
 			candidate.y = 575
-		player_pos = Walkability.slide(6,foot,candidate)
+		var resolved := Walkability.slide(6,foot,candidate,_flood_rise())
+		if story.phase == 6 and candidate.distance_to(resolved)>8.0 \
+				and Walkability.river_blocked(6,candidate,_flood_rise()) \
+				and unsafe_notice_cooldown <= 0.0:
+			story.unsafe_current()
+			unsafe_notice_cooldown = 1.5
+			_refresh()
+		player_pos = resolved
 	var dog_goal := bantay_pos.lerp(player_pos+Vector2(-53,28),clampf(delta*3.5,0.0,1.0))
-	bantay_pos = Walkability.slide(6,bantay_pos,dog_goal)
+	bantay_pos = Walkability.slide(6,bantay_pos,dog_goal,_flood_rise())
 	var target := player_pos+aim*48.0
 	if story.phase == 6 or qa_river_preview:
 		target = player_pos.lerp(Vector2(475,300),.16)+aim*34.0
@@ -468,8 +470,7 @@ func _draw() -> void:
 	var road := PackedVector2Array([
 		RETURN_FARM,Vector2(-875,-370),Vector2(-675,-178),
 		Vector2(-425,-65),Vector2(-115,88),Vector2(180,185)])
-	draw_polyline(road,Color("#334740"),115,true)
-	draw_polyline(road,Color("#ad9977"),82,true)
+	Landscape.raised_trail(self,road,82.0,Color("#334740"),Color("#ad9977"))
 	Landscape.trail_stones(self,RETURN_FARM,Vector2(-425,-65),17,80,night)
 	# Low river terrace: actual water surface is downriver of the safe bank.
 	var raised: float = _flood_rise()
@@ -484,8 +485,7 @@ func _draw() -> void:
 	draw_colored_polygon(water_region,Color("#1d4f59") if night else Color("#3b7778"))
 	draw_texture_rect(WATER,Rect2(-1160,250-raised,2500,560+raised),
 		false,Color(1,1,1,.21))
-	draw_polyline(shore,Color("#4b665d"),34,true)
-	draw_polyline(shore,Color("#b8aa87"),11,true)
+	Landscape.riverbank_relief(self,shore,night)
 	# Short drifting water-ripple clusters keep the stream visibly alive,
 	# instead of parallel full-screen ruler lines.
 	for i in range(105):
