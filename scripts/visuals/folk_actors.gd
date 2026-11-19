@@ -43,8 +43,10 @@ static func finish_illustrated_actor(actor: Node3D, texture: Texture2D, dog_acto
 	depth.billboard = BaseMaterial3D.BILLBOARD_FIXED_Y
 	depth.shaded = false
 	depth.alpha_cut = SpriteBase3D.ALPHA_CUT_DISCARD
-	depth.modulate = Color(.09, .16, .18, .72)
-	depth.position = art.position + Vector3(.063, -.016, .063)
+	depth.modulate = Color(.21, .27, .27, .43)
+	# From the isometric camera (+X,+Z), +X/+Z is FRONT, not BACK.
+	# The old dark plane was painted over faces and made NPCs silhouettes.
+	depth.position = art.position + Vector3(-.063, -.016, -.063)
 	actor.add_child(depth)
 	# This is actual horizontal 3D contact geometry, not a UI oval. It moves
 	# with Apprentice, villagers and Bantay, remaining on their floor plane.

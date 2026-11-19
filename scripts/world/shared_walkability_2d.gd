@@ -59,6 +59,74 @@ const NIGHT2_HOUSE_FOOTPRINTS := [
 	[Vector2(-716,405),Vector2(-534,447),Vector2(-452,389),Vector2(-634,347)]
 ]
 
+# The water masks are the *same footprints* as the chapter scenery.
+# Land navigation never depends on quest phase: only authored bridges/stone
+# corridors permit water traversal, including after the seven-night finale.
+static var NIGHT3_RAVINE: PackedVector2Array = PackedVector2Array([
+	Vector2(-220,740),Vector2(155,740),Vector2(310,-600),
+	Vector2(100,-710),Vector2(-40,20)])
+static var NIGHT3_BRIDGES: Array[PackedVector2Array] = [
+	PackedVector2Array([Vector2(-505,155),Vector2(-305,-70),
+		Vector2(-154,-293),Vector2(105,-118)]),
+	PackedVector2Array([Vector2(-396,-335),Vector2(28,-488)]),
+	PackedVector2Array([Vector2(-165,122),Vector2(-85,138),
+		Vector2(-8,133),Vector2(87,139)]),
+	PackedVector2Array([Vector2(105,-118),Vector2(220,50),
+		Vector2(120,245),Vector2(-8,133)])
+]
+static var NIGHT6_SHORE: PackedVector2Array = PackedVector2Array([
+	Vector2(-1200,231),Vector2(-785,220),Vector2(-375,238),
+	Vector2(60,220),Vector2(310,235),Vector2(530,270),
+	Vector2(835,308),Vector2(1340,285)])
+static var NIGHT6_STONE_CROSSING: PackedVector2Array = PackedVector2Array([
+	Vector2(185,185),Vector2(270,275),Vector2(475,363),
+	Vector2(690,458),Vector2(805,550)])
+# Elevated return hill road is visible over the high-water inlet.
+static var NIGHT6_HILL_TRAIL: PackedVector2Array = PackedVector2Array([
+	Vector2(735,470),Vector2(883,442),Vector2(1019,405),Vector2(1215,286)])
+static var NIGHT7_FLOOD_CHANNEL: PackedVector2Array = PackedVector2Array([
+	Vector2(-1460,565),Vector2(-1040,590),Vector2(-780,705),
+	Vector2(-400,805),Vector2(-1460,1070)])
+
+static func _near_segment_path(point: Vector2, path: PackedVector2Array, width: float) -> bool:
+	for i in range(path.size()-1):
+		if _point_segment_distance_squared(point,path[i],path[i+1]) <= width*width:
+			return true
+	return false
+
+static func _night06_waterline(x: float) -> float:
+	for i in range(NIGHT6_SHORE.size()-1):
+		var a: Vector2 = NIGHT6_SHORE[i]
+		var b: Vector2 = NIGHT6_SHORE[i+1]
+		if x >= a.x and x <= b.x:
+			return lerpf(a.y,b.y,(x-a.x)/maxf(b.x-a.x,1.0))
+	return 231.0 if x < NIGHT6_SHORE[0].x else 285.0
+
+static func safe_river_crossing(chapter: int, foot: Vector2) -> bool:
+	if chapter == 3:
+		for bridge in NIGHT3_BRIDGES:
+			if _near_segment_path(foot,bridge,52.0):
+				return true
+		return false
+	if chapter == 6:
+		return _near_segment_path(foot,NIGHT6_STONE_CROSSING,71.0) \
+			or _near_segment_path(foot,NIGHT6_HILL_TRAIL,54.0)
+	return false
+
+static func river_blocked(chapter: int, foot: Vector2, flood_rise: float = 0.0) -> bool:
+	if chapter == 3:
+		return Geometry2D.is_point_in_polygon(foot,NIGHT3_RAVINE) \
+			and not safe_river_crossing(3,foot)
+	if chapter == 6:
+		# On the far landing, restored paths remain dry even after the flood.
+		if foot.x > 795.0 and foot.y > 518.0:
+			return false
+		return foot.y > _night06_waterline(foot.x)-flood_rise-7.0 \
+			and not safe_river_crossing(6,foot)
+	if chapter == 7:
+		return Geometry2D.is_point_in_polygon(foot,NIGHT7_FLOOD_CHANNEL)
+	return false
+
 static func _point_segment_distance_squared(point: Vector2, a: Vector2, b: Vector2) -> float:
 	var edge := b-a
 	var amount := clampf((point-a).dot(edge)/maxf(edge.length_squared(),.0001),0.0,1.0)
@@ -83,16 +151,16 @@ static func mango_road_centerline() -> Array[Vector2]:
 		Vector2(405,-65),Vector2(655,-310),Vector2(910,-535)]
 
 
-static func repair_saved_position(chapter: int, at: Vector2) -> Vector2:
+static func repair_saved_position(chapter: int, at: Vector2, flood_rise: float = 0.0) -> Vector2:
 	# Older chapter saves can already contain a ghosted position INSIDE a
 	# house or tree. A swept collision cannot get such a player unstuck.
-	if not is_blocked(chapter,at):
+	if not is_blocked(chapter,at,flood_rise):
 		return at
 	for radius in range(20,720,20):
 		for i in range(32):
 			var theta := TAU*float(i)/32.0
 			var candidate := at+Vector2(cos(theta),sin(theta))*float(radius)
-			if not is_blocked(chapter,candidate):
+			if not is_blocked(chapter,candidate,flood_rise):
 				return candidate
 	return at
 
@@ -141,7 +209,9 @@ static func scenery_covers_actor(chapter: int, foot: Vector2) -> bool:
 		return true
 	return false
 
-static func is_blocked(chapter: int, foot: Vector2) -> bool:
+static func is_blocked(chapter: int, foot: Vector2, flood_rise: float = 0.0) -> bool:
+	if river_blocked(chapter,foot,flood_rise):
+		return true
 	for corners in PROJECTED_HOUSES.get(chapter, []):
 		if _point_in_footprint(foot,corners):
 			return true
@@ -160,7 +230,8 @@ static func is_blocked(chapter: int, foot: Vector2) -> bool:
 			return true
 	return false
 
-static func slide(chapter: int, origin: Vector2, intended: Vector2) -> Vector2:
+static func slide(chapter: int, origin: Vector2, intended: Vector2,
+		flood_rise: float = 0.0) -> Vector2:
 	var difference := intended-origin
 	if difference.length_squared()<0.0001:
 		return origin
@@ -171,13 +242,13 @@ static func slide(chapter: int, origin: Vector2, intended: Vector2) -> Vector2:
 	var foot := origin
 	for i in range(pieces):
 		var next := foot+step
-		if not is_blocked(chapter,next):
+		if not is_blocked(chapter,next,flood_rise):
 			foot = next
 			continue
 		var horizontal := foot+Vector2(step.x,0)
 		var vertical := foot+Vector2(0,step.y)
-		if not is_blocked(chapter,horizontal):
+		if not is_blocked(chapter,horizontal,flood_rise):
 			foot = horizontal
-		elif not is_blocked(chapter,vertical):
+		elif not is_blocked(chapter,vertical,flood_rise):
 			foot = vertical
 	return foot

@@ -381,9 +381,8 @@ func _draw() -> void:
 	# canopy and invited the player to appear on top of a flat tree sprite.
 	# A curved eroded road now respects the solid trunk and visible ground.
 	var road: Array[Vector2] = Walkability.mango_road_centerline()
-	_polyline(road,Color("#5f5a45"),139.0)
-	_polyline(road,Color("#8b7758"),105.0)
-	_polyline(road,Color("#aa8d65"),69.0)
+	Landscape.raised_trail(self,PackedVector2Array(road),82.0,
+		Color("#5f5a45"),Color("#aa8d65"))
 	for segment in range(road.size()-1):
 		for j in range(3):
 			var at: Vector2 = road[segment].lerp(road[segment+1],float(j+1)/4.0)
@@ -531,6 +530,12 @@ func _draw_chapter_actors(behind: bool) -> void:
 	actors.append({"at": player_pos+Vector2(0,8), "texture": HERO, "width": 92.0, "height": 124.0})
 	actors.sort_custom(func(a: Dictionary,b: Dictionary)->bool:
 		return (a["at"] as Vector2).y < (b["at"] as Vector2).y)
+	# All shadows FIRST, then every character body: a nearby NPC's later
+	# shadow must never darken Bantay's face or the apprentice's chest.
+	for actor in actors:
+		var foot: Vector2 = actor["at"]
+		if Walkability.scenery_covers_actor(2,foot) == behind:
+			DimensionalArt.paint_contact_shadow(self,foot,float(actor["width"]),.43)
 	for actor in actors:
 		var foot: Vector2 = actor["at"]
 		if Walkability.scenery_covers_actor(2,foot) != behind:
@@ -542,10 +547,10 @@ func _draw_chapter_actors(behind: bool) -> void:
 		if is_player or is_dog:
 			DimensionalArt.paint_animated_actor(self,actor["texture"],foot,
 				Vector2(width,height),walk_phase,walk_weight,prefs.reduced_motion,
-				Color.WHITE,.43,is_dog)
+				Color.WHITE,.43,is_dog,false)
 		else:
 			DimensionalArt.paint_grounded(self,actor["texture"],foot,
-				Vector2(width,height),Color.WHITE,.43)
+				Vector2(width,height),Color.WHITE,.43,0.0,false)
 
 
 func _draw_kapre_smoke() -> void:

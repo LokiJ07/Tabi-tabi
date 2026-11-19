@@ -114,6 +114,7 @@ jobs:
           run_test res://tests/night02_unlock_test.gd
           run_test res://tests/night03_state_test.gd
           run_test res://tests/world_depth_all_nights_test.gd
+          run_test res://tests/world_water_depth_full_audit_test.gd
           run_test res://tests/night03_scene_test.gd
           run_test res://tests/night03_unlock_test.gd
           run_test res://tests/night03_connected_playthrough_test.gd
@@ -260,7 +261,7 @@ jobs:
             build/android-night1-notebook.png
             build/android-night1-notebook-scrolled.png
             build/android-night1-preparation.png
-            build/android-night1-options.png
+            build/android-night*-options.png
             build/android-godot-renderer-log.txt
             build/android-night1-launch-log.txt
             build/android-display.txt

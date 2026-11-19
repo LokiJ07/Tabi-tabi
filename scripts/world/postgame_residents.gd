@@ -3,6 +3,7 @@ extends RefCounted
 ## All schedules use the same saved clock; NPCs do not reappear outdoors at night.
 ## These are ambient witnesses, not extra quest targets or duplicated rewards.
 const Depth = preload("res://scripts/visuals/layered_25d.gd")
+const Walk = preload("res://scripts/world/shared_walkability_2d.gd")
 const FISHER: Texture2D = preload("res://assets/characters/post_fisher.svg")
 const MARKET: Texture2D = preload("res://assets/characters/post_market.svg")
 const TRAIL: Texture2D = preload("res://assets/characters/post_trail.svg")
@@ -84,13 +85,26 @@ static func activity_position(actor: Dictionary, period: String, seconds: float 
 			at = actor["home"]
 	return at
 
+static func grounded_activity(region: String, actor: Dictionary, period: String,
+		seconds: float = 0.0) -> Vector2:
+	var at := activity_position(actor,period,seconds)
+	var chapter := int({
+		"old_mango":2,"night03":3,"night04":4,
+		"night05":5,"night06":6,"night07":7
+	}.get(region,0))
+	if chapter >= 2 and Walk.is_blocked(chapter,at):
+		# Never let free-roam inhabitants float in rivers or inside a house,
+		# even if the scripted NPC patrol predates improved world collision.
+		return Walk.repair_saved_position(chapter,at)
+	return at
+
 static func nearby(scene: Node, region: String, player_at: Vector2) -> String:
 	var clock := _clock(scene)
 	var period := schedule(clock)
 	if period in ["sleep", "home", "story"]:
 		return ""
 	for person in ACTORS.get(region, []):
-		if player_at.distance_to(activity_position(person, period)) <= 114.0:
+		if player_at.distance_to(grounded_activity(region,person,period)) <= 114.0:
 			return "postgame:" + str(person["id"])
 	return ""
 
@@ -111,34 +125,43 @@ static func paint(scene: Node2D, region: String, seconds: float, reduced_motion:
 	if clock == null:
 		return
 	var period := schedule(clock)
-	if period in ["sleep", "story"]:
+	if period in ["sleep","story","home"]:
 		return
 	var confidence: String = str(clock.get("village_mood"))
+	var visible_people: Array[Dictionary] = []
 	for person in ACTORS.get(region, []):
-		var at := activity_position(person, period, 0.0 if reduced_motion else seconds)
+		var at := grounded_activity(region,person,period,
+			0.0 if reduced_motion else seconds)
 		var job: String = str(person["job"])
-		if confidence == "healing" and region == "night06" and str(person["id"]) == "river_fisher":
+		if confidence == "healing" and region == "night06" \
+				and str(person["id"]) == "river_fisher":
 			job = "repair"
-		if period == "home":
-			continue # At home, the authored house window lights represent residents.
 		var id: String = str(person["id"])
-		_paint_work(scene, job, at, period, confidence, seconds, reduced_motion)
-		var image := _sprite_for(job, id)
 		var tint := Color.WHITE
 		if job == "trail": tint = Color("#ded7bd")
 		if job == "community": tint = Color("#f1dac8")
 		if job == "repair": tint = Color("#d6d9d0")
-		# Different work shifts visibly breathe/step rather than sliding a
-		# static PNG around. Nighttime still removes them from public paths.
+		visible_people.append({"at":at,"job":job,"id":id,
+			"image":_sprite_for(job,id),"tint":tint})
+	visible_people.sort_custom(func(a: Dictionary,b: Dictionary)->bool:
+		return (a["at"] as Vector2).y < (b["at"] as Vector2).y)
+	# Shadow silhouettes are ONE terrain pass, then all sprites are painted.
+	# Previously each new resident's dark contact oval covered earlier actors.
+	for person in visible_people:
+		Depth.paint_contact_shadow(scene,person["at"],95.0,.26)
+	for person in visible_people:
+		var at: Vector2 = person["at"]
+		var job: String = person["job"]
+		var id: String = person["id"]
+		_paint_work(scene,job,at,period,confidence,seconds,reduced_motion)
 		var motion_weight := .42 if period in ["morning","afternoon"] else .12
 		var stride_phase := seconds*2.2 + at.x*.037
-		Depth.paint_animated_actor(scene,image,at,Vector2(95,132),
-			stride_phase,motion_weight,reduced_motion,tint,.34)
+		Depth.paint_animated_actor(scene,person["image"],at,Vector2(95,132),
+			stride_phase,motion_weight,reduced_motion,person["tint"],.26,false,false)
 		if player_at.distance_to(at) < 158.0:
-			# Only a proximity cue; never add HUD panels or cover chapter controls.
 			scene.draw_string(ThemeDB.fallback_font, at + Vector2(-64,-157),
-				"INTERACT • " + speaker("postgame:" + id), HORIZONTAL_ALIGNMENT_CENTER,
-				290, 16, Color("#f0dfa9"))
+				"INTERACT • " + speaker("postgame:" + id),HORIZONTAL_ALIGNMENT_CENTER,
+				290,16,Color("#f0dfa9"))
 
 static func _sprite_for(job: String, actor_id: String) -> Texture2D:
 	# Four original profession-specific faces eliminate repeated market

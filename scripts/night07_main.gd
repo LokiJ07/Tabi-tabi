@@ -211,8 +211,7 @@ func _draw() -> void:
 		ENTRY,Vector2(-785,416),Vector2(-595,286),
 		Vector2(-362,173),Vector2(-125,110),Vector2(160,185),
 		Vector2(390,105),Vector2(600,-64),Vector2(724,-260)])
-	draw_polyline(road,Color("#203d39"),127,true)
-	draw_polyline(road,Color("#a48c6b"),90,true)
+	Landscape.raised_trail(self,road,90.0,Color("#203d39"),Color("#a48c6b"))
 	for i in range(road.size()-1):
 		Landscape.trail_stones(self,road[i],road[i+1],8,93,night)
 	# Leftover high-water channel: below the road, never a fake disconnected void.
@@ -220,8 +219,9 @@ func _draw() -> void:
 		Vector2(-1460,565),Vector2(-1040,590),Vector2(-780,705),
 		Vector2(-400,805),Vector2(-1460,1070)]),
 		Color("#254e57") if night else Color("#427679"))
-	draw_polyline(PackedVector2Array([Vector2(-1410,566),Vector2(-1040,592),
-		Vector2(-780,708),Vector2(-440,801)]),Color("#b8ad8c"),8,true)
+	Landscape.riverbank_relief(self,PackedVector2Array([
+		Vector2(-1410,566),Vector2(-1040,592),Vector2(-780,708),
+		Vector2(-440,801)]),night)
 	for i in range(20):
 		var n := float(i)
 		var at := Vector2(-1020+n*116,-540+sin(n*.61)*45)
@@ -299,12 +299,20 @@ func _draw() -> void:
 		"THE ANCIENT BALETE",HORIZONTAL_ALIGNMENT_LEFT,520,27,Color("#e9ddb1"))
 
 func _paint_chapter_protagonists(behind: bool) -> void:
+	var bantay_foot := bantay_pos+Vector2(0,18)
+	var hero_foot := player_pos+Vector2(0,9)
 	if Walkability.scenery_covers_actor(7,bantay_pos) == behind:
-		Depth.paint_animated_actor(self,BANTAY,bantay_pos+Vector2(0,18),
-			Vector2(100,106),walking,walk_weight,prefs.reduced_motion,Color.WHITE,.31,true)
+		Depth.paint_contact_shadow(self,bantay_foot,100.0,.31)
 	if Walkability.scenery_covers_actor(7,player_pos) == behind:
-		Depth.paint_animated_actor(self,HERO,player_pos+Vector2(0,9),
-			Vector2(108,143),walking,walk_weight,prefs.reduced_motion,Color.WHITE,.40)
+		Depth.paint_contact_shadow(self,hero_foot,108.0,.40)
+	if Walkability.scenery_covers_actor(7,bantay_pos) == behind:
+		Depth.paint_animated_actor(self,BANTAY,bantay_foot,
+			Vector2(100,106),walking,walk_weight,prefs.reduced_motion,
+			Color.WHITE,.31,true,false)
+	if Walkability.scenery_covers_actor(7,player_pos) == behind:
+		Depth.paint_animated_actor(self,HERO,hero_foot,
+			Vector2(108,143),walking,walk_weight,prefs.reduced_motion,
+			Color.WHITE,.40,false,false)
 
 
 func _mark_station(foot: Vector2,word: String,checked: bool,dark: bool) -> void:

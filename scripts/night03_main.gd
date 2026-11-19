@@ -187,9 +187,8 @@ func _process(delta: float) -> void:
 		var moved := player_pos + heading*PLAYER_SPEED*delta
 		moved.x = clampf(moved.x,MAP_BOUNDS.position.x+45.0,MAP_BOUNDS.end.x-45.0)
 		moved.y = clampf(moved.y,MAP_BOUNDS.position.y+45.0,MAP_BOUNDS.end.y-45.0)
-		# The ravine is real collision: the traveler must use the stone ford.
-		if _in_unsafe_ravine(moved):
-			moved = player_pos
+		# Riverbanks and permanent dry crossings share physical water masks.
+		# Swept movement slides along banks instead of freezing all directions.
 		player_pos = Walkability.slide(3,player_pos,moved)
 	var dog_goal := bantay_pos.lerp(player_pos + Vector2(-49,29),clampf(delta*3.5,0.0,1.0))
 	bantay_pos = Walkability.slide(3,bantay_pos,dog_goal)
@@ -242,10 +241,7 @@ func _process(delta: float) -> void:
 	queue_redraw()
 
 func _in_unsafe_ravine(at: Vector2) -> bool:
-	# Two steep washout banks block passage except the actual stone ford.
-	if at.x > -80.0 and at.x < 65.0 and at.y > 300.0 and at.y < 620.0:
-		return true
-	return false
+	return Walkability.river_blocked(3,at)
 
 func _modal_open() -> bool:
 	return (dialogue != null and dialogue.visible) or (notebook != null and notebook.visible) or (options_panel != null and options_panel.visible) or (ending_panel != null and ending_panel.visible)
@@ -314,8 +310,7 @@ func _poly(points: Array, color: Color) -> void:
 	draw_colored_polygon(PackedVector2Array(points),color)
 
 func _path(points: Array, edge: Color, fill: Color, width: float) -> void:
-	draw_polyline(PackedVector2Array(points),edge,width+24.0,true)
-	draw_polyline(PackedVector2Array(points),fill,width,true)
+	Landscape.raised_trail(self,PackedVector2Array(points),width,edge,fill)
 
 func _draw() -> void:
 	# Ground: layered ridge contours, flooded terrace, textured forest floor.
@@ -347,6 +342,14 @@ func _draw() -> void:
 		Vector2(380,-450),Vector2(640,-357)],Color("#53664b"),Color("#9d896c"),56.0)
 	_path([Vector2(-520,145),Vector2(-170,245),Vector2(126,260),
 		Vector2(220,50)],Color("#5c5a47"),Color("#9e8060"),59.0)
+	# A raised stone causeway keeps false-fork and heel-mark evidence on
+	# solid visible ground, never in an apparently swimmable river.
+	_path([Vector2(105,-118),Vector2(220,50),Vector2(120,245),
+		Vector2(-8,133)],Color("#4a6158"),Color("#b2a388"),68.0)
+	Landscape.riverbank_relief(self,PackedVector2Array([
+		Vector2(-220,740),Vector2(-40,20),Vector2(100,-710)]),_stage()>=2)
+	Landscape.riverbank_relief(self,PackedVector2Array([
+		Vector2(155,740),Vector2(310,-600)]),_stage()>=2)
 	# Broken shoulder stones follow the rising ridge and do not replace the
 	# existing walkable trail, real ravine collision or clue interactions.
 	Landscape.trail_stones(self,Vector2(-910,405),Vector2(-305,-70),29,70,_stage()>=2)
@@ -495,6 +498,10 @@ func _paint_chapter_actors(behind: bool) -> void:
 	actors.sort_custom(func(a: Dictionary,b: Dictionary)->bool:
 		return (a["at"] as Vector2).y < (b["at"] as Vector2).y)
 	for actor in actors:
+		var foot: Vector2 = actor["at"]
+		if Walkability.scenery_covers_actor(3,foot) == behind:
+			DimensionalArt.paint_contact_shadow(self,foot,(actor["size"] as Vector2).x,.43)
+	for actor in actors:
 		var where: Vector2 = actor["at"]
 		if Walkability.scenery_covers_actor(3,where) != behind:
 			continue
@@ -504,10 +511,10 @@ func _paint_chapter_actors(behind: bool) -> void:
 		if is_player or is_dog:
 			DimensionalArt.paint_animated_actor(self,actor["tex"],where,
 				dimensions,walk_phase,walk_weight,prefs.reduced_motion,
-				Color.WHITE,.43,is_dog)
+				Color.WHITE,.43,is_dog,false)
 		else:
 			DimensionalArt.paint_grounded(self,actor["tex"],where,dimensions,
-				Color.WHITE,.43)
+				Color.WHITE,.43,0.0,false)
 
 func _build_ui() -> void:
 	var atmosphere_layer := CanvasLayer.new()

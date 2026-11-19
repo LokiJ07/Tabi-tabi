@@ -391,11 +391,9 @@ func _draw() -> void:
 	# The former "end" is a Y-junction, NOT a dead end. A continuous
 	# public road heads east then uphill to the clearly marked Night 6 path.
 	var path := FarmArt.main_road_route(RETURN_WAKE,SAFE_PERIMETER,FUTURE_TRAIL)
-	draw_polyline(path,Color("#34443a"),116,true)
-	draw_polyline(path,Color("#ae9570"),81,true)
+	Landscape.raised_trail(self,path,81.0,Color("#34443a"),Color("#ae9570"))
 	var gate_spur := FarmArt.gate_approach_route()
-	draw_polyline(gate_spur,Color("#34443a"),50,true)
-	draw_polyline(gate_spur,Color("#bba07d"),34,true)
+	Landscape.raised_trail(self,gate_spur,34.0,Color("#34443a"),Color("#bba07d"))
 	FarmArt.paint_ground_texture(self,_stage()>=2)
 	FarmArt.paint_crop_rows(self,_stage()>=2)
 	FarmArt.paint_squash_patch(self,Vector2(-650,140),_stage()>=2)
@@ -543,20 +541,21 @@ func _draw() -> void:
 		HORIZONTAL_ALIGNMENT_LEFT,410,17,Color("#e0c58f"))
 
 func _paint_chapter_protagonists(behind: bool) -> void:
-	if Walkability.scenery_covers_actor(5,bantay_pos):
-		if behind:
-			DimensionalArt.paint_animated_actor(self,BANTAY,bantay_pos+Vector2(0,18),
-				Vector2(96,103),walk_phase,walk_weight,prefs.reduced_motion,Color.WHITE,.33,true)
-	elif not behind:
-		DimensionalArt.paint_animated_actor(self,BANTAY,bantay_pos+Vector2(0,18),
-			Vector2(96,103),walk_phase,walk_weight,prefs.reduced_motion,Color.WHITE,.33,true)
-	if Walkability.scenery_covers_actor(5,player_pos):
-		if behind:
-			DimensionalArt.paint_animated_actor(self,HERO,player_pos+Vector2(0,7),
-				Vector2(107,140),walk_phase,walk_weight,prefs.reduced_motion,Color.WHITE,.38)
-	elif not behind:
-		DimensionalArt.paint_animated_actor(self,HERO,player_pos+Vector2(0,7),
-			Vector2(107,140),walk_phase,walk_weight,prefs.reduced_motion,Color.WHITE,.38)
+	var hero_foot := player_pos+Vector2(0,7)
+	var bantay_foot := bantay_pos+Vector2(0,18)
+	# All contact shadows are laid on terrain before EITHER character body.
+	if Walkability.scenery_covers_actor(5,bantay_pos) == behind:
+		DimensionalArt.paint_contact_shadow(self,bantay_foot,96.0,.33)
+	if Walkability.scenery_covers_actor(5,player_pos) == behind:
+		DimensionalArt.paint_contact_shadow(self,hero_foot,107.0,.38)
+	if Walkability.scenery_covers_actor(5,bantay_pos) == behind:
+		DimensionalArt.paint_animated_actor(self,BANTAY,bantay_foot,
+			Vector2(96,103),walk_phase,walk_weight,prefs.reduced_motion,
+			Color.WHITE,.33,true,false)
+	if Walkability.scenery_covers_actor(5,player_pos) == behind:
+		DimensionalArt.paint_animated_actor(self,HERO,hero_foot,
+			Vector2(107,140),walk_phase,walk_weight,prefs.reduced_motion,
+			Color.WHITE,.38,false,false)
 
 
 func _fit_status_card() -> void:

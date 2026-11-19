@@ -60,6 +60,8 @@ jobs:
         run: godot --headless --path . --script res://tests/visual_depth_screenshot_test.gd
       - name: All seven nights rooted actors, real building collisions and save-position safety
         run: godot --headless --path . --script res://tests/world_depth_all_nights_test.gd
+      - name: River crossings, flood masks and actor-shadow grounding (full map QA)
+        run: godot --headless --path . --script res://tests/world_water_depth_full_audit_test.gd
       - name: Courage and safe retry regression
         run: godot --headless --path . --script res://tests/night01_courage_test.gd
       - name: Morning outcome world consistency regression

@@ -74,6 +74,35 @@ static func reeds(target: CanvasItem, foot: Vector2, height: float,
 		target.draw_line(at.lerp(peak,.68),at.lerp(peak,.68)+Vector2(-12,-7),
 			tip,2.0,true)
 
+static func raised_trail(target: CanvasItem, points: PackedVector2Array,
+		width: float, edge: Color, surface: Color) -> void:
+	# Four real paint planes: compact earth below the road, dark exposed
+	# shoulder, a sloping bank, then the walkable sunlit top. No large flat
+	# painted stripe or phantom collision outside the centerline.
+	if points.size() < 2:
+		return
+	var below := PackedVector2Array()
+	var lit_lip := PackedVector2Array()
+	for foot in points:
+		below.append(foot+Vector2(9,16))
+		lit_lip.append(foot+Vector2(-2,-maxf(6.0,width*.34)))
+	target.draw_polyline(below,edge.darkened(.43),width+22.0,true)
+	target.draw_polyline(points,edge.darkened(.22),width+24.0,true)
+	target.draw_polyline(points,edge,width+13.0,true)
+	target.draw_polyline(points,surface,width,true)
+	target.draw_polyline(lit_lip,surface.lightened(.20),3.0,true)
+
+static func riverbank_relief(target: CanvasItem, shoreline: PackedVector2Array,
+		dark: bool) -> void:
+	if shoreline.size() < 2:
+		return
+	var below := PackedVector2Array()
+	for p in shoreline:
+		below.append(p+Vector2(0,13))
+	target.draw_polyline(below,Color("#273d39") if dark else Color("#465d51"),22.0,true)
+	target.draw_polyline(shoreline,Color("#967d60") if dark else Color("#b3a47e"),9.0,true)
+	target.draw_polyline(shoreline,Color("#c9b18c") if dark else Color("#d7c49e"),2.0,true)
+
 static func trail_stones(target: CanvasItem, start: Vector2, finish: Vector2,
 		count: int, width: float, dark: bool) -> void:
 	# Small fixed edge debris reveals elevation without adding invisible walls
