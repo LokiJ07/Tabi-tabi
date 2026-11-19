@@ -27,12 +27,11 @@ static func paint_grounded(target: CanvasItem, texture: Texture2D, foot: Vector2
 		_oval(target, foot + Vector2(0.0, 2.0), Vector2(w * .35, maxf(3.0, w * .065)),
 			Color(.012, .019, .023, shadow * .68))
 	var image_box := Rect2(foot - Vector2(w * .5, h + bob), dimensions)
-	# A short offset second silhouette establishes readable side thickness,
-	# without duplicate visible faces, translucent ghosting or huge draw cost.
-	var relief := Vector2(clampf(w * .030, 2.0, 7.0), -clampf(h * .014, 2.0, 7.0))
-	target.draw_texture_rect(texture, Rect2(image_box.position + relief, dimensions),
-		false, Color(.035, .077, .092, .61 * tint.a))
-	target.draw_texture_rect(texture, image_box, false, tint)
+	# Do not draw an opaque DARK duplicate sprite at an offset. That used
+	# to cover the hero/NPC faces and looked like the actor's own shadow
+	# rendered OVER their body, especially on the Android software painter.
+	# The two contact ellipses above stay on the actual ground behind feet.
+	target.draw_texture_rect(texture,image_box,false,tint)
 
 static func paint_animated_actor(target: CanvasItem, texture: Texture2D,
 		foot: Vector2, dimensions: Vector2, phase: float, stride: float,
@@ -54,12 +53,12 @@ static func paint_animated_actor(target: CanvasItem, texture: Texture2D,
 	if intensity > .03:
 		# Paired opposing step shadows give movement a grounded leg rhythm,
 		# without ever changing hitboxes or putting dark art over the HUD.
-		_oval(target,foot+Vector2(-dimensions.x*.095 + cycle*3.0*intensity,4),
-			Vector2(dimensions.x*.10,dimensions.x*.027),
-			Color(.016,.027,.027,shadow*.20*intensity))
-		_oval(target,foot+Vector2(dimensions.x*.095 - cycle*3.0*intensity,4),
-			Vector2(dimensions.x*.10,dimensions.x*.027),
-			Color(.016,.027,.027,shadow*.20*intensity))
+		_oval(target,foot+Vector2(-dimensions.x*.095 + cycle*3.0*intensity,3),
+			Vector2(dimensions.x*.10,dimensions.x*.022),
+			Color(.016,.027,.027,shadow*.12*intensity))
+		_oval(target,foot+Vector2(dimensions.x*.095 - cycle*3.0*intensity,3),
+			Vector2(dimensions.x*.10,dimensions.x*.022),
+			Color(.016,.027,.027,shadow*.12*intensity))
 	paint_grounded(target,texture,foot+Vector2(horizontal,0),
 		Vector2(width,height),tint,shadow,rise)
 

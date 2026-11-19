@@ -187,9 +187,8 @@ func _process(delta: float) -> void:
 		var moved := player_pos + heading*PLAYER_SPEED*delta
 		moved.x = clampf(moved.x,MAP_BOUNDS.position.x+45.0,MAP_BOUNDS.end.x-45.0)
 		moved.y = clampf(moved.y,MAP_BOUNDS.position.y+45.0,MAP_BOUNDS.end.y-45.0)
-		# The ravine is real collision: the traveler must use the stone ford.
-		if _in_unsafe_ravine(moved):
-			moved = player_pos
+		# Continuous swept collision slides along the riverbank and only
+		# permits the marked ford and raised footbridges.
 		player_pos = Walkability.slide(3,player_pos,moved)
 	var dog_goal := bantay_pos.lerp(player_pos + Vector2(-49,29),clampf(delta*3.5,0.0,1.0))
 	bantay_pos = Walkability.slide(3,bantay_pos,dog_goal)
@@ -242,10 +241,9 @@ func _process(delta: float) -> void:
 	queue_redraw()
 
 func _in_unsafe_ravine(at: Vector2) -> bool:
-	# Two steep washout banks block passage except the actual stone ford.
-	if at.x > -80.0 and at.x < 65.0 and at.y > 300.0 and at.y < 620.0:
-		return true
-	return false
+	# Same geometry used by the drawn ravine and by physical movement.
+	# Before this, only a 145px rectangle was blocked in a much longer river.
+	return Walkability.is_water_blocked(3,at)
 
 func _modal_open() -> bool:
 	return (dialogue != null and dialogue.visible) or (notebook != null and notebook.visible) or (options_panel != null and options_panel.visible) or (ending_panel != null and ending_panel.visible)

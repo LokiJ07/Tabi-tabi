@@ -3,6 +3,71 @@ extends RefCounted
 ## buildings at their floors, not across their tall foliage or roof art.
 ## Night 1 uses physical Godot 3D collision instead.
 const FOOT_RADIUS := 17.0
+# Water polygons use the exact ground polygons drawn by the chapter artists.
+# These aren't decorative borders: all foot movement is swept through them.
+# Selected bridges, low boardwalks and marked safe stones are the only routes
+# through the water; story state still decides when dangerous crossings open.
+const RAVINE_3 := PackedVector2Array([
+	Vector2(-220,740),Vector2(155,740),Vector2(310,-600),
+	Vector2(100,-710),Vector2(-40,20)
+])
+const FLOOD_RIVER_6 := PackedVector2Array([
+	Vector2(-1200,209),Vector2(-785,198),Vector2(-375,216),
+	Vector2(60,198),Vector2(310,213),Vector2(530,248),
+	Vector2(835,286),Vector2(1340,263),Vector2(1350,835),
+	Vector2(-1250,835)
+])
+const RIVERBANK_6 := PackedVector2Array([
+	Vector2(790,520),Vector2(1110,485),Vector2(1330,550),
+	Vector2(1360,820),Vector2(780,830)
+])
+const HIGH_WATER_7 := PackedVector2Array([
+	Vector2(-1460,565),Vector2(-1040,590),Vector2(-780,705),
+	Vector2(-400,805),Vector2(-1460,1070)
+])
+# The geometry is matched to the visible footpaths/crossings, not entire
+# roof images, cliffs or canopy silhouettes. Units are world Canvas pixels.
+const RAVINE_CROSSINGS_3 := [
+	[Vector2(-165,130),Vector2(110,145),53.0], # marked seven-stone ford
+	[Vector2(-170,245),Vector2(126,260),48.0], # lower repaired footbridge
+	[Vector2(126,260),Vector2(220,50),46.0],
+	[Vector2(-154,-293),Vector2(230,-120),51.0], # high-ridge walkway
+	[Vector2(-396,-335),Vector2(380,-450),47.0] # old rescue overpass
+]
+const RIVER_CROSSINGS_6 := [
+	[Vector2(185,185),Vector2(270,275),61.0],
+	[Vector2(270,275),Vector2(475,363),61.0],
+	[Vector2(475,363),Vector2(690,458),61.0],
+	[Vector2(488,195),Vector2(488,254),55.0], # preparation platform
+	[Vector2(884,354),Vector2(1000,332),55.0] # hill return passage
+]
+
+static func _near_marked_crossing(point: Vector2, segments: Array) -> bool:
+	for entry in segments:
+		var start: Vector2 = entry[0]
+		var finish: Vector2 = entry[1]
+		var limit: float = float(entry[2])
+		var closest := Geometry2D.get_closest_point_to_segment(point,start,finish)
+		if point.distance_squared_to(closest) <= limit*limit:
+			return true
+	return false
+
+static func is_water_blocked(chapter: int, foot: Vector2) -> bool:
+	match chapter:
+		3:
+			return Geometry2D.is_point_in_polygon(foot,RAVINE_3) \
+				and not _near_marked_crossing(foot,RAVINE_CROSSINGS_3)
+		6:
+			if not Geometry2D.is_point_in_polygon(foot,FLOOD_RIVER_6):
+				return false
+			if Geometry2D.is_point_in_polygon(foot,RIVERBANK_6):
+				return false
+			return not _near_marked_crossing(foot,RIVER_CROSSINGS_6)
+		7:
+			return Geometry2D.is_point_in_polygon(foot,HIGH_WATER_7)
+	return false
+
+
 const CIRCLES := {
 	2: [[Vector2(245,-120),55.0],[Vector2(-898,178),35.0],[Vector2(-886,582),40.0],
 		[Vector2(-595,692),34.0],[Vector2(-286,667),36.0],[Vector2(725,590),38.0],[Vector2(812,-84),36.0]],
@@ -142,6 +207,8 @@ static func scenery_covers_actor(chapter: int, foot: Vector2) -> bool:
 	return false
 
 static func is_blocked(chapter: int, foot: Vector2) -> bool:
+	if is_water_blocked(chapter,foot):
+		return true
 	for corners in PROJECTED_HOUSES.get(chapter, []):
 		if _point_in_footprint(foot,corners):
 			return true
@@ -166,7 +233,7 @@ static func slide(chapter: int, origin: Vector2, intended: Vector2) -> Vector2:
 		return origin
 	# Sweep in short steps to prevent tunneling at low Android frame rates;
 	# axis sliding lets players move along a wall instead of teleporting.
-	var pieces := clampi(ceili(difference.length()/12.0),1,48)
+	var pieces := clampi(ceili(difference.length()/12.0),1,128)
 	var step := difference/float(pieces)
 	var foot := origin
 	for i in range(pieces):
