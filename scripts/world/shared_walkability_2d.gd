@@ -62,10 +62,10 @@ const NIGHT2_HOUSE_FOOTPRINTS := [
 # The water masks are the *same footprints* as the chapter scenery.
 # Land navigation never depends on quest phase: only authored bridges/stone
 # corridors permit water traversal, including after the seven-night finale.
-const NIGHT3_RAVINE := PackedVector2Array([
+static var NIGHT3_RAVINE: PackedVector2Array = PackedVector2Array([
 	Vector2(-220,740),Vector2(155,740),Vector2(310,-600),
 	Vector2(100,-710),Vector2(-40,20)])
-const NIGHT3_BRIDGES := [
+static var NIGHT3_BRIDGES: Array[PackedVector2Array] = [
 	PackedVector2Array([Vector2(-505,155),Vector2(-305,-70),
 		Vector2(-154,-293),Vector2(105,-118)]),
 	PackedVector2Array([Vector2(-396,-335),Vector2(28,-488)]),
@@ -74,14 +74,14 @@ const NIGHT3_BRIDGES := [
 	PackedVector2Array([Vector2(105,-118),Vector2(220,50),
 		Vector2(120,245),Vector2(-8,133)])
 ]
-const NIGHT6_SHORE := PackedVector2Array([
+static var NIGHT6_SHORE: PackedVector2Array = PackedVector2Array([
 	Vector2(-1200,231),Vector2(-785,220),Vector2(-375,238),
 	Vector2(60,220),Vector2(310,235),Vector2(530,270),
 	Vector2(835,308),Vector2(1340,285)])
-const NIGHT6_STONE_CROSSING := PackedVector2Array([
+static var NIGHT6_STONE_CROSSING: PackedVector2Array = PackedVector2Array([
 	Vector2(185,185),Vector2(270,275),Vector2(475,363),
 	Vector2(690,458),Vector2(805,550)])
-const NIGHT7_FLOOD_CHANNEL := PackedVector2Array([
+static var NIGHT7_FLOOD_CHANNEL: PackedVector2Array = PackedVector2Array([
 	Vector2(-1460,565),Vector2(-1040,590),Vector2(-780,705),
 	Vector2(-400,805),Vector2(-1460,1070)])
 
