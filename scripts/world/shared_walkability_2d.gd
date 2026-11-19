@@ -70,7 +70,9 @@ const NIGHT3_BRIDGES := [
 		Vector2(-154,-293),Vector2(105,-118)]),
 	PackedVector2Array([Vector2(-396,-335),Vector2(28,-488)]),
 	PackedVector2Array([Vector2(-165,122),Vector2(-85,138),
-		Vector2(-8,133),Vector2(87,139)])
+		Vector2(-8,133),Vector2(87,139)]),
+	PackedVector2Array([Vector2(105,-118),Vector2(220,50),
+		Vector2(120,245),Vector2(-8,133)])
 ]
 const NIGHT6_SHORE := PackedVector2Array([
 	Vector2(-1200,231),Vector2(-785,220),Vector2(-375,238),
@@ -100,7 +102,7 @@ static func _night06_waterline(x: float) -> float:
 static func safe_river_crossing(chapter: int, foot: Vector2) -> bool:
 	if chapter == 3:
 		for bridge in NIGHT3_BRIDGES:
-			if _near_segment_path(foot,bridge,40.0):
+			if _near_segment_path(foot,bridge,52.0):
 				return true
 		return false
 	if chapter == 6:
