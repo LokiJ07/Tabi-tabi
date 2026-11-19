@@ -381,26 +381,27 @@ func _draw() -> void:
 	# canopy and invited the player to appear on top of a flat tree sprite.
 	# A curved eroded road now respects the solid trunk and visible ground.
 	var road: Array[Vector2] = Walkability.mango_road_centerline()
-	_polyline(road,Color("#5f5a45"),139.0)
-	_polyline(road,Color("#8b7758"),105.0)
-	_polyline(road,Color("#aa8d65"),69.0)
+	Landscape.paint_raised_trail(self,PackedVector2Array(road),77.0,
+		_light_stage()>=2,Color("#aa8d65"),Color("#5f5a45"))
 	for segment in range(road.size()-1):
 		for j in range(3):
 			var at: Vector2 = road[segment].lerp(road[segment+1],float(j+1)/4.0)
 			draw_line(at+Vector2(-13,4),at+Vector2(20,-5),
 				Color(.90,.74,.54,.32),2.0)
 	# Real walkable path linking the existing refuge detour to Barrio Lawom.
-	_polyline([Vector2(-765, 485), Vector2(-685, 460), Vector2(-570, 520),
-		Vector2(-420, 280)], Color("#5c624a"), 69)
-	_polyline([Vector2(-765, 485), Vector2(-685, 460), Vector2(-570, 520),
-		Vector2(-420, 280)], Color("#b6a47b"), 45)
+	Landscape.paint_raised_trail(self,PackedVector2Array([
+		Vector2(-765,485),Vector2(-685,460),Vector2(-570,520),
+		Vector2(-420,280)]),45.0,_light_stage()>=2,
+		Color("#b6a47b"),Color("#5c624a"))
 	# Dimensional stones follow both shoulders of the refuge trail, preserving
 	# the original traversable centerline and interaction radii.
 	Landscape.trail_stones(self,Vector2(-765,485),Vector2(-420,280),18,69,_light_stage()>=2)
 	# The former shelter line marks the re-routed safe path, turning away
 	# from the giant tree, rather than a flat danger-zone sticker.
-	_polyline([Vector2(-570,520),Vector2(-420,280),Vector2(-440,70),Vector2(-650,-280)], Color("#67785a"), 64)
-	_polyline([Vector2(-570,520),Vector2(-420,280),Vector2(-440,70),Vector2(-650,-280)], Color("#b8a37c"), 44)
+	Landscape.paint_raised_trail(self,PackedVector2Array([
+		Vector2(-570,520),Vector2(-420,280),Vector2(-440,70),
+		Vector2(-650,-280)]),44.0,_light_stage()>=2,
+		Color("#b8a37c"),Color("#67785a"))
 	for i in range(23):
 		var x := -850.0 + float((i * 277) % 1550)
 		var y := -580.0 + float((i * 193) % 1170)

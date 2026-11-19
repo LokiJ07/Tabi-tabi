@@ -360,10 +360,10 @@ func _draw() -> void:
 		draw_rect(Rect2(MAP.position.x,y,MAP.size.x,60),Color("#334a3e").lerp(Color("#586a51"),float(i)/27.0))
 	draw_texture_rect(SOIL,Rect2(-960,-700,1910,1370),false,Color(1,1,1,.18))
 	# All paths lead into the one wake compound, not separate chapter rooms.
-	draw_polyline(PackedVector2Array([RETURN_RIDGE,Vector2(-680,310),
-		Vector2(-365,222),SAFE_COURT,Vector2(400,260)]),Color("#4d5746"),118,true)
-	draw_polyline(PackedVector2Array([RETURN_RIDGE,Vector2(-680,310),
-		Vector2(-365,222),SAFE_COURT,Vector2(400,260)]),Color("#af9875"),83,true)
+	Landscape.paint_raised_trail(self,PackedVector2Array([
+		RETURN_RIDGE,Vector2(-680,310),Vector2(-365,222),
+		SAFE_COURT,Vector2(400,260)]),83.0,_stage()>=2,
+		Color("#af9875"),Color("#4d5746"))
 	Landscape.trail_stones(self,RETURN_RIDGE,Vector2(-400,235),18,90,_stage()>=2)
 	_paint_chapter_people(true)
 	for at in [Vector2(-800,-400),Vector2(-850,-140),Vector2(-680,-595),

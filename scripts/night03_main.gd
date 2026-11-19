@@ -312,8 +312,8 @@ func _poly(points: Array, color: Color) -> void:
 	draw_colored_polygon(PackedVector2Array(points),color)
 
 func _path(points: Array, edge: Color, fill: Color, width: float) -> void:
-	draw_polyline(PackedVector2Array(points),edge,width+24.0,true)
-	draw_polyline(PackedVector2Array(points),fill,width,true)
+	Landscape.paint_raised_trail(self,PackedVector2Array(points),width,
+		_stage()>=2,fill,edge)
 
 func _draw() -> void:
 	# Ground: layered ridge contours, flooded terrace, textured forest floor.
@@ -337,6 +337,11 @@ func _draw() -> void:
 		var sy := -475.0+float(i)*67.0
 		draw_line(Vector2(-95+sin(float(i))*35.0,sy),Vector2(54+sin(float(i))*27.0,sy-55),
 			Color(.72,.86,.82,.23),2.0,true)
+	# Both deep ravine banks are visible slopes, not an unbounded blue floor.
+	Landscape.paint_river_edge(self,PackedVector2Array([
+		Vector2(-220,740),Vector2(-40,20),Vector2(100,-710)]),_stage()>=2)
+	Landscape.paint_river_edge(self,PackedVector2Array([
+		Vector2(155,740),Vector2(310,-600),Vector2(100,-710)]),_stage()>=2)
 	# Three connected walkable ridge footpaths + actual return trail.
 	_path([Vector2(-910,405),Vector2(-720,310),Vector2(-505,155),
 		Vector2(-305,-70),Vector2(-154,-293),Vector2(105,-118),
@@ -345,6 +350,16 @@ func _draw() -> void:
 		Vector2(380,-450),Vector2(640,-357)],Color("#53664b"),Color("#9d896c"),56.0)
 	_path([Vector2(-520,145),Vector2(-170,245),Vector2(126,260),
 		Vector2(220,50)],Color("#5c5a47"),Color("#9e8060"),59.0)
+	# Repair the real crossings in raised timber, aligned with the water
+	# collision corridor. The stepping ford remains the quieter short route.
+	for bridge in [
+		[Vector2(-154,-293),Vector2(230,-120),62.0],
+		[Vector2(-396,-335),Vector2(380,-450),58.0],
+		[Vector2(-170,245),Vector2(126,260),57.0],
+		[Vector2(126,260),Vector2(220,50),55.0]
+	]:
+		Landscape.paint_timber_crossing(self,bridge[0],bridge[1],
+			float(bridge[2]),_stage()>=2)
 	# Broken shoulder stones follow the rising ridge and do not replace the
 	# existing walkable trail, real ravine collision or clue interactions.
 	Landscape.trail_stones(self,Vector2(-910,405),Vector2(-305,-70),29,70,_stage()>=2)

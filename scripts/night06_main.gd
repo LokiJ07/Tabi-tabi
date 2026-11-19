@@ -468,8 +468,8 @@ func _draw() -> void:
 	var road := PackedVector2Array([
 		RETURN_FARM,Vector2(-875,-370),Vector2(-675,-178),
 		Vector2(-425,-65),Vector2(-115,88),Vector2(180,185)])
-	draw_polyline(road,Color("#334740"),115,true)
-	draw_polyline(road,Color("#ad9977"),82,true)
+	Landscape.paint_raised_trail(self,road,82.0,night,
+		Color("#ad9977"),Color("#334740"))
 	Landscape.trail_stones(self,RETURN_FARM,Vector2(-425,-65),17,80,night)
 	# Low river terrace: actual water surface is downriver of the safe bank.
 	var raised: float = _flood_rise()
@@ -484,8 +484,7 @@ func _draw() -> void:
 	draw_colored_polygon(water_region,Color("#1d4f59") if night else Color("#3b7778"))
 	draw_texture_rect(WATER,Rect2(-1160,250-raised,2500,560+raised),
 		false,Color(1,1,1,.21))
-	draw_polyline(shore,Color("#4b665d"),34,true)
-	draw_polyline(shore,Color("#b8aa87"),11,true)
+	Landscape.paint_river_edge(self,shore,night)
 	# Short drifting water-ripple clusters keep the stream visibly alive,
 	# instead of parallel full-screen ruler lines.
 	for i in range(105):
@@ -590,6 +589,8 @@ func _draw() -> void:
 				draw_string(ThemeDB.fallback_font,pos+Vector2(-95,-37),
 					id.replace("_"," ").to_upper(),HORIZONTAL_ALIGNMENT_CENTER,190,16,Color("#e9ddba"))
 	_paint_hill_checkpoint(night)
+	Landscape.paint_timber_crossing(self,Vector2(884,354),
+		Vector2(1000,332),51.0,night)
 	# Blue-grey environmental presence rises from current and river timber.
 	# Not ghosts, victims, personal names or an omniscient historian.
 	if night:

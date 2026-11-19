@@ -87,6 +87,62 @@ static func trail_stones(target: CanvasItem, start: Vector2, finish: Vector2,
 		var at := start.lerp(finish,t)+perpendicular*(width*.58+jitter)*side
 		rock(target,at,8.0+float(i%4)*3.0,not dark)
 
+
+# All illustrated chapters share one raised-soil visual grammar: a narrow
+# ground-cast side shadow and beveled near edge BELOW the walkable top.
+# This is visual only; paths and crossings have matching physical footprints
+# in shared_walkability_2d.gd. No HUD textures or fake depth overlays.
+static func paint_raised_trail(target: CanvasItem, points: PackedVector2Array,
+		width: float, night: bool, top: Color = Color("#b39b78"),
+		edge: Color = Color("#4e5c4a")) -> void:
+	if points.size()<2:
+		return
+	var under := PackedVector2Array()
+	for p in points:
+		under.append(p+Vector2(5.0,11.0))
+	target.draw_polyline(under,Color(.015,.035,.035,.34),width+29.0,true)
+	target.draw_polyline(under,Color("#5d5745") if night else Color("#745c44"),
+		width+17.0,true)
+	target.draw_polyline(points,edge,width+18.0,true)
+	target.draw_polyline(points,top.darkened(.20) if night else top,width+4.0,true)
+	target.draw_polyline(points,top.lightened(.13) if not night else top,width-8.0,true)
+	# Fine inner edge catches light and makes ramps read as raised soil.
+	var glint := PackedVector2Array()
+	for p in points:
+		glint.append(p+Vector2(-2.8,-width*.38))
+	target.draw_polyline(glint,Color(1.0,.87,.64,.13 if night else .23),2.0,true)
+
+static func paint_river_edge(target: CanvasItem, shoreline: PackedVector2Array,
+		night: bool) -> void:
+	var lower := PackedVector2Array()
+	for p in shoreline:
+		lower.append(p+Vector2(0,10))
+	target.draw_polyline(lower,Color(.02,.08,.11,.48),22.0,true)
+	target.draw_polyline(shoreline,Color("#566a5a") if night else Color("#7b7759"),
+		15.0,true)
+	target.draw_polyline(shoreline,Color("#b7bca5") if night else Color("#e0c89a"),
+		4.0,true)
+
+static func paint_timber_crossing(target: CanvasItem, from: Vector2,
+		to: Vector2, width: float, night: bool) -> void:
+	var direction := (to-from).normalized()
+	var across := Vector2(-direction.y,direction.x)
+	paint_raised_trail(target,PackedVector2Array([from,to]),width,night,
+		Color("#a68b65"),Color("#5f5141"))
+	var length := from.distance_to(to)
+	var count := clampi(roundi(length/28.0),3,40)
+	for i in range(1,count):
+		var p := from.lerp(to,float(i)/float(count))
+		target.draw_line(p-across*width*.40,p+across*width*.40,
+			Color(.26,.20,.15,.48),3.0,true)
+		if i%3==0:
+			target.draw_line(p+across*width*.51+Vector2(3,12),
+				p+across*width*.51-Vector2(0,18),
+				Color("#6d5139"),4.0,true)
+			target.draw_line(p-across*width*.51+Vector2(3,12),
+				p-across*width*.51-Vector2(0,18),
+				Color("#6d5139"),4.0,true)
+
 static func mist(target: CanvasItem, anchor: Vector2, width: float,
 		phase: float, moving: bool, dark: bool) -> void:
 	var fade := .022 if dark else .014
