@@ -20,8 +20,9 @@ func _initialize() -> void:
 func _run() -> void:
 	check(Depth.STYLE_ID == "shared-2.5d-layered-v1",
 		"all chapters must retain the same actor rendering style")
-	check(Landscape.has_method("paint_raised_trail") and
-		Landscape.has_method("paint_timber_crossing"),
+	var painter := Landscape.new()
+	check(painter.has_method("paint_raised_trail") and
+		painter.has_method("paint_timber_crossing"),
 		"shared raised paths and footbridges must compile")
 	# N3 ravine: formerly only the center 145px rectangle was solid.
 	for at in [Vector2(-10,400),Vector2(65,550),Vector2(130,-340)]:
@@ -69,7 +70,7 @@ func _run() -> void:
 			"saved player recovers onto nearby dry ground on Night %d" % chapter)
 	# The existing playable Godot scenes must load with these boundaries.
 	for packed in [N3,N6,N7]:
-		var scene := packed.instantiate()
+		var scene: Node = (packed as PackedScene).instantiate()
 		check(scene != null and scene.has_method("_draw"),
 			"actual chapter scene still loads and paints")
 		if scene != null: scene.free()
