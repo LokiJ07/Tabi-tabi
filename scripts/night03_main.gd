@@ -353,8 +353,10 @@ func _draw() -> void:
 	# Repair the real crossings in raised timber, aligned with the water
 	# collision corridor. The stepping ford remains the quieter short route.
 	for bridge in [
-		[Vector2(-154,-293),Vector2(230,-120),62.0],
-		[Vector2(-396,-335),Vector2(380,-450),58.0],
+		[Vector2(-154,-293),Vector2(105,-118),62.0],
+		[Vector2(105,-118),Vector2(230,-120),58.0],
+		[Vector2(-396,-335),Vector2(28,-488),61.0],
+		[Vector2(28,-488),Vector2(380,-450),61.0],
 		[Vector2(-170,245),Vector2(126,260),57.0],
 		[Vector2(126,260),Vector2(220,50),55.0]
 	]:

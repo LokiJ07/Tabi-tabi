@@ -31,8 +31,10 @@ const RAVINE_CROSSINGS_3 := [
 	[Vector2(-165,130),Vector2(110,145),53.0], # marked seven-stone ford
 	[Vector2(-170,245),Vector2(126,260),48.0], # lower repaired footbridge
 	[Vector2(126,260),Vector2(220,50),46.0],
-	[Vector2(-154,-293),Vector2(230,-120),51.0], # high-ridge walkway
-	[Vector2(-396,-335),Vector2(380,-450),47.0] # old rescue overpass
+	[Vector2(-154,-293),Vector2(105,-118),58.0],
+	[Vector2(105,-118),Vector2(230,-120),52.0], # high ridge pathway
+	[Vector2(-396,-335),Vector2(28,-488),60.0],
+	[Vector2(28,-488),Vector2(380,-450),60.0] # old rescue walkway
 ]
 const RIVER_CROSSINGS_6 := [
 	[Vector2(185,185),Vector2(270,275),61.0],
