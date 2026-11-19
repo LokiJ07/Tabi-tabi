@@ -54,6 +54,10 @@ func _run() -> void:
 			"Night 6 critical clue or stone landing stays reachable: "+str(dry))
 	check(Walk.slide(6,Vector2(-800,80),Vector2(-800,560),23.0).y < 242.0,
 		"held joystick cannot tunnel across Night 6 river at low FPS")
+	check(not Walk.river_blocked(6,Vector2(1010,395)),
+		"Night 7 to Night 6 connected arrival remains on dry elevated hill road")
+	check(not Walk.river_blocked(6,Vector2(1088,375)),
+		"Night 6 Balete transition is never isolated by its river mask")
 	check(Walk.river_blocked(7,Vector2(-1000,750)),
 		"Night 7 flood channel has collision")
 	check(not Walk.river_blocked(7,Vector2(-785,416)),
