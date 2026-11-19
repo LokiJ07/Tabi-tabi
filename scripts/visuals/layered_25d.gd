@@ -33,12 +33,11 @@ static func paint_grounded(target: CanvasItem, texture: Texture2D, foot: Vector2
 	if draw_shadow:
 		paint_contact_shadow(target,foot,w,shadow)
 	var image_box := Rect2(foot - Vector2(w * .5, h + bob), dimensions)
-	# A short offset second silhouette establishes readable side thickness,
-	# without duplicate visible faces, translucent ghosting or huge draw cost.
-	var relief := Vector2(clampf(w * .030, 2.0, 7.0), -clampf(h * .014, 2.0, 7.0))
-	target.draw_texture_rect(texture, Rect2(image_box.position + relief, dimensions),
-		false, Color(.035, .077, .092, .61 * tint.a))
-	target.draw_texture_rect(texture, image_box, false, tint)
+	# Exactly one bright actor image. A dark duplicate plane previously
+	# overlapped heads/eyes and turned daytime NPCs into black silhouettes,
+	# especially on Android software rendering. Ground ovals above provide
+	# the physical 2.5D contact without tinting a second human body.
+	target.draw_texture_rect(texture,image_box,false,tint)
 
 static func paint_animated_actor(target: CanvasItem, texture: Texture2D,
 		foot: Vector2, dimensions: Vector2, phase: float, stride: float,
