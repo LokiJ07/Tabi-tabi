@@ -41,7 +41,7 @@ func _run() -> void:
 		check(Walk.is_water_blocked(6,at),
 			"Night 6 deep or unmarked floodwater must block %s" % at)
 	for at in [Vector2(270,275),Vector2(475,363),Vector2(690,458),
-			Vector2(488,224),Vector2(940,343)]:
+			Vector2(488,224),Vector2(940,343),Vector2(1010,395),Vector2(1088,375)]:
 		check(not Walk.is_water_blocked(6,at),
 			"Night 6 safe stones/preparation and hill crossing must allow %s" % at)
 	for at in [Vector2(-705,-85),Vector2(180,175),

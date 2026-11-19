@@ -41,7 +41,7 @@ const RIVER_CROSSINGS_6 := [
 	[Vector2(270,275),Vector2(475,363),61.0],
 	[Vector2(475,363),Vector2(690,458),61.0],
 	[Vector2(488,195),Vector2(488,254),55.0], # preparation platform
-	[Vector2(884,354),Vector2(1000,332),55.0] # hill return passage
+	[Vector2(884,354),Vector2(1100,390),58.0] # hill road to Night 7 gate
 ]
 
 static func _near_marked_crossing(point: Vector2, segments: Array) -> bool:

@@ -658,7 +658,7 @@ func _choice(value: String) -> void:
 		_return_river()
 	_refresh()
 
-func _talk(speaker: String,line: String,actions: Array[Dictionary]) -> void:
+func _talk(speaker: String,line: String,actions: Array) -> void:
 	ending.hide()
 	options.hide()
 	notes.hide()
@@ -671,8 +671,13 @@ func _talk(speaker: String,line: String,actions: Array[Dictionary]) -> void:
 		choices.remove_child(child)
 		child.queue_free()
 	for option in actions:
-		var choice_id: String = str(option["action"])
-		_button(choices,str(option["label"]),func():_press_dialogue_choice(choice_id))
+		if not (option is Dictionary):
+			continue
+		var entry: Dictionary = option
+		var choice_id: String = str(entry.get("action",""))
+		if choice_id.is_empty():
+			continue
+		_button(choices,str(entry.get("label","Continue")),func():_press_dialogue_choice(choice_id))
 	SharedDialogueMotion.reveal(dialogue,prefs.reduced_motion)
 	SharedDialogueMotion.reveal_text(dialogue_body,prefs.reduced_motion)
 	_sync_ui()

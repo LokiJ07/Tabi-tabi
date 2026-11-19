@@ -590,7 +590,7 @@ func _draw() -> void:
 					id.replace("_"," ").to_upper(),HORIZONTAL_ALIGNMENT_CENTER,190,16,Color("#e9ddba"))
 	_paint_hill_checkpoint(night)
 	Landscape.paint_timber_crossing(self,Vector2(884,354),
-		Vector2(1000,332),51.0,night)
+		Vector2(1100,390),51.0,night)
 	# Blue-grey environmental presence rises from current and river timber.
 	# Not ghosts, victims, personal names or an omniscient historian.
 	if night:
