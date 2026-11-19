@@ -70,10 +70,10 @@ func _run() -> void:
 			"old_mango":2,"night03":3,"night04":4,
 			"night05":5,"night06":6,"night07":7
 		}[region])
-		for person in Residents.ACTORS[region]:
-			var safe := Residents.grounded_activity(region,person,"morning")
+		for worker in Residents.ACTORS[region]:
+			var safe := Residents.grounded_activity(region,worker,"morning")
 			check(not Walk.is_blocked(chapter,safe),
-				"postgame " + str(person["id"]) + " cannot stand in water, trees or house")
+				"postgame " + str(worker["id"]) + " cannot stand in water, trees or house")
 	check(Depth.STYLE_ID == "shared-2.5d-layered-v1",
 		"all story chapters retain the same authored actor style")
 	check(Landscape.PASS_ID == "nights1-3-landscape-depth-v2",
