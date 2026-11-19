@@ -115,7 +115,8 @@ jobs:
           run_test res://tests/night03_state_test.gd
           run_test res://tests/world_depth_all_nights_test.gd
           run_test res://tests/world_water_depth_full_audit_test.gd
-           run_test res://tests/visual_stabilization_test.gd
+          run_test res://tests/visual_stabilization_test.gd
+          run_test res://tests/android_renderer_policy_test.gd
           run_test res://tests/night03_scene_test.gd
           run_test res://tests/night03_unlock_test.gd
           run_test res://tests/night03_connected_playthrough_test.gd
