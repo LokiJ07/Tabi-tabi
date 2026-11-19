@@ -715,18 +715,38 @@ func _draw_evidence() -> void:
 			draw_line(pos+Vector2(39,-48),pos+Vector2(43,-43),Color.WHITE,3)
 			draw_line(pos+Vector2(43,-43),pos+Vector2(52,-57),Color.WHITE,3)
 
+func _world_label_clear(baseline: Vector2, width: float) -> bool:
+	# Painted wayfinding may not cross the apprentice or Bantay silhouettes.
+	# Hide just the floating lettering while nearby; physical trail markers remain.
+	var text_region := Rect2(baseline+Vector2(-16,-40),Vector2(width+32,62))
+	for feet in [player_pos,dog_pos]:
+		var actor_region := Rect2(feet+Vector2(-42,-120),Vector2(84,135))
+		if text_region.intersects(actor_region):
+			return false
+	return true
+
 func _draw_world_labels() -> void:
 	var font := ThemeDB.fallback_font
-	draw_string(font,TREE+Vector2(-173,105),"OLD MANGO • KEEP DISTANCE",HORIZONTAL_ALIGNMENT_LEFT,420,21,Color("#e6d8b2"))
+	var mango_label := TREE+Vector2(-173,105)
+	if _world_label_clear(mango_label,420):
+		draw_string(font,mango_label,"OLD MANGO • KEEP DISTANCE",HORIZONTAL_ALIGNMENT_LEFT,420,21,Color("#e6d8b2"))
 	var trail: Vector2 = ConnectedWorld.TRAIL_MANGO
-	draw_string(font,trail+Vector2(-145,76),"← BARRIO LAWOM • TRAIL",
-		HORIZONTAL_ALIGNMENT_LEFT,350,24,Color("#ffe0a4"))
-	draw_string(font,ConnectedWorld.TRAIL_MANGO_RIDGE+Vector2(-235,98),
-		"NORTH RIDGE • TIKBALANG  →",HORIZONTAL_ALIGNMENT_LEFT,410,19,Color("#f0d6a2"))
+	var return_label := trail+Vector2(-145,76)
+	if _world_label_clear(return_label,350):
+		draw_string(font,return_label,"← BARRIO LAWOM • TRAIL",
+			HORIZONTAL_ALIGNMENT_LEFT,350,24,Color("#ffe0a4"))
+	var ridge_label := ConnectedWorld.TRAIL_MANGO_RIDGE+Vector2(-235,98)
+	if _world_label_clear(ridge_label,410):
+		draw_string(font,ridge_label,
+			"NORTH RIDGE • TIKBALANG  →",HORIZONTAL_ALIGNMENT_LEFT,410,19,Color("#f0d6a2"))
 	if story.phase == 2:
-		draw_string(font,OBSERVATION+Vector2(-138,100),"SAFE LOOKOUT • HOLD OBSERVE",HORIZONTAL_ALIGNMENT_LEFT,360,19,Color("#ffe1a2"))
+		var lookout_label := OBSERVATION+Vector2(-138,100)
+		if _world_label_clear(lookout_label,360):
+			draw_string(font,lookout_label,"SAFE LOOKOUT • HOLD OBSERVE",HORIZONTAL_ALIGNMENT_LEFT,360,19,Color("#ffe1a2"))
 	if story.phase >= 1 and story.phase <= 2:
-		draw_string(font,Vector2(-440,378),"SHELTER DETOUR",HORIZONTAL_ALIGNMENT_LEFT,240,20,Color("#e5d2a4"))
+		var shelter_label := Vector2(-440,378)
+		if _world_label_clear(shelter_label,240):
+			draw_string(font,shelter_label,"SHELTER DETOUR",HORIZONTAL_ALIGNMENT_LEFT,240,20,Color("#e5d2a4"))
 
 
 func _fit_status_card() -> void:
@@ -1089,19 +1109,19 @@ func _update_hint() -> void:
 		return
 	last_target = near
 	if near == "return_barrio":
-		interaction_hint.text = "BARRIO LAWOM • FOLLOW TRAIL TO RETURN"
+		SharedHUD.set_nearby_prompt_text(interaction_hint, "BARRIO LAWOM • FOLLOW TRAIL TO RETURN")
 	elif near == "ridge_gate":
-		interaction_hint.text = "INTERACT • NORTH RIDGE / NIGHT 3" if story.outcome != "" else "NORTH RIDGE LOCKED • FINISH KAPRE CASE"
+		SharedHUD.set_nearby_prompt_text(interaction_hint, "INTERACT • NORTH RIDGE / NIGHT 3" if story.outcome != "" else "NORTH RIDGE LOCKED • FINISH KAPRE CASE")
 	elif near == "":
-		interaction_hint.text = "EXPLORE • Follow the highlighted clue / safe route"
+		SharedHUD.set_nearby_prompt_text(interaction_hint, "EXPLORE • Follow the highlighted clue / safe route")
 	elif near == "observe":
-		interaction_hint.text = "SAFE LOOKOUT • HOLD OBSERVE to watch from shelter"
+		SharedHUD.set_nearby_prompt_text(interaction_hint, "SAFE LOOKOUT • HOLD OBSERVE to watch from shelter")
 	elif near == "kapre":
-		interaction_hint.text = "KAPRE • INTERACT respectfully"
+		SharedHUD.set_nearby_prompt_text(interaction_hint, "KAPRE • INTERACT respectfully")
 	elif Story.BARRIER_POSITIONS.has(near):
-		interaction_hint.text = "INTERACT • CLOSE THE DANGEROUS %s" % near.replace("_"," ").to_upper()
+		SharedHUD.set_nearby_prompt_text(interaction_hint, "INTERACT • CLOSE THE DANGEROUS %s" % near.replace("_"," ").to_upper())
 	else:
-		interaction_hint.text = "INTERACT • " + str(CLUE_TITLES.get(near,near))
+		SharedHUD.set_nearby_prompt_text(interaction_hint, "INTERACT • " + str(CLUE_TITLES.get(near,near)))
 
 func _interact() -> void:
 	if dialogue.visible:

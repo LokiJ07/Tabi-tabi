@@ -7,7 +7,7 @@ config/name="TABI-TABI"
 run/main_scene="res://scenes/title.tscn"
 config/icon="res://assets/branding/tabi_tabi_icon.svg"
 config/features=PackedStringArray("4.3", "GL Compatibility")
-config/description="Barrio Lawom — Night 1 vertical slice"
+config/description="Barrio Lawom — seven connected folklore nights and playable epilogue"
 
 [autoload]
 PostgameClock="*res://scripts/core/postgame_clock.gd"

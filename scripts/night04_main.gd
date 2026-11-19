@@ -896,7 +896,7 @@ func _refresh_hint() -> void:
 	if interaction_hint == null:
 		return
 	var target := _nearby()
-	interaction_hint.text = "FOLLOW WAYPOINT • INVESTIGATE" if target == "" else "INTERACT • "+target.replace("_"," ").to_upper()
+	SharedHUD.set_nearby_prompt_text(interaction_hint, "FOLLOW WAYPOINT • INVESTIGATE" if target == "" else "INTERACT • "+target.replace("_"," ").to_upper())
 	var goal := RETURN_RIDGE
 	var title := "RETURN TO FLOOD RIDGE"
 	if story.phase == 0:

@@ -972,7 +972,7 @@ func _refresh_hint() -> void:
 			elapsed,story.shadow_index,prefs.reduced_motion)
 		farm_hint = SigbinPresence.detect_warning(_stage(),
 			player_pos.distance_to(sigbin_ground),elapsed,story.shadow_identified)
-	interaction_hint.text = farm_hint if id == "" else "INTERACT • "+id.replace("_"," ").to_upper()
+	SharedHUD.set_nearby_prompt_text(interaction_hint, farm_hint if id == "" else "INTERACT • "+id.replace("_"," ").to_upper())
 	var goal := RETURN_WAKE
 	var title := "RETURN TO THE WAKE"
 	if story.phase == 0:
