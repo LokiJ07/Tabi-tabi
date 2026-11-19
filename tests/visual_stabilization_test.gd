@@ -46,6 +46,13 @@ func _run() -> void:
 		"Night 6 building shadows stay beneath projected walls rather than making dark circles")
 	check(not night06_src.contains("draw_circle(foot+Vector2(10,5),w*.48"),
 		"Night 6 huge opaque circle behind villagers cannot regress")
+	check(night06_src.contains("Carved wooden source marker")
+		and not night06_src.contains("draw_circle(at-Vector2(0,20),20"),
+		"river evidence must appear as grounded documentary markers, not eye-shaped circles")
+	var night04_src := FileAccess.get_file_as_string("res://scripts/night04_main.gd")
+	check(night04_src.contains("Imported nipa-thatch texture follows BOTH real sloping roof planes")
+		and night04_src.contains("roof_uv,NIPA"),
+		"Night 4 lamay roof retains dimensional nipa material on its two planes")
 	for night in range(2,8):
 		var source := FileAccess.get_file_as_string(
 			"res://scripts/night%02d_main.gd" % night)
