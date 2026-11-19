@@ -303,16 +303,35 @@ func _nearest_evidence() -> Vector2:
 	return nearest
 
 func _paint_evidence(at: Vector2,name: String,read: bool) -> void:
-	# Real nearby inspection marker, never a wall of floating text over
-	# walkways or the Night 1 HUD. Distant sources remain identifiable by compass.
-	draw_circle(at+Vector2(0,5),28,Color(.02,.06,.06,.22))
-	draw_circle(at-Vector2(0,20),20,
-		Color("#759e87") if read else Color("#e6ce8c"))
-	draw_circle(at-Vector2(0,20),9,Color("#263f47"))
+	# Carved wooden source marker with a small visible folded field folio.
+	# Replaces the two huge concentric target circles that looked like eyes
+	# floating over the rescue ledger; the position and interaction radius stay.
+	Depth.paint_contact_shadow(self,at+Vector2(0,5),75.0,.17)
+	draw_line(at+Vector2(0,4),at+Vector2(0,-55),Color("#4a3b2e"),8.0,true)
+	draw_colored_polygon(PackedVector2Array([
+		at+Vector2(-31,-59),at+Vector2(26,-57),
+		at+Vector2(33,-49),at+Vector2(-25,-51)
+	]),Color("#d8b889"))
+	draw_colored_polygon(PackedVector2Array([
+		at+Vector2(-31,-59),at+Vector2(26,-57),
+		at+Vector2(26,-17),at+Vector2(-31,-20)
+	]),Color("#907351"))
+	draw_colored_polygon(PackedVector2Array([
+		at+Vector2(-22,-54),at+Vector2(18,-53),
+		at+Vector2(18,-23),at+Vector2(-22,-25)
+	]),Color("#e6d4a9") if not read else Color("#bfd6bb"))
+	for line in range(3):
+		var baseline := -43.0+float(line)*7.0
+		draw_line(at+Vector2(-15,baseline),at+Vector2(10,baseline+1),
+			Color("#7d7463"),1.5,true)
+	# Tiny coloured wax seal communicates collected vs unresolved evidence,
+	# without presenting a large magical portal as a historical document.
+	draw_circle(at+Vector2(12,-27),4.5,
+		Color("#568b70") if read else Color("#bd8850"))
 	if player_pos.distance_to(at) > 215.0 or at != _nearest_evidence():
 		return
 	var plaque_width: float = clampf(float(name.length())*8.5+22,100.0,198.0)
-	var plate := Rect2(at+Vector2(-plaque_width*.5,10),Vector2(plaque_width,27))
+	var plate := Rect2(at+Vector2(-plaque_width*.5,23),Vector2(plaque_width,27))
 	draw_rect(plate,Color(.055,.15,.17,.90))
 	draw_rect(plate,Color("#c8a36b"),false,1.5)
 	draw_string(ThemeDB.fallback_font,plate.position+Vector2(9,19),
