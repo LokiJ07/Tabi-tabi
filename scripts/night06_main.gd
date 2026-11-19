@@ -428,8 +428,7 @@ func _paint_hill_checkpoint(night: bool) -> void:
 	var trail := PackedVector2Array([
 		Vector2(735,470),Vector2(883,442),
 		Vector2(1019,405),Vector2(1215,286)])
-	draw_polyline(trail,Color("#34463c"),105,true)
-	draw_polyline(trail,Color("#a48e6c"),74,true)
+	Landscape.raised_trail(self,trail,74.0,Color("#34463c"),Color("#a48e6c"))
 	for at in [Vector2(884,420),Vector2(1001,397)]:
 		draw_circle(at+Vector2(5,8),21,Color(.03,.04,.03,.26))
 		draw_line(at,at+Vector2(-1,-72),Color("#81684b"),12,true)
