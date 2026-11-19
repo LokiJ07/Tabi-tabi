@@ -81,6 +81,9 @@ static var NIGHT6_SHORE: PackedVector2Array = PackedVector2Array([
 static var NIGHT6_STONE_CROSSING: PackedVector2Array = PackedVector2Array([
 	Vector2(185,185),Vector2(270,275),Vector2(475,363),
 	Vector2(690,458),Vector2(805,550)])
+# Elevated return hill road is visible over the high-water inlet.
+static var NIGHT6_HILL_TRAIL: PackedVector2Array = PackedVector2Array([
+	Vector2(735,470),Vector2(883,442),Vector2(1019,405),Vector2(1215,286)])
 static var NIGHT7_FLOOD_CHANNEL: PackedVector2Array = PackedVector2Array([
 	Vector2(-1460,565),Vector2(-1040,590),Vector2(-780,705),
 	Vector2(-400,805),Vector2(-1460,1070)])
@@ -106,7 +109,8 @@ static func safe_river_crossing(chapter: int, foot: Vector2) -> bool:
 				return true
 		return false
 	if chapter == 6:
-		return _near_segment_path(foot,NIGHT6_STONE_CROSSING,71.0)
+		return _near_segment_path(foot,NIGHT6_STONE_CROSSING,71.0) \
+			or _near_segment_path(foot,NIGHT6_HILL_TRAIL,54.0)
 	return false
 
 static func river_blocked(chapter: int, foot: Vector2, flood_rise: float = 0.0) -> bool:
