@@ -177,8 +177,16 @@ static func make_nearby_prompt(parent: Control, text_scale: float = 1.0) -> Labe
 	cue.content_margin_bottom = 4
 	prompt.add_theme_stylebox_override("normal",cue)
 	prompt.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	# An empty nearby hint is not an actionable chip. Do not paint blank frames.
+	prompt.visible = false
 	parent.add_child(prompt)
 	return prompt
+
+static func set_nearby_prompt_text(prompt: Label, message: String) -> void:
+	if prompt == null or not is_instance_valid(prompt):
+		return
+	prompt.text = message
+	prompt.visible = not message.strip_edges().is_empty()
 
 const MOVE_POSITIONS := {
 	"up": Vector2(95, 505),

@@ -247,7 +247,9 @@ func _process(delta: float) -> void:
 func _draw_house(foot: Vector2,width: float,night: bool,lit: bool) -> void:
 	var w := width
 	# Three real projected wall/roof planes; foot, door and shadow align.
-	draw_circle(foot+Vector2(10,5),w*.48,Color(.02,.04,.04,.25))
+	# Buildings cast a thin ground footprint, never an enormous circular
+	# black disk behind actors and windows during daytime.
+	Depth.paint_contact_shadow(self,foot+Vector2(10,5),w*1.5,.23)
 	draw_colored_polygon(PackedVector2Array([
 		foot+Vector2(-w*.48,-w*.30),foot+Vector2(0,-w*.53),
 		foot+Vector2(0,-w*1.07),foot+Vector2(-w*.48,-w*.82)]),Color("#8a816b"))
@@ -1162,7 +1164,7 @@ func _refresh() -> void:
 func _refresh_hint() -> void:
 	if interaction_hint == null: return
 	var id := _nearby()
-	interaction_hint.text = ("INTERACT • "+id.replace("_"," ").to_upper()) if id != "" else ""
+	SharedHUD.set_nearby_prompt_text(interaction_hint, ("INTERACT • "+id.replace("_"," ").to_upper()) if id != "" else "")
 	var goal := TABLE
 	var destination := "ARCHIVE TABLE"
 	match story.phase:

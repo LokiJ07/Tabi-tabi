@@ -742,7 +742,7 @@ func _refresh_hint() -> void:
 	if interaction_hint == null:
 		return
 	var target := _nearby()
-	interaction_hint.text = "FOLLOW THE VISIBLE PATH" if target == "" else "INTERACT • " + target.replace("_"," ").replace("postgame:","").to_upper()
+	SharedHUD.set_nearby_prompt_text(interaction_hint, "FOLLOW THE VISIBLE PATH" if target == "" else "INTERACT • " + target.replace("_"," ").replace("postgame:","").to_upper())
 	var dest := ENTRY
 	var title := "RIVER ROAD • RETURN"
 	match story.phase:

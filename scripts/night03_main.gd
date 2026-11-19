@@ -793,8 +793,8 @@ func _refresh_hint() -> void:
 	if interaction_hint == null:
 		return
 	var target := _nearby()
-	interaction_hint.text = "FOLLOW TRAIL • INTERACT near marked evidence" if target == "" else \
-		"INTERACT • "+str(CLUE_LABELS.get(target,target.replace("_"," ").to_upper()))
+	SharedHUD.set_nearby_prompt_text(interaction_hint, "FOLLOW TRAIL • INTERACT near marked evidence" if target == "" else \
+		"INTERACT • "+str(CLUE_LABELS.get(target,target.replace("_"," ").to_upper())))
 	var next: Dictionary = _next_target()
 	if next.is_empty():
 		waypoint.text = "NIGHT 3 • FIELD RECORD COMPLETE"
