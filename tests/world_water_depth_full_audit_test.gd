@@ -5,6 +5,7 @@ const Walk = preload("res://scripts/world/shared_walkability_2d.gd")
 const FolkActors = preload("res://scripts/visuals/folk_actors.gd")
 const Depth = preload("res://scripts/visuals/layered_25d.gd")
 const Landscape = preload("res://scripts/visuals/folklore_landscape_25d.gd")
+const Residents = preload("res://scripts/world/postgame_residents.gd")
 var failures := 0
 
 func check(condition: bool, label: String) -> void:
@@ -64,6 +65,15 @@ func _run() -> void:
 		"Night 7 connected road stays traversable")
 	check(not Walk.is_blocked(7,Vector2(210,220)),
 		"Night 7 ancient trial still accessible")
+		for region in ["old_mango","night03","night04","night05","night06","night07"]:
+		var chapter := int({
+			"old_mango":2,"night03":3,"night04":4,
+			"night05":5,"night06":6,"night07":7
+		}[region])
+		for person in Residents.ACTORS[region]:
+			var safe := Residents.grounded_activity(region,person,"morning")
+			check(not Walk.is_blocked(chapter,safe),
+				"postgame " + str(person["id"]) + " cannot stand in water, trees or house")
 	check(Depth.STYLE_ID == "shared-2.5d-layered-v1",
 		"all story chapters retain the same authored actor style")
 	check(Landscape.PASS_ID == "nights1-3-landscape-depth-v2",
