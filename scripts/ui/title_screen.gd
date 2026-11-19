@@ -2,6 +2,7 @@ extends Control
 ## Actual interactive offline title screen (not a concept image).
 ## The hand-authored background scales with the landscape viewport.
 const GameScene = preload("res://scenes/main.tscn")
+const RendererPolicy = preload("res://scripts/visuals/android_renderer_policy.gd")
 const Night02Scene = preload("res://scenes/night02.tscn")
 const Night03Scene = preload("res://scenes/night03.tscn")
 const Night04Scene = preload("res://scenes/night04.tscn")
@@ -54,6 +55,11 @@ var qa_corner_taps := 0
 var qa_last_tap_ms := 0
 
 func _ready() -> void:
+	# Configure 2D-only SwiftShader *before* instantiating the 3D Night 1.
+	# The software 2.5D world remains fully interactive and physics-backed.
+	var adapter := RenderingServer.get_video_adapter_name()
+	if RendererPolicy.configure_viewport(get_viewport(),adapter):
+		print("NIGHT1_QA_SOFTWARE_2D_VIEWPORT_ENABLED")
 	prefs.load_from()
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	resized.connect(queue_redraw)

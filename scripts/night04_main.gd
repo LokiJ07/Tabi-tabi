@@ -326,6 +326,19 @@ func _house() -> void:
 	var r_back := WAKE_HOUSE+Vector2(100,-645)
 	draw_colored_polygon(PackedVector2Array([roof_fl,r_front,r_back,roof_bl]),Color("#745849"))
 	draw_colored_polygon(PackedVector2Array([r_front,roof_fr,roof_br,r_back]),Color("#443c3b"))
+	# Imported nipa-thatch texture follows BOTH real sloping roof planes.
+	# Flat colour planes made the lamay house look like a cardboard cutout,
+	# especially in daylight. The eave, door and collider remain untouched.
+	var thatch_size := NIPA.get_size()
+	var roof_uv := PackedVector2Array([
+		Vector2(0,thatch_size.y),Vector2(thatch_size.x,thatch_size.y),
+		Vector2(thatch_size.x,0),Vector2(0,0)])
+	var lit_ink := Color(.84,.71,.59,.54)
+	var shade_ink := Color(.65,.63,.62,.43)
+	draw_polygon(PackedVector2Array([roof_fl,r_front,r_back,roof_bl]),
+		PackedColorArray([lit_ink,lit_ink,lit_ink,lit_ink]),roof_uv,NIPA)
+	draw_polygon(PackedVector2Array([r_front,roof_fr,roof_br,r_back]),
+		PackedColorArray([shade_ink,shade_ink,shade_ink,shade_ink]),roof_uv,NIPA)
 	for i in range(8):
 		var q := float(i+1)/9.0
 		draw_line(roof_fl.lerp(r_front,q),roof_bl.lerp(r_back,q),Color("#bd9871",.52),3.0,true)

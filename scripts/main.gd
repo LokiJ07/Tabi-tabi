@@ -16,6 +16,7 @@ const BarrioDetails = preload("res://scripts/world/barrio_details.gd")
 const EnvironmentPolish = preload("res://scripts/world/environment_polish.gd")
 const IllustratedBarrio = preload("res://scripts/world/illustrated_barrio.gd")
 const SoftwareWorldFallback = preload("res://scripts/visuals/software_world_fallback.gd")
+const RendererPolicy = preload("res://scripts/visuals/android_renderer_policy.gd")
 const SOIL_ART: Texture2D = preload("res://assets/world/soil_ground.svg")
 const PATH_ART: Texture2D = preload("res://assets/world/earthen_path.svg")
 const WATER_ART: Texture2D = preload("res://assets/world/tidal_water.svg")
@@ -144,6 +145,12 @@ var encounter_autosave_clock := 0.0
 
 
 func _ready() -> void:
+	# This must happen before any meshes, Sprite3D or 3D lights are created.
+	# SwiftShader cannot link some Godot GLES3 spatial shader permutations.
+	# Camera3D projection and collision stay active for the 2D fallback.
+	var adapter := RenderingServer.get_video_adapter_name()
+	if RendererPolicy.configure_viewport(get_viewport(),adapter):
+		print("NIGHT1_QA_SOFTWARE_2D_VIEWPORT_ENABLED")
 	preferences.load_from()
 	_create_world()
 	_create_ambient_walkers()

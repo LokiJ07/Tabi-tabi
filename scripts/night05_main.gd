@@ -380,14 +380,46 @@ func _paint_farmhouse() -> void:
 	draw_rect(Rect2(at+Vector2(6,-8),Vector2(58,95)),Color("#765f47"),false,5.0)
 	# Interior glow is drawn once AFTER the darkness grade in _draw().
 
+# Decorative hillside beyond the physical Night 5 walkability rectangle.
+# The camera looks across this terrain when taking the REAL Night 6 road.
+# The previous scene ended its earth texture at x=1100, producing a large,
+# flat, cyan-green region beyond the connected junction. Collision and the
+# authored gate to Night 6 deliberately remain unchanged.
+func _paint_east_foothills() -> void:
+	var hillside := Rect2(930,-900,1080,1770)
+	draw_texture_rect(SOIL,hillside,false,Color(1,1,1,.33))
+	# Raised hillside strata follow the road's northeast-facing slope.
+	# No walls or fake shortcuts are created: all marks are decorative.
+	for band in range(16):
+		var n := float(band)
+		var offset := Vector2(1000+n*54.0,-705+sin(n*.82)*26.0)
+		draw_polyline(PackedVector2Array([
+			offset+Vector2(-38,45),
+			offset+Vector2(34,-8),
+			offset+Vector2(106,-31)
+		]),Color(.30,.42,.33,.30 if band%3==0 else .17),
+			3.0 if band%3==0 else 2.0,true)
+	for i in range(110):
+		var x := 1010.0+float((i*139)%990)
+		var y := -825.0+float((i*173)%1580)
+		var foot := Vector2(x,y)
+		var stalk := 8.0+float(i%4)*3.0
+		var plant := Color("#8b9870",.62) if i%4==0 else Color("#6a856d",.58)
+		draw_line(foot,foot+Vector2(-4,-stalk),plant,1.8,true)
+		draw_line(foot,foot+Vector2(5,-stalk*.72),plant.darkened(.14),1.5,true)
+		if i%9==0:
+			Landscape.rock(self,foot+Vector2(17,12),14.0+float(i%3)*4.0,true)
+
 func _draw() -> void:
-	draw_rect(MAP.grow(190),Color("#253a32"))
+	# Extend only visual backdrop; gameplay constraints still use MAP.
+	draw_rect(MAP.grow(900),Color("#253a32"))
 	Landscape.parallax_ridges(self,MAP.grow(180),camera.position,4,_stage())
 	for i in range(30):
 		var y := MAP.position.y+float(i)*54.0
 		draw_rect(Rect2(MAP.position.x,y,MAP.size.x,54),
 			Color("#384c3d").lerp(Color("#6b7758"),float(i)/29.0))
 	draw_texture_rect(SOIL,Rect2(-1110,-765,2210,1530),false,Color(1,1,1,.21))
+	_paint_east_foothills()
 	# The former "end" is a Y-junction, NOT a dead end. A continuous
 	# public road heads east then uphill to the clearly marked Night 6 path.
 	var path := FarmArt.main_road_route(RETURN_WAKE,SAFE_PERIMETER,FUTURE_TRAIL)

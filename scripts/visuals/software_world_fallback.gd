@@ -5,6 +5,7 @@ extends Control
 ## same imported textures as the normal renderer, never a static screenshot.
 ## This layer is activated ONLY for known Android SwiftShader/Emulator adapters.
 const DimensionalArt = preload("res://scripts/visuals/layered_25d.gd")
+const RendererPolicy = preload("res://scripts/visuals/android_renderer_policy.gd")
 const NightWindows = preload("res://scripts/visuals/nighttime_windows.gd")
 const Landscape = preload("res://scripts/visuals/folklore_landscape_25d.gd")
 const SOIL: Texture2D = preload("res://assets/world/soil_ground.svg")
@@ -34,8 +35,7 @@ var game
 var camera: Camera3D
 
 static func needs_software_draw(adapter_name: String) -> bool:
-	var name := adapter_name.to_lower()
-	return name.contains("swiftshader") or name.contains("android emulator opengl es translator")
+	return RendererPolicy.needs_software_draw(adapter_name)
 
 func bind_game(scene, active_camera: Camera3D) -> void:
 	game = scene

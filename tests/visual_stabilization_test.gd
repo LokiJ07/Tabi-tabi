@@ -41,10 +41,26 @@ func _run() -> void:
 	kapre.free()
 
 	var night06_src := FileAccess.get_file_as_string("res://scripts/night06_main.gd")
-	check(night06_src.contains("Depth.paint_contact_shadow(self,foot+Vector2(10,5)"),
-		"Night 6 large building disks replaced by terrain-level contact shadows")
+	check(night06_src.contains("Shadow follows the FOUR wall-foot vertices")
+		and night06_src.contains("draw_colored_polygon(PackedVector2Array(["),
+		"Night 6 building shadows stay beneath projected walls rather than making dark circles")
 	check(not night06_src.contains("draw_circle(foot+Vector2(10,5),w*.48"),
 		"Night 6 huge opaque circle behind villagers cannot regress")
+	check(night06_src.contains("Carved wooden source marker")
+		and not night06_src.contains("draw_circle(at-Vector2(0,20),20"),
+		"river evidence must appear as grounded documentary markers, not eye-shaped circles")
+	var night05_src := FileAccess.get_file_as_string("res://scripts/night05_main.gd")
+	check(night05_src.contains("func _paint_east_foothills()")
+		and night05_src.contains("_paint_east_foothills()")
+		and night05_src.contains("var hillside := Rect2(930,-900,1080,1770)"),
+		"Night 5 eastern road cannot terminate in unpainted flat green scenery")
+	check(night05_src.contains("const MAP := Rect2(-1120,-790,2240,1590)")
+		and night05_src.contains("const FUTURE_TRAIL := Vector2(955,-470)"),
+		"Night 5 terrain polish preserves real walkability bounds and Night 6 gate")
+	var night04_src := FileAccess.get_file_as_string("res://scripts/night04_main.gd")
+	check(night04_src.contains("Imported nipa-thatch texture follows BOTH real sloping roof planes")
+		and night04_src.contains("roof_uv,NIPA"),
+		"Night 4 lamay roof retains dimensional nipa material on its two planes")
 	for night in range(2,8):
 		var source := FileAccess.get_file_as_string(
 			"res://scripts/night%02d_main.gd" % night)

@@ -115,7 +115,9 @@ jobs:
           run_test res://tests/night03_state_test.gd
           run_test res://tests/world_depth_all_nights_test.gd
           run_test res://tests/world_water_depth_full_audit_test.gd
-           run_test res://tests/visual_stabilization_test.gd
+          run_test res://tests/visual_stabilization_test.gd
+          run_test res://tests/android_renderer_policy_test.gd
+          python3 .github/scripts/assert_gles3_software_emulator.py --self-test
           run_test res://tests/night03_scene_test.gd
           run_test res://tests/night03_unlock_test.gd
           run_test res://tests/night03_connected_playthrough_test.gd
@@ -264,6 +266,7 @@ jobs:
             build/android-night1-preparation.png
             build/android-night*-options.png
             build/android-godot-renderer-log.txt
+            build/android-emulator-shader-audit.txt
             build/android-night1-launch-log.txt
             build/android-display.txt
           if-no-files-found: warn
