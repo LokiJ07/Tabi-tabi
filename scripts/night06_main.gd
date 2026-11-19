@@ -631,28 +631,47 @@ func _draw() -> void:
 			"NIGHT 7 • BALETE TRAIL OPEN" if World.implemented("night07") and story.outcome != "" else "NIGHT 7 • FINISH RIVER FIRST",HORIZONTAL_ALIGNMENT_LEFT,365,15,Color("#f2d89e"))
 
 func _paint_chapter_people(behind: bool) -> void:
+	var people: Array[Dictionary] = []
 	var night := _stage() >= 2
-	for actor in [
-		[MARA,MARA_AT,Vector2(98,153),ARCHIVE+Vector2(-28,-70)],
-		[DADO,DADO_AT,Vector2(101,159),ARCHIVE+Vector2(14,-70)],
-		[SABEL,SABEL_AT,Vector2(99,157),SABEL_AT+Vector2(40,-60)],
-		[LOLA,LOLA_AT,Vector2(103,155),LOLA_AT+Vector2(53,-65)]
-	]:
-		var fade: float = clampf(indoor_seconds/3.3,0.0,1.0) if night else 0.0
-		if fade >= 1.0:
+	var fade: float = clampf(indoor_seconds/3.3,0.0,1.0) if night else 0.0
+	if fade < 1.0:
+		for resident in [
+			[MARA,MARA_AT,Vector2(98,153),ARCHIVE+Vector2(-28,-70)],
+			[DADO,DADO_AT,Vector2(101,159),ARCHIVE+Vector2(14,-70)],
+			[SABEL,SABEL_AT,Vector2(99,157),SABEL_AT+Vector2(40,-60)],
+			[LOLA,LOLA_AT,Vector2(103,155),LOLA_AT+Vector2(53,-65)]
+		]:
+			people.append({
+				"tex":resident[0],"at":(resident[1] as Vector2).lerp(resident[3],fade),
+				"size":resident[2],"alpha":1.0-smoothstep(.77,1.0,fade),
+				"dog":false,"moving":false,"shadow":.23
+			})
+	people.append({"tex":BANTAY,"at":bantay_pos,"size":Vector2(95,102),
+		"alpha":1.0,"dog":true,"moving":true,"shadow":.31})
+	people.append({"tex":HERO,"at":player_pos,"size":Vector2(108,142),
+		"alpha":1.0,"dog":false,"moving":true,"shadow":.37})
+	people.sort_custom(func(a: Dictionary,b: Dictionary)->bool:
+		return (a["at"] as Vector2).y < (b["at"] as Vector2).y)
+	# Unified foot sorting and TWO passes prevent Bantay/NPC shadows from
+	# painting over the protagonist and reduce sprite silhouette artifacts.
+	for actor in people:
+		var foot: Vector2 = actor["at"]
+		if Walkability.scenery_covers_actor(6,foot) == behind:
+			Depth.paint_contact_shadow(self,foot,(actor["size"] as Vector2).x,
+				float(actor["shadow"])*float(actor["alpha"]))
+	for actor in people:
+		var foot: Vector2 = actor["at"]
+		if Walkability.scenery_covers_actor(6,foot) != behind:
 			continue
-		var resident_foot: Vector2 = actor[1]
-		resident_foot = resident_foot.lerp(actor[3],fade)
-		if Walkability.scenery_covers_actor(6,resident_foot) != behind:
-			continue
-		Depth.paint_grounded(self,actor[0],resident_foot,actor[2],
-			Color(1,1,1,1.0-smoothstep(.77,1.0,fade)),.23)
-	if Walkability.scenery_covers_actor(6,bantay_pos) == behind:
-		Depth.paint_animated_actor(self,BANTAY,bantay_pos,Vector2(95,102),
-			walk_time,walk_weight,prefs.reduced_motion,Color.WHITE,.31,true)
-	if Walkability.scenery_covers_actor(6,player_pos) == behind:
-		Depth.paint_animated_actor(self,HERO,player_pos,Vector2(108,142),
-			walk_time,walk_weight,prefs.reduced_motion,Color.WHITE,.37)
+		var ink := Color(1,1,1,float(actor["alpha"]))
+		if actor["moving"]:
+			Depth.paint_animated_actor(self,actor["tex"],foot,actor["size"],
+				walk_time,walk_weight,prefs.reduced_motion,ink,
+				float(actor["shadow"]),bool(actor["dog"]),false)
+		else:
+			Depth.paint_grounded(self,actor["tex"],foot,actor["size"],ink,
+				float(actor["shadow"]),0.0,false)
+
 
 func _fit_status_card() -> void:
 	if status_panel == null or status_stack == null or not is_inside_tree(): return

@@ -299,12 +299,20 @@ func _draw() -> void:
 		"THE ANCIENT BALETE",HORIZONTAL_ALIGNMENT_LEFT,520,27,Color("#e9ddb1"))
 
 func _paint_chapter_protagonists(behind: bool) -> void:
+	var bantay_foot := bantay_pos+Vector2(0,18)
+	var hero_foot := player_pos+Vector2(0,9)
 	if Walkability.scenery_covers_actor(7,bantay_pos) == behind:
-		Depth.paint_animated_actor(self,BANTAY,bantay_pos+Vector2(0,18),
-			Vector2(100,106),walking,walk_weight,prefs.reduced_motion,Color.WHITE,.31,true)
+		Depth.paint_contact_shadow(self,bantay_foot,100.0,.31)
 	if Walkability.scenery_covers_actor(7,player_pos) == behind:
-		Depth.paint_animated_actor(self,HERO,player_pos+Vector2(0,9),
-			Vector2(108,143),walking,walk_weight,prefs.reduced_motion,Color.WHITE,.40)
+		Depth.paint_contact_shadow(self,hero_foot,108.0,.40)
+	if Walkability.scenery_covers_actor(7,bantay_pos) == behind:
+		Depth.paint_animated_actor(self,BANTAY,bantay_foot,
+			Vector2(100,106),walking,walk_weight,prefs.reduced_motion,
+			Color.WHITE,.31,true,false)
+	if Walkability.scenery_covers_actor(7,player_pos) == behind:
+		Depth.paint_animated_actor(self,HERO,hero_foot,
+			Vector2(108,143),walking,walk_weight,prefs.reduced_motion,
+			Color.WHITE,.40,false,false)
 
 
 func _mark_station(foot: Vector2,word: String,checked: bool,dark: bool) -> void:
