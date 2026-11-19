@@ -333,10 +333,24 @@ if [ "${GITHUB_REF:-}" = "refs/heads/fix/world-depth-river-shadow-full-audit" ] 
   adb exec-out screencap -p > build/android-night3-intro.png
   for item in "133 RIDGE_DAY ridge-day" "136 WATCHPOST watchpost" "139 TIKBALANG_NIGHT tikbalang-night" "135 BACK_TRAIL back-trail"; do
     set -- $item
-    adb shell input keyevent "$1"
-    sleep 4
-    if ! adb logcat -d -v brief | grep -q "NIGHT3_QA_$2"; then
-      echo "ERROR: authentic Night 3 $2 camera state not reached"
+    # Godot's _unhandled_input can drop an adb F-key when it lands on the
+    # same frame that a prior focused control is released. Do not accept
+    # screenshots without the exact live camera QA marker, and do not fake
+    # the chapter's state. Retry the REAL Android hardware key instead.
+    reached=0
+    for attempt in 1 2 3; do
+      adb shell input keyevent "$1"
+      sleep 4
+      if adb logcat -d -v brief | grep -q "NIGHT3_QA_$2"; then
+        reached=1
+        break
+      fi
+      echo "Night 3 camera $2 keyevent dropped; real retry $attempt / 3"
+    done
+    if [ "$reached" -ne 1 ]; then
+      echo "ERROR: authentic Night 3 $2 camera state not reached after 3 hardware key events"
+      adb exec-out screencap -p > "build/android-night3-qa-failed-$3.png" || true
+      adb logcat -d -v brief | grep -E 'NIGHT3_QA|Godot|AndroidRuntime' | tail -n 80 || true
       exit 1
     fi
     adb exec-out screencap -p > "build/android-night3-$3.png"
