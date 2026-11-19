@@ -261,7 +261,7 @@ jobs:
             build/android-night1-notebook.png
             build/android-night1-notebook-scrolled.png
             build/android-night1-preparation.png
-            build/android-night1-options.png
+            build/android-night*-options.png
             build/android-godot-renderer-log.txt
             build/android-night1-launch-log.txt
             build/android-display.txt
