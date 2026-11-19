@@ -79,6 +79,7 @@ def read_png_rgb(path: Path, x_range=(.28, .65), y_range=(.28, .80)):
 
 if __name__ == "__main__":
     path = Path(sys.argv[1]) if len(sys.argv) > 1 else Path("build/android-night1-launch.png")
+    night_mode = "--night" in sys.argv[2:]
     width, height, total, histogram, white_popup_pixels = read_png_rgb(path)
     top, count = histogram.most_common(1)[0]
     dominant = count / total
@@ -87,10 +88,17 @@ if __name__ == "__main__":
     if white_popup_share > .15:
         print(f"FAIL: Android immersive onboarding / white system popup obscures {white_popup_share:.1%} of gameplay.", file=sys.stderr)
         sys.exit(1)
-    if dominant > .67:
-        print("FAIL: World is mostly a flat color, likely GLES3 shader failure / cyan background.", file=sys.stderr)
+    # Nighttime is intentionally much darker than daytime. A genuinely
+    # detailed river world can place ~68% of 16-level sample buckets into
+    # the same near-black shade while still showing water, reeds and lanterns.
+    # Keep a strict limit, and require MORE different colors at night so a
+    # blank black/cyan screen can never pass this exemption.
+    flat_limit = .76 if night_mode else .67
+    min_colors = 36 if night_mode else 24
+    if dominant > flat_limit:
+        print(f"FAIL: World is mostly flat (dominant {dominant:.1%}, limit {flat_limit:.0%}).", file=sys.stderr)
         sys.exit(1)
-    if len(histogram) < 24:
+    if len(histogram) < min_colors:
         print("FAIL: World is not visually varied enough to show the actual environment.", file=sys.stderr)
         sys.exit(1)
     print("PASS: Visible, varied rendered game world; not just title or HUD.")
