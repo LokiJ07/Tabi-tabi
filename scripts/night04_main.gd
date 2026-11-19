@@ -484,6 +484,11 @@ func _paint_chapter_people(behind: bool) -> void:
 	people.sort_custom(func(a: Dictionary,b: Dictionary)->bool:
 		return (a["at"] as Vector2).y < (b["at"] as Vector2).y)
 	for actor in people:
+		var foot: Vector2 = actor["at"]
+		if Walkability.scenery_covers_actor(4,foot) == behind:
+			var alpha: float = float(actor.get("alpha",1.0))
+			DimensionalArt.paint_contact_shadow(self,foot,(actor["size"] as Vector2).x,.38*alpha)
+	for actor in people:
 		var p: Vector2 = actor["at"]
 		if Walkability.scenery_covers_actor(4,p) != behind:
 			continue
@@ -495,10 +500,10 @@ func _paint_chapter_people(behind: bool) -> void:
 			if is_hero or is_dog:
 				DimensionalArt.paint_animated_actor(self,actor["tex"],p,
 					size2,walk_phase,walk_weight,prefs.reduced_motion,
-					Color(1,1,1,transparency),.38*transparency,is_dog)
+					Color(1,1,1,transparency),.38*transparency,is_dog,false)
 			else:
 				DimensionalArt.paint_grounded(self,actor["tex"],p,size2,
-					Color(1,1,1,transparency),.38*transparency)
+					Color(1,1,1,transparency),.38*transparency,0.0,false)
 
 func _fit_status_card() -> void:
 	# Same dynamic status height as Night 1–3: objectives must never overflow.
