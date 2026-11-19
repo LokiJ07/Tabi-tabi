@@ -65,7 +65,7 @@ func _run() -> void:
 		"Night 7 connected road stays traversable")
 	check(not Walk.is_blocked(7,Vector2(210,220)),
 		"Night 7 ancient trial still accessible")
-		for region in ["old_mango","night03","night04","night05","night06","night07"]:
+	for region in ["old_mango","night03","night04","night05","night06","night07"]:
 		var chapter := int({
 			"old_mango":2,"night03":3,"night04":4,
 			"night05":5,"night06":6,"night07":7
