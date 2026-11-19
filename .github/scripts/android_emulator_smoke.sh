@@ -5,6 +5,10 @@ PKG="org.tabitabi.nightone"
 APK="build/tabi-tabi-night1-debug.apk"
 mkdir -p build
 adb install -r "$APK"
+# CI uses set -o pipefail. Never use adb logcat | grep -q for
+# in-engine markers: grep -q may close its pipe on an early match and cause
+# adb to exit with SIGPIPE, falsely reporting a missing chapter state.
+# grep -F redirected to /dev/null drains the log stream completely.
 # Android's immersive-mode first-run warning is a SYSTEM overlay. On a fresh
 # emulator it blocks every tap on the Night 1 dialogue and persisted even
 # after the previous fixed-coordinate "Got it" tap. Confirm immersive mode
@@ -54,7 +58,7 @@ dismiss_system_anr
 # Wait for the exact in-engine title log, not an arbitrary time or screenshot.
 title_ready=0
 for attempt in $(seq 1 20); do
-  if adb logcat -d -v brief | grep -q "NIGHT1_QA_TITLE_SCENE_READY"; then
+  if adb logcat -d -v brief | grep -F "NIGHT1_QA_TITLE_SCENE_READY" >/dev/null; then
     title_ready=1
     break
   fi
@@ -76,7 +80,7 @@ fi
 adb shell input tap 520 300
 sleep 7
 scene_ready=0
-if adb logcat -d -v brief | grep -q "NIGHT1_QA_GAMEPLAY_SCENE_READY"; then
+if adb logcat -d -v brief | grep -F "NIGHT1_QA_GAMEPLAY_SCENE_READY" >/dev/null; then
   scene_ready=1
 fi
 # Backup: the debug triple-corner gesture avoids menu coordinate dependence.
@@ -87,7 +91,7 @@ if [ "$scene_ready" -ne 1 ]; then
     adb shell input tap 2230 85
     adb shell input tap 2230 85
     sleep 6
-    if adb logcat -d -v brief | grep -q "NIGHT1_QA_GAMEPLAY_SCENE_READY"; then
+    if adb logcat -d -v brief | grep -F "NIGHT1_QA_GAMEPLAY_SCENE_READY" >/dev/null; then
       scene_ready=1
       break
     fi
@@ -159,7 +163,7 @@ capture_real_options() {
   local file="build/android-night${chapter}-options.png"
   adb shell input tap 2205 58
   sleep 2
-  if ! adb logcat -d -v brief | grep -q "$marker"; then
+  if ! adb logcat -d -v brief | grep -F "$marker" >/dev/null; then
     echo "ERROR: Night $chapter Options BUTTON did not invoke real game settings"
     adb exec-out screencap -p > "$file" || true
     exit 1
@@ -198,7 +202,7 @@ capture_live_view() {
   for attempt in 1 2 3; do
     adb shell input keyevent "$key"
     sleep 4
-    if adb logcat -d -v brief | grep -q "NIGHT1_QA_VIEW_$label"; then
+    if adb logcat -d -v brief | grep -F "NIGHT1_QA_VIEW_$label" >/dev/null; then
       activated=1
       break
     fi
@@ -235,7 +239,7 @@ if [ "${GITHUB_REF:-}" = "refs/heads/fix/world-depth-river-shadow-full-audit" ] 
   sleep 7
   adb shell input keyevent 140  # Android F10, QA only: enter Night 2 scene
   sleep 7
-  if ! adb logcat -d -v brief | grep -q "NIGHT2_QA_SCENE_READY"; then
+  if ! adb logcat -d -v brief | grep -F "NIGHT2_QA_SCENE_READY" >/dev/null; then
     echo "ERROR: Night 2 Kapre scene did not actually launch"
     adb logcat -d | grep -E 'NIGHT2_QA|Godot|AndroidRuntime' | tail -n 100 || true
     exit 1
@@ -251,7 +255,7 @@ if [ "${GITHUB_REF:-}" = "refs/heads/fix/world-depth-river-shadow-full-audit" ] 
   for attempt in 1 2 3; do
     adb shell input keyevent 133  # F3, daytime mango on the LIVE Godot scene
     sleep 3
-    if adb logcat -d -v brief | grep -q "NIGHT2_QA_MANGO_DAY_VIEW"; then
+    if adb logcat -d -v brief | grep -F "NIGHT2_QA_MANGO_DAY_VIEW" >/dev/null; then
       night2_mango_ready=1
       break
     fi
@@ -270,7 +274,7 @@ if [ "${GITHUB_REF:-}" = "refs/heads/fix/world-depth-river-shadow-full-audit" ] 
     set -- $item
     adb shell input keyevent "$1"
     sleep 4
-    if ! adb logcat -d -v brief | grep -q "NIGHT2_QA_${2}_VIEW"; then
+    if ! adb logcat -d -v brief | grep -F "NIGHT2_QA_${2}_VIEW" >/dev/null; then
       echo "ERROR: Chapter 2 ${2} viewport not drawn from live gameplay"
       exit 1
     fi
@@ -279,7 +283,7 @@ if [ "${GITHUB_REF:-}" = "refs/heads/fix/world-depth-river-shadow-full-audit" ] 
   done
   adb shell input keyevent 136  # F6: in-engine twilight/lantern art preview
   sleep 3
-  if ! adb logcat -d -v brief | grep -q "NIGHT2_QA_DUSK_VIEW"; then
+  if ! adb logcat -d -v brief | grep -F "NIGHT2_QA_DUSK_VIEW" >/dev/null; then
     echo "ERROR: Kapre twilight view did not render from actual Godot gameplay"
     exit 1
   fi
@@ -289,7 +293,7 @@ if [ "${GITHUB_REF:-}" = "refs/heads/fix/world-depth-river-shadow-full-audit" ] 
   # absence of abandoned daytime villagers; mango tree view cannot prove it.
   adb shell input keyevent 134 # F4: actual shelter window at deep night
   sleep 4
-  if ! adb logcat -d -v brief | grep -q "NIGHT2_QA_SHELTER_NIGHT_VIEW"; then
+  if ! adb logcat -d -v brief | grep -F "NIGHT2_QA_SHELTER_NIGHT_VIEW" >/dev/null; then
     echo "ERROR: Night 2 occupied refuge window nighttime capture not reached"
     exit 1
   fi
@@ -306,7 +310,7 @@ if [ "${GITHUB_REF:-}" = "refs/heads/fix/world-depth-river-shadow-full-audit" ] 
   fi
   adb shell input keyevent 135  # F5: view live walkable road back to Barrio
   sleep 4
-  if ! adb logcat -d -v brief | grep -q "NIGHT2_QA_RETURN_TRAIL_VIEW"; then
+  if ! adb logcat -d -v brief | grep -F "NIGHT2_QA_RETURN_TRAIL_VIEW" >/dev/null; then
     echo "ERROR: Kapre return-to-Barrio trail is not in the running game"
     exit 1
   fi
@@ -325,7 +329,7 @@ if [ "${GITHUB_REF:-}" = "refs/heads/fix/world-depth-river-shadow-full-audit" ] 
   sleep 7
   adb shell input keyevent 141  # F11: development-only REAL Night 3 entry
   sleep 8
-  if ! adb logcat -d -v brief | grep -q "NIGHT3_QA_SCENE_READY"; then
+  if ! adb logcat -d -v brief | grep -F "NIGHT3_QA_SCENE_READY" >/dev/null; then
     echo "ERROR: authentic Night 3 Tikbalang scene did not launch"
     adb logcat -d | grep -E 'NIGHT3_QA|Godot|AndroidRuntime' | tail -n 100 || true
     exit 1
@@ -341,7 +345,7 @@ if [ "${GITHUB_REF:-}" = "refs/heads/fix/world-depth-river-shadow-full-audit" ] 
     for attempt in 1 2 3; do
       adb shell input keyevent "$1"
       sleep 4
-      if adb logcat -d -v brief | grep -q "NIGHT3_QA_$2"; then
+      if adb logcat -d -v brief | grep -F "NIGHT3_QA_$2" >/dev/null; then
         reached=1
         break
       fi
@@ -360,7 +364,7 @@ if [ "${GITHUB_REF:-}" = "refs/heads/fix/world-depth-river-shadow-full-audit" ] 
   # independently verify the living night light at the real watchpost.
   adb shell input keyevent 137 # F7: real night camera at lookout
   sleep 4
-  if ! adb logcat -d -v brief | grep -q "NIGHT3_QA_LOOKOUT_NIGHT"; then
+  if ! adb logcat -d -v brief | grep -F "NIGHT3_QA_LOOKOUT_NIGHT" >/dev/null; then
     echo "ERROR: Night 3 night watchpost window view was not reached"
     exit 1
   fi
@@ -381,7 +385,7 @@ if [ "${GITHUB_REF:-}" = "refs/heads/fix/world-depth-river-shadow-full-audit" ] 
   sleep 7
   adb shell input keyevent 142 # F12 QA-only authentic Night 4 entry
   sleep 8
-  if ! adb logcat -d -v brief | grep -q "NIGHT4_QA_SCENE_READY"; then
+  if ! adb logcat -d -v brief | grep -F "NIGHT4_QA_SCENE_READY" >/dev/null; then
     echo "ERROR: authentic Night 4 scene not entered"
     adb logcat -d | grep -E 'NIGHT4_QA|Godot|AndroidRuntime' | tail -n 120 || true
     exit 1
@@ -391,7 +395,7 @@ if [ "${GITHUB_REF:-}" = "refs/heads/fix/world-depth-river-shadow-full-audit" ] 
     set -- $item
     adb shell input keyevent "$1"
     sleep 4
-    if ! adb logcat -d -v brief | grep -q "NIGHT4_QA_$2"; then
+    if ! adb logcat -d -v brief | grep -F "NIGHT4_QA_$2" >/dev/null; then
       echo "ERROR: Night 4 $2 live gameplay camera did not render"
       exit 1
     fi
@@ -426,7 +430,7 @@ if [ "${GITHUB_REF:-}" = "refs/heads/fix/world-depth-river-shadow-full-audit" ] 
   sleep 8
   adb shell input keyevent 138 # F8, debug-only Sigbin farm entry
   sleep 8
-  if ! adb logcat -d -v brief | grep -q "NIGHT5_QA_SCENE_READY"; then
+  if ! adb logcat -d -v brief | grep -F "NIGHT5_QA_SCENE_READY" >/dev/null; then
     echo "ERROR: Night 5 original Sigbin farm never entered from real title"
     adb logcat -d | grep -E 'NIGHT5_QA|Godot|AndroidRuntime' | tail -n 100 || true
     exit 1
@@ -442,7 +446,7 @@ if [ "${GITHUB_REF:-}" = "refs/heads/fix/world-depth-river-shadow-full-audit" ] 
     set -- $item
     adb shell input keyevent "$1"
     sleep 4
-    if ! adb logcat -d -v brief | grep -q "NIGHT5_QA_$2"; then
+    if ! adb logcat -d -v brief | grep -F "NIGHT5_QA_$2" >/dev/null; then
       echo "ERROR: Night 5 $2 actual in-game shot not reachable"
       adb logcat -d | grep -E 'NIGHT5_QA|Godot|AndroidRuntime' | tail -n 80 || true
       exit 1
@@ -469,7 +473,7 @@ if [ "${GITHUB_REF:-}" = "refs/heads/fix/world-depth-river-shadow-full-audit" ] 
   # a disconnected prop or a title screenshot as continuous map evidence.
   adb shell input keyevent 141  # Android F11
   sleep 4
-  if ! adb logcat -d -v brief | grep -q "NIGHT5_QA_CONNECTED_NIGHT06_TRAIL"; then
+  if ! adb logcat -d -v brief | grep -F "NIGHT5_QA_CONNECTED_NIGHT06_TRAIL" >/dev/null; then
     echo "ERROR: Night 6 physically connected farm trail was not reached"
     exit 1
   fi
@@ -486,7 +490,7 @@ if [ "${GITHUB_REF:-}" = "refs/heads/fix/world-depth-river-shadow-full-audit" ] 
   for attempt in 1 2 3; do
     adb shell input keyevent 140 # F10, first canonical successful rescue
     sleep 2
-    if adb logcat -d -v brief | grep -q "NIGHT5_QA_FIRST_RESCUE_ACTIVE"; then
+    if adb logcat -d -v brief | grep -F "NIGHT5_QA_FIRST_RESCUE_ACTIVE" >/dev/null; then
       rescue_ready=1
       break
     fi
@@ -520,7 +524,7 @@ if [ "${GITHUB_REF:-}" = "refs/heads/fix/world-depth-river-shadow-full-audit" ] 
   sleep 8
   adb shell input keyevent 137 # F7 Night 6 QA entry
   sleep 8
-  if ! adb logcat -d -v brief | grep -q "NIGHT6_QA_SCENE_READY"; then
+  if ! adb logcat -d -v brief | grep -F "NIGHT6_QA_SCENE_READY" >/dev/null; then
     echo "ERROR: Night 6 river chapter not entered from Android title"
     adb logcat -d -v brief | grep -Ei 'NIGHT6|Godot|AndroidRuntime' | tail -n 100 || true
     exit 1
@@ -530,7 +534,7 @@ if [ "${GITHUB_REF:-}" = "refs/heads/fix/world-depth-river-shadow-full-audit" ] 
     set -- $item
     adb shell input keyevent "$1"
     sleep 5
-    if ! adb logcat -d -v brief | grep -q "NIGHT6_QA_$2"; then
+    if ! adb logcat -d -v brief | grep -F "NIGHT6_QA_$2" >/dev/null; then
       echo "ERROR: Night 6 $2 actual in-game scene missing"
       exit 1
     fi
@@ -555,7 +559,7 @@ if [ "${GITHUB_REF:-}" = "refs/heads/fix/world-depth-river-shadow-full-audit" ] 
   sleep 8
   adb shell input keyevent 139 # F9, actual Night 7 title QA entry
   sleep 8
-  if ! adb logcat -d -v brief | grep -q "NIGHT7_QA_SCENE_READY"; then
+  if ! adb logcat -d -v brief | grep -F "NIGHT7_QA_SCENE_READY" >/dev/null; then
     echo "ERROR: Night 7 actual Balete scene did not launch on Android"
     adb logcat -d -v brief | grep -Ei 'NIGHT7|SCRIPT ERROR|Godot|AndroidRuntime' | tail -n 100 || true
     exit 1
@@ -565,7 +569,7 @@ if [ "${GITHUB_REF:-}" = "refs/heads/fix/world-depth-river-shadow-full-audit" ] 
     set -- $item
     adb shell input keyevent "$1"
     sleep 5
-    if ! adb logcat -d -v brief | grep -q "NIGHT7_QA_$2"; then
+    if ! adb logcat -d -v brief | grep -F "NIGHT7_QA_$2" >/dev/null; then
       echo "ERROR: Night 7 live scene missing $2 view"
       adb logcat -d -v brief | grep -Ei 'NIGHT7|SCRIPT ERROR|Godot' | tail -n 95 || true
       exit 1
