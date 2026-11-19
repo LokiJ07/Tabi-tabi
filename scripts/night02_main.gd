@@ -381,9 +381,8 @@ func _draw() -> void:
 	# canopy and invited the player to appear on top of a flat tree sprite.
 	# A curved eroded road now respects the solid trunk and visible ground.
 	var road: Array[Vector2] = Walkability.mango_road_centerline()
-	_polyline(road,Color("#5f5a45"),139.0)
-	_polyline(road,Color("#8b7758"),105.0)
-	_polyline(road,Color("#aa8d65"),69.0)
+	Landscape.raised_trail(self,PackedVector2Array(road),82.0,
+		Color("#5f5a45"),Color("#aa8d65"))
 	for segment in range(road.size()-1):
 		for j in range(3):
 			var at: Vector2 = road[segment].lerp(road[segment+1],float(j+1)/4.0)

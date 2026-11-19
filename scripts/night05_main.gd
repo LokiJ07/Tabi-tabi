@@ -391,11 +391,9 @@ func _draw() -> void:
 	# The former "end" is a Y-junction, NOT a dead end. A continuous
 	# public road heads east then uphill to the clearly marked Night 6 path.
 	var path := FarmArt.main_road_route(RETURN_WAKE,SAFE_PERIMETER,FUTURE_TRAIL)
-	draw_polyline(path,Color("#34443a"),116,true)
-	draw_polyline(path,Color("#ae9570"),81,true)
+	Landscape.raised_trail(self,path,81.0,Color("#34443a"),Color("#ae9570"))
 	var gate_spur := FarmArt.gate_approach_route()
-	draw_polyline(gate_spur,Color("#34443a"),50,true)
-	draw_polyline(gate_spur,Color("#bba07d"),34,true)
+	Landscape.raised_trail(self,gate_spur,34.0,Color("#34443a"),Color("#bba07d"))
 	FarmArt.paint_ground_texture(self,_stage()>=2)
 	FarmArt.paint_crop_rows(self,_stage()>=2)
 	FarmArt.paint_squash_patch(self,Vector2(-650,140),_stage()>=2)
