@@ -16,10 +16,13 @@ static func paint_contact_shadow(target: CanvasItem, foot: Vector2,
 		width: float, shadow: float) -> void:
 	if shadow <= 0.0 or width <= 1.0:
 		return
-	_oval(target,foot+Vector2(7.0,5.0),Vector2(width*.33,maxf(3.0,width*.055)),
-		Color(.017,.031,.032,shadow*.33))
-	_oval(target,foot+Vector2(0.0,2.0),Vector2(width*.25,maxf(2.0,width*.040)),
-		Color(.012,.019,.023,shadow*.58))
+	# Two faint, flattened layers sit BELOW the feet rather than a large dark
+	# disk visible through a character or a building. Keep local shadows on
+	# the ground; they must not read as extra NPC silhouettes.
+	_oval(target,foot+Vector2(5.0,5.0),Vector2(width*.32,maxf(2.5,width*.045)),
+		Color(.018,.041,.040,shadow*.24))
+	_oval(target,foot+Vector2(0.0,2.0),Vector2(width*.23,maxf(2.0,width*.033)),
+		Color(.010,.026,.029,shadow*.44))
 
 static func paint_grounded(target: CanvasItem, texture: Texture2D, foot: Vector2,
 		dimensions: Vector2, tint: Color = Color.WHITE, shadow: float = .32,
