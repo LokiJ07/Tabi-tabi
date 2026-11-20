@@ -56,6 +56,8 @@ jobs:
         run: timeout --signal=TERM --kill-after=8s 180s godot --headless --audio-driver Dummy --path . --script res://tests/shared_options_all_nights_test.gd
       - name: Movable joystick and solid world collision all nights
         run: godot --headless --path . --script res://tests/movement_world_collision_test.gd
+      - name: Night 3 complete bridge crossing, Android multitouch and identity indicators
+        run: godot --headless --path . --script res://tests/night03_bridge_touch_identity_test.gd
       - name: Real visual-depth regression from Android screenshots (shelter / Kapre / Lola)
         run: godot --headless --path . --script res://tests/visual_depth_screenshot_test.gd
       - name: All seven nights rooted actors, real building collisions and save-position safety

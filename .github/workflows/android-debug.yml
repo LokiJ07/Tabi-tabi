@@ -115,6 +115,7 @@ jobs:
           run_test res://tests/night03_state_test.gd
           run_test res://tests/world_depth_all_nights_test.gd
           run_test res://tests/world_water_depth_full_audit_test.gd
+          run_test res://tests/night03_bridge_touch_identity_test.gd
           run_test res://tests/visual_stabilization_test.gd
           run_test res://tests/android_renderer_policy_test.gd
           python3 .github/scripts/assert_gles3_software_emulator.py --self-test
@@ -233,6 +234,7 @@ jobs:
             build/android-night3-intro.png
             build/android-night3-ridge-day.png
             build/android-night3-watchpost.png
+            build/android-night3-bridge-crossing.png
             build/android-night3-watchpost-night.png
             build/android-night3-tikbalang-night.png
             build/android-night3-back-trail.png

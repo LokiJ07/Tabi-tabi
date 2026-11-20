@@ -75,30 +75,49 @@ func _release() -> void:
 	axis_changed.emit(Vector2.ZERO)
 	queue_redraw()
 
-func _gui_input(event: InputEvent) -> void:
+func _input(event: InputEvent) -> void:
+	# Receive mobile touch BEFORE the GUI dispatch. Once a finger starts on
+	# this pad, continue listening to its pointer ID even when it wanders
+	# outside the circular area. _gui_input alone loses drags on some Android
+	# devices when another button/UI control becomes the hover target.
+	if not is_visible_in_tree() or (not (event is InputEventScreenTouch) \
+			and not (event is InputEventScreenDrag)):
+		return
 	if event is InputEventScreenTouch:
 		if event.pressed:
 			if active_touch != -1 or reposition_touch != -1:
+				return # Let a second finger tap INTERACT/FOCUS simultaneously.
+			if not get_global_rect().has_point(event.position):
 				return
-			if event.position.y < 39.0:
+			var local: Vector2 = get_global_transform_with_canvas().affine_inverse() * event.position
+			if local.y < 39.0:
 				reposition_touch = event.index
 			else:
 				active_touch = event.index
-				_set_axis_from_local(event.position)
+				_set_axis_from_local(local)
+			get_viewport().set_input_as_handled()
 		elif event.index == active_touch:
 			_release()
+			get_viewport().set_input_as_handled()
 		elif event.index == reposition_touch:
 			reposition_touch = -1
 			_save_position()
-		accept_event()
+			get_viewport().set_input_as_handled()
 	elif event is InputEventScreenDrag:
 		if event.index == active_touch:
-			_set_axis_from_local(event.position)
-			accept_event()
+			var local: Vector2 = get_global_transform_with_canvas().affine_inverse() * event.position
+			_set_axis_from_local(local)
+			get_viewport().set_input_as_handled()
 		elif event.index == reposition_touch:
 			_drag(event.relative)
-			accept_event()
-	elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
+			get_viewport().set_input_as_handled()
+
+func _gui_input(event: InputEvent) -> void:
+	# Desktop mouse remains local-control driven; mobile touch is exclusively
+	# captured by _input() above to avoid duplicate or lost pointer events.
+	if active_touch != -1 or reposition_touch != -1:
+		return
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
 		if event.pressed:
 			mouse_drag = event.position.y < 39.0
 			mouse_move = not mouse_drag
@@ -119,7 +138,8 @@ func _gui_input(event: InputEvent) -> void:
 			accept_event()
 
 func _notification(what: int) -> void:
-	if what == NOTIFICATION_VISIBILITY_CHANGED and not is_visible_in_tree():
+	if (what == NOTIFICATION_VISIBILITY_CHANGED and not is_visible_in_tree()) \
+			or what == NOTIFICATION_WM_WINDOW_FOCUS_OUT:
 		reposition_touch = -1
 		mouse_drag = false
 		_release()

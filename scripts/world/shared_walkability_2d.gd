@@ -65,15 +65,24 @@ const NIGHT2_HOUSE_FOOTPRINTS := [
 static var NIGHT3_RAVINE: PackedVector2Array = PackedVector2Array([
 	Vector2(-220,740),Vector2(155,740),Vector2(310,-600),
 	Vector2(100,-710),Vector2(-40,20)])
+# EXACT same four centerlines as the raised ridgeline paths in Night 3.
+# Earlier bridge masks covered only shortened segments and accidentally
+# blocked the main road, lookout branch and the lower ford ON their centerlines.
+# The water remains solid everywhere OFF these marked, visibly raised paths.
 static var NIGHT3_BRIDGES: Array[PackedVector2Array] = [
-	PackedVector2Array([Vector2(-505,155),Vector2(-305,-70),
-		Vector2(-154,-293),Vector2(105,-118)]),
-	PackedVector2Array([Vector2(-396,-335),Vector2(28,-488)]),
-	PackedVector2Array([Vector2(-165,122),Vector2(-85,138),
-		Vector2(-8,133),Vector2(87,139)]),
+	PackedVector2Array([Vector2(-910,405),Vector2(-720,310),
+		Vector2(-505,155),Vector2(-305,-70),Vector2(-154,-293),
+		Vector2(105,-118),Vector2(385,-125),Vector2(640,-357)]),
+	PackedVector2Array([Vector2(-330,-80),Vector2(-396,-335),
+		Vector2(28,-488),Vector2(380,-450),Vector2(640,-357)]),
+	PackedVector2Array([Vector2(-520,145),Vector2(-170,245),
+		Vector2(126,260),Vector2(220,50)]),
 	PackedVector2Array([Vector2(105,-118),Vector2(220,50),
 		Vector2(120,245),Vector2(-8,133)])
 ]
+# Center corridor includes a little touch steering tolerance. Real bridge
+# surface and shoulder are wider; the water outside them is still blocked.
+const NIGHT3_BRIDGE_HALF_WIDTHS := [51.0,44.0,45.0,47.0]
 static var NIGHT6_SHORE: PackedVector2Array = PackedVector2Array([
 	Vector2(-1200,231),Vector2(-785,220),Vector2(-375,238),
 	Vector2(60,220),Vector2(310,235),Vector2(530,270),
@@ -104,8 +113,9 @@ static func _night06_waterline(x: float) -> float:
 
 static func safe_river_crossing(chapter: int, foot: Vector2) -> bool:
 	if chapter == 3:
-		for bridge in NIGHT3_BRIDGES:
-			if _near_segment_path(foot,bridge,52.0):
+		for i in range(NIGHT3_BRIDGES.size()):
+			if _near_segment_path(foot,NIGHT3_BRIDGES[i],
+					NIGHT3_BRIDGE_HALF_WIDTHS[i]):
 				return true
 		return false
 	if chapter == 6:

@@ -9,6 +9,7 @@ const Night03Save = preload("res://scripts/core/night03_save.gd")
 const World = preload("res://scripts/core/connected_world.gd")
 const Preferences = preload("res://scripts/core/preferences.gd")
 const SharedHUD = preload("res://scripts/ui/shared_hud.gd")
+const Cues = preload("res://scripts/ui/world_interaction_cues.gd")
 const SharedOptions = preload("res://scripts/ui/shared_options.gd")
 const Walkability = preload("res://scripts/world/shared_walkability_2d.gd")
 const SharedDialogueMotion = preload("res://scripts/ui/shared_dialogue_motion.gd")
@@ -471,6 +472,7 @@ func _draw() -> void:
 	# still work when residents have moved inside, not been deleted.
 	_paint_chapter_people(false)
 	PostgameResidents.paint(self,"night04",elapsed,prefs.reduced_motion,player_pos)
+	_paint_world_identities()
 	var font := ThemeDB.fallback_font
 	draw_string(font,RETURN_RIDGE+Vector2(25,-90),"FLOOD RIDGE • RETURN",HORIZONTAL_ALIGNMENT_LEFT,320,18,Color("#e8cb94"))
 	draw_string(font,WAKE_HOUSE+Vector2(-160,206),"THE WAKE • LAMAY",HORIZONTAL_ALIGNMENT_LEFT,350,20,Color("#f7d79d"))
@@ -515,8 +517,9 @@ func _paint_chapter_people(behind: bool) -> void:
 					size2,walk_phase,walk_weight,prefs.reduced_motion,
 					Color(1,1,1,transparency),.38*transparency,is_dog,false)
 			else:
-				DimensionalArt.paint_grounded(self,actor["tex"],p,size2,
-					Color(1,1,1,transparency),.38*transparency,0.0,false)
+				DimensionalArt.paint_living_npc(self,actor["tex"],p,size2,
+					elapsed,prefs.reduced_motion,
+					Color(1,1,1,transparency),.38*transparency,false)
 
 func _fit_status_card() -> void:
 	# Same dynamic status height as Night 1–3: objectives must never overflow.
@@ -1073,3 +1076,31 @@ func _show_ending() -> void:
 	_button(stack,"RETURN TO FLOOD RIDGE (SAVE)",_return_to_ridge)
 	_button(stack,"SAVE & MAIN MENU",_save_menu)
 	_sync_ui()
+
+
+func _paint_world_identities() -> void:
+	var locations: Dictionary = CLUE_POS.duplicate()
+	locations.merge(DEFENSE_POS)
+	locations["return_ridge"] = RETURN_RIDGE
+	locations["farm_trail"] = FARM_TRAIL
+	locations["farm_locked"] = FARM_TRAIL
+	locations["coffee"] = Vector2(-230,97)
+	for id in ["deduce","begin_siege","watch"]:
+		locations[id] = SAFE_COURT
+	var names: Dictionary = CLUE_NAMES.duplicate()
+	names["return_ridge"] = "FLOOD RIDGE • RETURN"
+	names["farm_trail"] = "SIGBIN FARM • NIGHT 5"
+	names["farm_locked"] = "FARM TRAIL • LOCKED"
+	names["coffee"] = "COFFEE FOR THE MOURNERS"
+	names["deduce"] = "COURTYARD • COMPARE EVIDENCE"
+	names["begin_siege"] = "PREPARE COURTYARD DEFENSE"
+	names["watch"] = "WATCH THE ROOFLINE"
+	Cues.paint_nearby(self,player_pos,_nearby(),locations,names)
+	for witness in [
+		["NENA",Vector2(-420,-180),"ALING NENA • HOST",140.0],
+		["SABEL",Vector2(-515,145),"ALING SABEL • FAMILY",125.0],
+		["MARA",Vector2(-265,100),"TEACHER MARA",130.0]
+	]:
+		if NightWindows.outdoor_actor_visible(4,_stage(),witness[0]):
+			Cues.paint(self,witness[1],player_pos,witness[2],"npc",215,witness[3])
+	Cues.paint(self,bantay_pos+Vector2(0,19),player_pos,"BANTAY","npc",105,104)

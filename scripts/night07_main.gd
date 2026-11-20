@@ -9,6 +9,7 @@ const RiverSave = preload("res://scripts/core/night06_save.gd")
 const World = preload("res://scripts/core/connected_world.gd")
 const Prefs = preload("res://scripts/core/preferences.gd")
 const SharedHUD = preload("res://scripts/ui/shared_hud.gd")
+const Cues = preload("res://scripts/ui/world_interaction_cues.gd")
 const SharedOptions = preload("res://scripts/ui/shared_options.gd")
 const Walkability = preload("res://scripts/world/shared_walkability_2d.gd")
 const SharedDialogueMotion = preload("res://scripts/ui/shared_dialogue_motion.gd")
@@ -286,13 +287,18 @@ func _draw() -> void:
 	# People are NOT visible in outdoor routes at night unless story requires
 	# their participation. The safe finale keeps Lola and Mara near the path.
 	if story.phase <= 2 and story.outcome == "":
-		Depth.paint_grounded(self,LOLA,Vector2(-228,-4),Vector2(97,135),Color.WHITE,.3)
-		Depth.paint_grounded(self,MARA,Vector2(-135,50),Vector2(99,140),Color.WHITE,.3)
+		Depth.paint_living_npc(self,LOLA,Vector2(-228,-4),Vector2(97,135),
+			elapsed,prefs.reduced_motion,Color.WHITE,.3)
+		Depth.paint_living_npc(self,MARA,Vector2(-135,50),Vector2(99,140),
+			elapsed,prefs.reduced_motion,Color.WHITE,.3)
 	if story.phase >= 4 and story.phase <= 5:
-		Depth.paint_grounded(self,MARA,Vector2(290,30),Vector2(103,145),Color.WHITE,.3)
-		Depth.paint_grounded(self,LOLA,Vector2(220,80),Vector2(103,140),Color.WHITE,.3)
+		Depth.paint_living_npc(self,MARA,Vector2(290,30),Vector2(103,145),
+			elapsed,prefs.reduced_motion,Color.WHITE,.3)
+		Depth.paint_living_npc(self,LOLA,Vector2(220,80),Vector2(103,140),
+			elapsed,prefs.reduced_motion,Color.WHITE,.3)
 	_paint_chapter_protagonists(false)
 	PostgameResidents.paint(self,"night07",elapsed,prefs.reduced_motion,player_pos)
+	_paint_world_identities()
 	draw_string(ThemeDB.fallback_font,ENTRY+Vector2(15,-113),
 		"RIVER TRAIL • RETURN",HORIZONTAL_ALIGNMENT_LEFT,365,20,Color("#efdda9"))
 	draw_string(ThemeDB.fallback_font,KEEPER+Vector2(-270,-820),
@@ -964,3 +970,29 @@ func _unhandled_input(event: InputEvent) -> void:
 			_sync_ui()
 		else:
 			_open_options()
+
+
+func _paint_world_identities() -> void:
+	var locations: Dictionary = CLUE_POS.duplicate()
+	locations.merge(PREP_POS)
+	locations["return_river"] = ENTRY
+	for id in ["deduce","begin_trial","verdict"]:
+		locations[id] = VERDICT
+	locations["epilogue"] = MEMORIAL
+	locations["observe"] = TRIAL_POS[mini(story.trial_index,2)]
+	var names := {
+		"return_river":"RIVER VALLEY • RETURN",
+		"deduce":"KEEPER'S PACT • NOTEBOOK",
+		"begin_trial":"ANCIENT KEEPER • TRIAL",
+		"verdict":"ANCIENT KEEPER • CHOICE",
+		"epilogue":"COMMUNITY MEMORIAL",
+		"observe":"RITUAL TRIAL • OBSERVE"
+	}
+	Cues.paint_nearby(self,player_pos,_nearby(),locations,names)
+	if story.phase <= 2 and story.outcome == "":
+		Cues.paint(self,Vector2(-228,-4),player_pos,"LOLA PASING","npc",210,135)
+		Cues.paint(self,Vector2(-135,50),player_pos,"TEACHER MARA","npc",210,140)
+	if story.phase >= 4 and story.phase <= 5:
+		Cues.paint(self,Vector2(290,30),player_pos,"TEACHER MARA","npc",210,145)
+		Cues.paint(self,Vector2(220,80),player_pos,"LOLA PASING","npc",210,140)
+	Cues.paint(self,bantay_pos+Vector2(0,18),player_pos,"BANTAY","npc",105,106)

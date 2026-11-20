@@ -88,6 +88,7 @@ var dog_awareness = BantayAwareness.new()
 var dog_warning_label: Label
 var interact_hint: Label
 var interaction_nodes: Dictionary = {}
+var interaction_identity_tags: Dictionary = {}
 var dog_warning_seconds := 0.0
 var dog_waypoints := PackedVector3Array()
 var dog_next_waypoint := 0
@@ -162,6 +163,7 @@ func _ready() -> void:
 	_create_software_world_fallback()
 	_create_immersive_atmosphere()
 	_create_ui()
+	_build_world_interaction_tags()
 	_apply_preferences()
 	_restore_story()
 	if _postgame_is_active():
@@ -1223,17 +1225,46 @@ func _nearby_target() -> String:
 	return Nearby.closest(player.global_position, locations)
 
 
+func _build_world_interaction_tags() -> void:
+	# Night 1 used to set text on a shared prompt that was still invisible,
+	# causing nearby Lola/Dado, notebooks and river clues to have no cue.
+	# Attach small nameboards to the ORIGINAL interaction transforms; never
+	# create another collision body or an additional gameplay target.
+	for id in interaction_nodes:
+		var at: Node3D = interaction_nodes[id]
+		if at == null or not is_instance_valid(at):
+			continue
+		var tag := Label3D.new()
+		tag.name = "NearbyIdentity_" + str(id)
+		tag.text = str(id).replace("_"," ").to_upper()
+		tag.font_size = 39
+		tag.pixel_size = .004
+		tag.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+		tag.modulate = Color("#f4ddaa")
+		tag.outline_modulate = Color("#16333a")
+		tag.outline_size = 8
+		tag.position = Vector3(0,1.9,0)
+		tag.visible = false
+		at.add_child(tag)
+		interaction_identity_tags[id] = tag
+
 func _update_interact_hint() -> void:
 	if interact_hint == null:
 		return
-	if dialogue.visible or notebook_panel.visible or prep_panel.visible or settings_panel.visible:
-		interact_hint.text = ""
-		return
-	var closest_target := _nearby_target()
+	var hidden := dialogue.visible or notebook_panel.visible or prep_panel.visible or settings_panel.visible
+	var closest_target := "" if hidden else _nearby_target()
+	var text := ""
 	if closest_target.begins_with("POSTGAME_"):
-		interact_hint.text = "INTERACT • " + closest_target.trim_prefix("POSTGAME_").replace("_"," ")
-	else:
-		interact_hint.text = Nearby.caption(closest_target)
+		text = "INTERACT • " + closest_target.trim_prefix("POSTGAME_").replace("_"," ")
+	elif not closest_target.is_empty():
+		text = Nearby.caption(closest_target)
+	# This shared factory intentionally starts hidden; text alone never made
+	# the Night 1 prompt visible. Use the same setter as Nights 2–7.
+	SharedHUD.set_nearby_prompt_text(interact_hint,text)
+	for id in interaction_identity_tags:
+		var tag: Label3D = interaction_identity_tags[id]
+		if tag != null and is_instance_valid(tag):
+			tag.visible = str(id) == closest_target
 
 
 func _interact() -> void:
