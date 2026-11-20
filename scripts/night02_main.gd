@@ -11,6 +11,7 @@ const Preferences = preload("res://scripts/core/preferences.gd")
 const Night02Ambience = preload("res://scripts/audio/night02_ambience.gd")
 const ConnectedWorld = preload("res://scripts/core/connected_world.gd")
 const SharedHUD = preload("res://scripts/ui/shared_hud.gd")
+const Cues = preload("res://scripts/ui/world_interaction_cues.gd")
 const SharedOptions = preload("res://scripts/ui/shared_options.gd")
 const Walkability = preload("res://scripts/world/shared_walkability_2d.gd")
 const PostgameResidents = preload("res://scripts/world/postgame_residents.gd")
@@ -513,6 +514,7 @@ func _draw() -> void:
 		draw_line(TREE+Vector2(87,-191),TREE+Vector2(241,-201),Color("#98714c",.44),3.5,true)
 	_draw_chapter_actors(false)
 	PostgameResidents.paint(self,"old_mango",particle_phase,prefs.reduced_motion,player_pos)
+	_paint_world_identities()
 	_draw_world_labels()
 	if story.outcome == "resolve":
 		draw_arc(TREE, 157, 0, TAU, 80, Color("#bcd79d",.58), 3.0)
@@ -1456,3 +1458,22 @@ func _show_ending() -> void:
 		_open_notebook()
 	)
 	_action(box, "SAVE & MAIN MENU", _save_and_main_menu)
+
+
+func _paint_world_identities() -> void:
+	var locations: Dictionary = TARGETS.duplicate()
+	locations["return_barrio"] = ConnectedWorld.TRAIL_MANGO
+	locations["ridge_gate"] = ConnectedWorld.TRAIL_MANGO_RIDGE
+	locations["observe"] = OBSERVATION
+	locations["kapre"] = TREE
+	var names: Dictionary = CLUE_TITLES.duplicate()
+	names["ridge_gate"] = "NORTH RIDGE • NIGHT 3"
+	names["return_barrio"] = "BARRIO LAWOM"
+	names["observe"] = "SAFE LOOKOUT"
+	names["kapre"] = "KAPRE • OLD MANGO"
+	Cues.paint_nearby(self,player_pos,_nearby(),locations,names)
+	if NightWindows.outdoor_actor_visible(2,_light_stage(),"DADO"):
+		Cues.paint(self,Vector2(-661,-263),player_pos,"TATAY DADO • WITNESS","npc",210,128)
+	if NightWindows.outdoor_actor_visible(2,_light_stage(),"MARA"):
+		Cues.paint(self,Vector2(-461,-261),player_pos,"TEACHER MARA","npc",210,128)
+	Cues.paint(self,dog_pos+Vector2(0,29),player_pos,"BANTAY","npc",105,96)
