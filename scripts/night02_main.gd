@@ -549,8 +549,9 @@ func _draw_chapter_actors(behind: bool) -> void:
 				Vector2(width,height),walk_phase,walk_weight,prefs.reduced_motion,
 				Color.WHITE,.43,is_dog,false)
 		else:
-			DimensionalArt.paint_grounded(self,actor["texture"],foot,
-				Vector2(width,height),Color.WHITE,.43,0.0,false)
+			DimensionalArt.paint_living_npc(self,actor["texture"],foot,
+				Vector2(width,height),elapsed,prefs.reduced_motion,
+				Color.WHITE,.43,false)
 
 
 func _draw_kapre_smoke() -> void:
