@@ -282,7 +282,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			_open_options()
 	if OS.get_name() == "Android" and OS.has_feature("debug") and event is InputEventKey:
 		var key := event as InputEventKey
-		if key.pressed and not key.echo and key.keycode in [KEY_F3,KEY_F5,KEY_F6,KEY_F7,KEY_F9]:
+		if key.pressed and not key.echo and key.keycode in [KEY_F3,KEY_F4,KEY_F5,KEY_F6,KEY_F7,KEY_F9]:
 			_close_dialogue()
 			notebook.hide()
 			options_panel.hide()
@@ -291,6 +291,11 @@ func _unhandled_input(event: InputEvent) -> void:
 				KEY_F3:
 					player_pos = Vector2(-260,-320)
 					print("NIGHT3_QA_RIDGE_DAY")
+				KEY_F4:
+					# Actual daytime bridge at the previously river-blocked point.
+					# No save changes and no noclip; screenshot shows timber span.
+					player_pos = Vector2(175,-120)
+					print("NIGHT3_QA_BRIDGE_CROSSING")
 				KEY_F5:
 					player_pos = ConnectedWorld.ARRIVAL_RIDGE
 					print("NIGHT3_QA_BACK_TRAIL")
