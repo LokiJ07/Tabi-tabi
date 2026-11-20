@@ -10,6 +10,7 @@ const Night02State = preload("res://scripts/narrative/night02_state.gd")
 const ConnectedWorld = preload("res://scripts/core/connected_world.gd")
 const Preferences = preload("res://scripts/core/preferences.gd")
 const SharedHUD = preload("res://scripts/ui/shared_hud.gd")
+const Cues = preload("res://scripts/ui/world_interaction_cues.gd")
 const SharedOptions = preload("res://scripts/ui/shared_options.gd")
 const Walkability = preload("res://scripts/world/shared_walkability_2d.gd")
 const PostgameResidents = preload("res://scripts/world/postgame_residents.gd")
@@ -514,6 +515,7 @@ func _draw() -> void:
 	# draw order is world-depth based and HUD/cinematic layers stay untouched.
 	_paint_chapter_actors(false)
 	PostgameResidents.paint(self,"night03",particles,prefs.reduced_motion,player_pos)
+	_paint_world_identities()
 	# In-world wayfinding signs are small, correctly oriented and non-obstructive.
 	var font := ThemeDB.fallback_font
 	draw_string(font,ConnectedWorld.TRAIL_RIDGE+Vector2(-125,90),
@@ -1177,3 +1179,23 @@ func _show_ending() -> void:
 	_modal_button(area,"RETURN TO OLD MANGO (SAVE)",_return_to_mango)
 	_modal_button(area,"SAVE & MAIN MENU",_save_menu)
 	_sync_hud()
+
+
+func _paint_world_identities() -> void:
+	var locations: Dictionary = CLUES_AT.duplicate()
+	locations.merge(MARKERS_AT)
+	locations["return_mango"] = ConnectedWorld.TRAIL_RIDGE
+	locations["wake_gate"] = ConnectedWorld.TRAIL_RIDGE_WAKE
+	locations["wake_gate_locked"] = ConnectedWorld.TRAIL_RIDGE_WAKE
+	locations["observe"] = SAFE_LOOKOUT
+	locations["check_fork"] = FALSE_FORK
+	locations["tikbalang"] = RIDGE_GATE
+	var names: Dictionary = CLUE_LABELS.duplicate()
+	names["return_mango"] = "OLD MANGO GROVE • RETURN"
+	names["wake_gate"] = "THE WAKE • NIGHT 4"
+	names["wake_gate_locked"] = "WAKE TRAIL • COMPLETE RIDGE"
+	names["observe"] = "SAFE FLOOD WATCHPOST"
+	names["check_fork"] = "CHANGED WAYMARKS"
+	names["tikbalang"] = "TIKBALANG • RIDGE WITNESS"
+	Cues.paint_nearby(self,player_pos,_nearby(),locations,names)
+	Cues.paint(self,bantay_pos+Vector2(0,19),player_pos,"BANTAY","npc",105,104)
