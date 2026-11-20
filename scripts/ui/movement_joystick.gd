@@ -80,8 +80,8 @@ func _input(event: InputEvent) -> void:
 	# this pad, continue listening to its pointer ID even when it wanders
 	# outside the circular area. _gui_input alone loses drags on some Android
 	# devices when another button/UI control becomes the hover target.
-	if not is_visible_in_tree() or not event is InputEventScreenTouch \
-			and not event is InputEventScreenDrag:
+	if not is_visible_in_tree() or (not (event is InputEventScreenTouch) \
+			and not (event is InputEventScreenDrag)):
 		return
 	if event is InputEventScreenTouch:
 		if event.pressed:
