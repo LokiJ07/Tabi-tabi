@@ -286,11 +286,15 @@ func _draw() -> void:
 	# People are NOT visible in outdoor routes at night unless story requires
 	# their participation. The safe finale keeps Lola and Mara near the path.
 	if story.phase <= 2 and story.outcome == "":
-		Depth.paint_grounded(self,LOLA,Vector2(-228,-4),Vector2(97,135),Color.WHITE,.3)
-		Depth.paint_grounded(self,MARA,Vector2(-135,50),Vector2(99,140),Color.WHITE,.3)
+		Depth.paint_living_npc(self,LOLA,Vector2(-228,-4),Vector2(97,135),
+			elapsed,prefs.reduced_motion,Color.WHITE,.3)
+		Depth.paint_living_npc(self,MARA,Vector2(-135,50),Vector2(99,140),
+			elapsed,prefs.reduced_motion,Color.WHITE,.3)
 	if story.phase >= 4 and story.phase <= 5:
-		Depth.paint_grounded(self,MARA,Vector2(290,30),Vector2(103,145),Color.WHITE,.3)
-		Depth.paint_grounded(self,LOLA,Vector2(220,80),Vector2(103,140),Color.WHITE,.3)
+		Depth.paint_living_npc(self,MARA,Vector2(290,30),Vector2(103,145),
+			elapsed,prefs.reduced_motion,Color.WHITE,.3)
+		Depth.paint_living_npc(self,LOLA,Vector2(220,80),Vector2(103,140),
+			elapsed,prefs.reduced_motion,Color.WHITE,.3)
 	_paint_chapter_protagonists(false)
 	PostgameResidents.paint(self,"night07",elapsed,prefs.reduced_motion,player_pos)
 	draw_string(ThemeDB.fallback_font,ENTRY+Vector2(15,-113),
