@@ -10,6 +10,7 @@ const World = preload("res://scripts/core/connected_world.gd")
 const Prefs = preload("res://scripts/core/preferences.gd")
 const RiverSound = preload("res://scripts/audio/night06_ambience.gd")
 const SharedHUD = preload("res://scripts/ui/shared_hud.gd")
+const Cues = preload("res://scripts/ui/world_interaction_cues.gd")
 const SharedOptions = preload("res://scripts/ui/shared_options.gd")
 const Walkability = preload("res://scripts/world/shared_walkability_2d.gd")
 const PostgameResidents = preload("res://scripts/world/postgame_residents.gd")
@@ -639,6 +640,7 @@ func _draw() -> void:
 	# their own doorway, while warm house windows remain visibly inhabited.
 	_paint_chapter_people(false)
 	PostgameResidents.paint(self,"night06",clock,prefs.reduced_motion,player_pos)
+	_paint_world_identities()
 	# Nearby ground signs are concise and contextual, never overlaid across
 	# the touchscreen or blocking the player during exploration.
 	if player_pos.distance_to(RETURN_FARM)<270:
@@ -1395,3 +1397,44 @@ func _unhandled_input(event: InputEvent) -> void:
 			_refresh()
 			_sync_ui()
 			get_viewport().set_input_as_handled()
+
+
+func _paint_world_identities() -> void:
+	var locations: Dictionary = CLUE_POS.duplicate()
+	locations.merge(IDENTITY_POS)
+	locations.merge(PREP_POS)
+	for route in ROUTE_POS:
+		locations["route_"+route] = ROUTE_POS[route]
+	locations["return_farm"] = RETURN_FARM
+	locations["balete_gate"] = World.TRAIL_RIVER_BALETE
+	locations["balete_locked"] = World.TRAIL_RIVER_BALETE
+	locations["dado"] = DADO_AT
+	locations["sabel"] = SABEL_AT
+	locations["lola"] = LOLA_AT
+	for id in ["reconstruct_one","reconstruct_three","open_river"]:
+		locations[id] = TABLE
+	locations["begin_river"] = PREP_POS["lantern_beacon"]
+	locations["watch"] = STEPS[mini(story.step_index,2)]
+	var names := {
+		"dado":"TATAY DADO • EYEWITNESS",
+		"sabel":"ALING SABEL • FAMILY",
+		"lola":"LOLA PASING • KEEPER",
+		"return_farm":"SIGBIN FARM • RETURN",
+		"balete_gate":"BALETE GROUNDS • NIGHT 7",
+		"balete_locked":"BALETE GROUNDS • LOCKED",
+		"reconstruct_one":"OFFICIAL FLOOD RECORD",
+		"reconstruct_three":"RESCUER EVIDENCE",
+		"open_river":"BEGIN SAFE RIVER CROSSING",
+		"begin_river":"LANTERN BEACON • CROSSING",
+		"watch":"SAFE STONE • OBSERVE"
+	}
+	Cues.paint_nearby(self,player_pos,_nearby(),locations,names)
+	if _stage() < 2 or indoor_seconds < 3.3:
+		for person in [
+			[MARA_AT,"TEACHER MARA",153.0],
+			[DADO_AT,"TATAY DADO",159.0],
+			[SABEL_AT,"ALING SABEL",157.0],
+			[LOLA_AT,"LOLA PASING",155.0]
+		]:
+			Cues.paint(self,person[0],player_pos,person[1],"npc",205,person[2])
+	Cues.paint(self,bantay_pos,player_pos,"BANTAY","npc",105,102)
