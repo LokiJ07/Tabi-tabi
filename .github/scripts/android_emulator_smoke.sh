@@ -360,6 +360,23 @@ if [ "${GITHUB_REF:-}" = "refs/heads/fix/world-depth-river-shadow-full-audit" ] 
     adb exec-out screencap -p > "build/android-night3-$3.png"
     python3 .github/scripts/assert_gameplay_visible.py "build/android-night3-$3.png"
   done
+  # Capture a REAL playable bridge crossing on the exact road that was
+  # previously hidden behind the water collision mask (175,-120).
+  reached_bridge=0
+  for attempt in 1 2 3; do
+    adb shell input keyevent 134  # Android F4, Night 3 debug only
+    sleep 4
+    if adb logcat -d -v brief | grep -F "NIGHT3_QA_BRIDGE_CROSSING" >/dev/null; then
+      reached_bridge=1
+      break
+    fi
+  done
+  if [ "$reached_bridge" -ne 1 ]; then
+    echo "ERROR: real Night 3 timber bridge QA camera could not reach corrected crossing"
+    exit 1
+  fi
+  adb exec-out screencap -p > build/android-night3-bridge-crossing.png
+  python3 .github/scripts/assert_gameplay_visible.py build/android-night3-bridge-crossing.png
   # Night 3's remote ridge creature reveal does not show the watchpost;
   # independently verify the living night light at the real watchpost.
   adb shell input keyevent 137 # F7: real night camera at lookout
