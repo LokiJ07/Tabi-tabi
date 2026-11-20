@@ -693,8 +693,9 @@ func _paint_chapter_people(behind: bool) -> void:
 				walk_time,walk_weight,prefs.reduced_motion,ink,
 				float(actor["shadow"]),bool(actor["dog"]),false)
 		else:
-			Depth.paint_grounded(self,actor["tex"],foot,actor["size"],ink,
-				float(actor["shadow"]),0.0,false)
+			Depth.paint_living_npc(self,actor["tex"],foot,actor["size"],
+				elapsed,prefs.reduced_motion,ink,
+				float(actor["shadow"]),false)
 
 
 func _fit_status_card() -> void:
