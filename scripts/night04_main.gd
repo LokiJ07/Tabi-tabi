@@ -515,8 +515,9 @@ func _paint_chapter_people(behind: bool) -> void:
 					size2,walk_phase,walk_weight,prefs.reduced_motion,
 					Color(1,1,1,transparency),.38*transparency,is_dog,false)
 			else:
-				DimensionalArt.paint_grounded(self,actor["tex"],p,size2,
-					Color(1,1,1,transparency),.38*transparency,0.0,false)
+				DimensionalArt.paint_living_npc(self,actor["tex"],p,size2,
+					elapsed,prefs.reduced_motion,
+					Color(1,1,1,transparency),.38*transparency,false)
 
 func _fit_status_card() -> void:
 	# Same dynamic status height as Night 1–3: objectives must never overflow.
