@@ -631,6 +631,12 @@ if [ "${GITHUB_REF:-}" = "refs/heads/fix/world-depth-river-shadow-full-audit" ] 
       exit 1
     fi
   done
+  if [ "${GITHUB_REF:-}" = "refs/heads/fix/night3-bridges-touch-living-actors-20261120" ]; then
+    if ! test -s build/android-night3-bridge-crossing.png; then
+      echo "ERROR: Night 3 real timber bridge screenshot was skipped"
+      exit 1
+    fi
+  fi
   echo "PASS: Night 1-7 each rendered actual gameplay and opened shared Options on Android"
 fi
 
