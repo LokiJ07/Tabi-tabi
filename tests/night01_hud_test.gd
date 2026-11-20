@@ -15,6 +15,16 @@ func _run() -> void:
 	root.add_child(game)
 	await process_frame
 	game._close_dialogue()
+	check(game.interaction_identity_tags.size() >= 6,
+		"Night 1 original witnesses and source props have named 3D identity tags")
+	var original_at: Vector3 = game.player.global_position
+	var marked_door := game.interaction_nodes.get("HUT_ENTRY") as Node3D
+	if marked_door != null:
+		game.player.global_position = marked_door.global_position
+		game._update_interact_hint()
+		check(game.interact_hint.visible and not game.interact_hint.text.is_empty(),
+			"nearby Night 1 door shows a real, visible interact chip on Android")
+		game.player.global_position = original_at
 	check(game.atmosphere_fx != null, "Night 1 uses shared visual tension effect")
 	if game.atmosphere_fx != null:
 		check(game.atmosphere_fx.mouse_filter == Control.MOUSE_FILTER_IGNORE, "fear effects never steal touches")
