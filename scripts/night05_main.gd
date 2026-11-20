@@ -8,6 +8,7 @@ const Night04Save = preload("res://scripts/core/night04_save.gd")
 const World = preload("res://scripts/core/connected_world.gd")
 const Preferences = preload("res://scripts/core/preferences.gd")
 const SharedHUD = preload("res://scripts/ui/shared_hud.gd")
+const Cues = preload("res://scripts/ui/world_interaction_cues.gd")
 const SharedOptions = preload("res://scripts/ui/shared_options.gd")
 const Walkability = preload("res://scripts/world/shared_walkability_2d.gd")
 const PostgameResidents = preload("res://scripts/world/postgame_residents.gd")
@@ -565,6 +566,7 @@ func _draw() -> void:
 				if _stage()>=2 else 1.0),.31)
 	_paint_chapter_protagonists(false)
 	PostgameResidents.paint(self,"night05",elapsed,prefs.reduced_motion,player_pos)
+	_paint_world_identities()
 	var font := ThemeDB.fallback_font
 	draw_string(font,RETURN_WAKE+Vector2(26,-90),"WAKE TRAIL • RETURN",HORIZONTAL_ALIGNMENT_LEFT,335,18,Color("#f3d8a6"))
 	draw_string(font,BARN_FOOT+Vector2(-141,62),"OLD BARN • UNSAFE TO ENTER",HORIZONTAL_ALIGNMENT_LEFT,430,18,Color("#efd8a3"))
@@ -1172,3 +1174,26 @@ func _show_ending() -> void:
 	_button(stack,"RETURN TO THE WAKE (SAVE)",_return_to_wake)
 	_button(stack,"SAVE & MAIN MENU",_save_menu)
 	_sync_ui()
+
+
+func _paint_world_identities() -> void:
+	var locations: Dictionary = CLUE_POS.duplicate()
+	locations.merge(PREP_POS)
+	locations["return_wake"] = RETURN_WAKE
+	locations["trail_locked"] = FUTURE_TRAIL
+	locations["unsafe_barn"] = Vector2(350,-95)
+	locations["farmer"] = FARMER_POS
+	for id in ["deduce","begin_rescue","watch"]:
+		locations[id] = SAFE_PERIMETER
+	var names: Dictionary = CLUE_NAMES.duplicate()
+	names["return_wake"] = "THE WAKE • RETURN"
+	names["trail_locked"] = "RIVER ROAD • NIGHT 6"
+	names["unsafe_barn"] = "UNSTABLE BARN • KEEP OUT"
+	names["farmer"] = "FARMER • WITNESS"
+	names["deduce"] = "SAFE PERIMETER • FIELD NOTES"
+	names["begin_rescue"] = "BEGIN LIVESTOCK RESCUE"
+	names["watch"] = "WATCH SIGBIN FROM SAFETY"
+	Cues.paint_nearby(self,player_pos,_nearby(),locations,names)
+	if _stage() < 2 or farmer_retreat_seconds < 3.3:
+		Cues.paint(self,FARMER_POS,player_pos,"FARMER • WITNESS","npc",210,158)
+	Cues.paint(self,bantay_pos+Vector2(0,18),player_pos,"BANTAY","npc",105,103)
