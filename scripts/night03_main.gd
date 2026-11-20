@@ -309,8 +309,49 @@ func _unhandled_input(event: InputEvent) -> void:
 func _poly(points: Array, color: Color) -> void:
 	draw_colored_polygon(PackedVector2Array(points),color)
 
-func _path(points: Array, edge: Color, fill: Color, width: float) -> void:
-	Landscape.raised_trail(self,PackedVector2Array(points),width,edge,fill)
+func _path(points: PackedVector2Array, edge: Color, fill: Color, width: float) -> void:
+	Landscape.raised_trail(self,points,width,edge,fill)
+
+func _paint_ravine_bridge(path: PackedVector2Array, plank_width: float,
+		stone_causeway: bool = false) -> void:
+	# The timber bridge and old stone ford occupy exactly the WALKABLE
+	# sections of the painted trail, not a separate invisible collision mask.
+	# Work out water spans at fixed intervals; banks remain solid elsewhere.
+	for segment in range(path.size()-1):
+		var a: Vector2 = path[segment]
+		var b: Vector2 = path[segment+1]
+		var travel: Vector2 = b-a
+		var length := travel.length()
+		if length < 1.0:
+			continue
+		var direction := travel/length
+		var side := Vector2(-direction.y,direction.x)
+		var steps := maxi(1,ceili(length/25.0))
+		for idx in range(steps):
+			var center := a+travel*(float(idx)+.5)/float(steps)
+			if not Geometry2D.is_point_in_polygon(center,Walkability.NIGHT3_RAVINE):
+				continue
+			if stone_causeway:
+				var rock_half := plank_width*.45
+				var slab := PackedVector2Array([
+					center-side*rock_half-direction*9.0,
+					center+side*rock_half-direction*9.0,
+					center+side*rock_half+direction*9.0,
+					center-side*rock_half+direction*9.0])
+				draw_colored_polygon(slab,Color("#a79d84"))
+				draw_line(slab[0],slab[1],Color("#d9c6a3"),3.0,true)
+			else:
+				var left := center-side*plank_width*.5
+				var right := center+side*plank_width*.5
+				draw_line(left+direction*11.0,right+direction*11.0,
+					Color("#5d4738"),5.0,true)
+				draw_line(left,right,Color("#d3af7b"),4.0,true)
+				if idx%3==0:
+					# Low handrails read as a crossing, not a wall across the road.
+					for edge_point in [left,right]:
+						draw_line(edge_point,edge_point+Vector2(0,-19),
+							Color("#76573d"),3.0,true)
+						draw_circle(edge_point+Vector2(0,-19),3.0,Color("#dfbf89"))
 
 func _draw() -> void:
 	# Ground: layered ridge contours, flooded terrace, textured forest floor.
@@ -335,17 +376,16 @@ func _draw() -> void:
 		draw_line(Vector2(-95+sin(float(i))*35.0,sy),Vector2(54+sin(float(i))*27.0,sy-55),
 			Color(.72,.86,.82,.23),2.0,true)
 	# Three connected walkable ridge footpaths + actual return trail.
-	_path([Vector2(-910,405),Vector2(-720,310),Vector2(-505,155),
-		Vector2(-305,-70),Vector2(-154,-293),Vector2(105,-118),
-		Vector2(385,-125),Vector2(640,-357)],Color("#526247"),Color("#b59e79"),70.0)
-	_path([Vector2(-330,-80),Vector2(-396,-335),Vector2(28,-488),
-		Vector2(380,-450),Vector2(640,-357)],Color("#53664b"),Color("#9d896c"),56.0)
-	_path([Vector2(-520,145),Vector2(-170,245),Vector2(126,260),
-		Vector2(220,50)],Color("#5c5a47"),Color("#9e8060"),59.0)
-	# A raised stone causeway keeps false-fork and heel-mark evidence on
-	# solid visible ground, never in an apparently swimmable river.
-	_path([Vector2(105,-118),Vector2(220,50),Vector2(120,245),
-		Vector2(-8,133)],Color("#4a6158"),Color("#b2a388"),68.0)
+	# Use the physical crossing centerlines, unchanged between story/free roam.
+	_path(Walkability.NIGHT3_BRIDGES[0],Color("#526247"),Color("#b59e79"),70.0)
+	_path(Walkability.NIGHT3_BRIDGES[1],Color("#53664b"),Color("#9d896c"),56.0)
+	_path(Walkability.NIGHT3_BRIDGES[2],Color("#5c5a47"),Color("#9e8060"),59.0)
+	# A real raised stone causeway connects the false-fork evidence.
+	_path(Walkability.NIGHT3_BRIDGES[3],Color("#4a6158"),Color("#b2a388"),68.0)
+	_paint_ravine_bridge(Walkability.NIGHT3_BRIDGES[0],73.0)
+	_paint_ravine_bridge(Walkability.NIGHT3_BRIDGES[1],60.0)
+	_paint_ravine_bridge(Walkability.NIGHT3_BRIDGES[2],65.0,true)
+	_paint_ravine_bridge(Walkability.NIGHT3_BRIDGES[3],72.0,true)
 	Landscape.riverbank_relief(self,PackedVector2Array([
 		Vector2(-220,740),Vector2(-40,20),Vector2(100,-710)]),_stage()>=2)
 	Landscape.riverbank_relief(self,PackedVector2Array([
