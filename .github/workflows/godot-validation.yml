@@ -70,6 +70,8 @@ jobs:
         run: godot --headless --path . --script res://tests/android_renderer_policy_test.gd
       - name: Distinguish startup shader warnings from runtime GLES3 failures
         run: python3 .github/scripts/assert_gles3_software_emulator.py --self-test
+      - name: Production release signing, manifest, and anti-secret-leak safety gates
+        run: python3 .github/scripts/verify_android_release_pipeline.py
       - name: Courage and safe retry regression
         run: godot --headless --path . --script res://tests/night01_courage_test.gd
       - name: Morning outcome world consistency regression

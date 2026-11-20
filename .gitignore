@@ -8,4 +8,8 @@ export.cfg
 # Local keys, never commit signing secrets
 *.keystore
 *.jks
+*.p12
+*.pfx
+*release-signing-credentials*.txt
+*release-keystore-base64*.txt
 android/build/

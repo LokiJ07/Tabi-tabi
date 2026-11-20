@@ -96,10 +96,31 @@ Test coverage: `tests/postgame_clock_test.gd`, `tests/postgame_residents_test.gd
 
 Nights 1–7 form an **engineering QA baseline**, not a finished commercial release. The newest Night 7 adds real-scene, story-state, connected-travel and epilogue tests. Android debug APK export and emulator launch remain mandatory checks before merging to main. Check the latest relevant Godot validation and Android emulator runs in GitHub Actions before calling a change release-ready.
 
-Still needed for production: actual phone comfort/performance/heat, all outcomes played by humans, detailed art approval, and a stable signing key. CI-generated QA APKs use temporary signing, and uninstalling old builds can erase saves.
+**Official signed Android release workflow is now prepared**, separate from the temporary-signed QA builds. Real-device comfort/performance/heat, all endings played by humans, and final character-art approval remain acceptance checks before marking a broad commercial release. Do not call a GitHub debug artifact an official release. A production APK is emitted only after the permanent signing Secrets are configured and the signed-APK emulator gate passes. Earlier temporary debug signing cannot be upgraded in place using the new release key; back up saves before uninstalling.
 
 ## Development direction
 
 Build each night on a separate PR, following Final Master Script & Development Plan v1.0 (14 November 2026). Do not change canon, previous outcomes, shared touch controls, or the established art/HUD system. Night 5 uses Sigbin's shadow logic, missing goats and a rescue of farm animals without turning the folklore witness into a generic enemy. Night 6 implementation is a connected and source-backed river history chapter, not a generic monster duel. Finish Night 7 mobile, readability, accessibility and all-outcome reviews before marking the game release-ready.
 
 CI: https://github.com/LokiJ07/Tabi-tabi/actions
+
+
+## Official signed Android release (no debug APK)
+
+- The only official pipeline is [Signed Android release APK](.github/workflows/android-release.yml), launched via **GitHub Actions → Signed Android release APK → Run workflow**, on the **main** branch.
+- The branch `main` includes the verified Night 3 physical bridges, mobile touch/joystick fixes, named NPC/object prompts and improved walking motion from PR #27. Real seven-night Android evidence and 72 Godot checks passed before integration.
+- The release workflow strictly uses `godot --headless --export-release`, confirms an Android signature via `apksigner`, rejects `application-debuggable`, verifies ARM64 support and the preserved Android ID `org.tabitabi.nightone`, installs the exact signed APK on Android 35 emulator, and **only after that** publishes a tagged GitHub Release with APK and SHA256 checksum.
+- The signing key must remain **permanent** and **private**. Never commit a keystore (JKS/PKCS12), base64 key or signing password. Keep secure offline backups so that later signed APKs update in place.
+
+### One-time GitHub secrets (required before the workflow can publish)
+
+Open repository **Settings → Secrets and variables → Actions → New repository secret**, and create these three names with the private values from the release signing kit:
+  1. `TABITABI_KEYSTORE_BASE64` — exact base64 of the dedicated Tabi-tabi PKCS12 release keystore, with no extra whitespace.
+  2. `TABITABI_KEYSTORE_PASSWORD` — permanent keystore password.
+  3. `TABITABI_KEY_ALIAS` — key alias `tabitabi`.
+
+No signing passwords or keystore contents belong in this repository. The job intentionally fails if ANY secret is missing; it never invents or falls back to a throwaway signature.
+
+After configuring the secrets, choose version `1.0.0-rc.1` for the first production-signed release candidate, with `publish=true`. GitHub Actions produces the genuine **non-debuggable, release-signed APK** and the GitHub Release entry only after APK verification and live Android startup smoke pass. Once real-phone acceptance is complete, choose `1.0.0` with the **same** signing key. Never reuse a version to overwrite the issued APK.
+
+**Existing saves and updates:** the package ID stays `org.tabitabi.nightone`, but previously delivered CI debug APKs are each signed with *different temporary keys*. Android will not let the first official APK replace them as an update. Back up important saves before uninstalling the debug build. All later official releases reuse the one permanent release key.
