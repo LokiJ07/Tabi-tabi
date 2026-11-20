@@ -57,6 +57,11 @@ static func make_gameplay_button(parent: Control, title: String, pos: Vector2, d
 	var button := Button.new()
 	button.text = title
 	button.clip_text = true
+	# Android tap actions fire on initial PRESS, not only a touch-up event
+	# that a dragged joystick finger or a moved thumb can silently cancel.
+	button.action_mode = BaseButton.ACTION_MODE_BUTTON_PRESS
+	button.keep_pressed_outside = true
+	button.mouse_filter = Control.MOUSE_FILTER_STOP
 	var right_side := pos.x > 900
 	button.anchor_left = 1.0 if right_side else 0.0
 	button.anchor_right = button.anchor_left
@@ -70,10 +75,10 @@ static func make_gameplay_button(parent: Control, title: String, pos: Vector2, d
 	button.size = dimensions
 	button.button_down.connect(down)
 	button.button_up.connect(up)
-	# Dragging outside a touch button must never leave a MOVE or OBSERVE
-	# action held. This was inconsistent in the earlier farm/wake chapters.
+	# Keep the hold until the actual finger is released. mouse_exited
+	# used to cancel FOCUS just because a thumb slipped a few pixels outside.
+	# Hiding gameplay still releases every hold to avoid sticky movement.
 	if title in ["▲","▼","◀","▶","HOLD OBSERVE","HOLD FOCUS"]:
-		button.mouse_exited.connect(up)
 		parent.visibility_changed.connect(func():
 			if not parent.is_visible_in_tree():
 				up.call())
@@ -104,7 +109,7 @@ static func make_gameplay_button(parent: Control, title: String, pos: Vector2, d
 		button.set_meta("hold_visual_active",false)
 		button.button_down.connect(func(): set_hold_feedback(button,true))
 		button.button_up.connect(func(): set_hold_feedback(button,false))
-		button.mouse_exited.connect(func(): set_hold_feedback(button,false))
+ 		# Keep feedback active until actual release or hidden HUD.
 		parent.visibility_changed.connect(func():
 			if not parent.is_visible_in_tree():
 				set_hold_feedback(button,false))
@@ -144,6 +149,8 @@ static func make_options_button(parent: Control, callback: Callable, text_scale:
 	var button := Button.new()
 	button.name = "Options"
 	button.text = "OPTIONS"
+	button.action_mode = BaseButton.ACTION_MODE_BUTTON_PRESS
+	button.keep_pressed_outside = true
 	place_action_button(button, "OPTIONS")
 	style_game_button(button, 23, false, text_scale)
 	button.pressed.connect(callback)
@@ -227,6 +234,9 @@ static func modal_button_style(fill: Color, outline: Color) -> StyleBoxFlat:
 	return style
 
 static func style_modal_button(button: Button, selected: bool = false, footer: bool = false, text_scale: float = 1.0) -> void:
+	# Consistent press-to-activate touch timing in every modal and chapter.
+	button.action_mode = BaseButton.ACTION_MODE_BUTTON_PRESS
+	button.keep_pressed_outside = true
 	# Identical to Night 1's readable modal choices / notebook / options.
 	var edge := Color("#ffd47a") if selected else Color("#bb995c")
 	var background := Color("#295643") if selected else Color("#0d3443")
