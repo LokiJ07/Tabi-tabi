@@ -68,8 +68,58 @@ static func paint_animated_actor(target: CanvasItem, texture: Texture2D,
 		_oval(target,foot+Vector2(dimensions.x*.095 - cycle*3.0*intensity,4),
 			Vector2(dimensions.x*.10,dimensions.x*.027),
 			Color(.016,.027,.027,shadow*.20*intensity))
-	paint_grounded(target,texture,foot+Vector2(horizontal,0),
-		Vector2(width,height),tint,shadow,rise,draw_shadow)
+	if intensity < .09:
+		paint_grounded(target,texture,foot+Vector2(horizontal,0),
+			Vector2(width,height),tint,shadow,rise,draw_shadow)
+		return
+	# Two independent lower-body slices counter-step while the shoulders
+	# follow a softer weight shift. The prior one-piece cutout only bobbed
+	# up/down and looked like a static paper puppet while walking. Keep all
+	# animated pieces in the SAME ground-foot coordinate system and retain
+	# the original authored SVG (no new GPU shader or animation asset).
+	if draw_shadow:
+		paint_contact_shadow(target,foot,width,shadow)
+	var source: Vector2 = texture.get_size()
+	if source.x < 2.0 or source.y < 2.0:
+		return
+	var waist_ratio := .60 if companion else .70
+	var upper_h := height*waist_ratio
+	var lower_h := height-upper_h
+	var image_origin := foot-Vector2(width*.5,height+rise)
+	var step := sin(phase * (1.13 if companion else 1.0))*intensity
+	var stride_px := (4.2 if companion else 6.2)*step
+	var left_lift := maxf(0.0,step)*intensity*(3.0 if companion else 4.5)
+	var right_lift := maxf(0.0,-step)*intensity*(3.0 if companion else 4.5)
+	var source_upper_h := source.y*waist_ratio
+	var half_source_w := source.x*.5
+	var half_image_w := width*.5
+	var left_source := Rect2(0,source_upper_h,half_source_w,source.y-source_upper_h)
+	var right_source := Rect2(half_source_w,source_upper_h,half_source_w,source.y-source_upper_h)
+	target.draw_texture_rect_region(texture,
+		Rect2(image_origin+Vector2(-stride_px*.44,upper_h-left_lift),
+			Vector2(half_image_w+1.0,lower_h+1.0)),left_source,tint)
+	target.draw_texture_rect_region(texture,
+		Rect2(image_origin+Vector2(half_image_w+stride_px*.44,upper_h-right_lift),
+			Vector2(half_image_w+1.0,lower_h+1.0)),right_source,tint)
+	var shoulder_sway := sin(phase*.5)*intensity*(1.5 if companion else 2.3)
+	target.draw_texture_rect_region(texture,
+		Rect2(image_origin+Vector2(horizontal+shoulder_sway,0),
+			Vector2(width,upper_h+2.5)),
+		Rect2(0,0,source.x,source_upper_h+source.y*.012),tint)
+
+
+static func paint_living_npc(target: CanvasItem, texture: Texture2D,
+		foot: Vector2, dimensions: Vector2, seconds: float,
+		reduced_motion: bool, tint: Color = Color.WHITE,
+		shadow: float = .30, draw_shadow: bool = true) -> void:
+	# NPCs breathe, adjust their stance and turn gently toward the activity.
+	# This is intentionally subtle: a stationary witness must not skate
+	# around the river or leave the physical interaction marker.
+	var shift := 0.0 if reduced_motion else sin(seconds*1.45+foot.x*.031)*1.8
+	var breath := 0.0 if reduced_motion else sin(seconds*1.9+foot.y*.017)*.85
+	paint_grounded(target,texture,foot+Vector2(shift,0),
+		Vector2(dimensions.x*(1.0+breath*.0025),dimensions.y),
+		tint,shadow,breath,draw_shadow)
 
 
 static func lantern(target: CanvasItem, texture: Texture2D, foot: Vector2,
