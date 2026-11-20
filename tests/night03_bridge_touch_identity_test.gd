@@ -32,7 +32,7 @@ func _run() -> void:
 				check(not Walk.river_blocked(3,foot),
 					"bridge %d segment %d center blocked at %s" % [n,i,str(foot)])
 				for side in [-1.0,1.0]:
-					var steering := foot+sideways*(14.0*side)
+					var steering: Vector2 = foot+sideways*(14.0*float(side))
 					if Geometry2D.is_point_in_polygon(steering,Walk.NIGHT3_RAVINE):
 						check(not Walk.river_blocked(3,steering),
 							"bridge %d must allow thumb-steering room" % n)
