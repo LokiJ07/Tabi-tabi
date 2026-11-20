@@ -89,7 +89,7 @@ func _input(event: InputEvent) -> void:
 				return # Let a second finger tap INTERACT/FOCUS simultaneously.
 			if not get_global_rect().has_point(event.position):
 				return
-			var local := get_global_transform_with_canvas().affine_inverse() * event.position
+			var local: Vector2 = get_global_transform_with_canvas().affine_inverse() * event.position
 			if local.y < 39.0:
 				reposition_touch = event.index
 			else:
@@ -105,7 +105,7 @@ func _input(event: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 	elif event is InputEventScreenDrag:
 		if event.index == active_touch:
-			var local := get_global_transform_with_canvas().affine_inverse() * event.position
+			var local: Vector2 = get_global_transform_with_canvas().affine_inverse() * event.position
 			_set_axis_from_local(local)
 			get_viewport().set_input_as_handled()
 		elif event.index == reposition_touch:
