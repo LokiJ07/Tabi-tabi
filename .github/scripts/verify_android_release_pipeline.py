@@ -4,6 +4,12 @@ from pathlib import Path
 import subprocess
 
 root=Path(__file__).resolve().parents[2]
+# Ruby's native Psych parser validates GitHub Actions YAML syntax without
+# installing extra Python dependencies or accidentally changing credentials.
+subprocess.run(["ruby","-e","require 'yaml'; YAML.parse_file(ARGV.fetch(0))",
+                str(root/".github/workflows/android-release.yml")],
+               capture_output=True,text=True,check=True)
+print("PASS: Signed APK workflow YAML parses")
 preset=(root/"export_presets.cfg").read_text()
 workflow=(root/".github/workflows/android-release.yml").read_text()
 errors=[]
