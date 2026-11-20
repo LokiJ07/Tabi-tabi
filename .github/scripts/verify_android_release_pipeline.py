@@ -37,6 +37,28 @@ check("apksigner" in workflow and "SHA256SUMS.txt" in workflow,
       "Signature and release checksum are verified")
 check("release-emulator:" in workflow and "needs: [build-release, release-emulator]" in workflow,
       "Publish is gated on installing this EXACT signed-release APK in Android emulator")
+# Regression for the reported v1.0.0 RELEASE failure at run #44737818095:
+# reactivecircus/android-emulator-runner ran the multiline script as
+# independent `/bin/sh -c` commands, so "import struct" exited 127.
+smoke_script = root / ".github/scripts/android_release_emulator_smoke.sh"
+smoke = smoke_script.read_text() if smoke_script.exists() else ""
+check("script: bash .github/scripts/android_release_emulator_smoke.sh" in workflow
+      and "script: |" not in workflow,
+      "Release emulator invokes ONE bash script, not separately parsed heredoc lines")
+check("python3 - <<'PY'" in smoke and "adb install -r" in smoke
+      and 'adb shell pidof org.tabitabi.nightone' in smoke,
+      "Actual signed APK gets installed, booted, visually captured and Python-validated")
+check("github.event_name == 'push' || inputs.publish == true" in workflow
+      and "paths:" in workflow
+      and "'1.0.0'" in workflow,
+      "One-time main workflow patch can auto-trigger requested v1.0.0 release")
+check("actions/setup-java@v5" in workflow
+      and "android-actions/setup-android@v4" in workflow
+      and "actions/checkout@v5" in workflow
+      and "actions/upload-artifact@v6" in workflow
+      and "actions/download-artifact@v7" in workflow,
+      "Release workflow uses Node 24-compatible, non-deprecated Actions versions")
+
 check('gh release create "$tag"' in workflow and "--prerelease" in workflow,
       "Signed APK is published as a versioned immutable GitHub Release")
 check("github.ref == 'refs/heads/main'" in workflow,
