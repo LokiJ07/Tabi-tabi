@@ -696,7 +696,7 @@ func _paint_chapter_people(behind: bool) -> void:
 				float(actor["shadow"]),bool(actor["dog"]),false)
 		else:
 			Depth.paint_living_npc(self,actor["tex"],foot,actor["size"],
-				elapsed,prefs.reduced_motion,ink,
+				clock,prefs.reduced_motion,ink,
 				float(actor["shadow"]),false)
 
 
